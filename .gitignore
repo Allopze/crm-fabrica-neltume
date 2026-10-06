@@ -15,3 +15,8 @@ npm-debug.log*
 /test-results/
 /playwright-report/
 /respaldos-externos
+
+# Excel de la fábrica: solo en datos/ o local, nunca en git (AGENTS.md)
+/*.xlsx
+/*.xls
+/*.xlsm

@@ -127,7 +127,7 @@ Disponible = existencia − reservado. Se calcula con la vista `v_stock` (suma p
 
 ## 5. Importación del Excel (REQ-STK-1.x, REQ-COT-1.1)
 
-Fuente: `datos/COTIZADOR_2026.xlsx` (fuera de git), hojas `Categorias` y `Precio`.
+Fuente: `datos/Cotizador Puertas Neltume.Co-rev-4F.xlsx` (fuente de verdad desde el 06-10-2026; hojas `Precio` y `Categorias` idénticas a la anterior COTIZADOR_2026.xlsx) (fuera de git), hojas `Categorias` y `Precio`.
 
 | Paso | Hoja / columnas | Destino | Validación |
 |---|---|---|---|

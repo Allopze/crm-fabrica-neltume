@@ -25,7 +25,7 @@ Sin marcas [NEEDS CLARIFICATION] abiertas: las decisiones de la Fase 3 están en
 
 **Supuestos.**
 - S1: una sola bodega lógica "Fábrica", con zonas de materias primas y de producto terminado; el modelo admite más bodegas después.
-- S2: la lista de precios inicial es la hoja "Precio" de COTIZADOR_2026.xlsx, que también es la referencia de formato de la cotización (8.772 filas: 33 modelos × 4 maderas × 9 rangos de ancho × 7 alturas, más accesorios).
+- S2: la lista de precios inicial es la hoja "Precio" del cotizador real `Cotizador Puertas Neltume.Co-rev-4F.xlsx` (fuente de verdad; reemplaza a COTIZADOR_2026.xlsx, con precios y categorías idénticos), que también es la referencia de formato de la cotización (8.772 filas: 33 modelos × 4 maderas × 9 rangos de ancho × 7 alturas, más accesorios).
 - S3: vigencia por defecto de la cotización = 10 días hábiles (tomada del Excel), configurable.
 - S4: sin stock suficiente se cotiza igual, con aviso visible.
 - S5: el vendedor descarga el PDF y lo envía por su cuenta.
@@ -256,6 +256,6 @@ Facturación electrónica · portal de clientes · ventas de la tienda · envío
 | NC-5 | Redondeo al peso del precio unitario; línea = cantidad × unitario (REQ-COT-1.2) |
 | NC-6 | Descuento sin tope, con motivo obligatorio y auditado (REQ-COT-7.2) |
 | NC-7 | Borrador en ≤ 15 s (p90); costo de IA ≤ US$ 0,10 por cotización (REQ-NFR-1, 2) |
-| NC-8 | Precios: re-importar el Excel y editar en pantalla, ambos versionados; referencia COTIZADOR_2026.xlsx (REQ-COT-1.1) |
+| NC-8 | Precios: re-importar el Excel y editar en pantalla, ambos versionados; referencia `Cotizador Puertas Neltume.Co-rev-4F.xlsx` (REQ-COT-1.1) |
 | NC-9 | Flete fuera de alcance; el PDF dice "flete aparte" (REQ-COT-4.2) |
 | — | Nombre del cliente: nunca se envía a la IA (REQ-COT-2.9) |

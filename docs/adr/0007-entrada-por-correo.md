@@ -1,6 +1,6 @@
 # ADR-0007 — Entrada de pedidos por correo (Gmail)
 
-**Estado:** propuesto, pendiente de aprobación · **Fecha:** 06-10-2026 · **Refs:** ADR-0003, REQ-COT-2.x, 4.4, 11 (nuevo), SECURITY T1, T4, T6 · **Reemplaza en parte:** ADR-0003
+**Estado:** rechazado (06-10-2026): la empresa no usa Google Workspace; se descarta la entrada por correo y sigue vigente ADR-0003 · **Fecha:** 06-10-2026 · **Refs:** ADR-0003, REQ-COT-2.x, 4.4, 11 (nuevo), SECURITY T1, T4, T6 · **Reemplazaba en parte:** ADR-0003 (no aplica)
 
 ## Contexto
 ADR-0003 dejó la webapp como único canal: el vendedor copia el texto del correo a mano. Fase 4 (P3) pide evaluar un canal automático. Ya se cumplen los prerrequisitos técnicos: el cotizador interno pasó la evaluación de AI.md §6 con `gemini-3.5-flash` (ADR-0001) y existen la cola `trabajo_ia`, la redacción de datos personales y la revisión humana obligatoria. El usuario eligió **correo** (no WhatsApp).
