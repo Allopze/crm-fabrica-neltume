@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { clp } from "@/lib/formato";
 
-interface Opcion { codigo: string; modelo: string; madera: string; ancho: string; altoM: number; precioVenta: number }
+export interface Opcion { codigo: string; modelo: string; madera: string; ancho: string; altoM: number; precioVenta: number }
 
 /** Busca artículos en la lista vigente (código o modelo) y devuelve el código elegido. */
-export function SelectorArticulo({ version, onElegir, etiqueta = "Buscar artículo del catálogo" }: { version: number | null; onElegir: (codigo: string) => void; etiqueta?: string }) {
+export function SelectorArticulo({ version, onElegir, etiqueta = "Buscar artículo del catálogo" }: { version: number | null; onElegir: (codigo: string, opcion: Opcion) => void; etiqueta?: string }) {
   const [q, setQ] = useState("");
   const [opciones, setOpciones] = useState<Opcion[]>([]);
 
@@ -32,7 +32,7 @@ export function SelectorArticulo({ version, onElegir, etiqueta = "Buscar artícu
         <ul role="listbox" className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-linea-fuerte bg-lamina shadow-lg">
           {opciones.map((o) => (
             <li key={o.codigo}>
-              <button type="button" role="option" aria-selected={false} onClick={() => { onElegir(o.codigo); setQ(""); setOpciones([]); }}
+              <button type="button" role="option" aria-selected={false} onClick={() => { onElegir(o.codigo, o); setQ(""); setOpciones([]); }}
                 className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-papel">
                 <span><span className="font-mono">{o.codigo}</span> <span className="capitalize text-tinta-suave">{o.modelo.toLowerCase()} · {o.madera.toLowerCase()}</span></span>
                 <span className="tabular-nums text-tinta-tenue">{clp(o.precioVenta)}</span>

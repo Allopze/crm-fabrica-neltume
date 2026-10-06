@@ -74,7 +74,7 @@ Base `/api/v1`, JSON UTF-8, solo detrás de Cloudflare Access. Todos los handler
 | Método y ruta | Permiso | Idem | Notas |
 |---|---|---|---|
 | POST `/cotizaciones/interpretaciones` (`texto, cliente_id?`) | `cotizaciones.crear` | ✔ | 202 `{ id, estado: interpretando }`; 429 `LIMITE_IA` |
-| POST `/cotizaciones` (`cliente_id?, items:[{codigo, cantidad}]`) | `cotizaciones.crear` | ✔ | Cotización manual (REQ-COT-5) |
+| POST `/cotizaciones` (`clienteId?, items:[{codigo, cantidad} \| {detalle, cantidad}]`) | `cotizaciones.crear` | ✔ | Cotización manual (REQ-COT-5) |
 | GET `/cotizaciones?estado&cliente&desde&hasta&q` | `cotizaciones.crear` | | Paginado (REQ-COT-10) |
 | GET `/cotizaciones/:id` | `cotizaciones.crear` | | Texto original, interpretación, ítems, avisos de stock y diferencia de lista |
 | PATCH `/cotizaciones/:id` (`cliente_id, notas, version`) | `cotizaciones.crear` | | Solo en borrador |

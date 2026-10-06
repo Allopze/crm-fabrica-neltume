@@ -75,7 +75,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T1.28 (75) UI nueva cotización con polling, estado `ia_fallida` y "Cotizar a mano" · REQ-COT-2.7 · E `13-ia-caida-manual` · T1.27, T0.14
 - [x] T1.29 (90) UI de revisión lado a lado con resaltado del texto fuente, alertas e ítems `por_confirmar`/`a_pedido` · REQ-COT-3.1, UX §3 · E `06-cotizacion-lenguaje-natural` · T1.28
 - [x] T1.30 (75) API de ítems (agregar, editar, eliminar, fijar precio `a_pedido`) con versión optimista y recálculo auditado · REQ-COT-3.2–3.4 · I `cotizacion.items` · T1.27, T1.8
-- [ ] T1.31 (60) Cotización manual (API y UI) con el mismo cálculo · REQ-COT-5.x · U igualdad IA/manual · T1.30
+- [x] T1.31 (60) Cotización manual (API y UI) con el mismo cálculo · REQ-COT-5.x · U igualdad IA/manual · T1.30
 - [x] T1.32 (60) Aprobar: bloqueo si hay pendientes, congelado, vigencia y aprobador · REQ-COT-4.1, 4.4, 4.5, 6.1, 6.2, 6.5 · I `aprobar` · T1.30, T1.9
 - [ ] T1.33 (90) PDF de cotización (logo, totales, vigencia, "flete aparte") · ADR-0004, REQ-COT-4.2, 4.3, 4.5 · U `pdf.contenido`, I `pdf` · T1.32
 - [x] T1.34 (45) Banner de lista desactualizada y "Recalcular" · REQ-COT-6.3 · E `10-precios-congelados` · T1.30, T1.10

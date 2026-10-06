@@ -31,7 +31,7 @@ export async function articuloConDescripcion(tx: Tx, codigo: string) {
   return { ...a, descripcion: `${titulo(a.modelo)} · ${MADERA[a.madera] ?? a.madera} · ${a.ancho} × ${Number(a.altoM).toFixed(2).replace(".", ",")} m` };
 }
 
-async function lineaConPrecio(tx: Tx, codigo: string, cantidad: number, listaId: string) {
+export async function lineaConPrecio(tx: Tx, codigo: string, cantidad: number, listaId: string) {
   const a = await articuloConDescripcion(tx, codigo);
   const p = await precioDeArticulo(tx, a.id, listaId);
   return { articuloId: a.id, descripcion: a.descripcion, precioNetoLista: p.precioNetoLista, recargoPct: p.recargoPct, precioUnitario: p.precioUnitario,
