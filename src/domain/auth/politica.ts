@@ -4,6 +4,7 @@ import { randomUUID, timingSafeEqual } from "node:crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { bd } from "@/db/conexion";
+import { registro } from "@/lib/registro";
 import { registrarAuditoria } from "../auditoria";
 import { ESTADO_HTTP, ErrorDominio, type CodigoError } from "../errores";
 import { conIdempotencia } from "./idempotencia";
@@ -50,7 +51,7 @@ async function ejecutar<C extends ContextoBase<unknown>>(ctx: C, manejador: Mane
     if (e instanceof ZodError) {
       return respuestaError("VALIDACION", "Datos inválidos", ctx.correlacionId, e.issues.map((i) => ({ campo: i.path.join("."), mensaje: i.message })));
     }
-    console.error(JSON.stringify({ nivel: "error", correlacion_id: ctx.correlacionId, ruta: ctx.req.nextUrl.pathname, error: String(e) }));
+    registro.error("error no controlado en ruta", { correlacion_id: ctx.correlacionId, ruta: ctx.req.nextUrl.pathname, metodo: ctx.req.method, error: e });
     return respuestaError("INTERNO", "Ocurrió un error inesperado. Usa el código de correlación para soporte.", ctx.correlacionId);
   }
 }
