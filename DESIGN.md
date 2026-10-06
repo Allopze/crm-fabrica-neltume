@@ -86,7 +86,7 @@ Días hábiles: lunes a viernes, descontando los feriados de Chile de la tabla `
 - `datos` y `backend` son `internal: true`. Solo `borde` (tunnel) y `salida` (worker) tienen egreso.
 - `app` no tiene la clave del LLM.
 - `.env.example` lista estos nombres con una descripción y sin valores.
-- `docker-compose.test.yml` (TESTING.md) reemplaza `tunnel` y `proxy`, usa una BD efímera y pone el doble del LLM en `worker`.
+- Compose es solo de producción. Dev y test usan el PostgreSQL local: `npm run dev` aplica migraciones y semilla y levanta la app; `npm test` recrea las BD de test (TESTING.md §4).
 
 ## 5. Errores, cola, reintentos y observabilidad
 

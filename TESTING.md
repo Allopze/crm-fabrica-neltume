@@ -7,7 +7,7 @@ Refs: AGENTS.md (pruebas y calidad), SPEC.md (REQ), AI.md §5–6, ADR-0005. `np
 | Nivel | Herramienta | Qué cubre | Dónde | Cantidad aprox. |
 |---|---|---|---|---|
 | Unit | Vitest | `src/domain` puro (precios, redondeo, IVA, días hábiles, mapeo a catálogo, validación de RUT, estados), `src/ai/esquema` y `src/ai/redaccion` | `src/**/*.test.ts` | ~150 |
-| Integración | Vitest + Postgres real (`docker-compose.test.yml`) | Route handlers con su permiso, transacciones, triggers de inmutabilidad, idempotencia, `audit_log`, importación del Excel mini, worker con el doble | `tests/integracion/**` | ~120 |
+| Integración | Vitest + PostgreSQL local (BD `neltume_test`, recreada) | Route handlers con su permiso, transacciones, triggers de inmutabilidad, idempotencia, `audit_log`, importación del Excel mini, worker con el doble | `tests/integracion/**` | ~120 |
 | E2E | Playwright (`workers: 1`, `fullyParallel: false`, orden por nombre de archivo) | Recorrido de punta a punta en navegador, con estado compartido entre suites | `e2e/NN-*.spec.ts` | 14 suites |
 | Evaluación IA | `npm run eval:ia` (modelo real) | Set de AI.md §6 | `eval/` | 24+ casos; **no** forma parte de `npm test` |
 
@@ -24,7 +24,7 @@ Chequeos estructurales (corren en integración):
 
 - `src/ai/doble.ts` implementa la misma interfaz que el proveedor real (ADR-0001). Responde según un mapa fijo de texto a salida (`tests/fixtures/ia-respuestas.json`).
 - Escenarios: respuesta válida, con dudas, inexistente, `a_pedido`, injection (`alertas`), **timeout**, **error 500**, **salida inválida** y **sin ZDR**.
-- Se activa con `LLM_PROVEEDOR=doble` en `docker-compose.test.yml`. Una guarda impide usar `doble` con `NODE_ENV=production` y usar el proveedor real en test.
+- Se activa con `LLM_PROVEEDOR=doble` en el entorno de test. Una guarda impide usar `doble` con `NODE_ENV=production` y usar el proveedor real en test.
 - El doble registra cada petición recibida para verificar el enmascarado de datos personales (REQ-COT-2.9).
 
 ## 3. Suites E2E (secuenciales, con estado, en este orden)
@@ -52,7 +52,7 @@ Cada suite parte del estado que dejó la anterior. Nunca se ejecuta una suite su
 
 | Elemento | Detalle |
 |---|---|
-| `docker-compose.test.yml` | `db` efímera (tmpfs), `app` y `worker` con `LLM_PROVEEDOR=doble`, sin `tunnel` ni `proxy` y sin red de salida. Playwright accede a `app` por la red de Compose |
+| BD de test | PostgreSQL local: `neltume_test` (integración) y `neltume_e2e` (E2E), recreadas desde las migraciones al inicio de cada capa. La app de E2E corre con `next dev` contra `neltume_e2e` y `LLM_PROVEEDOR=doble` |
 | `e2e/fixtures/cotizador-mini.xlsx` | Misma estructura que COTIZADOR_2026.xlsx: ~50 filas (NEL, MOL, TOLT, LIC, FUY, RAN, ANC en las 4 maderas + 1 marco), costos ficticios redondos y 1 fila inválida a propósito. Versionado en git; **nunca** contiene costos reales |
 | `e2e/fixtures/cotizador-mini-v2.xlsx` | Igual, con +10 % en los precios (suite 10) |
 | `tests/fixtures/ia-respuestas.json` | Salidas del doble por texto |

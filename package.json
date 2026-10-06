@@ -3,25 +3,47 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx --env-file-if-exists=.env.local scripts/dev.ts",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint --max-warnings=0",
+    "test": "npm run lint && npm run test:unit && npm run test:integracion && npm run test:e2e",
+    "test:unit": "vitest run --project unit",
+    "test:integracion": "vitest run --project integracion",
+    "test:e2e": "playwright test",
+    "db:setup": "tsx --env-file-if-exists=.env.local scripts/db-setup.ts",
+    "db:migrar": "tsx --env-file-if-exists=.env.local scripts/migrar.ts",
+    "db:generar": "drizzle-kit generate",
+    "crear-admin": "tsx --env-file-if-exists=.env.local scripts/crear-admin.ts"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.2.1",
+    "drizzle-orm": "^0.45.3",
     "lucide-react": "^1.52.0",
     "next": "16.3.8",
+    "pg": "^8.23.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24.19.1",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.0.3",
+    "yaml": "^2.9.1"
+  },
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11"
   }
 }

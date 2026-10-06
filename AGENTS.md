@@ -6,7 +6,7 @@ Alcance por fases en SPEC.md (demo primero, producto después). Un solo rol hoy,
 UI y docs en español. CLP como enteros; precios con y sin IVA (19 %); números y fechas en formato chileno (1.234,56; dd-mm-aaaa).
 
 ## Stack y comandos
-Stack (ADR-0005): Next.js 16 (App Router) + TypeScript + Tailwind v4 + lucide-react, PostgreSQL + Drizzle, Zod, Auth.js, react-pdf, Caddy (proxy), cloudflared (túnel), Vitest + Playwright. Versiones: pendiente (se fijan con lockfile en el esqueleto). Despliegue: Docker Compose expuesto solo por Cloudflare Tunnel. LLM: Command Code (Provider API) detrás de una interfaz agnóstica al proveedor en `src/ai/`; lo específico de Command Code vive solo en su implementación.
+Stack (ADR-0005): Next.js 16 (App Router) + TypeScript + Tailwind v4 + lucide-react, PostgreSQL + Drizzle, Zod, sesiones propias (argon2id), react-pdf, Caddy (proxy), cloudflared (túnel), Vitest + Playwright. Versiones: pendiente (se fijan con lockfile en el esqueleto). Despliegue: Producción: Docker Compose expuesto solo por Cloudflare Tunnel; dev y test: Postgres local (`npm run dev`). LLM: Command Code (Provider API) detrás de una interfaz agnóstica al proveedor en `src/ai/`; lo específico de Command Code vive solo en su implementación.
 Los scripts los crea la Fase 0 de TASKS.md; estos nombres son el contrato (gestor npm):
 - dev: `npm run dev` · build: `npm run build` · lint: `npm run lint` · test (suite completa: unit + integración + E2E): `npm test` · stack: `docker compose up -d`
 - fuera de la suite: `npm run eval:ia` (modelo real, AI.md) · `npm run crear-admin` (primer usuario)
