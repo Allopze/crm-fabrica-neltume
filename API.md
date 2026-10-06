@@ -87,7 +87,7 @@ Base `/api/v1`, JSON UTF-8, solo detrás de Cloudflare Access. Todos los handler
 | POST `/pedidos` (`cotizacionId, direccionDespacho?, medioTransporte?`) | `pedidos.gestionar` | ✔ | Crea la nota de pedido y las reservas; 409 `VENCIDA`, `YA_TIENE_PEDIDO`, `NO_APROBADA` |
 | GET `/pedidos` · GET `/pedidos/:id` | `pedidos.gestionar` | | Muestra reservado y faltante por ítem |
 | POST `/pedidos/:id/cancelar` (`motivo`) | `pedidos.gestionar` | ✔ | Libera las reservas; 409 `NO_EDITABLE` si ya está cancelada o despachada |
-| GET `/pedidos/:id/pdf` | `pedidos.gestionar` | | Nota de pedido |
+| GET `/pedidos/:id/pdf` | `pedidos.gestionar` + `clientes.ver` | | Nota de pedido; auditado |
 
 ### Webhooks
 No hay. El único canal es la webapp (ADR-0003). Un test verifica que no existen rutas `/webhooks/*`.

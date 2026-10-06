@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contenidoCotizacion, fechaSantiago } from "./contenido";
+import { contenidoCotizacion, contenidoPedido, fechaSantiago } from "./contenido";
 
 const base = {
   numero: 124, aprobadaEn: new Date("2026-10-06T02:30:00Z"), vigenciaHasta: "2026-10-20", listaVersion: 3,
@@ -33,5 +33,23 @@ describe("pdf.contenido (REQ-COT-4.2)", () => {
 
   it("la fecha se toma en la zona de Santiago", () => {
     expect(fechaSantiago(new Date("2026-01-01T02:00:00Z"))).toBe("31-12-2025");
+  });
+});
+
+describe("pdf.contenido de la nota de pedido (REQ-COT-8.1)", () => {
+  it("muestra despacho, faltante por fabricar y totales congelados", () => {
+    const k = contenidoPedido({
+      numero: 7, creadoEn: new Date("2026-10-06T15:00:00Z"), estado: "pendiente", cotizacionNumero: 124,
+      cliente: { nombre: "Ferretería Puyehue", rut: "11.111.111-1", contacto: null, telefono: null },
+      direccionDespacho: null, medioTransporte: "Camión propio",
+      items: [{ codigo: "FUY-O-2-A", descripcion: "Fuy", cantidad: 3, faltante: 1, totalLinea: 300000 }, { codigo: null, descripcion: "Toltén", cantidad: 1, faltante: 1, totalLinea: 1000 }],
+      subtotal: 301000, descuento: 0, iva: 57190, total: 358190,
+    });
+    expect(k.titulo).toBe("Nota de pedido N.º 7");
+    expect(k.fechas).toBe("Fecha 06-10-2026 · Cotización N.º 124");
+    expect(k.datos).toContainEqual(["Despacho", "Retira en fábrica"]);
+    expect(k.filas).toEqual([["FUY-O-2-A", "Fuy", "3", "1", "$300.000"], ["A pedido", "Toltén", "1", "1", "$1.000"]]);
+    expect(k.total).toBe("$358.190");
+    expect(k.pie[0]).toContain("flete aparte");
   });
 });

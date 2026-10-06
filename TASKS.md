@@ -83,7 +83,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 ### Pedidos y reservas
 - [x] T1.35 (45) Migración `nota_pedido` y `pedido_item` · DATA-MODEL §2 · I `migraciones` · T1.21
 - [x] T1.36 (90) Dominio y API de pedidos: crear desde una cotización aprobada y vigente, reservar lo disponible, marcar faltante, cancelar y liberar · REQ-STK-7.x, REQ-COT-8.x · U `reserva`, I `pedidos` · T1.35, T1.13, T1.32
-- [ ] T1.37 (75) UI de pedidos y PDF de nota de pedido · REQ-COT-8.1 · E `09-pedido-reserva` · T1.36, T1.33
+- [x] T1.37 (75) UI de pedidos y PDF de nota de pedido · REQ-COT-8.1 · E `09-pedido-reserva` · T1.36, T1.33
 
 ### Auditoría, panel y E2E
 - [ ] T1.38 (60) API y UI de auditoría con filtros y paginación · REQ-ADM-3.2, 3.4 · E `14-auditoria` · T0.9 · [P]

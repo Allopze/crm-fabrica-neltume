@@ -7,6 +7,7 @@ import * as rutaAprobar from "@/app/api/v1/cotizaciones/[id]/aprobar/route";
 import * as rutaCots from "@/app/api/v1/cotizaciones/route";
 import * as rutaEntradas from "@/app/api/v1/movimientos/entradas/route";
 import * as rutaCancelar from "@/app/api/v1/pedidos/[id]/cancelar/route";
+import * as rutaPdf from "@/app/api/v1/pedidos/[id]/pdf/route";
 import * as rutaPedido from "@/app/api/v1/pedidos/[id]/route";
 import * as rutaPedidos from "@/app/api/v1/pedidos/route";
 import * as rutaSesion from "@/app/api/v1/sesion/route";
@@ -72,6 +73,14 @@ describe("nota de pedido y reserva (REQ-COT-8.1–8.4, REQ-STK-7.1–7.4)", () =
     expect(rows[0].estado).toBe("aceptada");
     const movs = await app.query("SELECT cantidad FROM movimiento WHERE tipo = 'reserva' AND ref_tipo = 'pedido' AND ref_id = $1", [pedido]);
     expect(movs.rows.map((m) => Number(m.cantidad))).toEqual([2]);
+  });
+
+  it("la nota de pedido se descarga en PDF y queda auditada", async () => {
+    const r = await llamar(rutaPdf.GET, "GET", "/x", s, { id: pedido });
+    expect(r.res.headers.get("content-type")).toBe("application/pdf");
+    expect(r.bytes.subarray(0, 5).toString()).toBe("%PDF-");
+    const { rows } = await app.query("SELECT 1 FROM audit_log WHERE accion = 'descargar pdf' AND recurso = 'nota_pedido' AND recurso_id = $1", [pedido]);
+    expect(rows).toHaveLength(1);
   });
 
   it("la misma cotización no genera otro pedido → 409 YA_TIENE_PEDIDO", async () => {
