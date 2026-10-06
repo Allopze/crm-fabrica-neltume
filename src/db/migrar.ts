@@ -3,6 +3,7 @@ import path from "node:path";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Client } from "pg";
+import { sembrar } from "./semilla";
 import { ident, partesUrl } from "./urls";
 
 const CARPETA = path.join(process.cwd(), "src/db/migraciones");
@@ -11,7 +12,8 @@ const CARPETA = path.join(process.cwd(), "src/db/migraciones");
 export const TABLAS_SOLO_INSERCION = ["audit_log", "movimiento"];
 
 /**
- * Aplica las migraciones con el dueño del esquema y luego ajusta los permisos del rol de la app.
+ * Aplica las migraciones con el dueño del esquema, ajusta los permisos del rol de la app y siembra
+ * permisos y rol administrador.
  * Idempotente: se puede correr en cada arranque.
  */
 export async function migrar(urlOwner: string, urlApp: string): Promise<void> {
@@ -22,6 +24,7 @@ export async function migrar(urlOwner: string, urlApp: string): Promise<void> {
       await migrate(drizzle(cliente), { migrationsFolder: CARPETA });
     }
     await aplicarPermisos(cliente, partesUrl(urlApp).usuario);
+    await sembrar(cliente);
   } finally {
     await cliente.end();
   }
