@@ -94,11 +94,15 @@ services:
       PGHOST: db
       PGUSER: ${POSTGRES_USER}
       PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: neltume
       BACKUP_RETENCION_DIAS: ${BACKUP_RETENCION_DIAS}
       TZ: America/Santiago
     volumes:
       - backups:/backups
+      # Copia externa (DESIGN §6): ruta del host en otro disco, NAS o carpeta sincronizada fuera del servidor.
+      - ${BACKUP_DESTINO_EXTERNO:-./respaldos-externos}:/externo
       - ./scripts/backup.sh:/backup.sh:ro
+      - ./scripts/restaurar-prueba.sh:/restaurar-prueba.sh:ro
     entrypoint: ["sh", "/backup.sh"]
     networks: [datos]
     depends_on:

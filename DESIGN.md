@@ -110,9 +110,9 @@ Días hábiles: lunes a viernes, descontando los feriados de Chile de la tabla `
 
 | Qué | Cómo | Frecuencia |
 |---|---|---|
-| BD completa | `pg_dump -Fc` → volumen `backups` | Diario 02:00 (America/Santiago), retención de 30 días |
-| Copia externa | Se sincroniza el último dump a `BACKUP_DESTINO_EXTERNO` (definido en el hosting) | Diario |
-| Prueba de restauración | `pg_restore` a una BD temporal, más el chequeo de conteos de `movimiento`, `cotizacion` y `audit_log` | Mensual, documentado en un runbook |
+| BD completa | `pg_dump -Fc` → volumen `backups`, con `.sha256` y `.conteos` (filas de `movimiento`, `cotizacion` y `audit_log` al respaldar) | Diario 02:00 (America/Santiago), retención de 30 días |
+| Copia externa | Se copia cada respaldo a `BACKUP_DESTINO_EXTERNO` (ruta del host montada en `/externo`) y se verifica su checksum; si no está montado, el log lo marca como error | Diario |
+| Prueba de restauración | `scripts/restaurar-prueba.sh`: checksum, `pg_restore` a una BD temporal, conteos ≥ los del respaldo y tiempo medido (RUNBOOK §4) | Mensual |
 
 Objetivos: pérdida máxima de 24 h y restauración en menos de 2 h (REQ-NFR-4). El Excel fuente no se respalda aquí: vive en `datos/`, fuera de git.
 

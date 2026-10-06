@@ -43,7 +43,16 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 
 - Salud: `GET /api/v1/salud` responde `ok`, o `degradado` (503) si la BD no responde. Lo usan los healthchecks.
 - Logs: JSON en stdout (`docker compose logs app`), con datos sensibles redactados. Cada error lleva su `correlacion_id`, que también se ve en pantalla y en `audit_log`.
-- Respaldos: el servicio `backup` hace `pg_dump` diario a las 02:00 en el volumen `backups`. La copia externa y la prueba de restauración mensual quedan en TASKS T2.3.
+- Respaldos: el servicio `backup` hace `pg_dump` diario a las 02:00 en el volumen `backups` (30 días) y lo copia a `BACKUP_DESTINO_EXTERNO`, verificando el checksum. `backups/ultimo-ok` guarda la fecha del último respaldo completo.
+  - Respaldo manual (antes de un cambio riesgoso): `docker compose exec backup sh /backup.sh --una-vez`.
+  - Revisar: `docker compose logs backup` no debe tener líneas `"nivel":"error"` (por ejemplo, destino externo sin montar).
+- Prueba de restauración (mensual; meta < 2 h, pérdida máxima 24 h, REQ-NFR-4): `docker compose exec backup sh /restaurar-prueba.sh` restaura el último respaldo en una BD temporal, verifica checksum y conteos, informa el tiempo y la borra. Para probar la copia externa: `sh /restaurar-prueba.sh /externo/<archivo>.dump`. Anota fecha y resultado en el registro de abajo.
+- Restaurar de verdad (desastre): detener `app` y `worker`; `docker compose exec backup pg_restore --clean --if-exists --no-owner --role=<usuario de DATABASE_URL_OWNER> -d neltume /backups/<archivo>.dump` (así las tablas siguen siendo del owner y las migraciones futuras funcionan); volver a correr `migrar` (reaplica permisos) y levantar todo.
+- En desarrollo, con Postgres.app: exporta `PGHOST`, `PGUSER`, `PGPASSWORD` del superusuario, `PGDATABASE=neltume_dev`, `BACKUP_DIR` y `BACKUP_EXTERNO_DIR`, y corre los mismos scripts con `sh scripts/…`.
+
+| Fecha | Respaldo | Resultado | Tiempo |
+|---|---|---|---|
+| 06-10-2026 | Local (dev, Postgres 18) con copia externa simulada | Checksum y conteos OK; copia alterada rechazada | < 1 s |
 
 ## 5. Incidentes frecuentes
 
