@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { MADERAS_LOGIN, Tablon } from "@/components/ui/tablon";
 import { sesionActual } from "@/domain/auth/servidor";
 import { FormularioLogin } from "./formulario-login";
 
 export const metadata: Metadata = { title: "Ingresar" };
 
-const muestras = [
-  { nombre: "Pino Oregón", css: "var(--pino-oregon)" },
-  { nombre: "Lenga", css: "var(--lenga)" },
-  { nombre: "Mara", css: "var(--mara)" },
-  { nombre: "Raulí", css: "var(--rauli-madera)" },
-];
 
 export default async function LoginPage() {
   if (await sesionActual()) redirect("/");
@@ -18,10 +13,11 @@ export default async function LoginPage() {
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       {/* Lado del taller: las cuatro maderas como tablones verticales */}
       <section className="veta relative hidden overflow-hidden lg:block">
-        <div className="absolute inset-0 grid grid-cols-4 gap-[3px] p-[3px] opacity-90">
-          {muestras.map((m, i) => (
-            <div key={m.nombre} className="swatch entrada relative" style={{ backgroundColor: m.css, animationDelay: `${i * 0.08}s` }}>
-              <span className="absolute bottom-8 left-1/2 -translate-x-1/2 rotate-180 whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.3em] text-white/75 [writing-mode:vertical-rl]">
+        <div className="absolute inset-0 grid grid-cols-4 gap-[2px] bg-[#1a120c]">
+          {MADERAS_LOGIN.map((m, i) => (
+            <div key={m.id} className="entrada relative overflow-hidden shadow-[inset_0_0_0_1px_rgb(0_0_0/0.25)]" style={{ animationDelay: `${i * 0.08}s` }}>
+              <Tablon m={m} className="absolute inset-0 h-full w-full" />
+              <span className="absolute bottom-8 left-1/2 -translate-x-1/2 rotate-180 whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.3em] text-white/85 [text-shadow:0_1px_2px_rgb(0_0_0/0.5)] [writing-mode:vertical-rl]">
                 {m.nombre}
               </span>
             </div>

@@ -29,10 +29,10 @@
   --bosque-tinta: #e9e2d3;
 
   /* Maderas del catálogo */
-  --pino-oregon: #d8a466;
-  --lenga: #c27a57;
-  --mara: #a1503a;
-  --rauli-madera: #74301d;
+  --pino-oregon: #d9ad74;
+  --lenga: #cf9474;
+  --mara: #7d3a27;
+  --rauli-madera: #a8654c;
 }
 
 @theme inline {
