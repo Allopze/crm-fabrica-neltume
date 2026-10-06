@@ -120,3 +120,5 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 ## Fase 4 — P3
 
 Entrada por correo o mensajería: fuera de alcance (ADR-0003). Antes de planificar tareas exige un ADR nuevo, que el cotizador interno pase la evaluación de AI.md y tu aprobación.
+
+Estado (06-10-2026): la evaluación pasó con `gemini-3.5-flash` (ADR-0001) y está **propuesto ADR-0007 (entrada por correo, Gmail)**. Las tareas se planifican aquí cuando se apruebe.
