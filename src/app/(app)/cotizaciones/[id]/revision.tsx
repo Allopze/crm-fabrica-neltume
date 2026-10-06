@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Download, Eye, Lock, Plus, RotateCcw, ShieldAlert, Truck } from "lucide-react";
-import { Boton, BotonLink } from "@/components/ui/base";
+import { Boton, BotonDescarga, BotonLink } from "@/components/ui/base";
 import { pedir } from "@/lib/api-cliente";
 import { clp, cn, fecha } from "@/lib/formato";
 import { SelectorArticulo } from "./selector-articulo";
@@ -51,7 +51,7 @@ export function Revision({ inicial, csrf, puedeAprobar, clientes }: Props) {
           <p className="flex items-center gap-2 text-musgo"><Lock className="h-4 w-4" />
             <span><strong>Aprobada por {c.aprobador}</strong> · precios congelados (lista v{c.lista.usada}) · {c.vencida ? "vencida" : `vigente hasta el ${fecha(c.vigenciaHasta!)}`}</span></p>
           <div className="flex gap-2">
-            <BotonLink href={`${base}/pdf`} prefetch={false}><Download className="h-4 w-4" /> PDF</BotonLink>
+            <BotonDescarga href={`${base}/pdf`}><Download className="h-4 w-4" /> PDF</BotonDescarga>
             {c.estado === "aprobada" && !c.vencida && <BotonLink href={`/pedidos/nuevo?cotizacion=${c.id}`} variante="primario"><Truck className="h-4 w-4" /> Convertir en pedido</BotonLink>}
           </div>
         </div>

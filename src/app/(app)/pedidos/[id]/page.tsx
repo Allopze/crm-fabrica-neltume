@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Download, Hammer } from "lucide-react";
-import { BotonLink, Encabezado, Etiqueta, Panel, Placa } from "@/components/ui/base";
+import { BotonDescarga, Encabezado, Etiqueta, Panel, Placa } from "@/components/ui/base";
 import { estadoPedido } from "@/components/ui/estado-pedido";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { bd } from "@/db/conexion";
@@ -35,7 +35,7 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
         acciones={
           <>
             <Etiqueta tono={e.tono}>{e.texto}</Etiqueta>
-            {sesion.permisos.has("clientes.ver") && <BotonLink href={`/api/v1/pedidos/${p.id}/pdf`} prefetch={false}><Download className="h-4 w-4" /> PDF</BotonLink>}
+            {sesion.permisos.has("clientes.ver") && <BotonDescarga href={`/api/v1/pedidos/${p.id}/pdf`}><Download className="h-4 w-4" /> PDF</BotonDescarga>}
             {!cancelada && p.estado !== "despachada" && <CancelarPedido id={p.id} csrf={sesion.csrf} />}
           </>
         }

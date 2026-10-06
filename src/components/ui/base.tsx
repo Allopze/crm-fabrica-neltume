@@ -19,6 +19,11 @@ export function Boton({ variante = "secundario", className, ...p }: ComponentPro
   return <button className={cn(baseBoton, variantes[variante], className)} {...p} />;
 }
 
+/** Enlace de descarga (archivos generados por la API): navegación completa, sin el router de Next. */
+export function BotonDescarga({ variante = "secundario", className, ...p }: ComponentProps<"a"> & { variante?: Variante }) {
+  return <a download className={cn(baseBoton, variantes[variante], className)} {...p} />;
+}
+
 export function BotonLink({ variante = "secundario", className, ...p }: ComponentProps<typeof Link> & { variante?: Variante }) {
   return <Link className={cn(baseBoton, variantes[variante], className)} {...p} />;
 }
