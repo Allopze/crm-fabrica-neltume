@@ -35,15 +35,17 @@ async function generar(destino: string, factor: number) {
   MADERAS.forEach(([madera, mc], im) => {
     for (const [cod, ancho, alto] of VARIANTES) {
       const [nombre, , tipo] = MODELOS.find(([, c]) => c === cod)!;
-      const costo = 100_000 + Number(ancho) * 10_000 + im * 15_000 + Math.round((alto - 2) * 50_000);
+      // factor escala costo y precio juntos: el importador exige neto = costo × (1 + margen).
+      const costo = Math.round((100_000 + Number(ancho) * 10_000 + im * 15_000 + Math.round((alto - 2) * 50_000)) * factor);
       const margen = tipo === "PUERTA ESPECIAL" ? 0.3 : 0.2;
-      const neto = Math.round(costo * (1 + margen) * factor);
+      const neto = Math.round(costo * (1 + margen));
       precio.getRow(fila++).values = [`${cod}-${mc}-${ancho}-${letraAlto(alto)}`, nombre, tipo, etiquetaAncho(ancho), null, alto, madera,
         5, costo * 0.25, costo * 0.5, costo * 0.1, costo * 0.15, costo, margen, neto, Math.round(neto * 1.19)];
     }
   });
   // Un accesorio: marco de 4 pulgadas para 2,10 m.
-  precio.getRow(fila++).values = ["MAR-O-2X4-B", "MARCO", "", 4, null, 2.1, "PINO OREGON", 1.3, 4000, 8000, 1500, 1500, 15_000, 0.3, Math.round(19_500 * factor), Math.round(19_500 * factor * 1.19)];
+  const costoMarco = Math.round(15_000 * factor);
+  precio.getRow(fila++).values = ["MAR-O-2X4-B", "MARCO", "", 4, null, 2.1, "PINO OREGON", 1.3, null, null, null, null, costoMarco, 0.3, Math.round(costoMarco * 1.3), Math.round(costoMarco * 1.3 * 1.19)];
   // Fila inválida a propósito: el código no coincide con el alto (como LLAG-O-2-A en el Excel real).
   precio.getRow(fila++).values = ["NEL-O-3-B", "NELTUME", "PUERTA BLOQUE", "0,80 A 0,85", null, 2.2, "PINO OREGON", 5, 30_000, 60_000, 12_000, 18_000, 120_000, 0.2, 144_000, 171_360];
 
