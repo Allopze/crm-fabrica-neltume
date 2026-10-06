@@ -92,6 +92,13 @@
       "when": 1791309515255,
       "tag": "0012_pedido_ciclo",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791310127396,
+      "tag": "0013_pedido_nota_tienda",
+      "breakpoints": true
     }
   ]
 }

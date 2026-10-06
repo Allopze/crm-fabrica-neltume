@@ -214,6 +214,10 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-COT-8.3: IF la cotización ya tiene nota de pedido THEN THE SYSTEM SHALL no crear otra.
 - REQ-COT-8.4: IF un usuario sin permiso de pedidos intenta crearla THEN THE SYSTEM SHALL denegarlo y registrar el intento.
 - REQ-COT-8.5: THE SYSTEM SHALL llevar la nota de pedido por pendiente → en producción (creando la orden por el faltante de catálogo) → lista (todo reservado y los ítems a pedido confirmados por una persona) → despachada, con entrega comprometida y observaciones editables hasta el despacho, cada paso auditado.
+- REQ-COT-8.6: WHEN un usuario con permiso de pedidos sube el PDF de una nota de pedido de la tienda THE SYSTEM SHALL leerla sin IA (número, códigos, cantidades, medida solicitada y despacho) y mostrar una vista previa, validando cada código contra el catálogo activo, antes de crear nada (ADR-0008).
+- REQ-COT-8.7: WHEN el usuario confirma la vista previa THE SYSTEM SHALL crear la nota de pedido para la tienda al precio de venta de la lista vigente sin recargo, reservar lo disponible y avisar si el precio de la nota difiere de la lista.
+- REQ-COT-8.8: IF la nota ya se cargó (mismo archivo o mismo número para la misma tienda), tiene códigos inexistentes, no es un PDF legible o está anulada THEN THE SYSTEM SHALL rechazarla sin crear el pedido.
+- REQ-COT-8.9: THE SYSTEM SHALL no guardar los datos personales del cliente final que aparecen en la nota de la tienda (nombre, RUT, giro, dirección, teléfono); solo la dirección de despacho, el transporte y el proyecto.
 
 **H9 Clientes (P1).** Como usuario, quiero registrar clientes con datos mínimos.
 - REQ-COT-9.1: WHEN un usuario crea o edita un cliente (nombre, RUT, giro, dirección, comuna, contacto, correo, teléfono) THE SYSTEM SHALL validar el RUT y guardar el cambio con auditoría.

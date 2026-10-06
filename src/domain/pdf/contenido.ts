@@ -49,7 +49,7 @@ export function contenidoCotizacion(c: CotizacionPdf, empresa: DatosEmpresa = da
 }
 
 export interface PedidoPdf {
-  numero: number; creadoEn: Date; estado: string; cotizacionNumero: number;
+  numero: number; creadoEn: Date; estado: string; cotizacionNumero: number | null; notaTienda: string | null;
   cliente: { nombre: string; rut: string | null; contacto: string | null; telefono: string | null };
   direccionDespacho: string | null; medioTransporte: string | null; entregaComprometida: string | null; observaciones: string | null;
   items: { codigo: string | null; descripcion: string; medidaSolicitada: string | null; cantidad: number; faltante: number; totalLinea: number }[];
@@ -59,7 +59,7 @@ export interface PedidoPdf {
 export function contenidoPedido(p: PedidoPdf) {
   return {
     titulo: `Nota de pedido N.º ${p.numero}${p.estado === "cancelada" ? " (cancelada)" : ""}`,
-    fechas: `Fecha ${fechaSantiago(p.creadoEn)} · Cotización N.º ${p.cotizacionNumero}`,
+    fechas: `Fecha ${fechaSantiago(p.creadoEn)} · ${p.cotizacionNumero ? `Cotización N.º ${p.cotizacionNumero}` : `Nota de la tienda N.º ${p.notaTienda}`}`,
     datos: [
       ["Cliente", p.cliente.nombre], ["RUT", p.cliente.rut ?? "—"], ["Contacto", p.cliente.contacto ?? "—"], ["Teléfono", p.cliente.telefono ?? "—"],
       ["Despacho", p.direccionDespacho ?? "Retira en fábrica"], ["Transporte", p.medioTransporte ?? "—"],
@@ -74,6 +74,6 @@ export function contenidoPedido(p: PedidoPdf) {
       ["IVA 19 %", clp(p.iva)],
     ] as [string, string][],
     total: clp(p.total),
-    pie: [`${NOTA_FLETE} Precios congelados de la cotización N.º ${p.cotizacionNumero}.`, "\"Por fabricar\": unidades sin stock al confirmar el pedido."],
+    pie: [`${NOTA_FLETE} ${p.cotizacionNumero ? `Precios congelados de la cotización N.º ${p.cotizacionNumero}.` : "Precios de venta de la lista vigente al confirmar el pedido."}`, "\"Por fabricar\": unidades sin stock al confirmar el pedido."],
   };
 }

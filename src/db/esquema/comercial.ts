@@ -1,6 +1,6 @@
 // Clientes (datos personales: SECURITY §4), cotizaciones y pedidos (DATA-MODEL §2; REQ-COT).
 import { sql } from "drizzle-orm";
-import { bigint, check, date, index, integer, jsonb, numeric, pgTable, serial, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, check, date, index, integer, jsonb, numeric, pgTable, serial, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { articulo, listaPrecio } from "./catalogo";
 import { usuario } from "./seguridad";
 
@@ -125,7 +125,11 @@ export const ESTADOS_PEDIDO = ["pendiente", "en_produccion", "lista", "despachad
 export const notaPedido = pgTable("nota_pedido", {
   id: uuid().primaryKey().defaultRandom(),
   numero: serial().notNull().unique(),
-  cotizacionId: uuid().notNull().unique().references(() => cotizacion.id), // una por cotización (REQ-COT-8.3)
+  cotizacionId: uuid().unique().references(() => cotizacion.id), // una por cotización (REQ-COT-8.3); nula si viene de la tienda
+  origen: text().notNull().default("cotizacion"), // cotizacion | nota_tienda (ADR-0008)
+  refExterna: text(), // N° de la nota de pedido de la tienda
+  archivoHash: text(), // SHA-256 del PDF importado (el archivo no se guarda)
+  proyecto: text(),
   clienteId: uuid().notNull().references(() => cliente.id),
   direccionDespacho: text(),
   medioTransporte: text(),
@@ -142,6 +146,9 @@ export const notaPedido = pgTable("nota_pedido", {
   despachadaPor: uuid().references(() => usuario.id),
 }, (t) => [
   check("pedido_estado", sql`${t.estado} in ('pendiente', 'en_produccion', 'lista', 'despachada', 'cancelada')`),
+  check("pedido_origen", sql`(${t.origen} = 'cotizacion' AND ${t.cotizacionId} IS NOT NULL) OR (${t.origen} = 'nota_tienda' AND ${t.refExterna} IS NOT NULL AND ${t.archivoHash} IS NOT NULL)`),
+  unique("pedido_nota_tienda_unica").on(t.clienteId, t.refExterna),
+  unique("pedido_archivo_unico").on(t.archivoHash),
   check("pedido_cancelacion", sql`${t.estado} <> 'cancelada' OR length(trim(coalesce(${t.motivoCancelacion}, ''))) > 0`),
   index("pedido_estado_idx").on(t.estado, t.creadoEn),
 ]);

@@ -11,7 +11,7 @@ Uso principal en PC (≥ 1280 px); las pantallas deben poder leerse en celular, 
 | Cotizador | **Nueva cotización** (pegar texto) → **Revisión** (lado a lado) → Aprobada (PDF) | `cotizaciones.*` | REQ-COT-2, 3, 4 |
 | Cotizador | Cotización manual | `cotizaciones.crear` | REQ-COT-5 |
 | Cotizador | Lista y búsqueda de cotizaciones | `cotizaciones.crear` | REQ-COT-10 |
-| Pedidos | Lista · Detalle (reservado, faltante) · Crear desde cotización | `pedidos.gestionar` | REQ-COT-8, REQ-STK-7 |
+| Pedidos | Lista · Detalle (reservado, faltante; avance: producir faltante, completar reserva, marcar lista, despachar; despacho y entrega comprometida) · Crear desde cotización · Desde nota de la tienda (subir PDF → vista previa → confirmar) | `pedidos.gestionar` | REQ-COT-8, REQ-STK-4.4, 7 |
 | Stock | Consulta con filtros (modelo, madera, medida, tipo) · Detalle de artículo con movimientos | `stock.ver` | REQ-STK-2 |
 | Stock | Registrar entrada / salida / ajuste | `stock.mover`, `stock.ajustar` | REQ-STK-3..5 |
 | Materias primas | Lista · Recepción · BOM por modelo · Órdenes de producción (cerrar) | `mp.*`, `produccion.gestionar` | REQ-MP |

@@ -20,31 +20,44 @@ export async function crearPedido(tx: Tx, d: DatosPedido, actor: Actor & { id: s
   const [cli] = await tx.select().from(cliente).where(eq(cliente.id, c.clienteId!));
 
   const items = await tx.select().from(cotizacionItem).where(eq(cotizacionItem.cotizacionId, c.id)).orderBy(asc(cotizacionItem.orden));
-  // Bloquea los artículos antes de leer el disponible: dos pedidos simultáneos no reservan lo mismo.
-  const articulos = [...new Set(items.flatMap((i) => (i.articuloId ? [i.articuloId] : [])))].sort();
+  const p = await insertarPedido(tx, {
+    cabecera: {
+      cotizacionId: c.id, clienteId: c.clienteId!, origen: "cotizacion",
+      direccionDespacho: d.direccionDespacho?.trim() || cli?.direccionDespacho || cli?.direccion || null,
+      medioTransporte: d.medioTransporte?.trim() || null,
+    },
+    lineas: items.map((i) => ({ articuloId: i.articuloId, descripcion: i.descripcion, medidaSolicitada: null, cantidad: i.cantidad, precioUnitario: i.precioUnitario!, totalLinea: i.totalLinea! })),
+  }, actor, origen, { cotizacion: c.numero });
+  await tx.update(cotizacion).set({ estado: "aceptada", version: c.version + 1, actualizadoEn: sql`now()` }).where(eq(cotizacion.id, c.id));
+  return p;
+}
+
+export interface LineaPedido { articuloId: string | null; descripcion: string; medidaSolicitada: string | null; cantidad: number; precioUnitario: number; totalLinea: number }
+
+/**
+ * Núcleo común de un pedido (desde cotización o desde la nota de la tienda): bloquea los artículos antes de leer el
+ * disponible (dos pedidos simultáneos no reservan lo mismo), reparte la reserva, inserta y audita (REQ-STK-7.1, 7.3).
+ */
+export async function insertarPedido(
+  tx: Tx, d: { cabecera: Omit<typeof notaPedido.$inferInsert, "creadoPor">; lineas: LineaPedido[] },
+  actor: Actor & { id: string }, origen: Origen, auditoria: Record<string, unknown> = {},
+) {
+  const articulos = [...new Set(d.lineas.flatMap((i) => (i.articuloId ? [i.articuloId] : [])))].sort();
   for (const a of articulos) await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${a}))`);
   const disponible = new Map(await Promise.all(articulos.map(async (a) => [a, (await saldo(tx, { articuloId: a })).disponible] as const)));
-  const reparto = repartirReserva(items.map((i) => ({ articuloId: i.articuloId, cantidad: i.cantidad })), disponible);
+  const reparto = repartirReserva(d.lineas.map((i) => ({ articuloId: i.articuloId, cantidad: i.cantidad })), disponible);
 
-  const [p] = await tx.insert(notaPedido).values({
-    cotizacionId: c.id, clienteId: c.clienteId!, creadoPor: actor.id,
-    direccionDespacho: d.direccionDespacho?.trim() || cli?.direccionDespacho || cli?.direccion || null,
-    medioTransporte: d.medioTransporte?.trim() || null,
-  }).returning({ id: notaPedido.id, numero: notaPedido.numero });
-  await tx.insert(pedidoItem).values(items.map((i, k) => ({
-    notaPedidoId: p.id, orden: k + 1, articuloId: i.articuloId, descripcion: i.descripcion, cantidad: i.cantidad,
-    precioUnitario: i.precioUnitario!, totalLinea: i.totalLinea!, ...reparto[k],
-  })));
+  const [p] = await tx.insert(notaPedido).values({ ...d.cabecera, creadoPor: actor.id }).returning({ id: notaPedido.id, numero: notaPedido.numero });
+  await tx.insert(pedidoItem).values(d.lineas.map((i, k) => ({ notaPedidoId: p.id, orden: k + 1, ...i, ...reparto[k] })));
 
-  const reservas = items.flatMap((i, k) => (reparto[k].reservado > 0
+  const reservas = d.lineas.flatMap((i, k) => (reparto[k].reservado > 0
     ? [{ articuloId: i.articuloId!, tipo: "reserva" as const, cantidad: reparto[k].reservado, refTipo: "pedido", refId: p.id }] : []));
   if (reservas.length) await registrarMovimientos(tx, reservas, actor, origen);
-  await tx.update(cotizacion).set({ estado: "aceptada", version: c.version + 1, actualizadoEn: sql`now()` }).where(eq(cotizacion.id, c.id));
 
   const faltante = reparto.reduce((t, r) => t + r.faltante, 0);
   await registrarAuditoria(tx, {
     actor, accion: "crear pedido", recurso: "nota_pedido", recursoId: p.id, resultado: "ok", origen,
-    despues: { numero: p.numero, cotizacion: c.numero, reservado: reparto.reduce((t, r) => t + r.reservado, 0), faltante },
+    despues: { numero: p.numero, origen: d.cabecera.origen, ...auditoria, reservado: reparto.reduce((t, r) => t + r.reservado, 0), faltante },
   });
   return { ...p, faltante };
 }

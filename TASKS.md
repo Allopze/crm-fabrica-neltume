@@ -134,7 +134,7 @@ Aprobada el 06-10-2026. La tienda le envía a la fábrica notas de pedido en PDF
 
 ### B — Pedidos
 - [x] T5.4 (90) Ciclo del pedido: producción, completar reserva, lista y despacho · REQ-STK-4.4, 7.5, REQ-COT-8.5 · I `pedidos.ciclo` · —
-- [ ] T5.5 (120) Pedido directo desde el PDF de la nota de la tienda · REQ-COT-8.6–8.9, ADR-0008 · U `nota-tienda`, I `pedido-directo`, E 15 · T5.4
+- [x] T5.5 (120) Pedido directo desde el PDF de la nota de la tienda · REQ-COT-8.6–8.9, ADR-0008 · U `nota-tienda`, I `pedido-directo`, E 15 · T5.4
 
 ### C — IA
 - [ ] T5.6 (60) Alias de modelos (seguros y posibles) · REQ-COT-2.11 · U `mapear`, I `alias` · —

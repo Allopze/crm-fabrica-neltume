@@ -101,6 +101,7 @@ Reglas verificables:
 | T6 | Suplantación de remitente (correo o WhatsApp) | **No aplica en v1**: no hay entrada externa (ADR-0003). Si se habilita, exigirá firma del webhook y lista de remitentes, con la cotización siempre en borrador | Pendiente hasta habilitar el canal; hoy, un test verifica que no existen rutas de webhook |
 | T7 | Robo de sesión o fuerza bruta en login | Cloudflare Access delante; contraseña de mínimo 8 caracteres con hash argon2id; 5 intentos por usuario e IP cada 15 min; cookie `HttpOnly`, `Secure`, `SameSite=Lax`; expiración de 8 h; token CSRF en mutaciones | Integración: el 6.º intento da 429 y se audita; una mutación sin CSRF da 403 |
 | T8 | Exposición de BD o paneles de administración | Ningún `ports:` público en Compose; BD solo en la red interna; acceso de administración por túnel SSH o `127.0.0.1`; el túnel solo apunta al proxy | Test de configuración: `docker compose config` no tiene puertos en `0.0.0.0` |
+| T9 | PDF malicioso o engañoso subido como nota de la tienda | Máximo 5 MB y firma `%PDF-`; `pdfjs-dist` 6 solo extrae texto (sin XFA, sin fuentes del sistema, se detiene ante errores); el archivo no se guarda (solo su hash); vista previa y confirmación humana; el servidor vuelve a leer el PDF al confirmar; códigos validados contra el catálogo y precio siempre de la lista (ADR-0008) | Unit: lector con nota anulada, sin tabla y sin códigos; integración: no PDF → 400, código inexistente → bloquea, duplicado → 409, sin datos del cliente final en BD ni auditoría |
 
 ## 6. Exposición de red
 

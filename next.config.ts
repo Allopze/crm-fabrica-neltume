@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   output: "standalone",
   poweredByHeader: false,
+  // Lector de la nota de la tienda (ADR-0008): pdfjs se carga desde node_modules, sin empaquetarlo.
+  serverExternalPackages: ["pdfjs-dist"],
 };
 
 export default nextConfig;

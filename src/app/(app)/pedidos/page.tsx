@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Encabezado, Etiqueta, Panel } from "@/components/ui/base";
+import { FileUp } from "lucide-react";
+import { BotonLink, Encabezado, Etiqueta, Panel } from "@/components/ui/base";
 import { estadoPedido } from "@/components/ui/estado-pedido";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
@@ -22,7 +23,8 @@ export default async function PedidosPage({ searchParams }: PageProps<"/pedidos"
       <Encabezado
         antetitulo="Ventas · pedidos"
         titulo="Notas de pedido"
-        descripcion="Una cotización aceptada se convierte en nota de pedido: reserva lo disponible y marca lo que falta fabricar."
+        descripcion="Una cotización aceptada o una nota de la tienda se convierte en nota de pedido: reserva lo disponible y marca lo que falta fabricar."
+        acciones={<BotonLink href="/pedidos/nota-tienda" variante="primario"><FileUp className="h-4 w-4" /> Desde nota de la tienda</BotonLink>}
       />
       <Panel sinRelleno>
         {datos.length === 0 ? (
@@ -37,7 +39,7 @@ export default async function PedidosPage({ searchParams }: PageProps<"/pedidos"
                   <Tr key={p.id}>
                     <Td><Link href={`/pedidos/${p.id}`} className="font-mono font-medium text-rauli hover:underline">{p.numero}</Link></Td>
                     <Td className="font-medium">{p.cliente}</Td>
-                    <Td className="font-mono text-tinta-suave">#{p.cotizacion}</Td>
+                    <Td className="font-mono text-tinta-suave">{p.cotizacion ? `#${p.cotizacion}` : <span className="font-sans">Nota tienda N.º {p.refExterna}</span>}</Td>
                     <Td className="text-tinta-suave">{fecha(new Date(p.creadoEn).toISOString())}</Td>
                     <Td>
                       <span className="tabular-nums">{p.reservado} / {p.cantidad}</span>

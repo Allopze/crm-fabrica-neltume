@@ -27,8 +27,9 @@ export async function cifrasDelMes(tx: Tx) {
     porConfirmar: sql<number>`count(*)::int`, borradores: sql<number>`count(DISTINCT ${cotizacion.id})::int`,
   }).from(cotizacionItem).innerJoin(cotizacion, eq(cotizacion.id, cotizacionItem.cotizacionId))
     .where(and(eq(cotizacion.estado, "borrador"), sql`${cotizacionItem.estadoItem} <> 'ok'`));
-  const [ped] = await tx.select({ total: sql<number>`coalesce(sum(${cotizacion.total}), 0)::bigint`, n: count() })
-    .from(notaPedido).innerJoin(cotizacion, eq(cotizacion.id, notaPedido.cotizacionId)).where(notInArray(notaPedido.estado, ABIERTOS));
+  const totalPedido = sql`coalesce(${cotizacion.total}, (SELECT round(sum(${pedidoItem.totalLinea}) * 1.19) FROM ${pedidoItem} WHERE ${pedidoItem.notaPedidoId} = ${notaPedido.id}))`;
+  const [ped] = await tx.select({ total: sql<number>`coalesce(sum(${totalPedido}), 0)::bigint`, n: count() })
+    .from(notaPedido).leftJoin(cotizacion, eq(cotizacion.id, notaPedido.cotizacionId)).where(notInArray(notaPedido.estado, ABIERTOS));
   return { creadas: c.creadas, medianaMin: c.mediana === null ? null : Number(c.mediana), ...p, pedidosAbiertos: ped.n, totalPedidos: Number(ped.total) };
 }
 

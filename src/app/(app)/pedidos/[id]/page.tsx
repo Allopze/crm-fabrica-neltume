@@ -34,9 +34,9 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
         <span className="text-tinta">N.º {p.numero}</span>
       </nav>
       <Encabezado
-        antetitulo={`Desde cotización #${p.cotizacion.numero} · ${fecha(new Date(p.creadoEn).toISOString())}`}
+        antetitulo={`${p.cotizacion ? `Desde cotización #${p.cotizacion.numero}` : `Desde la nota N.º ${p.refExterna} de la tienda`} · ${fecha(new Date(p.creadoEn).toISOString())}`}
         titulo={<>Nota de pedido <span className="text-rauli">{p.numero}</span></>}
-        descripcion={<>{p.cliente.nombre} · <Link href={`/cotizaciones/${p.cotizacion.id}`} className="text-rauli hover:underline">ver cotización</Link></>}
+        descripcion={<>{p.cliente.nombre}{p.proyecto && <> · proyecto {p.proyecto}</>}{p.cotizacion && <> · <Link href={`/cotizaciones/${p.cotizacion.id}`} className="text-rauli hover:underline">ver cotización</Link></>}</>}
         acciones={
           <>
             <Etiqueta tono={e.tono}>{e.texto}</Etiqueta>
@@ -106,7 +106,7 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
                 {p.observaciones && <div><dt className="text-tinta-tenue">Observaciones</dt><dd className="mt-0.5 whitespace-pre-wrap">{p.observaciones}</dd></div>}
               </dl>
             )}
-            <p className="mt-5 flex items-baseline justify-between border-t border-linea pt-4 text-sm"><span className="text-tinta-tenue">Total (precios congelados)</span><span className="font-display text-2xl tabular-nums">{clp(Number(p.cotizacion.total))}</span></p>
+            <p className="mt-5 flex items-baseline justify-between border-t border-linea pt-4 text-sm"><span className="text-tinta-tenue">{p.cotizacion ? "Total (precios congelados)" : "Total (lista vigente, IVA incl.)"}</span><span className="font-display text-2xl tabular-nums">{clp(p.totales.total)}</span></p>
           </Panel>
           {p.ordenes.length > 0 && (
             <Panel titulo="Órdenes de producción">

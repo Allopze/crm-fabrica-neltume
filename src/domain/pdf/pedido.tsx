@@ -31,11 +31,11 @@ export async function pdfPedido(tx: Tx, id: string): Promise<{ numero: number; p
   const p = await obtenerPedido(tx, id, true);
   const c = p.cliente as { nombre: string; rut?: string; contacto?: string | null; telefono?: string | null };
   const datos: PedidoPdf = {
-    numero: p.numero, creadoEn: p.creadoEn, estado: p.estado, cotizacionNumero: p.cotizacion.numero,
+    numero: p.numero, creadoEn: p.creadoEn, estado: p.estado, cotizacionNumero: p.cotizacion?.numero ?? null, notaTienda: p.refExterna,
     cliente: { nombre: c.nombre, rut: c.rut ?? null, contacto: c.contacto ?? null, telefono: c.telefono ?? null },
     direccionDespacho: p.direccionDespacho, medioTransporte: p.medioTransporte, entregaComprometida: p.entregaComprometida, observaciones: p.observaciones,
     items: p.items.map((i) => ({ codigo: i.codigo, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, cantidad: i.cantidad, faltante: i.faltante, totalLinea: Number(i.totalLinea) })),
-    subtotal: Number(p.cotizacion.subtotal), descuento: Number(p.cotizacion.descuento), iva: Number(p.cotizacion.iva), total: Number(p.cotizacion.total),
+    ...p.totales,
   };
   return { numero: p.numero, pdf: await renderizarPedido(datos) };
 }
