@@ -62,7 +62,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T1.19 (60) UI de órdenes con vista previa de consumos y etiqueta DEMO · REQ-MP-4.1 · E `04-produccion-entrada` · T1.18
 
 ### Clientes
-- [ ] T1.20 (75) Migración, validación de RUT, API y UI de clientes · REQ-COT-9.x · U `rut`, I `clientes` · T0.9 · [P]
+- [x] T1.20 (75) Migración, validación de RUT, API y UI de clientes · REQ-COT-9.x · U `rut`, I `clientes` · T0.9 · [P]
 
 ### Cotizador
 - [ ] T1.21 (60) Migración `cotizacion`, `cotizacion_item`, `trabajo_ia`, `llamada_ia` y trigger de solo lectura tras aprobar · DATA-MODEL §2 · I `cotizacion.inmutable` · T1.2
