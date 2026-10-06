@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+/* Sistema "Taller editorial": papel cálido, tinta de bosque, acento raulí. */
+:root {
+  --papel: #f4efe6;
+  --papel-hundido: #ebe4d7;
+  --lamina: #fbf8f2;
+  --tinta: #1d2920;
+  --tinta-suave: #4b544a;
+  --tinta-tenue: #7d8076;
+  --linea: #dcd2c1;
+  --linea-fuerte: #c4b8a3;
+
+  --rauli: #9a4524;
+  --rauli-hondo: #7a3519;
+  --rauli-velo: #f3e2d6;
+
+  --musgo: #3f5f3c;
+  --musgo-velo: #e3eadb;
+  --ambar: #a66d12;
+  --ambar-velo: #f6e8c9;
+  --pizarra: #38566e;
+  --pizarra-velo: #dfe7ee;
+  --error: #b3261e;
+  --error-velo: #f8dedb;
+
+  --bosque: #16211a;
+  --bosque-2: #1f2d24;
+  --bosque-tinta: #e9e2d3;
+
+  /* Maderas del catálogo */
+  --pino-oregon: #d8a466;
+  --lenga: #c27a57;
+  --mara: #a1503a;
+  --rauli-madera: #74301d;
+}
+
+@theme inline {
+  --color-papel: var(--papel);
+  --color-papel-hundido: var(--papel-hundido);
+  --color-lamina: var(--lamina);
+  --color-tinta: var(--tinta);
+  --color-tinta-suave: var(--tinta-suave);
+  --color-tinta-tenue: var(--tinta-tenue);
+  --color-linea: var(--linea);
+  --color-linea-fuerte: var(--linea-fuerte);
+  --color-rauli: var(--rauli);
+  --color-rauli-hondo: var(--rauli-hondo);
+  --color-rauli-velo: var(--rauli-velo);
+  --color-musgo: var(--musgo);
+  --color-musgo-velo: var(--musgo-velo);
+  --color-ambar: var(--ambar);
+  --color-ambar-velo: var(--ambar-velo);
+  --color-pizarra: var(--pizarra);
+  --color-pizarra-velo: var(--pizarra-velo);
+  --color-error: var(--error);
+  --color-error-velo: var(--error-velo);
+  --color-bosque: var(--bosque);
+  --color-bosque-2: var(--bosque-2);
+  --color-bosque-tinta: var(--bosque-tinta);
+
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-instrument);
+  --font-mono: var(--font-jetbrains);
+}
+
+html {
+  background: var(--papel);
+  color: var(--tinta);
+}
+
+body {
+  font-family: var(--font-instrument), ui-sans-serif, sans-serif;
+  font-feature-settings: "ss01", "tnum";
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--rauli-velo);
+  color: var(--rauli-hondo);
+}
+
+:focus-visible {
+  outline: 2px solid var(--rauli);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Grano de papel: textura sutil sobre todo el lienzo. */
+.grano::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .2 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Veta de madera para la barra lateral. */
+.veta {
+  background-color: var(--bosque);
+  background-image:
+    repeating-radial-gradient(ellipse 140% 18% at 30% 120%, transparent 0 14px, rgb(255 255 255 / 0.018) 15px 16px),
+    repeating-linear-gradient(97deg, transparent 0 22px, rgb(0 0 0 / 0.12) 23px 24px);
+}
+
+/* Regla de carpintero: divisor con marcas cada 8px y una mayor cada 40px. */
+.regla {
+  height: 10px;
+  background-image:
+    repeating-linear-gradient(90deg, var(--linea-fuerte) 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(90deg, var(--linea) 0 1px, transparent 1px 8px);
+  background-size: 100% 10px, 100% 5px;
+  background-repeat: no-repeat;
+  background-position: 0 0, 0 0;
+  border-top: 1px solid var(--linea-fuerte);
+}
+
+/* Swatch de madera: color base con veta. */
+.swatch {
+  background-image:
+    repeating-linear-gradient(170deg, rgb(255 255 255 / 0.10) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(80deg, rgb(0 0 0 / 0.10) 0 2px, transparent 2px 7px);
+}
+
+@keyframes entrada {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.entrada { animation: entrada 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.entrada-2 { animation-delay: 0.06s; }
+.entrada-3 { animation-delay: 0.12s; }
+
+@keyframes escaneo {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(100%); }
+}
+.escaneo { animation: escaneo 1.6s ease-in-out infinite alternate; }
+
+@media (prefers-reduced-motion: reduce) {
+  .entrada, .escaneo { animation: none; }
+}
