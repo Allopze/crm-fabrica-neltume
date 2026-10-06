@@ -62,9 +62,9 @@ describe("interpretación por API (REQ-COT-2.1, 2.6, 2.10, 3.1, 3.4)", () => {
     expect(r.cuerpo.datos[0]).toMatchObject({ estado: "borrador", pendientes: 1 });
   });
 
-  it("sin cotizaciones.crear → 403; id inexistente o inválido → 404", async () => {
+  it("sin cotizaciones.crear: crear → 403 y leer → 404 como si no existiera (REQ-COT-10.2); id inexistente o inválido → 404", async () => {
     expect((await llamar(rutaInterp.POST, "POST", "/x", { ...bodega, cabeceras: idem(), cuerpo: { texto: "hola" } })).estado).toBe(403);
-    expect((await llamar(rutaCot.GET, "GET", "/x", bodega, { id })).estado).toBe(403);
+    expect((await llamar(rutaCot.GET, "GET", "/x", bodega, { id })).estado).toBe(404);
     expect((await llamar(rutaCot.GET, "GET", "/x", admin, { id: randomUUID() })).estado).toBe(404);
     expect((await llamar(rutaCot.GET, "GET", "/x", admin, { id: "1 OR 1=1" })).estado).toBe(404);
   });

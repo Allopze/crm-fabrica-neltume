@@ -6,9 +6,9 @@ import { obtenerCotizacion } from "@/domain/cotizaciones/consulta";
 import { actualizarCabecera } from "@/domain/cotizaciones/edicion";
 
 // GET /api/v1/cotizaciones/:id — texto original, interpretación, ítems con aviso de stock y estado de la lista (REQ-COT-3.1, 6.3).
-// Sin permiso: 403; inexistente o id inválido: 404 (no revela existencia, REQ-COT-3.4).
+// Sin permiso, inexistente o id inválido: el mismo 404, sin revelar si existe (REQ-COT-3.4, 10.2).
 export const GET = conPermiso<{ id: string }>("cotizaciones.crear", async ({ params, sesion }) =>
-  NextResponse.json(await obtenerCotizacion(bd(), params.id, sesion.permisos.has("clientes.ver"))));
+  NextResponse.json(await obtenerCotizacion(bd(), params.id, sesion.permisos.has("clientes.ver"))), { ocultar: "Cotización no encontrada" });
 
 const Cabecera = z.strictObject({ clienteId: z.uuid().nullable().optional(), notas: z.string().trim().max(1000).nullable().optional(), version: z.number().int().positive() });
 

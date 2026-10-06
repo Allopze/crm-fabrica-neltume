@@ -87,11 +87,13 @@ function csrfValido(enviado: string | null, esperado: string): boolean {
 /**
  * Exige sesión válida, CSRF en mutaciones y el o los permisos indicados ("sesion" = solo autenticado).
  * Con `idempotente`, exige Idempotency-Key y no repite la acción (API §1).
+ * Con `ocultar`, la falta de permiso responde el mismo 404 que un recurso inexistente (anti-IDOR, REQ-COT-10.2);
+ * la denegación se audita igual.
  */
 export function conPermiso<P = Record<string, never>>(
   permiso: Permiso | Permiso[] | "sesion",
   manejador: Manejador<ContextoAutenticado<P>>,
-  opciones: { idempotente?: boolean } = {},
+  opciones: { idempotente?: boolean; ocultar?: string } = {},
 ): Ruta<P> {
   return async (req, segmento) => {
     const base = contextoBase(req, await segmento.params);
@@ -107,6 +109,7 @@ export function conPermiso<P = Record<string, never>>(
     const requeridos = permiso === "sesion" ? [] : Array.isArray(permiso) ? permiso : [permiso];
     if (!requeridos.every((p) => sesion.permisos.has(p))) {
       await auditarDenegacion(base, "SIN_PERMISO", sesion.usuario.id);
+      if (opciones.ocultar) return respuestaError("NO_ENCONTRADO", opciones.ocultar, base.correlacionId);
       return respuestaError("SIN_PERMISO", "No tienes permiso para esta acción.", base.correlacionId);
     }
     const actor = { tipo: "usuario" as const, id: sesion.usuario.id, ip: base.ip, userAgent: base.userAgent };

@@ -76,14 +76,14 @@ Base `/api/v1`, JSON UTF-8, solo detrás de Cloudflare Access. Todos los handler
 |---|---|---|---|
 | POST `/cotizaciones/interpretaciones` (`texto, cliente_id?`) | `cotizaciones.crear` | ✔ | 202 `{ id, estado: interpretando }`; 429 `LIMITE_IA` |
 | POST `/cotizaciones` (`clienteId?, items:[{codigo, cantidad} \| {detalle, cantidad}]`) | `cotizaciones.crear` | ✔ | Cotización manual (REQ-COT-5) |
-| GET `/cotizaciones?estado&cliente&desde&hasta&q` | `cotizaciones.crear` | | Paginado (REQ-COT-10) |
-| GET `/cotizaciones/:id` | `cotizaciones.crear` | | Texto original, interpretación, ítems, avisos de stock y diferencia de lista |
+| GET `/cotizaciones?estado&q&desde&hasta&antesDe&limite` | `cotizaciones.crear` | | `q`: número o nombre de cliente (este solo con `clientes.ver`); fechas de creación en días de Santiago; paginado por número (REQ-COT-10.1) |
+| GET `/cotizaciones/:id` | `cotizaciones.crear` | | Texto original, interpretación, ítems, avisos de stock y diferencia de lista. Sin permiso: el mismo 404 que si no existiera (REQ-COT-10.2) |
 | PATCH `/cotizaciones/:id` (`cliente_id, notas, version`) | `cotizaciones.crear` | | Solo en borrador |
 | POST `/cotizaciones/:id/items` · PATCH `/…/items/:itemId` · DELETE `/…/items/:itemId` | `cotizaciones.crear` | | Resolver: `{ codigo, cantidad }` o `{ precio_unitario }` si es `a_pedido`; recalcula |
 | POST `/cotizaciones/:id/recalcular` | `cotizaciones.crear` | | Pasa a la lista vigente (REQ-COT-6.3) |
 | POST `/cotizaciones/:id/descuento` (`porcentaje` en puntos 0–99,99, `motivo`, `version`) | `descuentos.aplicar` | | Solo borradores; 0 lo quita; auditado (REQ-COT-7.1, 7.2) |
 | POST `/cotizaciones/:id/aprobar` (`version`) | `cotizaciones.aprobar` | ✔ | 409 `ITEMS_POR_CONFIRMAR` |
-| GET `/cotizaciones/:id/pdf` | `cotizaciones.aprobar` + `clientes.ver` | | 409 `NO_APROBADA`; lleva datos del cliente; auditado |
+| GET `/cotizaciones/:id/pdf` | `cotizaciones.aprobar` + `clientes.ver` | | 409 `NO_APROBADA`; sin permiso, 404; lleva datos del cliente; auditado |
 | GET/POST `/clientes` · GET/PATCH `/clientes/:id` | `clientes.ver` / `clientes.editar` | | RUT validado |
 | POST `/pedidos` (`cotizacionId, direccionDespacho?, medioTransporte?`) | `pedidos.gestionar` | ✔ | Crea la nota de pedido y las reservas; 409 `VENCIDA`, `YA_TIENE_PEDIDO`, `NO_APROBADA` |
 | GET `/pedidos` · GET `/pedidos/:id` | `pedidos.gestionar` | | Muestra reservado y faltante por ítem |

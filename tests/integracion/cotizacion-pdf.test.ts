@@ -51,12 +51,12 @@ describe("PDF de cotización (REQ-COT-4.2, 4.3, 4.5; ADR-0004)", () => {
     expect(rows).toHaveLength(1);
   });
 
-  it("sin cotizaciones.aprobar se deniega y se audita", async () => {
+  it("sin cotizaciones.aprobar responde como si no existiera (REQ-COT-10.2) y se audita", async () => {
     const rol = await bd().transaction((tx) => crearRol(tx, "cotiza sin aprobar", ["cotizaciones.crear", "clientes.ver"], sistema, "consola"));
     await bd().transaction((tx) => crearUsuario(tx, { email: "noaprueba@neltume.cl", nombre: "No Aprueba", clave: "clave-noaprueba", rolId: rol.id }, sistema, "consola"));
     const otra = await sesionDe("noaprueba@neltume.cl", "clave-noaprueba", "10.16.0.2");
     const r = await llamar(rutaPdf.GET, "GET", `/api/v1/cotizaciones/${id}/pdf`, otra, { id });
-    expect(r.cuerpo.error.codigo).toBe("SIN_PERMISO");
+    expect(r.cuerpo.error.codigo).toBe("NO_ENCONTRADO");
     const { rows } = await app.query("SELECT 1 FROM audit_log WHERE resultado = 'denegado' AND accion LIKE '%/pdf'");
     expect(rows.length).toBeGreaterThan(0);
   });

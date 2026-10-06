@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { Encabezado, Etiqueta } from "@/components/ui/base";
 import { EstadoCotizacionEtiqueta } from "@/components/ui/estado-cotizacion";
-import { SinPermiso } from "@/components/ui/sin-permiso";
 import { bd } from "@/db/conexion";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { buscarClientes } from "@/domain/clientes";
@@ -18,7 +17,8 @@ export const metadata: Metadata = { title: "Revisión de cotización" };
 
 export default async function CotizacionPage({ params }: PageProps<"/cotizaciones/[id]">) {
   const sesion = await requerirSesion();
-  if (!sesion.permisos.has("cotizaciones.crear")) return <SinPermiso permiso="cotizaciones.crear" />;
+  // Sin permiso se responde como si no existiera (REQ-COT-10.2).
+  if (!sesion.permisos.has("cotizaciones.crear")) notFound();
   const { id } = await params;
   const verClientes = sesion.permisos.has("clientes.ver");
   const c = await obtenerCotizacion(bd(), id, verClientes).catch((e) => { if (e instanceof ErrorDominio) notFound(); throw e; });

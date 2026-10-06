@@ -21,12 +21,13 @@ test("cada acción prohibida responde 403 y el stock no cambia", async ({ page }
     await api(page, "POST", "/api/v1/movimientos/entradas", { codigo: "NEL-R-4-B", cantidad: 5, referencia: "intento" }),
     await api(page, "POST", "/api/v1/movimientos/ajustes", { codigo: "NEL-R-4-B", cantidad: -2, motivo: "intento" }),
     await api(page, "POST", `/api/v1/cotizaciones/${idA}/aprobar`, { version: 1 }),
-    await api(page, "GET", `/api/v1/cotizaciones/${idA}`),
     await api(page, "GET", "/api/v1/clientes"),
     await api(page, "POST", "/api/v1/pedidos", { cotizacionId: idA }),
     await api(page, "GET", "/api/v1/auditoria"),
   ];
   for (const r of intentos) expect(r.cuerpo.error.codigo).toBe("SIN_PERMISO");
+  // Una cotización que no puede ver responde como si no existiera (REQ-COT-10.2).
+  expect((await api(page, "GET", `/api/v1/cotizaciones/${idA}`)).cuerpo.error.codigo).toBe("NO_ENCONTRADO");
   const importar = await page.request.post("/api/v1/importaciones", {
     headers: { "x-csrf-token": (await api(page, "GET", "/api/v1/sesion")).cuerpo.csrf, "idempotency-key": crypto.randomUUID() },
     multipart: { archivo: { name: "x.xlsx", mimeType: "application/octet-stream", buffer: Buffer.from("x") } },
@@ -44,9 +45,9 @@ test("ve precios pero nunca costos ni márgenes", async ({ page }) => {
   expect(r.cuerpo.datos[0]).not.toHaveProperty("margen");
 });
 
-test("abrir la cotización A por URL muestra «sin permiso»", async ({ page }) => {
+test("abrir la cotización A por URL responde como si no existiera", async ({ page }) => {
   await ingresar(page, CONSULTA.email, CONSULTA.clave);
   await ir(page, `/cotizaciones/${idA}`);
-  await expect(page.getByText("No tienes permiso para esta sección")).toBeVisible();
+  await expect(page.getByText("No encontramos lo que buscas")).toBeVisible();
   await expect(page.getByRole("main")).not.toContainText("Constructora Los Alerces");
 });

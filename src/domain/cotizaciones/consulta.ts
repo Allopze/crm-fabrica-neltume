@@ -36,7 +36,7 @@ export async function obtenerCotizacion(tx: Tx, id: string, verCliente: boolean)
 }
 
 /** Sin `clientes.ver` el nombre del cliente sale como "(oculto)" y no se busca por él (REQ-NFR-5, SECURITY §datos personales). */
-export async function listarCotizaciones(tx: Tx, f: { estado?: string; q?: string; antesDe?: number; limite?: number }, verCliente: boolean) {
+export async function listarCotizaciones(tx: Tx, f: { estado?: string; q?: string; desde?: string; hasta?: string; antesDe?: number; limite?: number }, verCliente: boolean) {
   const limite = Math.min(Math.max(f.limite ?? 50, 1), 200);
   const condiciones = [];
   if (f.estado === "vencida") condiciones.push(and(eq(cotizacion.estado, "aprobada"), lt(cotizacion.vigenciaHasta, hoySantiago())));
@@ -45,6 +45,9 @@ export async function listarCotizaciones(tx: Tx, f: { estado?: string; q?: strin
     const porNumero = sql`${cotizacion.numero}::text = ${f.q.replace(/\D/g, "") || "-1"}`;
     condiciones.push(verCliente ? or(ilike(cliente.nombre, `%${f.q}%`), porNumero) : porNumero);
   }
+  // Fechas de creación en días calendario de Santiago (REQ-COT-10.1).
+  if (f.desde) condiciones.push(sql`${cotizacion.creadoEn} >= (${f.desde}::date)::timestamp AT TIME ZONE 'America/Santiago'`);
+  if (f.hasta) condiciones.push(sql`${cotizacion.creadoEn} < ((${f.hasta}::date + 1))::timestamp AT TIME ZONE 'America/Santiago'`);
   if (f.antesDe) condiciones.push(lt(cotizacion.numero, f.antesDe));
   const filas = await tx
     .select({ id: cotizacion.id, numero: cotizacion.numero, estado: cotizacion.estado, origen: cotizacion.origen, creadoEn: cotizacion.creadoEn,

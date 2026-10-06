@@ -14,4 +14,4 @@ export const GET = conPermiso<{ id: string }>(["cotizaciones.aprobar", "clientes
   return new Response(new Uint8Array(pdf), {
     headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename="cotizacion-${numero}.pdf"`, "cache-control": "private, no-store" },
   });
-});
+}, { ocultar: "Cotización no encontrada" });
