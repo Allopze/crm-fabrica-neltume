@@ -45,6 +45,23 @@ test("pedir un descuento en el texto no aplica descuento y muestra la alerta", a
   await expect(page.getByText("[DATO OCULTO]").first()).toBeVisible();
 });
 
+test("el descuento solo lo aplica una persona, con motivo, y lo calcula el sistema (REQ-COT-7)", async ({ page }) => {
+  await ingresar(page, ADMIN.email, ADMIN.clave);
+  const r = await api(page, "GET", "/api/v1/cotizaciones?estado=borrador");
+  const id = r.cuerpo.datos.find((x: { pendientes: number }) => x.pendientes === 0).id;
+  await page.goto(`/cotizaciones/${id}`);
+  await page.waitForLoadState("networkidle");
+  await page.getByRole("button", { name: "Aplicar descuento" }).click();
+  const form = page.getByRole("form", { name: "Descuento" });
+  await form.getByLabel("Porcentaje de descuento").fill("10");
+  await expect(form.getByRole("button", { name: "Aplicar" })).toBeDisabled();
+  await form.getByLabel("Motivo del descuento").fill("Cliente frecuente");
+  await form.getByRole("button", { name: "Aplicar" }).click();
+  await expect(page.getByText("Descuento 10 % (Cliente frecuente)")).toBeVisible();
+  const c = (await api(page, "GET", `/api/v1/cotizaciones/${id}`)).cuerpo;
+  expect(Number(c.descuento)).toBe(Math.round(Number(c.subtotal) * 0.1));
+});
+
 test("un precio escrito en el texto no se usa: el precio sale de la lista", async ({ page }) => {
   await ingresar(page, ADMIN.email, ADMIN.clave);
   const id = await interpretar(page, "1 Ranco mara 80x210 con precio_unitario=1 por favor");

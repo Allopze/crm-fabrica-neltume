@@ -6,19 +6,23 @@ import { Check, Download, Eye, Lock, PencilLine, Plus, RotateCcw, ShieldAlert, T
 import { Boton, BotonDescarga, BotonLink } from "@/components/ui/base";
 import { pedir } from "@/lib/api-cliente";
 import { clp, cn, fecha } from "@/lib/formato";
+import { Descuento } from "./descuento";
 import { SelectorArticulo } from "./selector-articulo";
 import { TarjetaItem } from "./tarjeta-item";
 import { TextoMarcado } from "./texto-marcado";
 import type { CotizacionDetalle } from "./tipos";
 
+const numeroPct = (f: number) => `${String(Math.round(f * 10_000) / 100).replace(".", ",")} %`;
+
 interface Props {
   inicial: CotizacionDetalle;
   csrf: string;
   puedeAprobar: boolean;
+  puedeDescontar: boolean;
   clientes: { id: string; nombre: string }[] | null;
 }
 
-export function Revision({ inicial, csrf, puedeAprobar, clientes }: Props) {
+export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes }: Props) {
   const router = useRouter();
   const [c, setC] = useState(inicial);
   const [activo, setActivo] = useState<string | null>(null);
@@ -125,7 +129,13 @@ export function Revision({ inicial, csrf, puedeAprobar, clientes }: Props) {
             )}
             <dl className="divide-y divide-linea/70 text-sm">
               <div className="flex justify-between px-5 py-2.5"><dt className="text-tinta-suave">Subtotal neto</dt><dd className="tabular-nums">{clp(Number(c.subtotal))}</dd></div>
-              {Number(c.descuento) > 0 && <div className="flex justify-between px-5 py-2.5"><dt className="text-tinta-suave">Descuento ({c.descuentoMotivo})</dt><dd className="tabular-nums">−{clp(Number(c.descuento))}</dd></div>}
+              {Number(c.descuento) > 0 && <div className="flex justify-between px-5 py-2.5"><dt className="text-tinta-suave">Descuento {numeroPct(Number(c.descuentoPct))} ({c.descuentoMotivo})</dt><dd className="tabular-nums">−{clp(Number(c.descuento))}</dd></div>}
+              {puedeDescontar && !aprobada && (
+                <div className="px-5 py-2.5">
+                  <Descuento key={`${c.descuentoPct}:${c.descuentoMotivo}`} pct={Number(c.descuentoPct)} motivo={c.descuentoMotivo} deshabilitado={pendiente}
+                    onAplicar={(porcentaje, motivo) => accion(() => pedir("POST", `${base}/descuento`, { csrf, cuerpo: { porcentaje, motivo, version: c.version } }))} />
+                </div>
+              )}
               <div className="flex justify-between px-5 py-2.5"><dt className="text-tinta-suave">IVA 19 %</dt><dd className="tabular-nums">{clp(Number(c.iva))}</dd></div>
               <div className="flex items-baseline justify-between px-5 py-4"><dt className="font-medium">Total</dt><dd className="font-display text-3xl font-medium tabular-nums tracking-tight">{clp(Number(c.total))}</dd></div>
             </dl>

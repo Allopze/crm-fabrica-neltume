@@ -42,7 +42,7 @@ export default async function CotizacionPage({ params }: PageProps<"/cotizacione
       />
       {c.estado === "interpretando"
         ? <EsperaInterpretacion texto={c.textoOriginal ?? ""} />
-        : <Revision key={`${c.id}:${c.version}`} inicial={c} csrf={sesion.csrf} puedeAprobar={sesion.permisos.has("cotizaciones.aprobar")} clientes={clientes} />}
+        : <Revision key={`${c.id}:${c.version}`} inicial={c} csrf={sesion.csrf} puedeAprobar={sesion.permisos.has("cotizaciones.aprobar")} puedeDescontar={sesion.permisos.has("descuentos.aplicar")} clientes={clientes} />}
     </>
   );
 }

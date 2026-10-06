@@ -111,3 +111,23 @@ export async function recalcularConListaVigente(tx: Tx, id: string, version: num
   const totales = await recalcularTotales(tx, id);
   await registrarAuditoria(tx, { actor, accion: "recalcular", recurso: "cotizacion", recursoId: id, antes: { listaId: c.listaId }, despues: { listaId: vigente, ...totales }, resultado: "ok", origen });
 }
+
+/**
+ * Descuento manual: excepción con motivo, calculada en el servidor sobre el subtotal y antes del IVA (REQ-COT-7.1, 7.2).
+ * Sin tope mientras exista un solo perfil. Nunca viene de la IA ni del texto del cliente (REQ-COT-7.3).
+ * `porcentaje` en puntos (10 = 10 %); 0 lo quita, también con motivo.
+ */
+export async function aplicarDescuento(tx: Tx, id: string, d: { porcentaje: number; motivo: string }, version: number, actor: Actor & { id: string }, origen: Origen) {
+  const motivo = d.motivo.trim();
+  if (motivo.length < 3) throw new ErrorDominio("VALIDACION", "El descuento necesita un motivo.");
+  if (!(d.porcentaje >= 0 && d.porcentaje < 100)) throw new ErrorDominio("VALIDACION", "El descuento debe estar entre 0 y 99,99 %.");
+  const c = await tomarBorrador(tx, id, version);
+  const pct = Math.round(d.porcentaje * 100) / 10_000; // 2 decimales de porcentaje = 4 de fracción (numeric 5,4)
+  await tx.update(cotizacion).set({ descuentoPct: pct, descuentoMotivo: pct > 0 ? motivo : null }).where(eq(cotizacion.id, id));
+  const totales = await recalcularTotales(tx, id);
+  await registrarAuditoria(tx, {
+    actor, accion: pct > 0 ? "aplicar descuento" : "quitar descuento", recurso: "cotizacion", recursoId: id, resultado: "ok", origen,
+    antes: { descuentoPct: Number(c.descuentoPct), motivo: c.descuentoMotivo, descuento: Number(c.descuento) },
+    despues: { descuentoPct: pct, motivo, descuento: totales.descuento, total: totales.total },
+  });
+}

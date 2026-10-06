@@ -81,7 +81,7 @@ Base `/api/v1`, JSON UTF-8, solo detrás de Cloudflare Access. Todos los handler
 | PATCH `/cotizaciones/:id` (`cliente_id, notas, version`) | `cotizaciones.crear` | | Solo en borrador |
 | POST `/cotizaciones/:id/items` · PATCH `/…/items/:itemId` · DELETE `/…/items/:itemId` | `cotizaciones.crear` | | Resolver: `{ codigo, cantidad }` o `{ precio_unitario }` si es `a_pedido`; recalcula |
 | POST `/cotizaciones/:id/recalcular` | `cotizaciones.crear` | | Pasa a la lista vigente (REQ-COT-6.3) |
-| POST `/cotizaciones/:id/descuento` (`porcentaje, motivo`) | `descuentos.aplicar` | | P2 |
+| POST `/cotizaciones/:id/descuento` (`porcentaje` en puntos 0–99,99, `motivo`, `version`) | `descuentos.aplicar` | | Solo borradores; 0 lo quita; auditado (REQ-COT-7.1, 7.2) |
 | POST `/cotizaciones/:id/aprobar` (`version`) | `cotizaciones.aprobar` | ✔ | 409 `ITEMS_POR_CONFIRMAR` |
 | GET `/cotizaciones/:id/pdf` | `cotizaciones.aprobar` + `clientes.ver` | | 409 `NO_APROBADA`; lleva datos del cliente; auditado |
 | GET/POST `/clientes` · GET/PATCH `/clientes/:id` | `clientes.ver` / `clientes.editar` | | RUT validado |
