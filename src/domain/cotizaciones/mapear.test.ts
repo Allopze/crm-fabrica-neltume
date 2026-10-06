@@ -11,6 +11,13 @@ const cat: CatalogoMapeo = {
     ["mN|dR|4|B", { id: "a1", codigo: "NEL-R-4-B" }], ["mT|dR|4|C", { id: "a2", codigo: "TOLT-R-4-C" }], ["mN|dO|3|A", { id: "a3", codigo: "NEL-O-3-A" }],
   ]),
   alias: [{ alias: "NELTU", modelo: "NELTUME", tipo: "seguro" }, { alias: "NEL TUNE", modelo: "NELTUME", tipo: "posible" }],
+  accesorios: [{ id: "mM", nombre: "MARCO", codigo: "MAR" }, { id: "mE", nombre: "ENDOLADO", codigo: "ENDO" }],
+  piezas: [
+    { id: "p1", codigo: "MAR-R-2X4-B", modeloId: "mM", maderaId: "dR", seccion: "2X4", largoM: 2.1 },
+    { id: "p2", codigo: "MAR-R-2X4-C", modeloId: "mM", maderaId: "dR", seccion: "2X4", largoM: 2.2 },
+    { id: "p3", codigo: "MAR-R-2X4-H", modeloId: "mM", maderaId: "dR", seccion: "2X4", largoM: 3 },
+    { id: "p4", codigo: "ENDO-R-12X4,5-H", modeloId: "mE", maderaId: "dR", seccion: "12X4,5", largoM: 3 },
+  ],
 };
 const item = (p: Partial<ItemPropuesto>): ItemPropuesto => ({
   texto_fuente: "3 Neltume raulí 90x210", tipo: "puerta", modelo: "NELTUME", madera: "RAULI", ancho_m: 0.9, alto_m: 2.1, medida_accesorio: null, cantidad: 3, dudas: [], ...p,
@@ -38,10 +45,10 @@ describe("mapeo exacto al catálogo (REQ-COT-2.1, 2.3–2.5)", () => {
     expect(mapearItem(item({ alto_m: 2.8 }), cat)).toMatchObject({ estado: "por_confirmar", duda: expect.stringContaining("supera la grilla") });
   });
 
-  it("dudas de la IA, cantidad faltante y accesorios → por confirmar (nunca se completa en silencio)", () => {
+  it("dudas de la IA, cantidad faltante y accesorio sin escuadría → por confirmar (nunca se completa en silencio)", () => {
     expect(mapearItem(item({ dudas: ["No se indica la madera"] }), cat)).toMatchObject({ estado: "por_confirmar", duda: "No se indica la madera" });
     expect(mapearItem(item({ cantidad: null }), cat)).toMatchObject({ estado: "por_confirmar", cantidad: 1, duda: "Falta la cantidad." });
-    expect(mapearItem(item({ tipo: "marco" }), cat)).toMatchObject({ estado: "por_confirmar" });
+    expect(mapearItem(item({ tipo: "marco" }), cat)).toMatchObject({ estado: "por_confirmar", duda: expect.stringContaining("escuadría") });
   });
 
   it("la descripción nunca copia texto libre de la IA", () => {
@@ -76,5 +83,29 @@ describe("medidas en m, cm o mm y vano/hoja (REQ-COT-2.12)", () => {
   it("guarda la medida solicitada si se dijo vano u hoja, o si es a pedido", () => {
     expect(mapearItem(item({ tipo_medida: "vano" }), cat)).toMatchObject({ estado: "ok", medidaSolicitada: "900 × 2100 mm (vano)" });
     expect(mapearItem(item({ modelo: "TOLTEN", ancho_m: 87, alto_m: 215 }), cat)).toMatchObject({ estado: "a_pedido", medidaSolicitada: "870 × 2150 mm" });
+  });
+});
+
+describe("accesorios: marcos, piezas T y molduras (REQ-COT-2.13)", () => {
+  const marco = (p: Partial<ItemPropuesto>) => item({ tipo: "marco", modelo: null, ancho_m: null, medida_accesorio: "2x4", alto_m: 2.1, ...p });
+
+  it("escuadría y largo exactos → ok; «4 pulgadas» y «4» son 2x4", () => {
+    expect(mapearItem(marco({}), cat)).toMatchObject({ estado: "ok", codigo: "MAR-R-2X4-B", descripcion: "Marco · Raulí · 2x4 pulg. kit 2,10 m" });
+    expect(mapearItem(marco({ medida_accesorio: "4 pulgadas" }), cat)).toMatchObject({ estado: "ok", codigo: "MAR-R-2X4-B" });
+    expect(mapearItem(marco({ medida_accesorio: "4", alto_m: 3 }), cat)).toMatchObject({ estado: "ok", codigo: "MAR-R-2X4-H", descripcion: "Marco · Raulí · 2x4 pulg. × 3,00 m" });
+  });
+
+  it("molduras por sección en cm (4.5 → 4,5)", () => {
+    expect(mapearItem(item({ tipo: "endolado", modelo: null, ancho_m: null, medida_accesorio: "12 x 4.5 cm", alto_m: 3 }), cat)).toMatchObject({ estado: "ok", codigo: "ENDO-R-12X4,5-H" });
+  });
+
+  it("largo entre escalones → a pedido con referencia superior; sobre el mayor o sin largo → por confirmar", () => {
+    expect(mapearItem(marco({ alto_m: 2.15 }), cat)).toMatchObject({ estado: "a_pedido", referencia: { codigo: "MAR-R-2X4-C" }, medidaSolicitada: "2x4 pulg. × 2,15 m" });
+    expect(mapearItem(marco({ alto_m: 3.2 }), cat)).toMatchObject({ estado: "por_confirmar", duda: expect.stringContaining("supera") });
+    expect(mapearItem(marco({ alto_m: null }), cat)).toMatchObject({ estado: "por_confirmar", duda: "Falta el largo." });
+  });
+
+  it("una escuadría inexistente lista las disponibles", () => {
+    expect(mapearItem(marco({ medida_accesorio: "2x9" }), cat)).toMatchObject({ estado: "por_confirmar", duda: expect.stringContaining("hay: 2X4") });
   });
 });

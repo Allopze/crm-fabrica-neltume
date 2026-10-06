@@ -84,7 +84,7 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-STK-1.1: WHEN un usuario con permiso de catálogo carga el Excel vigente THE SYSTEM SHALL crear modelos, maderas, medidas y artículos con su código y una versión de lista de precios, e informar cuántas filas se crearon, cambiaron y se rechazaron.
 - REQ-STK-1.2: IF una fila no tiene código, medida, madera o precio válido THEN THE SYSTEM SHALL rechazarla, listar el motivo y no detener las demás filas.
 - REQ-STK-1.3: WHEN se vuelve a cargar el mismo archivo THE SYSTEM SHALL no duplicar artículos ni crear una versión nueva sin cambios.
-- REQ-STK-1.4: THE SYSTEM SHALL identificar cada artículo por modelo, madera, rango de ancho y alto, y conservar los accesorios (marco, piezas T, endolado, guardapolvo, pilastra) como artículos propios.
+- REQ-STK-1.4: THE SYSTEM SHALL identificar cada artículo por modelo, madera, rango de ancho y alto, y conservar los accesorios (marco, piezas T, endolado, guardapolvo, pilastra) como artículos propios, identificados por escuadría o sección y largo (REQ-COT-2.13).
 - REQ-STK-1.5: IF un usuario sin permiso de catálogo intenta importar o editar artículos THEN THE SYSTEM SHALL denegar la acción y registrar el intento.
 - REQ-STK-1.6: IF el código de una fila no coincide con sus atributos THEN THE SYSTEM SHALL corregirla solo cuando exactamente una hipótesis sea consistente con el resto del catálogo (el código está mal, o los atributos están mal), informar la corrección y rechazar la fila si la discrepancia es ambigua.
 
@@ -178,6 +178,7 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-COT-2.10: IF un visitante o un usuario sin permiso de cotizar intenta usar el cotizador THEN THE SYSTEM SHALL denegarlo y registrar el intento.
 - REQ-COT-2.11: WHEN el pedido nombra un modelo con un alias registrado («coscos» por Coz Coz) THE SYSTEM SHALL resolverlo si el alias es seguro; IF el alias es dudoso o el nombre solo se parece a un modelo THEN THE SYSTEM SHALL dejar el ítem por confirmar con la sugerencia, sin aplicarla. Un modelo real siempre gana sobre un alias.
 - REQ-COT-2.12: WHEN el pedido trae medidas en metros, centímetros o milímetros THE SYSTEM SHALL interpretarlas por magnitud, dejar por confirmar las implausibles (fuera de 0,3 a 3 m) y registrar la medida solicitada, con «hoja» o «vano» solo si el cliente lo indicó.
+- REQ-COT-2.13: WHEN el pedido incluye marcos, piezas T o molduras (endolado, guardapolvo, pilastra) THE SYSTEM SHALL mapearlos por madera, escuadría en pulgadas o sección en cm y largo: exacto → listo; largo entre escalones → a pedido con referencia del escalón superior; sin escuadría, sin largo o sobre el mayor → por confirmar. «Con su marco» agrega el marco con la cantidad de las puertas.
 
 **H3 Revisar y resolver ítems (P1).** Como usuario, quiero ver lado a lado lo que dijo el cliente y lo que se entendió.
 - REQ-COT-3.1: WHEN un usuario abre un borrador THE SYSTEM SHALL mostrar el texto original junto a los ítems interpretados, con los "por confirmar" destacados.

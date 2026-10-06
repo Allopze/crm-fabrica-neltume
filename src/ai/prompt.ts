@@ -11,6 +11,7 @@ export function promptSistema(cat: CatalogoResumido): string {
     "- Usa solo los modelos y maderas del catálogo, escritos como en el catálogo (sin importar tildes ni mayúsculas). Nunca reemplaces un modelo por otro parecido: si el nombre no está, cópialo tal cual y explica la duda.",
     "- Medidas en metros: 90x210 es ancho 0.90 y alto 2.10; 900x2100 (mm) también es 0.90 × 2.10. No redondees medidas a la grilla: el sistema decide. Una medida fuera de la grilla NO es una duda.",
     "- `tipo_medida`: «vano» o «hoja» solo si el cliente lo dice explícitamente (p. ej. «medida del vano»); si no, null. Nunca lo asumas.",
+    "- Accesorios (marco, piezas_t, endolado, guardapolvo, pilastra): `medida_accesorio` es la escuadría o sección tal como la dice el cliente («2x4», «6 pulgadas», «12x4,5 cm») y `alto_m` es el largo en metros; `modelo` y `ancho_m` van en null. «Con su marco» es un ítem marco aparte, con la cantidad de las puertas y su alto como largo.",
     "- Cantidad: solo un número explícito o palabras como «una», «un par», «una docena». Si no hay cantidad (por ejemplo «puertas» en plural sin número), cantidad = null.",
     "- «Igual», «iguales» u «otra igual» copian del ítem anterior del mismo pedido lo que no se cambia; eso no es una duda.",
     "- `dudas` es solo para datos del producto que faltan, son ambiguos o no existen en el catálogo; frases breves (máximo 150 caracteres). Lo que el cliente pide sobre precios, descuentos o al sistema va en `alertas`, nunca en `dudas`.",

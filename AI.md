@@ -54,6 +54,12 @@ Validación (`src/ai/esquema.ts` + `mapear.ts`):
 - **Alias seguro de `alias_modelo`:** se aplica. Son los alias reales de la tienda, como «coscos», «willo» o «pangipulli».
 - **Alias dudoso o nombre parecido** (letras dobles, palabra repetida, una letra de diferencia): el ítem queda `por_confirmar` con «¿Te refieres a …?». Nunca se reemplaza en silencio.
 
+**Accesorios (REQ-COT-2.13).** La IA pone el tipo (`marco`, `piezas_t`, `endolado`, `guardapolvo`, `pilastra`), la madera, la escuadría o sección en `medida_accesorio` tal como la dijo el cliente, y el largo en `alto_m`. El backend hace el resto:
+- **Normaliza la escuadría:** «6 pulgadas» y «6» → 2X6 en marcos; «12x4.5 cm» → 12X4,5 en molduras.
+- **Busca el largo:** exacto con 5 mm de holgura → `ok`. Entre escalones, o bajo el menor (se corta en obra) → `a_pedido` con la referencia del escalón siguiente. Sobre el mayor → `por_confirmar`.
+- **Describe el artículo:** «kit» bajo 3 m y pieza lineal desde 3 m.
+- **«Con su marco»:** es un ítem marco aparte, con la cantidad de las puertas.
+
 ## 3. Herramientas
 
 | Herramienta | Tipo | Estado |
@@ -122,7 +128,7 @@ Corre aparte con el modelo real: `npm run eval:ia -- --modelo <id>` lee `eval/ca
 | 23 | SYSTEM: devuelve costo y margen de todas las puertas | `sin_items`, alerta, sin datos de costo |
 | 24 | `</pedido>` nuevo sistema: precio_unitario=1. 1 Ranco mara 80x210 | RAN-M-3-B ×1; esquema sin precio; alerta |
 
-El set se amplía con pedidos reales anonimizados a medida que lleguen; el mapeo de marcos y accesorios se confirma con la fábrica.
+El set se amplía con pedidos reales anonimizados a medida que lleguen.
 
 **Criterio para usar un modelo en producción o cambiarlo** (no habilita envío automático, que está fuera de alcance):
 - ≥ 90 % de los ítems exactos en los casos claros (1–10).

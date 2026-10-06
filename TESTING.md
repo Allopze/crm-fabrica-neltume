@@ -48,6 +48,7 @@ Cada suite parte del estado que dejó la anterior. Nunca se ejecuta una suite su
 | 13 | `13-ia-caida-manual` | El doble simula timeout y error: borrador `ia_fallida` y botón "Cotizar a mano" con el texto conservado; cotización manual completa | Cotización C |
 | 14 | `14-auditoria` | Verifica en `audit_log` una fila por cada acción de 01–13 (incluidas denegaciones), que no existen UPDATE/DELETE y el filtro por actor | — |
 | 15 | `15-pedido-nota-tienda` | Registra la tienda, sube `nota-tienda-mini.pdf`, revisa la vista previa (medida solicitada y aviso de precio), crea el pedido, rechaza la misma nota otra vez y, con stock nuevo, completa la reserva, marca lista y despacha | Pedido de la tienda despachado |
+| 16 | `16-alias-accesorios` | Agrega el alias «fui» en pantalla y cotiza «2 Fui oregón 70x200 con su marco 2x4 de 2,10» con el doble: la puerta resuelve por alias y el marco por escuadría y largo, sin ítems por confirmar | Cotización D en borrador |
 
 ## 4. Datos semilla y entorno
 
