@@ -6,6 +6,7 @@ import { registrarAuditoria } from "@/domain/auditoria";
 import { listaVigenteId, precioDeArticulo, recalcularTotales } from "@/domain/cotizaciones/calculo";
 import { cargarCatalogoMapeo, catalogoResumido } from "@/domain/cotizaciones/catalogo";
 import { mapearItem } from "@/domain/cotizaciones/mapear";
+import { alertasGasto, gastoIa } from "@/domain/metricas-ia";
 import { calcularLinea } from "@/domain/precios/calcular";
 import { registro } from "@/lib/registro";
 import { ErrorIA, type InterpreteIA } from "./interfaz";
@@ -96,6 +97,9 @@ export async function procesarSiguiente(ia: InterpreteIA, opciones: { esperasMs?
         despues: { items: resultado.propuesta.items.length, alertas: resultado.propuesta.alertas.length, proveedor: resultado.proveedor, modelo: resultado.modelo, latenciaMs: resultado.latenciaMs, costoUsd: resultado.costoUsd },
       });
     });
+    // SECURITY T4: aviso al 80 % del tope diario y del presupuesto mensual (también en /administracion/metricas).
+    const g = await gastoIa(bd());
+    for (const a of alertasGasto(g.diaUsd, g.mesUsd)) registro.warn(a, { diaUsd: g.diaUsd, mesUsd: g.mesUsd });
     return "listo";
   } catch (e) {
     const motivo = e instanceof ErrorIA ? `${e.tipo}: ${e.message}` : (e as Error).message;

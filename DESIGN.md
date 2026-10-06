@@ -79,8 +79,8 @@ Días hábiles: lunes a viernes, descontando los feriados de Chile de la tabla `
 | `tunnel` | `cloudflare/cloudflared` | `borde` | ninguno | `TUNNEL_TOKEN` | — |
 | `proxy` | `caddy` | `borde`, `backend` | ninguno | — | `Caddyfile` (ro) |
 | `migrar` | build `.` (target `migrar`) | `datos` | ninguno | `DATABASE_ADMIN_URL`, `DATABASE_URL_OWNER`, `DATABASE_URL` | — |
-| `app` | build `.` (target `app`) | `backend`, `datos` | ninguno | `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `APP_TZ=America/Santiago` | `pdf_tmp` |
-| `worker` | build `.` (target `worker`) | `datos`, `salida` | ninguno | `DATABASE_URL`, `CMD_API_KEY`, `CMD_API_BASE_URL`, `CMD_MODEL`, `CMD_ZDR`, `LLM_TIMEOUT_MS`, `LLM_MAX_REINTENTOS`, `LLM_TOPE_DIARIO_USD` | — |
+| `app` | build `.` (target `app`) | `backend`, `datos` | ninguno | `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `APP_TZ=America/Santiago`, `LLM_TOPE_DIARIO_USD`, `LLM_PRESUPUESTO_MENSUAL_USD` (solo para mostrar alertas) | `pdf_tmp` |
+| `worker` | build `.` (target `worker`) | `datos`, `salida` | ninguno | `DATABASE_URL`, `CMD_API_KEY`, `CMD_API_BASE_URL`, `CMD_MODEL`, `CMD_ZDR`, `LLM_TIMEOUT_MS`, `LLM_MAX_REINTENTOS`, `LLM_TOPE_DIARIO_USD`, `LLM_PRESUPUESTO_MENSUAL_USD` | — |
 | `db` | `postgres:18` (digest al desplegar) | `datos` (internal) | `127.0.0.1:5432` solo con `docker-compose.admin.yml` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `pg_data` |
 | `backup` | `postgres` + cron | `datos` | ninguno | `PGPASSWORD`, `BACKUP_RETENCION_DIAS`, `BACKUP_DESTINO_EXTERNO` | `backups` |
 
@@ -103,7 +103,7 @@ Días hábiles: lunes a viernes, descontando los feriados de Chile de la tabla `
   - Hay un máximo de 3 intentos. Un trabajo con más de 60 s en `en_curso` se reintenta.
 - **Concurrencia.** `cotizacion.version` es un bloqueo optimista; un PATCH con versión vieja da 409.
 - **Logs.** JSON a stdout con nivel, `correlacion_id`, ruta, duración y resultado. Se redactan `authorization`, `cookie`, `x-api-key` y los campos de cliente. Rotación con el driver de Docker (10 MB × 5).
-- **Métricas mínimas** (pantalla interna con `auditoria.ver`): latencia p50/p90 del cotizador, costo de IA del día y del mes, tasa de `ia_fallida` y trabajos pendientes.
+- **Métricas mínimas** (`/administracion/metricas` y `GET /api/v1/metricas/ia`, con `auditoria.ver`; últimos 30 días): latencia p50/p90 del cotizador (alta de la cotización → interpretación auditada), costo medio, costo de IA del día y del mes, tasa de `ia_fallida`, trabajos pendientes y llamadas por resultado. Alerta al 80 % del tope diario y del presupuesto mensual (`LLM_PRESUPUESTO_MENSUAL_USD`), visible también en el panel y en los logs del worker.
 - **Salud.** `GET /api/v1/salud` (sin sesión, solo `ok` o `degradado`) para healthchecks de Compose.
 
 ## 6. Respaldos y restauración

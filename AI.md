@@ -69,7 +69,7 @@ En v1 el catálogo resumido va completo en el contexto (es pequeño), así que n
 | Salida | `max_tokens` = 800 | ≤ 800 |
 
 - **Costo estimado:** ~4.000 tokens de entrada y ~400 de salida. Con un modelo de gama media (tarifa nativa de su proveedor) son unos US$ 0,005–0,02 por cotización, y con un reintento queda bajo el tope de US$ 0,10 (REQ-NFR-2). Las tarifas exactas se confirman con `/models` y el plan contratado.
-- **Topes:** 20 interpretaciones por usuario por hora y `LLM_TOPE_DIARIO_USD`. El costo de cada llamada queda en `llamada_ia`.
+- **Topes:** 20 interpretaciones por usuario por hora y `LLM_TOPE_DIARIO_USD` (al alcanzarlo, `ia_fallida`). `LLM_PRESUPUESTO_MENSUAL_USD` solo alerta al 80 % (SECURITY T4). El costo de cada llamada queda en `llamada_ia`.
 - **Latencia:** el timeout es de 12 s por intento y el presupuesto total de 15 s p90 (REQ-NFR-1).
 - **Modelo:** se fija en `CMD_MODEL` tras correr el set de evaluación con 2 o 3 candidatos de `/models`. El primero que cumpla §6 con menor costo gana.
 - **Cabeceras:** `Authorization: Bearer` (clave en `CMD_API_KEY`) y `x-cmd-zdr: 1`.

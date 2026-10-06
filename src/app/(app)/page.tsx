@@ -4,6 +4,7 @@ import { Cifra, Encabezado, Etiqueta, Panel, Placa } from "@/components/ui/base"
 import { bd } from "@/db/conexion";
 import type { Permiso } from "@/domain/auth/permisos";
 import { requerirSesion } from "@/domain/auth/servidor";
+import { alertasGasto, gastoIa } from "@/domain/metricas-ia";
 import { alertasStock, cifrasDelMes, pedidosConFaltante, porRevisar } from "@/domain/panel";
 import { clp, fechaHora, numero } from "@/lib/formato";
 
@@ -25,6 +26,8 @@ export default async function PanelPage() {
     puede("pedidos.gestionar") ? pedidosConFaltante(bd(), verCliente) : null,
   ]);
   const bajos = alertas ? alertas.puertas.length + alertas.mp.length : 0;
+  const gasto = puede("auditoria.ver") ? await gastoIa(bd()) : null;
+  const alertasIa = gasto ? alertasGasto(gasto.diaUsd, gasto.mesUsd) : [];
 
   return (
     <>
@@ -38,6 +41,12 @@ export default async function PanelPage() {
           </>
         }
       />
+
+      {alertasIa.map((a) => (
+        <Link key={a} href="/administracion/metricas" role="alert" className="mb-6 flex items-center gap-2 rounded-lg border border-ambar/30 bg-ambar-velo px-5 py-3 text-sm text-ambar hover:underline">
+          <TriangleAlert className="h-4 w-4" /> {a}
+        </Link>
+      ))}
 
       {cotiza && (
         <Link href="/cotizaciones/nueva"
