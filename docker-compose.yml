@@ -53,6 +53,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      LLM_PROVEEDOR: commandcode
       CMD_API_KEY: ${CMD_API_KEY}
       CMD_API_BASE_URL: ${CMD_API_BASE_URL}
       CMD_MODEL: ${CMD_MODEL}
@@ -60,6 +61,8 @@ services:
       LLM_TIMEOUT_MS: ${LLM_TIMEOUT_MS}
       LLM_MAX_REINTENTOS: ${LLM_MAX_REINTENTOS}
       LLM_TOPE_DIARIO_USD: ${LLM_TOPE_DIARIO_USD}
+      LLM_PRECIO_ENTRADA_USD_MTOK: ${LLM_PRECIO_ENTRADA_USD_MTOK}
+      LLM_PRECIO_SALIDA_USD_MTOK: ${LLM_PRECIO_SALIDA_USD_MTOK}
     networks: [datos, salida]
     depends_on:
       migrar: { condition: service_completed_successfully }
