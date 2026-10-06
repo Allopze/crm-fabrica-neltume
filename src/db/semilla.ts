@@ -45,6 +45,9 @@ export async function sembrar(cliente: Client): Promise<void> {
     for (const [codigo, m] of ALTOS) {
       await cliente.query("INSERT INTO alto (codigo, alto_m) VALUES ($1, $2) ON CONFLICT DO NOTHING", [codigo, m]);
     }
+    for (const [codigo, nombre] of [["un", "unidad"], ["m", "metro"], ["m2", "metro cuadrado"], ["m3", "metro cúbico"], ["pulg", "pulgada maderera"], ["kg", "kilogramo"], ["lt", "litro"]]) {
+      await cliente.query("INSERT INTO unidad (codigo, nombre) VALUES ($1, $2) ON CONFLICT DO NOTHING", [codigo, nombre]);
+    }
     await cliente.query(`INSERT INTO parametro (clave, valor) VALUES ('vigencia_dias_habiles', '10'), ('iva', '0.19') ON CONFLICT DO NOTHING`);
     for (const [fecha, nombre] of FERIADOS_2026) {
       await cliente.query("INSERT INTO feriado (fecha, nombre) VALUES ($1, $2) ON CONFLICT DO NOTHING", [fecha, nombre]);

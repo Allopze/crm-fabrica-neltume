@@ -2,6 +2,7 @@
 import { sql } from "drizzle-orm";
 import { check, index, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { articulo, bodega } from "./catalogo";
+import { materiaPrima } from "./produccion";
 import { usuario } from "./seguridad";
 
 export const TIPOS_MOVIMIENTO = ["entrada_produccion", "recepcion", "salida_despacho", "consumo_produccion", "ajuste", "reserva", "liberacion"] as const;
@@ -12,7 +13,7 @@ export const movimiento = pgTable("movimiento", {
   ocurridoEn: timestamp({ withTimezone: true }).notNull().defaultNow(),
   bodegaId: uuid().notNull().references(() => bodega.id),
   articuloId: uuid().references(() => articulo.id),
-  materiaPrimaId: uuid(), // FK a materia_prima en la migración de materias primas (T1.15)
+  materiaPrimaId: uuid().references(() => materiaPrima.id),
   tipo: text().notNull(),
   cantidad: numeric({ precision: 12, scale: 3, mode: "number" }).notNull(),
   motivo: text(),

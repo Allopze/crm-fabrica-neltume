@@ -13,6 +13,7 @@ describe("catálogo y precios: migración y referencia (T1.1–T1.2)", () => {
     expect(await n("rango_ancho")).toBe(9);
     expect(await n("alto")).toBe(7);
     expect(await n("feriado")).toBeGreaterThanOrEqual(15);
+    expect(await n("unidad")).toBe(7);
     const { rows } = await app.query("SELECT valor FROM parametro WHERE clave = 'vigencia_dias_habiles'");
     expect(rows[0].valor).toBe(10);
   });

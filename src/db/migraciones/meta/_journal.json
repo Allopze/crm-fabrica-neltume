@@ -43,6 +43,13 @@
       "when": 1791255777574,
       "tag": "0005_stock_vista_inmutable",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791256129805,
+      "tag": "0006_materias_primas_produccion",
+      "breakpoints": true
     }
   ]
 }
