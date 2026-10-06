@@ -29,9 +29,9 @@ describe("mapear fila del Excel (REQ-STK-1.2, 1.4; DATA-MODEL §5)", () => {
     expect(mapearFila(fila({ madera: "Raulí" }), cat).ok).toBe(true);
   });
 
-  it("rechaza el caso real LLAG-O-2-A con alto 2,2 (debía ser LLAG-O-2-C)", () => {
+  it("detecta el caso real LLAG-O-2-A con alto 2,2 (debía ser LLAG-O-2-C) como discrepancia", () => {
     const r = mapearFila(fila({ codigo: "LLAG-O-2-A", modelo: "LOS LAGOS", ancho: "0,70 A 0,75", alto: 2.2, madera: "PINO OREGON" }), cat);
-    expect(r).toEqual({ ok: false, fila: 10, motivo: expect.stringContaining("se esperaba LLAG-O-2-C") });
+    expect(r).toMatchObject({ ok: false, fila: 10, motivo: expect.stringContaining("se esperaba LLAG-O-2-C"), discrepancia: { codigoHoja: "LLAG-O-2-A" } });
   });
 
   it("mapea marcos por pulgadas y molduras por cm × espesor × largo", () => {
@@ -56,5 +56,31 @@ describe("mapear fila del Excel (REQ-STK-1.2, 1.4; DATA-MODEL §5)", () => {
     const { validos, rechazos } = mapearFilas([fila({ fila: 4 }), fila({ fila: 9 })], cat);
     expect(validos).toHaveLength(1);
     expect(rechazos).toEqual([{ fila: 9, motivo: "Código NEL-R-3-B repetido (ya está en la fila 4)" }]);
+  });
+});
+
+describe("corrección de filas inconsistentes por dos hipótesis (REQ-STK-1.6)", () => {
+  const llag = (p: Partial<FilaPrecio>) => fila({ modelo: "LOS LAGOS", ancho: "0,70 A 0,75", madera: "PINO OREGON", ...p });
+
+  it("A: el código está mal si el esperado está libre y el de la hoja ya existe (caso LLAG-O-2-A real)", () => {
+    const r = mapearFilas([llag({ fila: 1, codigo: "LLAG-O-2-A", alto: 2 }), llag({ fila: 2, codigo: "LLAG-O-2-A", alto: 2.2 })], cat);
+    expect(r.validos.map((a) => [a.codigo, a.altoM])).toEqual([["LLAG-O-2-A", 2], ["LLAG-O-2-C", 2.2]]);
+    expect(r.correcciones).toEqual([{ fila: 2, detalle: "Código LLAG-O-2-A → LLAG-O-2-C" }]);
+    expect(r.rechazos).toEqual([]);
+  });
+
+  it("B: los atributos están mal si el código de la hoja está libre y el esperado ya existe (marcos de raulí con largo 2)", () => {
+    const marco = (p: Partial<FilaPrecio>) => fila({ modelo: "MARCO", tipo: "", ancho: 4, madera: "PINO OREGON", costoTotal: null, ...p });
+    const r = mapearFilas([marco({ fila: 1, codigo: "MAR-O-2X4-A", alto: 2 }), marco({ fila: 2, codigo: "MAR-O-2X4-B", alto: 2 })], cat);
+    expect(r.validos.map((a) => [a.codigo, a.altoM])).toEqual([["MAR-O-2X4-A", 2], ["MAR-O-2X4-B", 2.1]]);
+    expect(r.correcciones).toEqual([{ fila: 2, detalle: "MAR-O-2X4-B: largo 2 → 2,1 m" }]);
+  });
+
+  it("si ambas hipótesis son posibles (o ninguna) la fila se rechaza como ambigua", () => {
+    const ambas = mapearFilas([llag({ fila: 2, codigo: "LLAG-O-2-A", alto: 2.2 })], cat);
+    expect(ambas.validos).toEqual([]);
+    expect(ambas.rechazos[0].motivo).toContain("Discrepancia ambigua");
+    const ninguna = mapearFilas([llag({ fila: 1, codigo: "LLAG-O-2-A", alto: 2 }), llag({ fila: 2, codigo: "LLAG-O-2-C", alto: 2.2 }), llag({ fila: 3, codigo: "LLAG-O-2-A", alto: 2.2 })], cat);
+    expect(ninguna.rechazos).toEqual([{ fila: 3, motivo: expect.stringContaining("Discrepancia ambigua") }]);
   });
 });

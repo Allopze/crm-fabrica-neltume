@@ -33,7 +33,7 @@ Cada suite parte del estado que dejó la anterior. Nunca se ejecuta una suite su
 
 | # | Archivo | Qué hace | Estado que deja |
 |---|---|---|---|
-| 01 | `01-seed-importacion` | BD vacía + `crear-admin`; importa `cotizador-mini.xlsx`, revisa el informe (con 1 fila inválida rechazada) y lo re-importa sin duplicar | Catálogo y lista v1 |
+| 01 | `01-seed-importacion` | BD vacía + `crear-admin`; importa `cotizador-mini.xlsx`, revisa el informe (con 1 fila inconsistente corregida, REQ-STK-1.6) y lo re-importa sin duplicar | Catálogo y lista v1 |
 | 02 | `02-login-roles` | Login fallido y exitoso, visitante sin sesión, crea el rol de prueba `solo-consulta` (`stock.ver`) y el usuario `consulta@test`, y verifica que no se puede desactivar al último admin | 2 usuarios |
 | 03 | `03-materias-primas-recepcion` | Alta de 3 materias primas con unidades, recepción idempotente (doble envío = 1 movimiento) | Stock de MP |
 | 04 | `04-produccion-entrada` | BOM demo para NEL, orden de 2 NEL-R-4-B, cierre (consumo + entrada), segundo cierre sin duplicar, cierre sin BOM e insumo faltante → 409 | 2 NEL-R-4-B en stock |
@@ -53,7 +53,7 @@ Cada suite parte del estado que dejó la anterior. Nunca se ejecuta una suite su
 | Elemento | Detalle |
 |---|---|
 | BD de test | PostgreSQL local: `neltume_test` (integración) y `neltume_e2e` (E2E), recreadas desde las migraciones al inicio de cada capa. En integración, `neltume_test` es plantilla: cada archivo crea su copia (`CREATE DATABASE … TEMPLATE`) y la borra al terminar, sin depender del orden. La app de E2E corre con `next dev` contra `neltume_e2e` y `LLM_PROVEEDOR=doble` |
-| `e2e/fixtures/cotizador-mini.xlsx` | Misma estructura que el cotizador real (rev-4F): 70 filas (7 modelos × 4 maderas en algunas medidas + 1 marco), costos ficticios redondos y 1 fila inválida a propósito (código que no coincide con su alto, como LLAG-O-2-A en el Excel real). Se regenera con `npx tsx scripts/generar-fixtures.mts`. Versionado en git; **nunca** contiene costos reales |
+| `e2e/fixtures/cotizador-mini.xlsx` | Misma estructura que el cotizador real (rev-4F): 70 filas (7 modelos × 4 maderas en algunas medidas + 1 marco), costos ficticios redondos y 1 fila inconsistente a propósito (código que no coincide con su alto, como LLAG-O-2-A en el Excel real), que el importador corrige a NEL-O-3-C. Se regenera con `npx tsx scripts/generar-fixtures.mts`. Versionado en git; **nunca** contiene costos reales |
 | `e2e/fixtures/cotizador-mini-v2.xlsx` | Igual, con +10 % en los precios (suite 10) |
 | `tests/fixtures/ia-respuestas.json` | Salidas del doble por texto |
 | Reloj | `APP_FECHA_FIJA` en test para la vigencia y los feriados deterministas |

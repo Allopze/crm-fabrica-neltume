@@ -23,15 +23,16 @@ test("sin sesión, cualquier pantalla interna lleva al login", async ({ page }) 
   await expect(page.getByRole("heading", { name: "Ingresar" })).toBeVisible();
 });
 
-test("importa el Excel desde la UI e informa la fila rechazada", async ({ page }) => {
+test("importa el Excel desde la UI e informa la fila corregida", async ({ page }) => {
   await ingresar(page, ADMIN.email, ADMIN.clave);
   await ir(page, "/precios/importar");
   await page.getByLabel("Archivo Excel").setInputFiles("e2e/fixtures/cotizador-mini.xlsx");
   await page.getByRole("button", { name: "Importar" }).click();
   const informe = page.getByRole("region", { name: "Informe de importación" });
   await expect(informe).toContainText("Lista de precios vigente: v1");
-  await expect(informe.getByText("Creadas").locator("..")).toContainText("69");
-  await expect(informe).toContainText("se esperaba NEL-O-3-C");
+  await expect(informe.getByText("Creadas").locator("..")).toContainText("70");
+  await expect(informe).toContainText("Filas corregidas · 1");
+  await expect(informe).toContainText("Código NEL-O-3-B → NEL-O-3-C");
 });
 
 test("re-importar el mismo archivo no duplica nada", async ({ page }) => {

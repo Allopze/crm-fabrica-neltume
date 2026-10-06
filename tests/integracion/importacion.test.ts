@@ -21,8 +21,9 @@ afterAll(async () => { await app.end(); await cerrarBd(); });
 describe("importación del Excel (REQ-STK-1.1–1.4, REQ-COT-1.1)", () => {
   it("crea artículos y la lista v1, y rechaza la fila inválida con su motivo", async () => {
     const r = await importarExcel(MINI, "cotizador-mini.xlsx", actor);
-    expect(r).toMatchObject({ repetida: false, creadas: 69, actualizadas: 0, rechazadas: 1 });
-    expect(r.rechazos[0].motivo).toContain("se esperaba NEL-O-3-C");
+    expect(r).toMatchObject({ repetida: false, creadas: 70, actualizadas: 0, rechazadas: 0 });
+    // La fila inconsistente (como LLAG-O-2-A en el Excel real) se corrige y se informa (REQ-STK-1.6).
+    expect(r.correcciones).toEqual([{ fila: expect.any(Number), detalle: "Código NEL-O-3-B → NEL-O-3-C" }]);
     const { rows } = await app.query("SELECT version, vigente FROM lista_precio");
     expect(rows).toEqual([{ version: r.listaVersion, vigente: true }]);
     const recargos = await app.query("SELECT count(*)::int AS n FROM recargo_tipo");
@@ -33,7 +34,7 @@ describe("importación del Excel (REQ-STK-1.1–1.4, REQ-COT-1.1)", () => {
     const r = await importarExcel(MINI, "otro-nombre.xlsx", actor);
     expect(r.repetida).toBe(true);
     const { rows } = await app.query("SELECT (SELECT count(*) FROM articulo)::int AS a, (SELECT count(*) FROM lista_precio)::int AS l");
-    expect(rows[0]).toEqual({ a: 69, l: 1 });
+    expect(rows[0]).toEqual({ a: 70, l: 1 });
   });
 
   it("un archivo con precios distintos crea la versión nueva y deja la anterior intacta", async () => {
@@ -49,7 +50,7 @@ describe("importación del Excel (REQ-STK-1.1–1.4, REQ-COT-1.1)", () => {
   it("audita solo conteos y filas, sin costos ni precios", async () => {
     const { rows } = await app.query("SELECT despues FROM audit_log WHERE accion = 'importar excel' ORDER BY id");
     expect(rows).toHaveLength(2);
-    expect(Object.keys(rows[0].despues).sort()).toEqual(["actualizadas", "archivo", "creadas", "filasRechazadas", "hash", "listaVersion", "rechazadas", "sinCambios"]);
+    expect(Object.keys(rows[0].despues).sort()).toEqual(["actualizadas", "archivo", "creadas", "filasCorregidas", "filasRechazadas", "hash", "listaVersion", "rechazadas", "sinCambios"]);
   });
 
   it("un archivo que no es Excel o sin las hojas aborta sin cambios", async () => {

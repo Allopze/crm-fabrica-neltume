@@ -6,7 +6,7 @@ import { bd } from "@/db/conexion";
 import { articulo, importacion, listaPrecio, madera, modelo, precio, recargoTipo, tipoPuerta } from "@/db/esquema/catalogo";
 import { type Actor, registrarAuditoria } from "../auditoria";
 import { leerLibro } from "./leer-excel";
-import { type ArticuloImportado, MADERAS, mapearFilas } from "./mapear";
+import { type ArticuloImportado, type Correccion, MADERAS, mapearFilas } from "./mapear";
 
 export interface InformeImportacion {
   id: string;
@@ -17,6 +17,8 @@ export interface InformeImportacion {
   sinCambios: number;
   rechazadas: number;
   rechazos: { fila: number; motivo: string }[];
+  /** Filas inconsistentes que se corrigieron (código o atributos), informadas para revisar el Excel. */
+  correcciones: Correccion[];
 }
 
 const LOTE = 500;
@@ -28,11 +30,11 @@ export async function importarExcel(datos: ArrayBuffer, nombreArchivo: string, a
   const [previa] = await bd().select().from(importacion).where(eq(importacion.archivoHash, hash)).orderBy(desc(importacion.creadoEn)).limit(1);
   if (previa) {
     const [lista] = previa.listaId ? await bd().select({ v: listaPrecio.version }).from(listaPrecio).where(eq(listaPrecio.id, previa.listaId)) : [];
-    return { id: previa.id, repetida: true, listaVersion: lista?.v ?? null, creadas: 0, actualizadas: 0, sinCambios: previa.creadas + previa.actualizadas + previa.sinCambios, rechazadas: previa.rechazadas, rechazos: previa.rechazos as InformeImportacion["rechazos"] };
+    return { id: previa.id, repetida: true, listaVersion: lista?.v ?? null, creadas: 0, actualizadas: 0, sinCambios: previa.creadas + previa.actualizadas + previa.sinCambios, rechazadas: previa.rechazadas, rechazos: previa.rechazos as InformeImportacion["rechazos"], correcciones: previa.correcciones as Correccion[] };
   }
 
   const { categorias, filas } = await leerLibro(datos);
-  const { validos, rechazos } = mapearFilas(filas, categorias);
+  const { validos, rechazos, correcciones } = mapearFilas(filas, categorias);
 
   return bd().transaction(async (tx) => {
     // Referencias: modelos de Categorias, 4 maderas y tipos de puerta.
@@ -92,14 +94,14 @@ export async function importarExcel(datos: ArrayBuffer, nombreArchivo: string, a
 
     const informe = { creadas: nuevos.length, actualizadas, sinCambios: validos.length - nuevos.length - actualizadas, rechazadas: rechazos.length };
     const [imp] = await tx.insert(importacion)
-      .values({ archivoHash: hash, nombreArchivo, listaId, ...informe, rechazos, creadoPor: actor.id })
+      .values({ archivoHash: hash, nombreArchivo, listaId, ...informe, rechazos, correcciones, creadoPor: actor.id })
       .returning({ id: importacion.id });
     // Auditoría: solo conteos, hash y filas rechazadas; nunca costos ni precios (DATA-MODEL §5).
     await registrarAuditoria(tx, {
       actor, accion: "importar excel", recurso: "importacion", recursoId: imp.id, resultado: "ok", origen: "importacion",
-      despues: { archivo: nombreArchivo, hash, listaVersion, ...informe, filasRechazadas: rechazos.map((r) => r.fila) },
+      despues: { archivo: nombreArchivo, hash, listaVersion, ...informe, filasRechazadas: rechazos.map((r) => r.fila), filasCorregidas: correcciones.map((c) => c.fila) },
     });
-    return { id: imp.id, repetida: false, listaVersion, ...informe, rechazos };
+    return { id: imp.id, repetida: false, listaVersion, ...informe, rechazos, correcciones };
   });
 }
 

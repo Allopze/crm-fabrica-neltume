@@ -64,7 +64,7 @@ describe("listas de precio (REQ-COT-1.1, 1.3–1.5)", () => {
     const v1 = await llamar(rutaVersion.GET, "GET", "/x?q=NEL-R-4-B", admin, { version: "1" });
     expect(v1.cuerpo.datos[0].precioNeto).toBe(antes.cuerpo.datos[0].precioNeto);
     const total = await app.query("SELECT (SELECT count(*) FROM precio p JOIN lista_precio l ON l.id = p.lista_id WHERE l.vigente)::int AS n");
-    expect(total.rows[0].n).toBe(69);
+    expect(total.rows[0].n).toBe(70);
   });
 
   it("sin precios.editar → 403; códigos inexistentes → 400; sin cambios → 400", async () => {

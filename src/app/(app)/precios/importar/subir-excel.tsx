@@ -9,6 +9,7 @@ import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 interface Informe {
   repetida: boolean; listaVersion: number | null; creadas: number; actualizadas: number; sinCambios: number; rechazadas: number;
   rechazos: { fila: number; motivo: string }[];
+  correcciones: { fila: number; detalle: string }[];
 }
 
 export function SubirExcel({ csrf }: { csrf: string }) {
@@ -75,6 +76,22 @@ export function SubirExcel({ csrf }: { csrf: string }) {
               </div>
             ))}
           </dl>
+          {informe.correcciones.length > 0 && (
+            <div className="rounded-lg border border-linea bg-lamina">
+              <p className="flex items-center justify-between border-b border-linea px-4 py-2.5 text-sm font-medium">
+                Filas corregidas · {informe.correcciones.length} <Etiqueta tono="ambar">revisar en el Excel</Etiqueta>
+              </p>
+              <p className="px-4 pt-2.5 text-xs text-tinta-tenue">El código no coincidía con los atributos y solo una corrección era consistente con el resto del catálogo.</p>
+              <Tabla>
+                <thead><tr><Th>Fila</Th><Th>Corrección</Th></tr></thead>
+                <tbody>
+                  {informe.correcciones.map((c) => (
+                    <Tr key={c.fila}><Td className="font-mono">{c.fila}</Td><Td className="font-mono text-xs text-tinta-suave">{c.detalle}</Td></Tr>
+                  ))}
+                </tbody>
+              </Tabla>
+            </div>
+          )}
           {informe.rechazos.length > 0 && (
             <div className="rounded-lg border border-linea bg-lamina">
               <p className="flex items-center justify-between border-b border-linea px-4 py-2.5 text-sm font-medium">

@@ -1,0 +1,1 @@
+ALTER TABLE "importacion" ADD COLUMN "correcciones" jsonb DEFAULT '[]'::jsonb NOT NULL;

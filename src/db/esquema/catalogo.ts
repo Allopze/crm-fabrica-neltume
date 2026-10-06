@@ -127,6 +127,7 @@ export const importacion = pgTable("importacion", {
   sinCambios: integer().notNull(),
   rechazadas: integer().notNull(),
   rechazos: jsonb().notNull(), // [{ fila, motivo }] — sin valores de costo ni precio
+  correcciones: jsonb().notNull().default([]), // [{ fila, detalle }] corregidas por dos hipótesis (REQ-STK-1.6)
   creadoPor: uuid().references(() => usuario.id),
   creadoEn: ahora(),
 }, (t) => [index("importacion_hash_idx").on(t.archivoHash)]);

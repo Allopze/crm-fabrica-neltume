@@ -70,7 +70,7 @@ erDiagram
 | `lista_precio` | `version` (serial), `origen` (`excel`/`edicion`), `archivo_hash`, `vigente_desde`, `creado_por`, `vigente` bool | Solo una `vigente`; las antiguas son inmutables |
 | `precio` | `lista_id`, `articulo_id`, `costo_produccion`, `costo_materiales`, `costo_insumos`, `costos_generales`, `costo_total`, `margen`, `precio_neto` | PK (`lista_id`, `articulo_id`); costos visibles solo con `costos.ver`; **solo inserción** (trigger) |
 | `recargo_tipo` | `lista_id`, `tipo_puerta_id` (null = accesorios), `porcentaje` | Sembrado en 0 % (DESIGN C2) |
-| `importacion` | `archivo_hash`, `nombre_archivo`, `lista_id` null, `creadas`, `actualizadas`, `sin_cambios`, `rechazadas`, `rechazos` jsonb `[{fila, motivo}]` | Sin valores de costo ni precio; `GET /importaciones/:id` |
+| `importacion` | `archivo_hash`, `nombre_archivo`, `lista_id` null, `creadas`, `actualizadas`, `sin_cambios`, `rechazadas`, `rechazos` jsonb `[{fila, motivo}]`, `correcciones` jsonb `[{fila, detalle}]` | Sin valores de costo ni precio; `GET /importaciones/:id` |
 
 Una edición en pantalla copia la versión vigente, aplica el cambio y crea `version + 1` (REQ-COT-1.1).
 
@@ -133,13 +133,13 @@ Fuente: `datos/Cotizador Puertas Neltume.Co-rev-4F.xlsx` (fuente de verdad desde
 |---|---|---|---|
 | 1 | `Categorias` C:D (modelos y código) | `modelo` | 38 filas; las 5 últimas son accesorios |
 | 2 | `Categorias` G (maderas), R:S (anchos → código), U:V (altos y largos → letra) | `madera`, `rango_ancho`, `alto` | Normaliza "RAULÍ" y "RAULI" (DESIGN C3) |
-| 3 | `Precio` fila 4 en adelante: A código, B modelo, C tipo, D ancho, E espesor, F alto, G madera, H pulgadas | `tipo_puerta`, `articulo` | El código recompuesto `MOD-MADERA-ANCHO-ALTO` debe coincidir con A; si no, la fila se rechaza con su motivo |
+| 3 | `Precio` fila 4 en adelante: A código, B modelo, C tipo, D ancho, E espesor, F alto, G madera, H pulgadas | `tipo_puerta`, `articulo` | El código recompuesto `MOD-MADERA-ANCHO-ALTO` debe coincidir con A. Si no coincide, se corrige cuando exactamente una hipótesis es consistente: A) el código está mal (el esperado no lo usa otra fila) o B) los atributos están mal (los del código lo reconstruyen y nadie más lo usa); si no, se rechaza como ambigua (REQ-STK-1.6). En el Excel real: 29 correcciones (LLAG-O-2-A → LLAG-O-2-C y 28 marcos de raulí con largo 2) |
 | 4 | `Precio` I–L costos, M costo total, N margen, O precio neto (P con IVA se ignora y se recalcula) | `lista_precio` + `precio` | Números positivos; O ≈ M × (1 + N) con tolerancia de $1 o se reporta |
 | 5 | — | `recargo_tipo` (0 %) | Solo en la primera carga |
 
 - La importación es idempotente: si el hash del archivo ya se importó, no hace nada (REQ-STK-1.3). Si cambia el archivo, crea una nueva `lista_precio` y hace upsert de artículos por código.
 - Corre en una transacción. Un fallo de fila no detiene las demás (REQ-STK-1.2), pero un fallo de estructura (falta una hoja o columna) aborta todo.
-- Informe: creadas, actualizadas y rechazadas, con fila y motivo, devuelto al usuario. En `audit_log` (`origen=importacion`) se guardan solo conteos, hash del archivo y números de fila rechazados, nunca valores de costo o precio.
+- Informe: creadas, actualizadas, corregidas y rechazadas, con fila y detalle, devuelto al usuario. En `audit_log` (`origen=importacion`) se guardan solo conteos, hash del archivo y números de fila rechazados y corregidos, nunca valores de costo o precio.
 - Los fixtures de test usan un Excel reducido y anónimo (`e2e/fixtures/cotizador-mini.xlsx`, unas 50 filas con costos ficticios) con la misma estructura.
 
 ## 6. Datos semilla

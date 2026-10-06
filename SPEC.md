@@ -86,6 +86,7 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-STK-1.3: WHEN se vuelve a cargar el mismo archivo THE SYSTEM SHALL no duplicar artículos ni crear una versión nueva sin cambios.
 - REQ-STK-1.4: THE SYSTEM SHALL identificar cada artículo por modelo, madera, rango de ancho y alto, y conservar los accesorios (marco, piezas T, endolado, guardapolvo, pilastra) como artículos propios.
 - REQ-STK-1.5: IF un usuario sin permiso de catálogo intenta importar o editar artículos THEN THE SYSTEM SHALL denegar la acción y registrar el intento.
+- REQ-STK-1.6: IF el código de una fila no coincide con sus atributos THEN THE SYSTEM SHALL corregirla solo cuando exactamente una hipótesis sea consistente con el resto del catálogo (el código está mal, o los atributos están mal), informar la corrección y rechazar la fila si la discrepancia es ambigua.
 
 **H2 Consulta de stock (P1).** Como usuario, quiero ver cuántas puertas hay y cuántas están comprometidas.
 - REQ-STK-2.1: WHEN un usuario consulta un artículo THE SYSTEM SHALL mostrar existencia, reservado y disponible, calculados como suma de movimientos.

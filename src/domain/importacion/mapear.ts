@@ -33,7 +33,11 @@ export interface ArticuloImportado {
   precioNeto: number;
 }
 
-export type ResultadoFila = { ok: true; articulo: ArticuloImportado } | { ok: false; fila: number; motivo: string };
+export type ResultadoFila =
+  | { ok: true; articulo: ArticuloImportado }
+  | { ok: false; fila: number; motivo: string; discrepancia?: { codigoHoja: string; conCodigoEsperado: ArticuloImportado } };
+
+export interface Correccion { fila: number; detalle: string }
 
 export const MADERAS: Record<string, string> = { "PINO OREGON": "O", LENGA: "L", MARA: "M", RAULI: "R" };
 const MARCOS = new Set(["MARCO", "PIEZAS T"]);
@@ -104,38 +108,106 @@ export function mapearFila(f: FilaPrecio, cat: Categorias): ResultadoFila {
   if (!anchoCodigo) return error(`Ancho «${String(f.ancho ?? "")}» no está en la hoja Categorias`);
   if (!altoCodigo) return error(`Alto o largo ${texto(altoM)} no está en la hoja Categorias`);
 
-  const esperado = `${modeloCodigo}-${maderaCodigo}-${anchoCodigo}-${altoCodigo}`.toUpperCase();
-  if (esperado !== codigo) return error(`El código ${codigo} no coincide con modelo, madera y medida (se esperaba ${esperado})`);
-
   const costoTotal = numero(f.costoTotal);
   const margen = numero(f.margen);
   if (costoTotal !== null && margen !== null && Math.abs(costoTotal * (1 + margen) - precioNeto) > 1) {
     return error("El precio neto no coincide con costo total × (1 + margen)");
   }
 
-  return {
-    ok: true,
-    articulo: {
-      fila: f.fila, codigo, modelo, modeloCodigo, familia, madera, anchoCodigo: anchoCodigo.toUpperCase(), anchoEtiqueta,
-      altoCodigo, altoM, espesor, pulgadas: numero(f.pulgadas), tipo,
-      costos: { produccion: numero(f.costoProduccion), materiales: numero(f.costoMateriales), insumos: numero(f.costoInsumos), generales: numero(f.costosGenerales), total: costoTotal },
-      margen, precioNeto,
-    },
+  const esperado = `${modeloCodigo}-${maderaCodigo}-${anchoCodigo}-${altoCodigo}`.toUpperCase();
+  const articulo: ArticuloImportado = {
+    fila: f.fila, codigo: esperado, modelo, modeloCodigo, familia, madera, anchoCodigo: anchoCodigo.toUpperCase(), anchoEtiqueta,
+    altoCodigo, altoM, espesor, pulgadas: numero(f.pulgadas), tipo,
+    costos: { produccion: numero(f.costoProduccion), materiales: numero(f.costoMateriales), insumos: numero(f.costoInsumos), generales: numero(f.costosGenerales), total: costoTotal },
+    margen, precioNeto,
   };
+  if (esperado !== codigo) {
+    return { ok: false, fila: f.fila, motivo: `El código ${codigo} no coincide con modelo, madera y medida (se esperaba ${esperado})`, discrepancia: { codigoHoja: codigo, conCodigoEsperado: articulo } };
+  }
+  return { ok: true, articulo };
 }
 
-/** Mapea todas las filas y rechaza códigos repetidos (se conserva la primera aparición). */
+/**
+ * Hipótesis B: los atributos están mal y el código bien. Reconstruye modelo, madera, ancho y alto desde el código de
+ * la hoja y vuelve a mapear la fila; sirve solo si el resultado es exactamente ese código.
+ */
+function conAtributosDelCodigo(f: FilaPrecio, codigoHoja: string, cat: Categorias): ArticuloImportado | null {
+  const partes = codigoHoja.split("-");
+  if (partes.length !== 4) return null;
+  const [mod, mad, ancho, alto] = partes;
+  const modelo = [...cat.modelos].find(([, c]) => c.toUpperCase() === mod)?.[0];
+  const madera = Object.entries(MADERAS).find(([, c]) => c === mad)?.[0];
+  if (!modelo || !madera) return null;
+  const corregida: FilaPrecio = { ...f, modelo, madera };
+  if (MARCOS.has(modelo)) {
+    const pulg = /^2X(\d+(?:\.\d+)?)$/.exec(ancho)?.[1];
+    const largo = [...cat.altos].find(([k, l]) => l === alto && /^\d+(\.\d+)?$/.test(k))?.[0];
+    if (!pulg || !largo) return null;
+    Object.assign(corregida, { ancho: Number(pulg), alto: Number(largo) });
+  } else if (MOLDURAS.has(modelo)) {
+    const clave = [...cat.altos].find(([k, l]) => l === alto && k.startsWith(`${ancho}X`))?.[0];
+    if (!clave) return null;
+    Object.assign(corregida, { alto: Number(clave.slice(ancho.length + 1)) });
+  } else {
+    const etiqueta = [...cat.anchos].find(([, c]) => c.toUpperCase() === ancho)?.[0];
+    const altoM = [...cat.altos].find(([k, l]) => l === alto && /^\d+(\.\d+)?$/.test(k))?.[0];
+    if (!etiqueta || !altoM) return null;
+    Object.assign(corregida, { ancho: etiqueta, alto: Number(altoM) });
+  }
+  const r = mapearFila(corregida, cat);
+  return r.ok && r.articulo.codigo === codigoHoja ? r.articulo : null;
+}
+
+const detalleB = (antes: ArticuloImportado, despues: ArticuloImportado) => {
+  const cambios = [
+    antes.modelo !== despues.modelo && `modelo ${antes.modelo} → ${despues.modelo}`,
+    antes.madera !== despues.madera && `madera ${antes.madera} → ${despues.madera}`,
+    antes.anchoEtiqueta !== despues.anchoEtiqueta && `ancho ${antes.anchoEtiqueta} → ${despues.anchoEtiqueta}`,
+    antes.altoM !== despues.altoM && `${antes.familia === "accesorio" ? "largo" : "alto"} ${texto(antes.altoM)} → ${texto(despues.altoM)} m`,
+  ].filter(Boolean);
+  return `${despues.codigo}: ${cambios.join(", ")}`;
+};
+
+/**
+ * Mapea todas las filas y rechaza códigos repetidos (se conserva la primera aparición). Una fila cuyo código no
+ * coincide con sus atributos se corrige si exactamente una hipótesis es consistente (REQ-STK-1.6):
+ *  A) el código está mal: el código esperado no lo usa ninguna otra fila;
+ *  B) los atributos están mal: los del código reconstruyen ese mismo código y nadie más lo usa.
+ * Si ambas o ninguna, la fila se rechaza como discrepancia ambigua.
+ */
 export function mapearFilas(filas: FilaPrecio[], cat: Categorias) {
+  const resultados = filas.map((f) => ({ f, r: mapearFila(f, cat) }));
+  const usados = new Map<string, number>(); // código → fila, de las filas sin discrepancia
+  for (const { f, r } of resultados) if (r.ok && !usados.has(r.articulo.codigo)) usados.set(r.articulo.codigo, f.fila);
+  const codigosHoja = new Map<string, number>();
+  for (const { f, r } of resultados) if (!r.ok && r.discrepancia) codigosHoja.set(r.discrepancia.codigoHoja, f.fila);
+
   const validos: ArticuloImportado[] = [];
   const rechazos: { fila: number; motivo: string }[] = [];
+  const correcciones: Correccion[] = [];
   const vistos = new Map<string, number>();
-  for (const f of filas) {
-    const r = mapearFila(f, cat);
-    if (!r.ok) { rechazos.push({ fila: r.fila, motivo: r.motivo }); continue; }
-    const previa = vistos.get(r.articulo.codigo);
-    if (previa) { rechazos.push({ fila: f.fila, motivo: `Código ${r.articulo.codigo} repetido (ya está en la fila ${previa})` }); continue; }
-    vistos.set(r.articulo.codigo, f.fila);
-    validos.push(r.articulo);
+  const aceptar = (a: ArticuloImportado, fila: number) => {
+    const previa = vistos.get(a.codigo);
+    if (previa) { rechazos.push({ fila, motivo: `Código ${a.codigo} repetido (ya está en la fila ${previa})` }); return false; }
+    vistos.set(a.codigo, fila);
+    validos.push(a);
+    return true;
+  };
+  for (const { f, r } of resultados) {
+    if (r.ok) { aceptar(r.articulo, f.fila); continue; }
+    if (!r.discrepancia) { rechazos.push({ fila: r.fila, motivo: r.motivo }); continue; }
+    const { codigoHoja, conCodigoEsperado } = r.discrepancia;
+    const esperado = conCodigoEsperado.codigo;
+    const otroUsa = (c: string) => (usados.has(c) && usados.get(c) !== f.fila) || (codigosHoja.has(c) && codigosHoja.get(c) !== f.fila);
+    const a = !otroUsa(esperado);
+    const b = otroUsa(codigoHoja) ? null : conAtributosDelCodigo(f, codigoHoja, cat);
+    if (a && !b) {
+      if (aceptar(conCodigoEsperado, f.fila)) correcciones.push({ fila: f.fila, detalle: `Código ${codigoHoja} → ${esperado}` });
+    } else if (b && !a) {
+      if (aceptar(b, f.fila)) correcciones.push({ fila: f.fila, detalle: detalleB(conCodigoEsperado, b) });
+    } else {
+      rechazos.push({ fila: f.fila, motivo: `Discrepancia ambigua entre el código ${codigoHoja} y sus atributos (se esperaba ${esperado})` });
+    }
   }
-  return { validos, rechazos };
+  return { validos, rechazos, correcciones };
 }
