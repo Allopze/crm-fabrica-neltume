@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/formato";
-import { maderas, type MaderaId } from "@/mock/catalogo";
+import { maderas, type MaderaId } from "./maderas";
 
 type Variante = "primario" | "secundario" | "fantasma" | "peligro";
 

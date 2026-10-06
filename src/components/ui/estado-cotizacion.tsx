@@ -1,5 +1,6 @@
 import { Etiqueta } from "@/components/ui/base";
-import type { EstadoCotizacion } from "@/mock/comercial";
+
+export type EstadoCotizacion = "interpretando" | "borrador" | "ia_fallida" | "aprobada" | "aceptada" | "vencida";
 
 const mapa: Record<EstadoCotizacion, { texto: string; tono: "neutro" | "musgo" | "ambar" | "pizarra" | "rauli" | "error" }> = {
   interpretando: { texto: "Interpretando", tono: "pizarra" },
