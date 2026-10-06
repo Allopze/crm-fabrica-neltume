@@ -18,7 +18,7 @@ test("crea 3 materias primas con su unidad", async ({ page }) => {
     await form.getByLabel("Unidad").selectOption(unidad);
     if (minimo) await form.getByLabel("Mínimo").fill(minimo);
     await form.getByRole("button", { name: "Crear" }).click();
-    await expect(page.getByRole("cell", { name: nombre })).toBeVisible();
+    await expect(page.getByRole("cell", { name: nombre, exact: true })).toBeVisible();
   }
 });
 

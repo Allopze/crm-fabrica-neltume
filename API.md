@@ -63,8 +63,9 @@ Base `/api/v1`, JSON UTF-8, solo detrás de Cloudflare Access. Todos los handler
 ### Materias primas y producción (REQ-MP)
 | Método y ruta | Permiso | Idem | Notas |
 |---|---|---|---|
-| GET `/materias-primas` · POST · PATCH `/:id` | `stock.ver` / `mp.editar` | | |
-| GET `/materias-primas/alertas` | `stock.ver` | | P2 |
+| GET `/materias-primas` · POST · PATCH `/:id` (`activo`) | `stock.ver` / `mp.editar` | | |
+| PATCH `/materias-primas/:id/minimo` (`stockMinimo`) | `config.editar` | | Mínimo de reposición (REQ-MP-6.2) |
+| GET `/materias-primas/alertas` | `stock.ver` | | Bajo su mínimo, con `faltan`; las más urgentes (proporcionalmente) primero (REQ-MP-6.1) |
 | POST `/recepciones` (`materia_prima, cantidad, referencia`) | `mp.mover` | ✔ | |
 | GET `/bom?modelo` · PUT `/bom/:modelo` (`lineas[], origen`) | `stock.ver` / `mp.editar` | | Crea una nueva vigencia |
 | GET/POST `/ordenes` · GET `/ordenes/:id` | `produccion.gestionar` | ✔ (POST) | |

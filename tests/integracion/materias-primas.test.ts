@@ -3,7 +3,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { poolApp, poolOwner } from "./bd";
 import { llamar, tokenDeCookie } from "./http";
 import * as rutaMp from "@/app/api/v1/materias-primas/route";
+import * as rutaMinimo from "@/app/api/v1/materias-primas/[id]/minimo/route";
 import * as rutaMpId from "@/app/api/v1/materias-primas/[id]/route";
+import * as rutaAlertasMp from "@/app/api/v1/materias-primas/alertas/route";
 import * as rutaAjuste from "@/app/api/v1/movimientos/ajustes/route";
 import * as rutaRecepcion from "@/app/api/v1/recepciones/route";
 import * as rutaSesion from "@/app/api/v1/sesion/route";
@@ -75,8 +77,17 @@ describe("materias primas y recepciones (REQ-MP-1, 2, 5)", () => {
     expect(den.rows).toHaveLength(1);
   });
 
-  it("mínimo editable con mp.editar; sin permiso → 403", async () => {
-    expect((await llamar(rutaMpId.PATCH, "PATCH", "/x", { ...admin, cuerpo: { stockMinimo: 150 } }, { id: tabla })).cuerpo.stockMinimo).toBe(150);
+  it("mínimo con config.editar y alertas de reposición; sin permiso → 403 auditado (REQ-MP-6.1, 6.2)", async () => {
+    const r = await llamar(rutaMinimo.PATCH, "PATCH", "/x", { ...admin, cuerpo: { stockMinimo: 150 } }, { id: tabla });
+    expect(r.cuerpo.stockMinimo).toBe(150);
+    const a = (await llamar(rutaAlertasMp.GET, "GET", "/x", lector)).cuerpo.datos;
+    expect(a).toEqual([expect.objectContaining({ id: tabla, existencia: 120, minimo: 150, faltan: 30 })]);
+    // El PATCH general ya no cambia el mínimo: es configuración.
+    expect((await llamar(rutaMpId.PATCH, "PATCH", "/x", { ...admin, cuerpo: { stockMinimo: 1 } }, { id: tabla })).estado).toBe(400);
+    const d = await llamar(rutaMinimo.PATCH, "PATCH", `/api/v1/materias-primas/${tabla}/minimo`, { ...lector, cuerpo: { stockMinimo: 0 } }, { id: tabla });
+    expect(d.cuerpo.error.codigo).toBe("SIN_PERMISO");
+    const { rows } = await app.query("SELECT 1 FROM audit_log WHERE resultado = 'denegado' AND accion LIKE 'PATCH %/minimo'");
+    expect(rows).toHaveLength(1);
     expect((await llamar(rutaMp.POST, "POST", "/x", { ...lector, cuerpo: { nombre: "Barniz", unidadCodigo: "lt" } })).estado).toBe(403);
     expect((await llamar(rutaRecepcion.POST, "POST", "/x", { ...lector, cabeceras: idem(), cuerpo: { materiaPrimaId: tabla, cantidad: 1 } })).estado).toBe(403);
   });
