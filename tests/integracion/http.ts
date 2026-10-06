@@ -15,8 +15,9 @@ export async function llamar(ruta: Ruta, metodo: string, url: string, p: Peticio
     method: metodo, headers: cabeceras, body: p.cuerpo === undefined ? undefined : JSON.stringify(p.cuerpo),
   });
   const res = await ruta(req, { params: Promise.resolve(params as never) });
-  const texto = await res.text();
-  return { estado: res.status, cuerpo: texto ? JSON.parse(texto) : null, res };
+  const bytes = Buffer.from(await res.arrayBuffer());
+  const json = res.headers.get("content-type")?.includes("json") || !res.headers.get("content-type");
+  return { estado: res.status, cuerpo: json && bytes.length ? JSON.parse(bytes.toString()) : null, bytes, res };
 }
 
 export function tokenDeCookie(res: Response): string | undefined {
