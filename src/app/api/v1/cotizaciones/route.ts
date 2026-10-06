@@ -10,5 +10,5 @@ const Filtro = z.object({
 });
 
 // GET /api/v1/cotizaciones — lista paginada por número (REQ-COT-10.1)
-export const GET = conPermiso("cotizaciones.crear", async ({ req }) =>
-  NextResponse.json(await listarCotizaciones(bd(), Filtro.parse(Object.fromEntries(req.nextUrl.searchParams)))));
+export const GET = conPermiso("cotizaciones.crear", async ({ req, sesion }) =>
+  NextResponse.json(await listarCotizaciones(bd(), Filtro.parse(Object.fromEntries(req.nextUrl.searchParams)), sesion.permisos.has("clientes.ver"))));

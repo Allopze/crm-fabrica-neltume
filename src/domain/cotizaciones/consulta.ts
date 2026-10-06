@@ -35,12 +35,16 @@ export async function obtenerCotizacion(tx: Tx, id: string, verCliente: boolean)
   };
 }
 
-export async function listarCotizaciones(tx: Tx, f: { estado?: string; q?: string; antesDe?: number; limite?: number }) {
+/** Sin `clientes.ver` el nombre del cliente sale como "(oculto)" y no se busca por él (REQ-NFR-5, SECURITY §datos personales). */
+export async function listarCotizaciones(tx: Tx, f: { estado?: string; q?: string; antesDe?: number; limite?: number }, verCliente: boolean) {
   const limite = Math.min(Math.max(f.limite ?? 50, 1), 200);
   const condiciones = [];
   if (f.estado === "vencida") condiciones.push(and(eq(cotizacion.estado, "aprobada"), lt(cotizacion.vigenciaHasta, hoySantiago())));
   else if (f.estado) condiciones.push(eq(cotizacion.estado, f.estado));
-  if (f.q) condiciones.push(or(ilike(cliente.nombre, `%${f.q}%`), sql`${cotizacion.numero}::text = ${f.q.replace(/\D/g, "") || "-1"}`));
+  if (f.q) {
+    const porNumero = sql`${cotizacion.numero}::text = ${f.q.replace(/\D/g, "") || "-1"}`;
+    condiciones.push(verCliente ? or(ilike(cliente.nombre, `%${f.q}%`), porNumero) : porNumero);
+  }
   if (f.antesDe) condiciones.push(lt(cotizacion.numero, f.antesDe));
   const filas = await tx
     .select({ id: cotizacion.id, numero: cotizacion.numero, estado: cotizacion.estado, origen: cotizacion.origen, creadoEn: cotizacion.creadoEn,
@@ -50,6 +54,6 @@ export async function listarCotizaciones(tx: Tx, f: { estado?: string; q?: strin
     .where(condiciones.length ? and(...condiciones) : undefined)
     .orderBy(desc(cotizacion.numero)).limit(limite + 1);
   const hoy = hoySantiago();
-  const datos = filas.slice(0, limite).map((x) => ({ ...x, vencida: x.estado === "aprobada" && x.vigenciaHasta !== null && x.vigenciaHasta < hoy }));
+  const datos = filas.slice(0, limite).map((x) => ({ ...x, cliente: x.cliente && !verCliente ? "(oculto)" : x.cliente, vencida: x.estado === "aprobada" && x.vigenciaHasta !== null && x.vigenciaHasta < hoy }));
   return { datos, siguiente: filas.length > limite ? datos.at(-1)!.numero : null };
 }
