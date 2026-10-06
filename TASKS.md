@@ -78,7 +78,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [ ] T1.31 (60) Cotización manual (API y UI) con el mismo cálculo · REQ-COT-5.x · U igualdad IA/manual · T1.30
 - [x] T1.32 (60) Aprobar: bloqueo si hay pendientes, congelado, vigencia y aprobador · REQ-COT-4.1, 4.4, 4.5, 6.1, 6.2, 6.5 · I `aprobar` · T1.30, T1.9
 - [ ] T1.33 (90) PDF de cotización (logo, totales, vigencia, "flete aparte") · ADR-0004, REQ-COT-4.2, 4.3, 4.5 · U `pdf.contenido`, I `pdf` · T1.32
-- [ ] T1.34 (45) Banner de lista desactualizada y "Recalcular" · REQ-COT-6.3 · E `10-precios-congelados` · T1.30, T1.10
+- [x] T1.34 (45) Banner de lista desactualizada y "Recalcular" · REQ-COT-6.3 · E `10-precios-congelados` · T1.30, T1.10
 
 ### Pedidos y reservas
 - [ ] T1.35 (45) Migración `nota_pedido` y `pedido_item` · DATA-MODEL §2 · I `migraciones` · T1.21

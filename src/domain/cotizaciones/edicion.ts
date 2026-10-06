@@ -92,3 +92,22 @@ export async function actualizarCabecera(tx: Tx, id: string, d: { clienteId?: st
   await tx.update(cotizacion).set(d).where(eq(cotizacion.id, id));
   await registrarAuditoria(tx, { actor, accion: "editar cabecera", recurso: "cotizacion", recursoId: id, antes: { clienteId: c.clienteId, notas: c.notas }, despues: d, resultado: "ok", origen });
 }
+
+/** Pasa el borrador a la lista vigente y recalcula sus precios (REQ-COT-6.3). Los precios fijados a mano se conservan. */
+export async function recalcularConListaVigente(tx: Tx, id: string, version: number, actor: Actor & { id: string }, origen: Origen) {
+  const c = await tomarBorrador(tx, id, version);
+  const vigente = await listaVigenteId(tx);
+  const items = await tx.select().from(cotizacionItem).where(eq(cotizacionItem.cotizacionId, id));
+  for (const i of items) {
+    if (i.articuloId && !i.fijadoPor) {
+      const p = await precioDeArticulo(tx, i.articuloId, vigente);
+      await tx.update(cotizacionItem).set({ precioNetoLista: p.precioNetoLista, recargoPct: p.recargoPct, precioUnitario: p.precioUnitario, totalLinea: p.precioUnitario * i.cantidad }).where(eq(cotizacionItem.id, i.id));
+    } else if (i.estadoItem === "a_pedido" && i.referenciaCodigo) {
+      const ref = await articuloConDescripcion(tx, i.referenciaCodigo);
+      await tx.update(cotizacionItem).set({ precioReferencia: (await precioDeArticulo(tx, ref.id, vigente)).precioUnitario }).where(eq(cotizacionItem.id, i.id));
+    }
+  }
+  await tx.update(cotizacion).set({ listaId: vigente }).where(eq(cotizacion.id, id));
+  const totales = await recalcularTotales(tx, id);
+  await registrarAuditoria(tx, { actor, accion: "recalcular", recurso: "cotizacion", recursoId: id, antes: { listaId: c.listaId }, despues: { listaId: vigente, ...totales }, resultado: "ok", origen });
+}
