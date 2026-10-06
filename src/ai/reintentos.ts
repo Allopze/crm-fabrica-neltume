@@ -3,11 +3,17 @@ import { ErrorIA, type InterpreteIA, type CatalogoResumido, type ResultadoInterp
 
 export interface Intento { numero: number; error?: ErrorIA; resultado?: ResultadoInterpretacion; latenciaMs: number }
 
+/** LLM_MAX_REINTENTOS vacío o inválido = valor por defecto (2); 0 desactiva los reintentos. */
+export function reintentosDesdeEntorno(valor = process.env.LLM_MAX_REINTENTOS): number {
+  const n = valor?.trim() ? Number(valor) : NaN;
+  return Number.isInteger(n) && n >= 0 ? n : 2;
+}
+
 export async function interpretarConReintentos(
   ia: InterpreteIA, texto: string, catalogo: CatalogoResumido,
   opciones: { maxReintentos?: number; esperasMs?: number[]; alIntentar?: (i: Intento) => Promise<void> | void } = {},
 ): Promise<ResultadoInterpretacion> {
-  const max = opciones.maxReintentos ?? Number(process.env.LLM_MAX_REINTENTOS ?? 2);
+  const max = opciones.maxReintentos ?? reintentosDesdeEntorno();
   const esperas = opciones.esperasMs ?? [1_000, 3_000];
   for (let n = 0; ; n++) {
     const inicio = Date.now();
