@@ -6,7 +6,7 @@
 El plan ponía Cloudflare Access delante de todo el hostname, como defensa en profundidad: solo los correos autorizados llegaban al login de la app. El usuario decidió no usar Access: `cloudflared` se usa solo para exponer la webapp a internet.
 
 ## Decisión
-- La webapp se publica en internet únicamente por Cloudflare Tunnel (`cloudflared` → `proxy` → `app`). Se mantiene la regla 10 de AGENTS: el host no abre puertos y la BD y los paneles nunca se publican.
+- La webapp se publica en internet únicamente por Cloudflare Tunnel (`cloudflared` → `app`, sin proxy intermedio: ADR-0011). Se mantiene la regla 10 de AGENTS: el host no abre puertos y la BD y los paneles nunca se publican.
 - No hay Cloudflare Access: el **login propio es la única barrera de entrada**.
 - Superficie sin sesión: la página de login, `POST /api/v1/sesion`, `GET /api/v1/salud` (solo `ok`/`degradado`) y los estáticos. Todo lo demás exige sesión y permiso (`conPermiso`, denegado por defecto), y sin sesión responde 401.
 - Defensas que ya existen y pasan a ser las principales (SECURITY T7):

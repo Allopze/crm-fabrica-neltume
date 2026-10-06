@@ -28,6 +28,13 @@ describe("docker-compose.yml de producción (SECURITY §6, T8)", () => {
     }
   });
 
+  it("el túnel llega solo a la app, sin proxy intermedio (ADR-0011)", () => {
+    expect(compose.services.proxy).toBeUndefined();
+    expect(compose.services.tunnel.networks).toEqual(["borde", "backend"]);
+    const enBackend = Object.entries(compose.services).filter(([, s]) => s.networks?.includes("backend")).map(([n]) => n).sort();
+    expect(enBackend).toEqual(["app", "tunnel"]);
+  });
+
   it(".env.example tiene nombres sin valores", () => {
     const lineas = readFileSync(".env.example", "utf8").split("\n").filter((l) => /^[A-Z_]+=/.test(l));
     expect(lineas.length).toBeGreaterThan(5);

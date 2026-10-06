@@ -21,6 +21,7 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | 403 | `SIN_PERMISO`, `CSRF` |
 | 404 | `NO_ENCONTRADO` (también cuando no hay permiso de lectura sobre el recurso, contra IDOR) |
 | 409 | `VERSION_OBSOLETA`, `ITEMS_POR_CONFIRMAR`, `NO_APROBADA`, `VENCIDA`, `YA_TIENE_PEDIDO`, `ORDEN_CERRADA`, `STOCK_INSUFICIENTE`, `INSUMOS_INSUFICIENTES`, `SIN_BOM` |
+| 413 | `CUERPO_GRANDE`: más de 1 MB, o 6 MB en `/importaciones` y `/pedidos/nota-tienda*`; se rechaza sin leer el cuerpo, o al pasar el límite si llega por trozos (ADR-0011) |
 | 422 | `IDEMPOTENCIA_CONFLICTO`, `ULTIMO_ADMIN` |
 | 429 | `LIMITE_IA`, `LIMITE_LOGIN` |
 | 503 | `IA_NO_DISPONIBLE` (solo informativo; el borrador queda `ia_fallida`) |

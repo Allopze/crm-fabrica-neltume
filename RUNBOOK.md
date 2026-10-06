@@ -33,7 +33,7 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 ## 3. Cloudflare Tunnel (sin Access, ADR-0010)
 
 1. Cloudflare Zero Trust → Networks → Tunnels → crear un túnel de tipo *cloudflared*. Copia el token a `TUNNEL_TOKEN` en `.env`.
-2. En el túnel, agrega un *Public hostname*. Por ejemplo, `fabrica.<dominio>` → servicio `http://proxy:80`. Es la única ruta de entrada.
+2. En el túnel, agrega un *Public hostname*. Por ejemplo, `fabrica.<dominio>` → servicio `http://app:3000` (sin proxy intermedio, ADR-0011). Es la única ruta de entrada.
 3. No se usa Cloudflare Access: la webapp queda pública y su login es la barrera. Recomendado: en el dominio, Security → WAF → *Rate limiting rules*, una regla para `POST /api/v1/sesion` (por ejemplo, 20 peticiones por minuto por IP → bloquear 10 min). Complementa el límite propio de la app (SECURITY T7).
 4. Comprueba desde fuera de la red:
    - `https://fabrica.<dominio>` muestra el login de la app.

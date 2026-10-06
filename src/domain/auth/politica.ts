@@ -1,7 +1,7 @@
 // Punto único de autorización en el backend (SECURITY §2). Todo route handler se exporta envuelto
 // en `conPermiso` o `publico`; un test estructural lo exige (T0.12).
 import { randomUUID, timingSafeEqual } from "node:crypto";
-import { type NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { bd } from "@/db/conexion";
 import { registro } from "@/lib/registro";
@@ -13,6 +13,10 @@ import { type SesionActiva, validarSesion } from "./sesiones";
 
 export const COOKIE_SESION = "neltume_sesion";
 const MUTANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+/** Cuerpo máximo por defecto (ADR-0011): 1 MB. Las rutas que reciben archivos declaran el suyo. */
+export const MAX_CUERPO = 1024 * 1024;
+/** Excel del catálogo y PDF de la nota de la tienda: archivo de hasta 5 MB más el sobre multipart. */
+export const MAX_CUERPO_ARCHIVO = 6 * 1024 * 1024;
 
 export interface ContextoBase<P> {
   req: NextRequest;
@@ -36,9 +40,39 @@ export function respuestaError(codigo: CodigoError, mensaje: string, correlacion
   );
 }
 
-function contextoBase<P>(req: NextRequest, params: P): ContextoBase<P> {
+function contextoBase<P>(req: NextRequest, params: P, correlacionId = randomUUID()): ContextoBase<P> {
   const ip = req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined;
-  return { req, params, correlacionId: randomUUID(), ip, userAgent: req.headers.get("user-agent") ?? undefined };
+  return { req, params, correlacionId, ip, userAgent: req.headers.get("user-agent") ?? undefined };
+}
+
+/**
+ * Acota el cuerpo sin leer de más (ADR-0011; antes lo hacía Caddy). Con `Content-Length` se decide sin leer nada. Sin
+ * él (envío por trozos; `cloudflared` puede reenviar así), se lee contando bytes y se corta al pasar el máximo; lo
+ * leído se entrega al handler como una petición nueva con el mismo método, URL y cabeceras.
+ */
+async function acotarCuerpo(req: NextRequest, max: number, correlacionId: string): Promise<NextRequest | NextResponse> {
+  const grande = () => respuestaError("CUERPO_GRANDE", `El envío supera ${Math.round(max / 1024 / 1024)} MB.`, correlacionId);
+  const largo = req.headers.get("content-length");
+  if (largo !== null) {
+    const n = Number(largo);
+    if (!Number.isInteger(n) || n < 0) return respuestaError("VALIDACION", "Content-Length inválido.", correlacionId);
+    return n > max ? grande() : req;
+  }
+  if (!req.body) return req;
+  const partes: Uint8Array[] = [];
+  let total = 0;
+  const lector = req.body.getReader();
+  for (;;) {
+    const { done, value } = await lector.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max) {
+      await lector.cancel().catch(() => undefined);
+      return grande();
+    }
+    partes.push(value);
+  }
+  return new NextRequest(req.url, { method: req.method, headers: req.headers, body: Buffer.concat(partes) });
 }
 
 async function ejecutar<C extends ContextoBase<unknown>>(ctx: C, manejador: Manejador<C>, actorId?: string): Promise<Response> {
@@ -88,15 +122,19 @@ function csrfValido(enviado: string | null, esperado: string): boolean {
  * Exige sesión válida, CSRF en mutaciones y el o los permisos indicados ("sesion" = solo autenticado).
  * Con `idempotente`, exige Idempotency-Key y no repite la acción (API §1).
  * Con `ocultar`, la falta de permiso responde el mismo 404 que un recurso inexistente (anti-IDOR, REQ-COT-10.2);
- * la denegación se audita igual.
+ * la denegación se audita igual. `maxCuerpo` (por defecto 1 MB) acota el cuerpo antes de leerlo (ADR-0011).
  */
 export function conPermiso<P = Record<string, never>>(
   permiso: Permiso | Permiso[] | "sesion",
   manejador: Manejador<ContextoAutenticado<P>>,
-  opciones: { idempotente?: boolean; ocultar?: string } = {},
+  opciones: { idempotente?: boolean; ocultar?: string; maxCuerpo?: number } = {},
 ): Ruta<P> {
-  return async (req, segmento) => {
-    const base = contextoBase(req, await segmento.params);
+  return async (peticion, segmento) => {
+    const correlacionId = randomUUID();
+    const acotada = await acotarCuerpo(peticion, opciones.maxCuerpo ?? MAX_CUERPO, correlacionId);
+    if (acotada instanceof NextResponse) return acotada;
+    const req = acotada;
+    const base = contextoBase(req, await segmento.params, correlacionId);
     const sesion = await validarSesion(req.cookies.get(COOKIE_SESION)?.value);
     if (!sesion) {
       await auditarDenegacion(base, "NO_AUTENTICADO");
@@ -123,8 +161,12 @@ export function conPermiso<P = Record<string, never>>(
 
 /** Rutas sin sesión (login y salud). Las mutaciones exigen JSON para bloquear formularios de otros sitios. */
 export function publico<P = Record<string, never>>(manejador: Manejador<ContextoBase<P>>): Ruta<P> {
-  return async (req, segmento) => {
-    const base = contextoBase(req, await segmento.params);
+  return async (peticion, segmento) => {
+    const correlacionId = randomUUID();
+    const acotada = await acotarCuerpo(peticion, MAX_CUERPO, correlacionId);
+    if (acotada instanceof NextResponse) return acotada;
+    const req = acotada;
+    const base = contextoBase(req, await segmento.params, correlacionId);
     if (MUTANTES.has(req.method) && !req.headers.get("content-type")?.startsWith("application/json")) {
       return respuestaError("VALIDACION", "Se esperaba JSON.", base.correlacionId);
     }

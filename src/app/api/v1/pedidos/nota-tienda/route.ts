@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { bd } from "@/db/conexion";
-import { conPermiso } from "@/domain/auth/politica";
+import { conPermiso, MAX_CUERPO_ARCHIVO } from "@/domain/auth/politica";
 import { crearPedidoDirecto } from "@/domain/pedidos/directo";
 import { campo, pdfDelFormulario } from "./archivo";
 
@@ -19,4 +19,4 @@ export const POST = conPermiso("pedidos.gestionar", async ({ req, actor }) => {
   });
   const r = await bd().transaction((tx) => crearPedidoDirecto(tx, datos, d, actor, "web"));
   return NextResponse.json(r, { status: 201 });
-}, { idempotente: true });
+}, { idempotente: true, maxCuerpo: MAX_CUERPO_ARCHIVO });

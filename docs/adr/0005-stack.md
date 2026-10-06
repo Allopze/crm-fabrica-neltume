@@ -16,7 +16,7 @@ El equipo es pequeño, el volumen es de 50–200 cotizaciones al mes, el desplie
 | Auth | Sesiones propias en BD: cookie HttpOnly con token aleatorio, hash SHA-256 en `sesion`, contraseñas argon2id (`@node-rs/argon2`), revocación inmediata. Sin Cloudflare Access delante: el login propio es la barrera (ADR-0010). Se descartó Auth.js porque con credenciales obliga a JWT no revocable (decisión del usuario, Fase 0) |
 | Entornos | Producción: Docker Compose. Dev y test: PostgreSQL local (Postgres.app); `npm run dev` migra y levanta la app (decisión del usuario, Fase 0) |
 | PDF | @react-pdf/renderer (ADR-0004) |
-| Proxy / túnel | Caddy · cloudflared |
+| Proxy / túnel | cloudflared directo a la app (Caddy retirado: ADR-0011) |
 | Tests | Vitest (unit e integración) · Playwright (E2E, 1 worker, secuencial) |
 | Gestor | npm |
 

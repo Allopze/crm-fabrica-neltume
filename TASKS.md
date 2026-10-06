@@ -103,6 +103,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T2.4 (60) Pantalla de métricas de IA y alerta al 80 % del tope · DESIGN §5, SECURITY T4 · I `metricas` · T1.26 · [P]
 - [ ] T2.5 (90) Despliegue en el hosting: túnel real sin Access (ADR-0010), regla de limitación del login en Cloudflare y verificación de exposición · SECURITY §6, REQ-NFR-3 · chequeo externo de puertos · T0.15
 - [x] T2.6 (45) Prueba de volumen: importar ~8.800 filas en ≤ 60 s y consulta en ≤ 1 s · REQ-NFR-8 · I `importacion.volumen` · T1.5 · [P]
+- [x] T2.8 (45) Quitar Caddy: encabezados en `next.config.ts`, límite de cuerpo por ruta en `conPermiso`/`publico`, túnel directo a la app · ADR-0011, SECURITY §2 · I `salud` · T0.15
 - [ ] T2.7 (60) Carga de BOM reales cuando Producción los entregue (reemplazan los demo) · REQ-MP-3.1 · I `bom` · T1.17
 
 **Checkpoint F2:** producción con datos reales, evaluación aprobada y restauración probada. Espero tu OK.

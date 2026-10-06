@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { bd } from "@/db/conexion";
-import { conPermiso } from "@/domain/auth/politica";
+import { conPermiso, MAX_CUERPO_ARCHIVO } from "@/domain/auth/politica";
 import { prepararNotaTienda } from "@/domain/pedidos/directo";
 import { campo, pdfDelFormulario } from "../archivo";
 
@@ -11,4 +11,4 @@ export const POST = conPermiso("pedidos.gestionar", async ({ req }) => {
   const clienteId = z.uuid().optional().parse(campo(form, "clienteId") || undefined);
   const v = await bd().transaction((tx) => prepararNotaTienda(tx, datos, clienteId));
   return NextResponse.json({ ...v, hash: undefined });
-});
+}, { maxCuerpo: MAX_CUERPO_ARCHIVO });

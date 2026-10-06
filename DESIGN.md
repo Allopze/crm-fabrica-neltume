@@ -6,10 +6,9 @@ Cómo se cumple SPEC.md. Seguridad en SECURITY.md, IA en AI.md, datos en DATA-MO
 
 ```mermaid
 flowchart LR
-  U[Navegador PC] -->|HTTPS| CF[Cloudflare + Access]
+  U[Navegador PC] -->|HTTPS| CF[Cloudflare]
   CF -->|túnel saliente| T[tunnel<br/>cloudflared]
-  T --> P[proxy<br/>Caddy]
-  P --> A[app<br/>Next.js: UI + API]
+  T --> A[app<br/>Next.js: UI + API]
   A --> D[(db<br/>PostgreSQL)]
   W[worker<br/>src/ai/worker] --> D
   W -->|HTTPS + x-cmd-zdr| L[Command Code<br/>Provider API]
@@ -22,8 +21,7 @@ flowchart LR
 | app | Páginas, route handlers `/api/v1`, dominio (precios, stock, cotizaciones, pedidos, producción), PDF | todas |
 | worker | Toma trabajos de interpretación de la cola en BD, llama al LLM vía `src/ai/`, guarda la propuesta | REQ-COT-2.x |
 | db | Única fuente de verdad, con triggers de inmutabilidad y la cola de trabajos | REQ-STK-5.3, REQ-ADM-3.3 |
-| proxy | Encabezados de seguridad, límite de cuerpo y punto único de entrada desde el túnel | SECURITY §6 |
-| tunnel | Conexión saliente a Cloudflare; ningún puerto entrante | REQ-NFR-7 |
+| tunnel | Conexión saliente a Cloudflare; ningún puerto entrante; único camino de internet a la app (sin Access ni proxy intermedio: ADR-0010, ADR-0011) | REQ-NFR-7 |
 | backup | `pg_dump` diario, retención de 30 días local + copia externa | REQ-NFR-4 |
 
 Stack: ADR-0005. Proveedor de IA: ADR-0001. Cola en BD: ADR-0006.
@@ -33,17 +31,15 @@ Stack: ADR-0005. Proveedor de IA: ADR-0001. Cola en BD: ADR-0006.
 ```mermaid
 sequenceDiagram
   participant N as Navegador
-  participant C as Cloudflare (Access)
+  participant C as Cloudflare
   participant T as tunnel
-  participant P as proxy
   participant A as app (route handler)
   participant D as db
   N->>C: HTTPS /api/v1/...
-  C->>C: valida identidad Access
-  C->>T: petición por túnel
-  T->>P: HTTP interno
-  P->>A: + encabezados, límite 1 MB
-  A->>A: sesión → conPermiso(permiso) → validación Zod
+  C->>T: petición por túnel (TLS terminado en Cloudflare)
+  T->>A: HTTP interno a app:3000
+  A->>A: límite de cuerpo → sesión → conPermiso(permiso) → validación Zod
+  Note over A: encabezados de seguridad desde next.config.ts
   A->>D: transacción (dominio + audit_log)
   D-->>A: resultado
   A-->>N: JSON / HTML (correlacion_id en cabecera)
@@ -76,8 +72,7 @@ Días hábiles: lunes a viernes, descontando los feriados legales de Chile (calc
 
 | Servicio | Imagen / build | Redes | Puertos | Variables (nombres) | Volúmenes |
 |---|---|---|---|---|---|
-| `tunnel` | `cloudflare/cloudflared` | `borde` | ninguno | `TUNNEL_TOKEN` | — |
-| `proxy` | `caddy` | `borde`, `backend` | ninguno | — | `Caddyfile` (ro) |
+| `tunnel` | `cloudflare/cloudflared` | `borde`, `backend` | ninguno | `TUNNEL_TOKEN` | — |
 | `migrar` | build `.` (target `migrar`) | `datos` | ninguno | `DATABASE_ADMIN_URL`, `DATABASE_URL_OWNER`, `DATABASE_URL` | — |
 | `app` | build `.` (target `app`) | `backend`, `datos` | ninguno | `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `APP_TZ=America/Santiago`, `LLM_TOPE_DIARIO_USD`, `LLM_PRESUPUESTO_MENSUAL_USD` (solo para mostrar alertas) | `pdf_tmp` |
 | `worker` | build `.` (target `worker`) | `datos`, `salida` | ninguno | `DATABASE_URL`, `CMD_API_KEY`, `CMD_API_BASE_URL`, `CMD_MODEL`, `CMD_ZDR`, `LLM_TIMEOUT_MS`, `LLM_MAX_REINTENTOS`, `LLM_TOPE_DIARIO_USD`, `LLM_PRESUPUESTO_MENSUAL_USD` | — |

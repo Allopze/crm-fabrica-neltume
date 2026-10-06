@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { conPermiso } from "@/domain/auth/politica";
+import { conPermiso, MAX_CUERPO_ARCHIVO } from "@/domain/auth/politica";
 import { ErrorDominio } from "@/domain/errores";
 import { importarExcel } from "@/domain/importacion/importar";
 
@@ -14,4 +14,4 @@ export const POST = conPermiso(["catalogo.editar", "precios.editar"], async ({ r
   if (archivo.size > MAX_BYTES) throw new ErrorDominio("VALIDACION", "El archivo supera 5 MB.");
   const informe = await importarExcel(await archivo.arrayBuffer(), archivo.name, actor);
   return NextResponse.json(informe, { status: informe.repetida ? 200 : 201 });
-}, { idempotente: true });
+}, { idempotente: true, maxCuerpo: MAX_CUERPO_ARCHIVO });

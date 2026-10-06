@@ -1,5 +1,5 @@
 # Producción (DESIGN.md §4, SECURITY.md §6). Ningún servicio publica puertos:
-# la única entrada es el túnel saliente de Cloudflare hacia el proxy.
+# la única entrada es el túnel saliente de Cloudflare hacia la app (sin proxy intermedio, ADR-0011).
 # Las imágenes se fijan por digest al desplegar (TASKS T2.5).
 name: neltume
 
@@ -70,22 +70,15 @@ services:
     depends_on:
       migrar: { condition: service_completed_successfully }
 
-  proxy:
-    image: caddy:2
-    restart: unless-stopped
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-    networks: [borde, backend]
-    depends_on: [app]
-
   tunnel:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
     command: tunnel --no-autoupdate run
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN}
-    networks: [borde]
-    depends_on: [proxy]
+    # `borde` para salir a Cloudflare; `backend` (interna) para llegar solo a la app.
+    networks: [borde, backend]
+    depends_on: [app]
 
   backup:
     image: postgres:18
