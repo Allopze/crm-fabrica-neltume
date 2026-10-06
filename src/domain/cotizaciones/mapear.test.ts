@@ -10,6 +10,7 @@ const cat: CatalogoMapeo = {
   articulos: new Map([
     ["mN|dR|4|B", { id: "a1", codigo: "NEL-R-4-B" }], ["mT|dR|4|C", { id: "a2", codigo: "TOLT-R-4-C" }], ["mN|dO|3|A", { id: "a3", codigo: "NEL-O-3-A" }],
   ]),
+  alias: [{ alias: "NELTU", modelo: "NELTUME", tipo: "seguro" }, { alias: "NEL TUNE", modelo: "NELTUME", tipo: "posible" }],
 };
 const item = (p: Partial<ItemPropuesto>): ItemPropuesto => ({
   texto_fuente: "3 Neltume raulí 90x210", tipo: "puerta", modelo: "NELTUME", madera: "RAULI", ancho_m: 0.9, alto_m: 2.1, medida_accesorio: null, cantidad: 3, dudas: [], ...p,
@@ -46,5 +47,16 @@ describe("mapeo exacto al catálogo (REQ-COT-2.1, 2.3–2.5)", () => {
   it("la descripción nunca copia texto libre de la IA", () => {
     const r = mapearItem(item({ madera: "<script>roble</script>" }), cat);
     expect(r.descripcion).toBe("Ítem por confirmar");
+  });
+});
+
+describe("alias de modelos en el mapeo (REQ-COT-2.11)", () => {
+  it("un alias seguro mapea al modelo real", () => {
+    expect(mapearItem(item({ modelo: "neltu" }), cat)).toMatchObject({ estado: "ok", codigo: "NEL-R-4-B", descripcion: expect.stringContaining("Neltume") });
+  });
+
+  it("un alias dudoso o un nombre parecido queda por confirmar con la sugerencia", () => {
+    expect(mapearItem(item({ modelo: "Nel tune" }), cat)).toMatchObject({ estado: "por_confirmar", duda: expect.stringContaining("¿Te refieres a «Neltume»?") });
+    expect(mapearItem(item({ modelo: "Toltem" }), cat)).toMatchObject({ estado: "por_confirmar", duda: expect.stringContaining("«Tolten»") });
   });
 });

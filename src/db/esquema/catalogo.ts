@@ -16,6 +16,14 @@ export const modelo = pgTable("modelo", {
   activo: boolean().notNull().default(true),
 }, (t) => [check("modelo_familia", sql`${t.familia} in ('puerta', 'accesorio')`)]);
 
+/** Nombres alternativos de modelos (REQ-COT-2.11). `modelo` es el nombre del catálogo: el alias sobrevive a reimportaciones. */
+export const aliasModelo = pgTable("alias_modelo", {
+  alias: text().primaryKey(), // normalizado: mayúsculas, sin tildes ni signos
+  modelo: text().notNull(),
+  tipo: text().notNull(), // seguro | posible
+  creadoEn: timestamp({ withTimezone: true }).notNull().defaultNow(),
+}, (t) => [check("alias_tipo", sql`${t.tipo} in ('seguro', 'posible')`)]);
+
 export const madera = pgTable("madera", {
   id: uuid().primaryKey().defaultRandom(),
   nombre: text().notNull().unique(), // normalizado sin tildes: PINO OREGON, LENGA, MARA, RAULI

@@ -49,6 +49,7 @@ Base `/api/v1`, JSON UTF-8, solo detrás de Cloudflare Access. Todos los handler
 | PATCH `/articulos/:codigo` (`activo`, `stock_minimo`) | `catalogo.editar` / `config.editar` | | |
 | GET `/listas-precio` · GET `/listas-precio/:version` | `stock.ver` | | Costos y margen solo con `costos.ver` |
 | POST `/listas-precio` (`{ cambios:[{codigo, precio_neto}], recargos:[…] }`) | `precios.editar` | ✔ | Crea la versión N+1 |
+| GET `/alias-modelos` · POST `/alias-modelos` (`alias, modelo, tipo`) · DELETE `/alias-modelos/:alias` | `stock.ver` / `catalogo.editar` | | Alias seguros y dudosos de modelos (REQ-COT-2.11) |
 
 ### Stock de puertas (REQ-STK-2..7)
 | Método y ruta | Permiso | Idem | Notas |

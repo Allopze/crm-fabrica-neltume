@@ -2,20 +2,22 @@
 import { eq } from "drizzle-orm";
 import type { CatalogoResumido } from "@/ai/interfaz";
 import type { Tx } from "@/db/conexion";
-import { alto, articulo, madera, modelo, rangoAncho } from "@/db/esquema/catalogo";
+import { aliasModelo, alto, articulo, madera, modelo, rangoAncho } from "@/db/esquema/catalogo";
 import type { CatalogoMapeo } from "./mapear";
+import type { AliasModelo } from "./modelos";
 
 export async function cargarCatalogoMapeo(tx: Tx): Promise<CatalogoMapeo> {
-  const [modelos, maderas, rangos, altos, arts] = await Promise.all([
+  const [modelos, maderas, rangos, altos, arts, alias] = await Promise.all([
     tx.select({ id: modelo.id, nombre: modelo.nombre, codigo: modelo.codigo }).from(modelo).where(eq(modelo.familia, "puerta")),
     tx.select({ id: madera.id, nombre: madera.nombre, codigo: madera.codigo }).from(madera),
     tx.select().from(rangoAncho),
     tx.select().from(alto),
     tx.select({ id: articulo.id, codigo: articulo.codigo, m: articulo.modeloId, d: articulo.maderaId, a: articulo.anchoCodigo, h: articulo.altoCodigo })
       .from(articulo).where(eq(articulo.activo, true)),
+    tx.select({ alias: aliasModelo.alias, modelo: aliasModelo.modelo, tipo: aliasModelo.tipo }).from(aliasModelo),
   ]);
   return {
-    modelos, maderas,
+    modelos, maderas, alias: alias as AliasModelo[],
     rangos: rangos.map((r) => ({ codigo: r.codigo, etiqueta: r.etiqueta, minM: Number(r.minM), maxM: Number(r.maxM) })),
     altos: altos.map((a) => ({ codigo: a.codigo, altoM: Number(a.altoM) })),
     articulos: new Map(arts.map((x) => [`${x.m}|${x.d}|${x.a}|${x.h}`, { id: x.id, codigo: x.codigo }])),

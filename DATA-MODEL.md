@@ -55,6 +55,7 @@ erDiagram
 | Tabla | Columnas clave | Reglas |
 |---|---|---|
 | `modelo` | `nombre` (NELTUME), `codigo` (NEL), `familia` (`puerta`/`accesorio`), `activo` | 33 puertas + 5 accesorios |
+| `alias_modelo` | `alias` PK (normalizado), `modelo` (nombre), `tipo` (`seguro`/`posible`) | Semilla con los alias reales de la tienda; editable con `catalogo.editar` (REQ-COT-2.11) |
 | `madera` | `nombre` normalizado (PINO OREGON, LENGA, MARA, RAULI), `codigo` (O/L/M/R) | La comparación ignora tildes |
 | `rango_ancho` | `codigo` (1–9), `etiqueta` ("0,80 A 0,85"), `min_m`, `max_m` | Para accesorios: `2x4`…, `6X1`… como texto |
 | `alto` | `codigo` (A–G para 2,0–2,6; H… en accesorios), `alto_m` | |

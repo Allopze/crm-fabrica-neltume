@@ -99,6 +99,13 @@
       "when": 1791310127396,
       "tag": "0013_pedido_nota_tienda",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791310878876,
+      "tag": "0014_alias_modelo",
+      "breakpoints": true
     }
   ]
 }

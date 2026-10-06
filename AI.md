@@ -48,6 +48,11 @@ Validación (`src/ai/esquema.ts` + `mapear.ts`):
 - Si existe cualquier duda, el ítem es `por_confirmar`. Por eso el prompt reserva `dudas` para datos del producto que faltan, son ambiguos o no existen (frases breves, hasta 300 caracteres): una medida fuera de grilla no es duda (la resuelve el backend como `a_pedido`) y las instrucciones del cliente van en `alertas`.
 - Ítem o salida inválidos: se reintenta 1 vez; si vuelve a fallar, el borrador queda `ia_fallida` (cotización manual).
 
+**Nombres de modelo (REQ-COT-2.11).** El backend resuelve el nombre que propone la IA en este orden:
+- **Nombre o código real:** siempre gana (con o sin espacios).
+- **Alias seguro de `alias_modelo`:** se aplica. Son los alias reales de la tienda, como «coscos», «willo» o «pangipulli».
+- **Alias dudoso o nombre parecido** (letras dobles, palabra repetida, una letra de diferencia): el ítem queda `por_confirmar` con «¿Te refieres a …?». Nunca se reemplaza en silencio.
+
 ## 3. Herramientas
 
 | Herramienta | Tipo | Estado |

@@ -2,6 +2,7 @@
 // Puro: el catálogo se pasa como datos. Nada se completa en silencio: lo incierto queda por confirmar.
 import type { ItemPropuesto } from "@/ai/esquema";
 import { normalizar } from "../importacion/mapear";
+import { type AliasModelo, resolverModelo } from "./modelos";
 
 export interface CatalogoMapeo {
   modelos: { id: string; nombre: string; codigo: string }[];
@@ -10,6 +11,8 @@ export interface CatalogoMapeo {
   altos: { codigo: string; altoM: number }[];
   /** Artículo por variante: `${modeloId}|${maderaId}|${anchoCodigo}|${altoCodigo}` */
   articulos: Map<string, { id: string; codigo: string }>;
+  /** Nombres alternativos de modelos (REQ-COT-2.11). */
+  alias: AliasModelo[];
 }
 
 export interface ItemMapeado {
@@ -37,8 +40,10 @@ export function mapearItem(p: ItemPropuesto, cat: CatalogoMapeo): ItemMapeado {
   if (p.dudas.length) return porConfirmar(p.dudas.join(". "));
   if (p.cantidad === null) return porConfirmar("Falta la cantidad.");
 
-  const modelo = cat.modelos.find((m) => normalizar(m.nombre) === normalizar(p.modelo) || m.codigo === normalizar(p.modelo));
-  if (!modelo) return porConfirmar(p.modelo ? `El modelo «${p.modelo}» no está en el catálogo.` : "Falta el modelo.");
+  const resuelto = resolverModelo(p.modelo, cat.modelos, cat.alias);
+  if (resuelto.tipo === "posible") return porConfirmar(`¿Te refieres a «${titulo(resuelto.modelo.nombre)}»? «${p.modelo}» no está en el catálogo con ese nombre.`);
+  if (resuelto.tipo === "desconocido") return porConfirmar(p.modelo ? `El modelo «${p.modelo}» no está en el catálogo.` : "Falta el modelo.");
+  const modelo = resuelto.modelo;
   const nombreMadera = ALIAS_MADERA[normalizar(p.madera)];
   const madera = cat.maderas.find((m) => m.nombre === nombreMadera);
   if (!madera) {

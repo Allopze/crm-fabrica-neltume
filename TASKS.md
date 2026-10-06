@@ -137,7 +137,7 @@ Aprobada el 06-10-2026. La tienda le envía a la fábrica notas de pedido en PDF
 - [x] T5.5 (120) Pedido directo desde el PDF de la nota de la tienda · REQ-COT-8.6–8.9, ADR-0008 · U `nota-tienda`, I `pedido-directo`, E 15 · T5.4
 
 ### C — IA
-- [ ] T5.6 (60) Alias de modelos (seguros y posibles) · REQ-COT-2.11 · U `mapear`, I `alias` · —
+- [x] T5.6 (60) Alias de modelos (seguros y posibles) · REQ-COT-2.11 · U `mapear`, I `alias` · —
 - [ ] T5.7 (45) Medidas en m/cm/mm y vano/hoja · REQ-COT-2.12 · U `mapear` · —
 - [ ] T5.8 (90) Accesorios: marcos, piezas T y molduras · REQ-COT-2.13, REQ-STK-1.4 · U `mapear`, E 16 · T5.7
 - [ ] T5.9 (75) Verificación de cifras y cobertura del pedido · REQ-COT-2.14 · U `anclaje` · T5.7

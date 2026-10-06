@@ -26,7 +26,12 @@ export default async function PreciosPage({ searchParams }: PageProps<"/precios"
   const verCostos = sesion.permisos.has("costos.ver");
 
   const vigente = await listaVigente();
-  const acciones = puedeImportar && <BotonLink href="/precios/importar" variante="primario"><Upload className="h-4 w-4" /> Importar Excel</BotonLink>;
+  const acciones = (
+    <>
+      <BotonLink href="/precios/alias">Alias de modelos</BotonLink>
+      {puedeImportar && <BotonLink href="/precios/importar" variante="primario"><Upload className="h-4 w-4" /> Importar Excel</BotonLink>}
+    </>
+  );
   const encabezado = (
     <Encabezado antetitulo="Configuración · precios" titulo="Lista de precios" acciones={acciones}
       descripcion="Cada cambio crea una versión nueva. Las cotizaciones aprobadas conservan el precio de la versión con que se emitieron." />
