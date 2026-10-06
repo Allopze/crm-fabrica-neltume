@@ -59,7 +59,7 @@ erDiagram
 | `rango_ancho` | `codigo` (1–9), `etiqueta` ("0,80 A 0,85"), `min_m`, `max_m` | Para accesorios: `2x4`…, `6X1`… como texto |
 | `alto` | `codigo` (A–G para 2,0–2,6; H… en accesorios), `alto_m` | |
 | `tipo_puerta` | `nombre` (BLOQUE, PANEL, ESPECIAL) | |
-| `articulo` | `codigo` único (`NEL-R-4-B`), `modelo_id`, `madera_id`, `rango_ancho_id`, `alto_id`, `tipo_puerta_id` null, `pulgadas`, `espesor`, `stock_minimo` null, `activo` | Único por (modelo, madera, ancho, alto) |
+| `articulo` | `codigo` único (`NEL-R-4-B`), `modelo_id`, `madera_id`, `ancho_codigo` (1–9 en puertas; `2X4`, `6X1`… en accesorios), `ancho_etiqueta`, `alto_codigo`, `alto_m` (alto o largo), `espesor`, `pulgadas`, `tipo_puerta_id` null, `stock_minimo` null, `activo` | Único por (modelo, madera, ancho_codigo, alto_codigo). `rango_ancho` y `alto` quedan como referencia de puertas para el mapeo exacto |
 | `bodega` | `nombre` ("Fábrica"), `zona` | Una sola en v1 (supuesto S1) |
 | `feriado` | `fecha` PK, `nombre` | Para la vigencia en días hábiles |
 | `parametro` | `clave`, `valor` jsonb | `vigencia_dias_habiles`=10, `iva`=0.19, topes de IA |
@@ -68,8 +68,9 @@ erDiagram
 | Tabla | Columnas clave | Reglas |
 |---|---|---|
 | `lista_precio` | `version` (serial), `origen` (`excel`/`edicion`), `archivo_hash`, `vigente_desde`, `creado_por`, `vigente` bool | Solo una `vigente`; las antiguas son inmutables |
-| `precio` | `lista_id`, `articulo_id`, `costo_produccion`, `costo_materiales`, `costo_insumos`, `costos_generales`, `costo_total`, `margen`, `precio_neto` | PK (`lista_id`, `articulo_id`); costos visibles solo con `costos.ver` |
+| `precio` | `lista_id`, `articulo_id`, `costo_produccion`, `costo_materiales`, `costo_insumos`, `costos_generales`, `costo_total`, `margen`, `precio_neto` | PK (`lista_id`, `articulo_id`); costos visibles solo con `costos.ver`; **solo inserción** (trigger) |
 | `recargo_tipo` | `lista_id`, `tipo_puerta_id` (null = accesorios), `porcentaje` | Sembrado en 0 % (DESIGN C2) |
+| `importacion` | `archivo_hash`, `nombre_archivo`, `lista_id` null, `creadas`, `actualizadas`, `sin_cambios`, `rechazadas`, `rechazos` jsonb `[{fila, motivo}]` | Sin valores de costo ni precio; `GET /importaciones/:id` |
 
 Una edición en pantalla copia la versión vigente, aplica el cambio y crea `version + 1` (REQ-COT-1.1).
 

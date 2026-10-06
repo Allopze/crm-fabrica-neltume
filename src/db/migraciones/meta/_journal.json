@@ -15,6 +15,20 @@
       "when": 1791250884314,
       "tag": "0001_inmutabilidad",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791254837290,
+      "tag": "0002_catalogo_precios",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791254868090,
+      "tag": "0003_precios_inmutables",
+      "breakpoints": true
     }
   ]
 }

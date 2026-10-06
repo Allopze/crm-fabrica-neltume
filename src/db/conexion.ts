@@ -1,9 +1,10 @@
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import * as catalogo from "./esquema/catalogo";
 import * as seguridad from "./esquema/seguridad";
 import { requerirEnv } from "./urls";
 
-export const esquema = { ...seguridad };
+export const esquema = { ...seguridad, ...catalogo };
 export type Bd = NodePgDatabase<typeof esquema>;
 /** Transacción o conexión: las funciones de dominio aceptan cualquiera de las dos. */
 export type Tx = Parameters<Parameters<Bd["transaction"]>[0]>[0] | Bd;
