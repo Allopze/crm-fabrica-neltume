@@ -20,6 +20,7 @@ export default defineConfig({
           sequence: { concurrent: false },
           testTimeout: 20_000,
           hookTimeout: 60_000,
+          globalSetup: ["tests/integracion/setup-global.ts"],
         },
       },
     ],

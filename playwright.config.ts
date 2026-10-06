@@ -1,4 +1,7 @@
 import { defineConfig } from "@playwright/test";
+import { cargarEnvLocal, conBase, requerirEnv } from "./src/db/urls";
+
+cargarEnvLocal();
 
 const PUERTO = 3200;
 
@@ -10,6 +13,7 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   forbidOnly: true,
+  globalSetup: "./e2e/setup-global.ts",
   reporter: [["list"]],
   use: {
     baseURL: `http://localhost:${PUERTO}`,
@@ -22,6 +26,10 @@ export default defineConfig({
     url: `http://localhost:${PUERTO}/login`,
     reuseExistingServer: false,
     timeout: 120_000,
-    env: { NEXT_DIST_DIR: ".next-e2e" },
+    env: {
+      NEXT_DIST_DIR: ".next-e2e",
+      DATABASE_URL: conBase(requerirEnv("DATABASE_URL"), "neltume_e2e"),
+      LLM_PROVEEDOR: "doble",
+    },
   },
 });
