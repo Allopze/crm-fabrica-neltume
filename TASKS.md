@@ -16,21 +16,21 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 
 ## Fase 0 — Esqueleto que camina
 
-- [ ] T0.1 (60) Proyecto Next.js + TS con npm, estructura de AGENTS.md, ESLint y versiones fijadas con lockfile · ADR-0005 · `npm run lint` y `npm run build` verdes · — 
-- [ ] T0.2 (45) Vitest y Playwright (`workers:1`, `fullyParallel:false`); `npm test` = lint → unit → integración → e2e, con un test trivial por nivel · TESTING §1 · `npm test` verde · T0.1
-- [ ] T0.3 (75) Dockerfile multi-target (`app`, `worker`) y `docker-compose.yml` con db, app, worker, proxy, tunnel, backup y redes internas; `.env.example` descrito sin valores · DESIGN §4, SECURITY §6 · chequeo "sin puertos 0.0.0.0" · T0.1 · [P]
-- [ ] T0.4 (45) Entorno local sobre Postgres instalado: `npm run db:setup` (roles y BD), `npm run dev` (migra + semilla + app) y recreación de las BD de test al inicio de `npm test` · TESTING §4 · `npm test` contra Postgres local · T0.2
-- [ ] T0.5 (75) Drizzle y migración base: `permiso`, `rol`, `rol_permiso`, `usuario`, `sesion`, `intento_login`, `audit_log`, `idempotencia`; triggers solo-INSERT y grants del rol de la app · REQ-ADM-3.3 · I `audit.trigger` · T0.4
-- [ ] T0.6 (45) Semilla de los 18 permisos y del rol `administrador`; `npm run crear-admin` (contraseña por consola) · REQ-ADM-2.2 · I `usuarios.semilla` · T0.5
-- [ ] T0.7 (90) Sesiones propias en BD (ADR-0005), argon2id, sesión de 8 h, logout, límite de 5 intentos/15 min y auditoría de login · REQ-ADM-1.1–1.3, SECURITY T7 · I `auth.login` · T0.6
-- [ ] T0.8 (75) `conPermiso` y `publico`, CSRF, formato de error único, `correlacion_id` y 404 ante falta de lectura · REQ-ADM-2.2, 2.3, API §1–2 · I `politica` · T0.7
-- [ ] T0.9 (60) `registrarAuditoria` en la misma transacción, incluidas las denegaciones · REQ-ADM-3.1, 3.5 · I `audit.denegaciones` · T0.8
-- [ ] T0.10 (45) Middleware de `Idempotency-Key` (24 h, 422 si el cuerpo es distinto) · API §1 · I `idempotencia` · T0.8 · [P]
-- [ ] T0.11 (45) Logger JSON con redacción de cabeceras y datos de cliente · SECURITY T5 · U `logger` · T0.1 · [P]
-- [ ] T0.12 (60) Chequeos estructurales: rutas con `conPermiso`, sin `/webhooks`, archivos ≤ 500 líneas, escaneo de secretos, puertos de Compose · AGENTS, SECURITY §2 · I `estructura` · T0.8
-- [ ] T0.13 (60) Usuarios y roles: API y UI (crear, desactivar, permisos, último admin) · REQ-ADM-2.1–2.4 · I `usuarios` · T0.9
-- [ ] T0.14 (75) Layout, navegación, login y estados comunes (vacío, carga, error, sin permiso, sin conexión, conflicto) · UX §1–2 · E `02-login-roles` (parcial) · T0.7 · [P]
-- [ ] T0.15 (45) Caddyfile, `/salud`, healthchecks y runbook de túnel + Cloudflare Access (sin secretos) · SECURITY §6, DESIGN §5 · I `salud` · T0.3 · [P]
+- [x] T0.1 (60) Proyecto Next.js + TS con npm, estructura de AGENTS.md, ESLint y versiones fijadas con lockfile · ADR-0005 · `npm run lint` y `npm run build` verdes · — 
+- [x] T0.2 (45) Vitest y Playwright (`workers:1`, `fullyParallel:false`); `npm test` = lint → unit → integración → e2e, con un test trivial por nivel · TESTING §1 · `npm test` verde · T0.1
+- [x] T0.3 (75) Dockerfile multi-target (`app`, `worker`) y `docker-compose.yml` con db, app, worker, proxy, tunnel, backup y redes internas; `.env.example` descrito sin valores · DESIGN §4, SECURITY §6 · chequeo "sin puertos 0.0.0.0" · T0.1 · [P]
+- [x] T0.4 (45) Entorno local sobre Postgres instalado: `npm run db:setup` (roles y BD), `npm run dev` (migra + semilla + app) y recreación de las BD de test al inicio de `npm test` · TESTING §4 · `npm test` contra Postgres local · T0.2
+- [x] T0.5 (75) Drizzle y migración base: `permiso`, `rol`, `rol_permiso`, `usuario`, `sesion`, `intento_login`, `audit_log`, `idempotencia`; triggers solo-INSERT y grants del rol de la app · REQ-ADM-3.3 · I `audit.trigger` · T0.4
+- [x] T0.6 (45) Semilla de los 18 permisos y del rol `administrador`; `npm run crear-admin` (contraseña por consola) · REQ-ADM-2.2 · I `usuarios.semilla` · T0.5
+- [x] T0.7 (90) Sesiones propias en BD (ADR-0005), argon2id, sesión de 8 h, logout, límite de 5 intentos/15 min y auditoría de login · REQ-ADM-1.1–1.3, SECURITY T7 · I `auth.login` · T0.6
+- [x] T0.8 (75) `conPermiso` y `publico`, CSRF, formato de error único, `correlacion_id` y 404 ante falta de lectura · REQ-ADM-2.2, 2.3, API §1–2 · I `politica` · T0.7
+- [x] T0.9 (60) `registrarAuditoria` en la misma transacción, incluidas las denegaciones · REQ-ADM-3.1, 3.5 · I `audit.denegaciones` · T0.8
+- [x] T0.10 (45) Middleware de `Idempotency-Key` (24 h, 422 si el cuerpo es distinto) · API §1 · I `idempotencia` · T0.8 · [P]
+- [x] T0.11 (45) Logger JSON con redacción de cabeceras y datos de cliente · SECURITY T5 · U `logger` · T0.1 · [P]
+- [x] T0.12 (60) Chequeos estructurales: rutas con `conPermiso`, sin `/webhooks`, archivos ≤ 500 líneas, escaneo de secretos, puertos de Compose · AGENTS, SECURITY §2 · I `estructura` · T0.8
+- [x] T0.13 (60) Usuarios y roles: API y UI (crear, desactivar, permisos, último admin) · REQ-ADM-2.1–2.4 · I `usuarios` · T0.9
+- [x] T0.14 (75) Layout, navegación, login y estados comunes (vacío, carga, error, sin permiso, sin conexión, conflicto) · UX §1–2 · E `02-login-roles` (parcial) · T0.7 · [P]
+- [x] T0.15 (45) Caddyfile, `/salud`, healthchecks y runbook de túnel + Cloudflare Access (sin secretos) · SECURITY §6, DESIGN §5 · I `salud` · T0.3 · [P]
 
 **Checkpoint F0:** `docker compose up -d` levanta todo, el login funciona, una denegación se audita y `npm test` está verde. Espero tu OK.
 
