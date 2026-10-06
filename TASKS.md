@@ -106,6 +106,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T2.8 (45) Quitar Caddy: encabezados en `next.config.ts`, límite de cuerpo por ruta en `conPermiso`/`publico`, túnel directo a la app · ADR-0011, SECURITY §2 · I `salud` · T0.15
 - [x] T2.7 (90) BOM reales: «madera de la puerta» (opción A, ADR-0012) y carga inicial de lo entregado por Producción (`scripts/cargar-bom-real.mts`) · REQ-MP-3.1, 3.4, 3.5 · I `produccion` · T1.17
 - [ ] T2.9 (30) Completar el BOM con la fábrica: qué pulgadas valen (factor de la madera), uso por puerta de Titebond, tarugos, retape y adhesivo; stock inicial y mínimos de las materias primas · REQ-MP-2.1, 3.1, 6.2 · — · T2.7
+- [x] T2.10 (90) Producción y materias primas usables para cargar el BOM real: editar receta precargada, aplicar a varias recetas, confirmar cierre, conteo de existencias, cantidades fraccionarias y contraste AA de `tinta-tenue` y `ambar` · REQ-MP-3.6, UX §4 · I `produccion`, E 04 · T2.7
 
 **Checkpoint F2:** producción con datos reales, evaluación aprobada y restauración probada. Espero tu OK.
 

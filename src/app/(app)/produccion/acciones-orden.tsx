@@ -44,10 +44,26 @@ interface Insumo { materiaPrimaId: string; nombre: string; unidad: string; usa: 
 export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos, demo, materias, csrf }: {
   ordenId: string; numero: number; insumos: Insumo[]; sinBom: string[]; incompletos: string[]; demo: boolean; materias: { id: string; nombre: string; unidad: string }[]; csrf: string;
 }) {
-  const { enviar, pendiente, error } = useEnvio();
+  const router = useRouter();
+  const [confirmando, setConfirmando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pendiente, iniciar] = useTransition();
   const [manual, setManual] = useState<{ materiaPrimaId: string; cantidad: string }>({ materiaPrimaId: materias[0]?.id ?? "", cantidad: "" });
   const faltan = insumos.some((i) => i.faltante > 0);
   const cuerpo = sinBom.length && manual.cantidad ? { consumosManuales: [{ materiaPrimaId: manual.materiaPrimaId, cantidad: Number(manual.cantidad.replace(",", ".")) }] } : {};
+  // El motivo de un botón deshabilitado se dice al lado, no se adivina.
+  const bloqueo = incompletos.length ? "falta asociar la madera (ver arriba)."
+    : faltan ? "faltan materias primas; registra la recepción en Materias primas."
+      : sinBom.length > 0 && !manual.cantidad ? "indica el consumo a mano de los artículos sin BOM." : null;
+  const cerrar = () => iniciar(async () => {
+    try {
+      setError(null);
+      await pedir("POST", `/api/v1/ordenes/${ordenId}/cerrar`, { csrf, idempotente: true, cuerpo });
+      // Tras cerrar no se elige otra orden sola: el resultado queda a la vista y un segundo clic no cierra otra.
+      router.push(`/produccion?cerrada=${num}`);
+      router.refresh();
+    } catch (e) { setError((e as Error).message); setConfirmando(false); }
+  });
 
   return (
     <div>
@@ -82,10 +98,24 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos
           ))}
         </ul>
       )}
-      <Boton variante="primario" className="mt-5 h-10 w-full" disabled={pendiente || faltan || incompletos.length > 0 || (sinBom.length > 0 && !manual.cantidad)}
-        onClick={() => enviar(() => pedir("POST", `/api/v1/ordenes/${ordenId}/cerrar`, { csrf, idempotente: true, cuerpo }))}>
-        <CheckCheck className="h-4 w-4" /> Cerrar orden {num} y mover stock
-      </Boton>
+      {/* Cerrar mueve stock y no se puede deshacer: primero se nombra lo que va a pasar, después se confirma (UX §4). */}
+      {bloqueo ? (
+        <p className="mt-5 rounded-md border border-linea bg-papel px-3 py-2 text-sm text-tinta-suave">No se puede cerrar todavía: {bloqueo}</p>
+      ) : !confirmando ? (
+        <Boton variante="primario" className="mt-5 h-10 w-full" onClick={() => setConfirmando(true)}>
+          <CheckCheck className="h-4 w-4" /> Cerrar orden {num} y mover stock
+        </Boton>
+      ) : (
+        <div role="group" aria-label={`Confirmar cierre de la orden ${num}`} className="mt-5 rounded-md border border-tinta/20 bg-papel p-3">
+          <p className="text-sm">Se {insumos.length === 1 ? "descontará 1 insumo" : `descontarán ${insumos.length} insumos`} y entrarán las puertas al stock. Los movimientos no se pueden editar ni borrar; una corrección es un ajuste con motivo.</p>
+          <div className="mt-3 flex gap-2">
+            <Boton variante="primario" className="h-10 flex-1" disabled={pendiente} onClick={cerrar}>
+              <CheckCheck className="h-4 w-4" /> {pendiente ? "Cerrando orden…" : "Confirmar cierre"}
+            </Boton>
+            <Boton variante="fantasma" className="h-10" disabled={pendiente} onClick={() => setConfirmando(false)}>Volver</Boton>
+          </div>
+        </div>
+      )}
       <p className="mt-2 text-xs text-tinta-tenue">Todo o nada: si falta un insumo, no se mueve nada.{demo && " Usa un BOM de DEMOSTRACIÓN."}</p>
       {error && <p role="alert" className="mt-2 text-sm text-error">{error}</p>}
     </div>

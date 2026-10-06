@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { poolApp } from "./bd";
 import { llamar, tokenDeCookie } from "./http";
 import * as rutaBomModelo from "@/app/api/v1/bom/[modelo]/route";
+import * as rutaBomAplicar from "@/app/api/v1/bom/aplicar/route";
 import * as rutaBom from "@/app/api/v1/bom/route";
 import * as rutaMaderaInsumo from "@/app/api/v1/maderas/[codigo]/insumo/route";
 import * as rutaMp from "@/app/api/v1/materias-primas/route";
@@ -153,5 +154,35 @@ describe("carga de los BOM reales (T2.7, ADR-0012)", () => {
     ]) });
     const nel = (await llamar(rutaBom.GET, "GET", "/api/v1/bom?modelo=NEL", s)).cuerpo.datos[0];
     expect(nel.lineas).toHaveLength(1); // el BOM real definido a mano no se reemplaza
+  });
+});
+
+describe("aplicar un cambio a varias recetas (REQ-MP-3.6)", () => {
+  const aplicar = (cuerpo: unknown, quien = s) => llamar(rutaBomAplicar.POST, "POST", "/api/v1/bom/aplicar", { ...quien, cabeceras: idem(), cuerpo });
+  const lineasDe = async (modelo: string) => (await llamar(rutaBom.GET, "GET", `/api/v1/bom?modelo=${modelo}`, s)).cuerpo.datos[0].lineas as { maderaPuerta: boolean; mpId: string | null; cantidad: number }[];
+
+  it("fija el factor de la madera y agrega, cambia o quita un insumo en todas las recetas elegidas, como versiones nuevas", async () => {
+    const r = await aplicar({ modelos: ["FUY", "ANC"], operacion: { tipo: "factor", factor: 1.1 } });
+    expect(r.cuerpo).toEqual({ actualizados: expect.arrayContaining(["FUY", "ANC"]), sinReceta: [], sinCambio: [] });
+    expect((await lineasDe("FUY")).find((l) => l.maderaPuerta)?.cantidad).toBe(1.1);
+
+    expect((await aplicar({ modelos: ["FUY"], operacion: { tipo: "insumo", materiaPrimaId: mp.Cola, cantidad: 0.05 } })).cuerpo.actualizados).toEqual(["FUY"]);
+    expect((await lineasDe("FUY")).find((l) => l.mpId === mp.Cola)?.cantidad).toBe(0.05);
+    // Repetir el mismo cambio no crea otra versión.
+    expect((await aplicar({ modelos: ["FUY"], operacion: { tipo: "insumo", materiaPrimaId: mp.Cola, cantidad: 0.05 } })).cuerpo).toMatchObject({ actualizados: [], sinCambio: ["FUY"] });
+    expect((await aplicar({ modelos: ["FUY"], operacion: { tipo: "quitar", materiaPrimaId: mp.Cola } })).cuerpo.actualizados).toEqual(["FUY"]);
+    expect((await lineasDe("FUY")).some((l) => l.mpId === mp.Cola)).toBe(false);
+
+    const { rows } = await app.query("SELECT despues->'operacion'->>'tipo' AS tipo FROM audit_log WHERE accion = 'aplicar a varias recetas' AND resultado = 'ok' ORDER BY id");
+    expect(rows.map((x) => x.tipo)).toEqual(["factor", "insumo", "insumo", "quitar"]);
+    expect((await aplicar({ modelos: ["NOEXISTE"], operacion: { tipo: "factor", factor: 1 } })).estado).toBe(400);
+  });
+
+  it("exige mp.editar: 403 auditado", async () => {
+    const r = await llamar(rutaSesion.POST, "POST", "/api/v1/sesion", { cuerpo: { email: "lee-bom@neltume.cl", clave: "clave-lee-bom" }, ip: "10.10.0.10" });
+    const lector = { token: tokenDeCookie(r.res)!, csrf: r.cuerpo.csrf };
+    expect((await aplicar({ modelos: ["FUY"], operacion: { tipo: "factor", factor: 2 } }, lector)).cuerpo.error.codigo).toBe("SIN_PERMISO");
+    const { rows } = await app.query("SELECT 1 FROM audit_log WHERE resultado = 'denegado' AND accion = 'POST /api/v1/bom/aplicar'");
+    expect(rows).toHaveLength(1);
   });
 });

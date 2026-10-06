@@ -142,6 +142,7 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-MP-3.3: IF un usuario sin permiso de producción intenta editar un BOM THEN THE SYSTEM SHALL denegarlo y registrar el intento.
 - REQ-MP-3.4: WHEN un BOM incluye la madera de la puerta THE SYSTEM SHALL calcular su consumo al cerrar una orden como las pulgadas del artículo × el factor de la línea × la cantidad, y descontarlo de la materia prima asociada a la madera del artículo (ADR-0012).
 - REQ-MP-3.5: WHEN un usuario con permiso de materias primas asocia una madera a una materia prima THE SYSTEM SHALL guardarlo y auditarlo; IF al cerrar una orden falta esa asociación o las pulgadas del artículo THEN THE SYSTEM SHALL rechazar el cierre indicando qué falta, sin completarlo en silencio.
+- REQ-MP-3.6: WHEN un usuario con permiso de materias primas aplica un mismo cambio (factor de la madera, o agregar, cambiar o quitar un insumo por puerta) a varias recetas THE SYSTEM SHALL crear una versión nueva de cada receta general afectada en una sola transacción, auditada, e informar cuáles cambiaron, cuáles ya estaban así y cuáles no tienen receta.
 
 **H4 Cierre de producción (P1).** Como usuario, quiero que al terminar una orden se descuenten los insumos y entren las puertas.
 - REQ-MP-4.1: WHEN un usuario cierra una orden de producción con BOM definido THE SYSTEM SHALL crear los movimientos de consumo de cada materia prima y el movimiento de entrada de las puertas terminadas, todo o nada.

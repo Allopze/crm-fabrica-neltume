@@ -7,6 +7,7 @@ import { materiasParaReponer } from "@/domain/alertas";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { listarMateriasPrimas, listarUnidades } from "@/domain/materias-primas";
 import { cn, fecha, numero } from "@/lib/formato";
+import { ConteoExistencias } from "./conteo";
 import { EditarMinimoMp } from "./editar-minimo-mp";
 import { FormularioAjusteMp, FormularioNuevaMp, FormularioRecepcion } from "./formularios-mp";
 
@@ -28,6 +29,10 @@ export default async function MateriasPrimasPage() {
         descripcion="Madera, tableros, colas y barnices. Las recepciones suman stock y el cierre de cada orden de producción lo descuenta según el BOM."
         acciones={sesion.permisos.has("mp.editar") && <FormularioNuevaMp unidades={unidades} csrf={sesion.csrf} />}
       />
+      {activas.length > 0 && (sesion.permisos.has("stock.ajustar") || editaMinimo) && (
+        <ConteoExistencias csrf={sesion.csrf} puedeAjustar={sesion.permisos.has("stock.ajustar")} puedeMinimo={editaMinimo}
+          filas={activas.map((m) => ({ id: m.id, nombre: m.nombre, unidad: m.unidad, existencia: m.existencia, minimo: m.stockMinimo }))} />
+      )}
       <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
         <Panel titulo="Existencias" accion={reponer.length > 0 && <Etiqueta tono="ambar">{reponer.length} bajo el mínimo</Etiqueta>} sinRelleno>
           {materias.length === 0 ? (

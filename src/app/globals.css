@@ -7,7 +7,7 @@
   --lamina: #fbf8f2;
   --tinta: #1d2920;
   --tinta-suave: #4b544a;
-  --tinta-tenue: #7d8076;
+  --tinta-tenue: #666860; /* ≥ 4,5:1 sobre lámina, papel y velo ámbar (AA) */
   --linea: #dcd2c1;
   --linea-fuerte: #c4b8a3;
 
@@ -17,7 +17,7 @@
 
   --musgo: #3f5f3c;
   --musgo-velo: #e3eadb;
-  --ambar: #a66d12;
+  --ambar: #8e5d0f; /* ≥ 4,5:1 sobre lámina, papel y velo ámbar (AA) */
   --ambar-velo: #f6e8c9;
   --pizarra: #38566e;
   --pizarra-velo: #dfe7ee;

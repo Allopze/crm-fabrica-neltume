@@ -59,7 +59,7 @@ export async function listarBoms(tx: Tx) {
   const ids = vigentes.rows.map((r) => r.id);
   if (!ids.length) return [];
   const filas = await tx
-    .select({ id: bom.id, modelo: modelo.nombre, modeloCodigo: modelo.codigo, ancho: bom.anchoCodigo, alto: bom.altoCodigo, origen: bom.origen,
+    .select({ id: bom.id, modelo: modelo.nombre, modeloCodigo: modelo.codigo, familia: modelo.familia, ancho: bom.anchoCodigo, alto: bom.altoCodigo, origen: bom.origen,
       vigenteDesde: bom.vigenteDesde, lineaId: bomLinea.id, maderaPuerta: bomLinea.maderaPuerta, mpId: materiaPrima.id, mp: materiaPrima.nombre,
       unidad: materiaPrima.unidadCodigo, cantidad: bomLinea.cantidad })
     .from(bom)
@@ -69,9 +69,10 @@ export async function listarBoms(tx: Tx) {
     .where(inArray(bom.id, ids))
     .orderBy(modelo.nombre, desc(bomLinea.maderaPuerta), materiaPrima.nombre);
   type Linea = { id: string; maderaPuerta: boolean; mpId: string | null; mp: string; unidad: string; cantidad: number };
-  const mapa = new Map<string, { id: string; modelo: string; modeloCodigo: string; ancho: string | null; alto: string | null; origen: string; lineas: Linea[] }>();
+  type Receta = { id: string; modelo: string; modeloCodigo: string; familia: "puerta" | "accesorio"; ancho: string | null; alto: string | null; origen: string; vigenteDesde: Date; lineas: Linea[] };
+  const mapa = new Map<string, Receta>();
   for (const f of filas) {
-    const b = mapa.get(f.id) ?? { id: f.id, modelo: f.modelo, modeloCodigo: f.modeloCodigo, ancho: f.ancho, alto: f.alto, origen: f.origen, lineas: [] };
+    const b = mapa.get(f.id) ?? { id: f.id, modelo: f.modelo, modeloCodigo: f.modeloCodigo, familia: f.familia as Receta["familia"], ancho: f.ancho, alto: f.alto, origen: f.origen, vigenteDesde: f.vigenteDesde, lineas: [] };
     b.lineas.push(f.maderaPuerta
       ? { id: f.lineaId, maderaPuerta: true, mpId: null, mp: "Madera de la puerta", unidad: "× pulgadas del artículo", cantidad: Number(f.cantidad) }
       : { id: f.lineaId, maderaPuerta: false, mpId: f.mpId, mp: f.mp ?? "?", unidad: f.unidad ?? "", cantidad: Number(f.cantidad) });
@@ -104,4 +105,52 @@ export async function asociarMaderaInsumo(tx: Tx, maderaCodigo: string, materiaP
     actor, accion: "asociar madera", recurso: "madera_insumo", recursoId: m.id, origen, resultado: "ok",
     antes: { materiaPrimaId: antes?.materiaPrimaId ?? null }, despues: { madera: m.nombre, materiaPrimaId },
   });
+}
+
+export type OperacionBom =
+  | { tipo: "factor"; factor: number }
+  | { tipo: "insumo"; materiaPrimaId: string; cantidad: number }
+  | { tipo: "quitar"; materiaPrimaId: string };
+
+/**
+ * Aplica un mismo cambio a la receta general (sin medida) de varios modelos (REQ-MP-3.6): fijar el factor de la madera,
+ * agregar o cambiar un insumo, o quitarlo. Cada receta cambiada es una versión nueva (con su auditoría), en una sola
+ * transacción; un modelo sin receta o donde el cambio no altera nada se informa y no se toca.
+ */
+export async function aplicarABoms(tx: Tx, d: { modelos: string[]; operacion: OperacionBom }, actor: Actor & { id: string }, origen: Origen) {
+  const op = d.operacion;
+  if (op.tipo === "factor" && !(op.factor > 0)) throw new ErrorDominio("VALIDACION", "El factor debe ser mayor que cero");
+  if (op.tipo === "insumo" && !(op.cantidad > 0)) throw new ErrorDominio("VALIDACION", "La cantidad debe ser mayor que cero");
+  if (op.tipo !== "factor") {
+    const [mp] = await tx.select({ id: materiaPrima.id }).from(materiaPrima).where(eq(materiaPrima.id, op.materiaPrimaId));
+    if (!mp) throw new ErrorDominio("VALIDACION", "La materia prima no existe");
+  }
+  const codigos = [...new Set(d.modelos.map((m) => m.toUpperCase()))];
+  const modelos = codigos.length ? await tx.select().from(modelo).where(inArray(modelo.codigo, codigos)) : [];
+  if (modelos.length !== codigos.length) throw new ErrorDominio("VALIDACION", "Algún modelo no existe");
+
+  const r = { actualizados: [] as string[], sinReceta: [] as string[], sinCambio: [] as string[] };
+  for (const m of modelos) {
+    const [b] = await tx.select().from(bom).where(and(eq(bom.modeloId, m.id), isNull(bom.anchoCodigo), isNull(bom.altoCodigo)))
+      .orderBy(desc(bom.vigenteDesde)).limit(1);
+    if (!b) { r.sinReceta.push(m.codigo); continue; }
+    const antes = (await tx.select().from(bomLinea).where(eq(bomLinea.bomId, b.id)))
+      .map((l) => ({ materiaPrimaId: l.materiaPrimaId, maderaPuerta: l.maderaPuerta, cantidad: Number(l.cantidad) }));
+    let despues = antes.map((l) => ({ ...l }));
+    if (op.tipo === "factor") {
+      const madera = despues.find((l) => l.maderaPuerta);
+      if (madera) madera.cantidad = op.factor; else despues.unshift({ materiaPrimaId: null, maderaPuerta: true, cantidad: op.factor });
+    } else if (op.tipo === "insumo") {
+      const linea = despues.find((l) => l.materiaPrimaId === op.materiaPrimaId);
+      if (linea) linea.cantidad = op.cantidad; else despues.push({ materiaPrimaId: op.materiaPrimaId, maderaPuerta: false, cantidad: op.cantidad });
+    } else {
+      despues = despues.filter((l) => l.materiaPrimaId !== op.materiaPrimaId);
+    }
+    const igual = despues.length === antes.length && despues.every((l, i) => l.materiaPrimaId === antes[i].materiaPrimaId && l.maderaPuerta === antes[i].maderaPuerta && l.cantidad === antes[i].cantidad);
+    if (igual || !despues.length) { r.sinCambio.push(m.codigo); continue; }
+    await definirBom(tx, { modeloCodigo: m.codigo, origen: b.origen as "real" | "demo", lineas: despues }, actor, origen);
+    r.actualizados.push(m.codigo);
+  }
+  await registrarAuditoria(tx, { actor, accion: "aplicar a varias recetas", recurso: "bom", resultado: "ok", origen, despues: { operacion: op, ...r } });
+  return r;
 }

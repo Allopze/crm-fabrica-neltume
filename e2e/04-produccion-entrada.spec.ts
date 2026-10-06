@@ -26,6 +26,13 @@ test("define el BOM de demostración de Neltume", async ({ page }) => {
   }
   await form.getByRole("button", { name: "Guardar BOM" }).click();
   await expect(page.getByText("DEMO").first()).toBeVisible();
+  // «Editar» abre la receta vigente precargada, sin reescribirla.
+  await page.getByRole("link", { name: "Editar BOM de Neltume" }).click();
+  const edicion = page.getByRole("form", { name: "Editar BOM de Neltume" });
+  await expect(edicion.getByLabel("Cantidad 1")).not.toHaveValue("");
+  await expect(edicion.getByLabel("Cantidad 3")).toBeVisible();
+  await edicion.getByRole("button", { name: "Cancelar" }).click();
+  await expect(edicion).toBeHidden();
 });
 
 test("crea y cierra una orden de 2 NEL-R-4-B: consume insumos y suma puertas", async ({ page }) => {
@@ -39,6 +46,9 @@ test("crea y cierra una orden de 2 NEL-R-4-B: consume insumos y suma puertas", a
   await expect(page.getByText("BOM DEMO")).toBeVisible();
   await expect(page.getByText("Tabla raulí").last()).toBeVisible();
   await page.getByRole("button", { name: /Cerrar orden \d+ y mover stock/ }).click();
+  // Mover stock es irreversible: primero se confirma, y el resultado queda a la vista sin saltar a otra orden.
+  await page.getByRole("group", { name: /Confirmar cierre de la orden/ }).getByRole("button", { name: "Confirmar cierre" }).click();
+  await expect(page.getByText(/Orden \d+ cerrada/)).toBeVisible();
   await expect(page.getByRole("cell", { name: "Cerrada" })).toBeVisible();
   await ir(page, "/stock/NEL-R-4-B");
   await expect(page.getByText("Existencia").locator("..")).toContainText("2");

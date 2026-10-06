@@ -72,6 +72,7 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | POST `/recepciones` (`materia_prima, cantidad, referencia`) | `mp.mover` | ✔ | |
 | GET `/bom?modelo` · PUT `/bom/:modelo` (`lineas[], origen`) | `stock.ver` / `mp.editar` | | Crea una nueva vigencia. Cada línea es `{materiaPrimaId, cantidad}` o `{maderaPuerta: true, cantidad}` (factor sobre las pulgadas del artículo, una vez por BOM; ADR-0012) |
 | PUT `/maderas/:codigo/insumo` (`materiaPrimaId` o null) | `mp.editar` | | Materia prima de la que se descuenta esa madera (REQ-MP-3.5); 204; auditado |
+| POST `/bom/aplicar` (`modelos[]`, `operacion`: `{tipo: factor, factor}` · `{tipo: insumo, materiaPrimaId, cantidad}` · `{tipo: quitar, materiaPrimaId}`) | `mp.editar` | ✔ | Mismo cambio en la receta general de varios modelos, como versiones nuevas; responde `actualizados`, `sinCambio`, `sinReceta` (REQ-MP-3.6) |
 | GET/POST `/ordenes` · GET `/ordenes/:id` | `produccion.gestionar` | ✔ (POST) | |
 | POST `/ordenes/:id/cerrar` | `produccion.gestionar` | ✔ | Consumo + entrada, todo o nada; 409 `SIN_BOM`, `BOM_INCOMPLETO` (madera sin materia prima asociada o artículo sin pulgadas), `INSUMOS_INSUFICIENTES`, `ORDEN_CERRADA` |
 

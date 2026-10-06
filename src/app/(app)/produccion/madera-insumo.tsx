@@ -14,11 +14,14 @@ export function MaderaInsumo({ maderas, materias, editable, csrf }: {
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [guardada, setGuardada] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
   const guardar = (codigo: string, materiaPrimaId: string) => iniciar(async () => {
     try {
       setError(null);
+      setGuardada(null);
       await pedir("PUT", `/api/v1/maderas/${codigo}/insumo`, { csrf, cuerpo: { materiaPrimaId: materiaPrimaId || null } });
+      setGuardada(codigo);
       router.refresh();
     } catch (e) { setError((e as Error).message); }
   });
@@ -28,8 +31,8 @@ export function MaderaInsumo({ maderas, materias, editable, csrf }: {
       <ul className="divide-y divide-linea/70">
         {maderas.map((m) => (
           <li key={m.codigo} className="flex items-center justify-between gap-3 py-2 text-sm">
-            <span className="capitalize">{m.nombre.toLowerCase()}</span>
-            <select aria-label={`Materia prima de ${m.nombre.toLowerCase()}`} disabled={!editable || pendiente} value={m.materiaPrimaId ?? ""}
+            <span>{m.nombre}{guardada === m.codigo && <span role="status" className="ml-2 text-xs normal-case text-musgo">guardado</span>}</span>
+            <select aria-label={`Materia prima de ${m.nombre}`} disabled={!editable || pendiente} value={m.materiaPrimaId ?? ""}
               onChange={(e) => guardar(m.codigo, e.target.value)} className={`${campo} w-64`}>
               <option value="">— sin asociar —</option>
               {materias.map((x) => <option key={x.id} value={x.id}>{x.nombre} ({x.unidad})</option>)}

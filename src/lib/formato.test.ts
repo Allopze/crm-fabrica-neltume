@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clp, fecha, fechaHora, metros } from "./formato";
+import { clp, fecha, fechaHora, metros, cantidad, leerCantidad, usoPorPuerta } from "./formato";
 
 describe("formato chileno (REQ-STK-2.3, REQ-NFR-9)", () => {
   it("formatea CLP sin decimales y con punto de miles", () => {
@@ -16,5 +16,18 @@ describe("formato chileno (REQ-STK-2.3, REQ-NFR-9)", () => {
   it("formatea metros con dos decimales y coma", () => {
     expect(metros(2.1)).toBe("2,10");
     expect(metros(0.9)).toBe("0,90");
+  });
+});
+
+describe("cantidades de receta (REQ-MP-3.1)", () => {
+  it("muestran 4 decimales y la lectura «1 cada N»; se escriben con coma o como fracción", () => {
+    expect(cantidad(1 / 70)).toBe("0,0143");
+    expect(usoPorPuerta(0.0143)).toBe("1 cada 70 puertas");
+    expect(usoPorPuerta(0.1)).toBe("1 cada 10 puertas");
+    expect(usoPorPuerta(0.4)).toBeNull();
+    expect(usoPorPuerta(2)).toBeNull();
+    expect(leerCantidad("1/70")).toBeCloseTo(1 / 70, 10);
+    expect(leerCantidad("0,4")).toBe(0.4);
+    expect(leerCantidad("abc")).toBeNaN();
   });
 });
