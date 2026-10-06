@@ -1,0 +1,109 @@
+# Producción (DESIGN.md §4, SECURITY.md §6). Ningún servicio publica puertos:
+# la única entrada es el túnel saliente de Cloudflare hacia el proxy.
+# Las imágenes se fijan por digest al desplegar (TASKS T2.5).
+name: neltume
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+      TZ: America/Santiago
+    volumes:
+      - pg_data:/var/lib/postgresql
+    networks: [datos]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      retries: 6
+
+  migrar:
+    build: { context: ., target: migrar }
+    environment:
+      DATABASE_ADMIN_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/postgres
+      DATABASE_URL_OWNER: ${DATABASE_URL_OWNER}
+      DATABASE_URL: ${DATABASE_URL}
+    networks: [datos]
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+
+  app:
+    build: { context: ., target: app }
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      APP_URL: ${APP_URL}
+      APP_TZ: America/Santiago
+    networks: [backend, datos]
+    depends_on:
+      migrar: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/v1/salud').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      retries: 3
+
+  # Se habilita con el cotizador (TASKS T1.26): `docker compose --profile ia up -d`.
+  worker:
+    profiles: [ia]
+    build: { context: ., target: worker }
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      CMD_API_KEY: ${CMD_API_KEY}
+      CMD_API_BASE_URL: ${CMD_API_BASE_URL}
+      CMD_MODEL: ${CMD_MODEL}
+      CMD_ZDR: "1"
+      LLM_TIMEOUT_MS: ${LLM_TIMEOUT_MS}
+      LLM_MAX_REINTENTOS: ${LLM_MAX_REINTENTOS}
+      LLM_TOPE_DIARIO_USD: ${LLM_TOPE_DIARIO_USD}
+    networks: [datos, salida]
+    depends_on:
+      migrar: { condition: service_completed_successfully }
+
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    networks: [borde, backend]
+    depends_on: [app]
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    networks: [borde]
+    depends_on: [proxy]
+
+  backup:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_RETENCION_DIAS: ${BACKUP_RETENCION_DIAS}
+      TZ: America/Santiago
+    volumes:
+      - backups:/backups
+      - ./scripts/backup.sh:/backup.sh:ro
+    entrypoint: ["sh", "/backup.sh"]
+    networks: [datos]
+    depends_on:
+      db: { condition: service_healthy }
+
+networks:
+  borde: {}
+  salida: {}
+  backend: { internal: true }
+  datos: { internal: true }
+
+volumes:
+  pg_data: {}
+  backups: {}

@@ -78,9 +78,10 @@ Días hábiles: lunes a viernes, descontando los feriados de Chile de la tabla `
 |---|---|---|---|---|---|
 | `tunnel` | `cloudflare/cloudflared` | `borde` | ninguno | `TUNNEL_TOKEN` | — |
 | `proxy` | `caddy` | `borde`, `backend` | ninguno | — | `Caddyfile` (ro) |
+| `migrar` | build `.` (target `migrar`) | `datos` | ninguno | `DATABASE_ADMIN_URL`, `DATABASE_URL_OWNER`, `DATABASE_URL` | — |
 | `app` | build `.` (target `app`) | `backend`, `datos` | ninguno | `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `APP_TZ=America/Santiago` | `pdf_tmp` |
 | `worker` | build `.` (target `worker`) | `datos`, `salida` | ninguno | `DATABASE_URL`, `CMD_API_KEY`, `CMD_API_BASE_URL`, `CMD_MODEL`, `CMD_ZDR`, `LLM_TIMEOUT_MS`, `LLM_MAX_REINTENTOS`, `LLM_TOPE_DIARIO_USD` | — |
-| `db` | `postgres` (versión fija en ADR-0005) | `datos` (internal) | `127.0.0.1:5432` solo con el perfil `admin` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `pg_data` |
+| `db` | `postgres:18` (digest al desplegar) | `datos` (internal) | `127.0.0.1:5432` solo con `docker-compose.admin.yml` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `pg_data` |
 | `backup` | `postgres` + cron | `datos` | ninguno | `PGPASSWORD`, `BACKUP_RETENCION_DIAS`, `BACKUP_DESTINO_EXTERNO` | `backups` |
 
 - `datos` y `backend` son `internal: true`. Solo `borde` (tunnel) y `salida` (worker) tienen egreso.
