@@ -6,6 +6,7 @@ import { ZodError } from "zod";
 import { bd } from "@/db/conexion";
 import { registrarAuditoria } from "../auditoria";
 import { ESTADO_HTTP, ErrorDominio, type CodigoError } from "../errores";
+import { conIdempotencia } from "./idempotencia";
 import type { Permiso } from "./permisos";
 import { type SesionActiva, validarSesion } from "./sesiones";
 
@@ -73,8 +74,15 @@ function csrfValido(enviado: string | null, esperado: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-/** Exige sesión válida, CSRF en mutaciones y el permiso indicado ("sesion" = solo autenticado). */
-export function conPermiso<P = Record<string, never>>(permiso: Permiso | "sesion", manejador: Manejador<ContextoAutenticado<P>>): Ruta<P> {
+/**
+ * Exige sesión válida, CSRF en mutaciones y el permiso indicado ("sesion" = solo autenticado).
+ * Con `idempotente`, exige Idempotency-Key y no repite la acción (API §1).
+ */
+export function conPermiso<P = Record<string, never>>(
+  permiso: Permiso | "sesion",
+  manejador: Manejador<ContextoAutenticado<P>>,
+  opciones: { idempotente?: boolean } = {},
+): Ruta<P> {
   return async (req, segmento) => {
     const base = contextoBase(req, await segmento.params);
     const sesion = await validarSesion(req.cookies.get(COOKIE_SESION)?.value);
@@ -91,7 +99,11 @@ export function conPermiso<P = Record<string, never>>(permiso: Permiso | "sesion
       return respuestaError("SIN_PERMISO", "No tienes permiso para esta acción.", base.correlacionId);
     }
     const actor = { tipo: "usuario" as const, id: sesion.usuario.id, ip: base.ip, userAgent: base.userAgent };
-    return ejecutar({ ...base, sesion, actor }, manejador);
+    const ctx = { ...base, sesion, actor };
+    if (!opciones.idempotente) return ejecutar(ctx, manejador);
+    return ejecutar(ctx, async (c) =>
+      conIdempotencia(req.headers.get("idempotency-key"), sesion.usuario.id, await req.clone().text(), () => manejador(c)),
+    );
   };
 }
 
