@@ -29,6 +29,20 @@
       "when": 1791254868090,
       "tag": "0003_precios_inmutables",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791255777243,
+      "tag": "0004_movimientos",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791255777574,
+      "tag": "0005_stock_vista_inmutable",
+      "breakpoints": true
     }
   ]
 }
