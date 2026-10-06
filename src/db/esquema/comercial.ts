@@ -1,6 +1,8 @@
 // Clientes (datos personales: SECURITY §4), cotizaciones y pedidos (DATA-MODEL §2; REQ-COT).
 import { sql } from "drizzle-orm";
-import { check, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, check, date, index, integer, jsonb, numeric, pgTable, serial, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { articulo, listaPrecio } from "./catalogo";
+import { usuario } from "./seguridad";
 
 const ahora = () => timestamp({ withTimezone: true }).notNull().defaultNow();
 
@@ -22,3 +24,97 @@ export const cliente = pgTable("cliente", {
   check("cliente_tipo", sql`${t.tipo} in ('tienda', 'directo')`),
   index("cliente_nombre_idx").on(t.nombre),
 ]);
+
+// --- Cotizaciones (REQ-COT-2–8). Importes en pesos enteros (bigint). Inmutable desde "aprobada" (trigger). ---
+
+const pesos = () => bigint({ mode: "number" });
+
+export const ESTADOS_COTIZACION = ["interpretando", "borrador", "ia_fallida", "aprobada", "aceptada"] as const;
+
+export const cotizacion = pgTable("cotizacion", {
+  id: uuid().primaryKey().defaultRandom(),
+  numero: serial().notNull().unique(),
+  clienteId: uuid().references(() => cliente.id),
+  estado: text().notNull(),
+  origen: text().notNull(), // ia | manual
+  textoOriginal: text(),
+  interpretacionIa: jsonb(),
+  alertas: jsonb().notNull().default([]),
+  listaId: uuid().references(() => listaPrecio.id),
+  subtotal: pesos().notNull().default(0),
+  descuentoPct: numeric({ precision: 5, scale: 4, mode: "number" }).notNull().default(0),
+  descuentoMotivo: text(),
+  descuento: pesos().notNull().default(0),
+  neto: pesos().notNull().default(0),
+  iva: pesos().notNull().default(0),
+  total: pesos().notNull().default(0),
+  vigenciaHasta: date({ mode: "string" }),
+  notas: text(),
+  aprobadaPor: uuid().references(() => usuario.id),
+  aprobadaEn: timestamp({ withTimezone: true }),
+  creadoPor: uuid().notNull().references(() => usuario.id),
+  creadoEn: ahora(),
+  actualizadoEn: ahora(),
+  version: integer().notNull().default(1),
+}, (t) => [
+  check("cotizacion_estado", sql`${t.estado} in ('interpretando', 'borrador', 'ia_fallida', 'aprobada', 'aceptada')`),
+  check("cotizacion_origen", sql`${t.origen} in ('ia', 'manual')`),
+  check("cotizacion_descuento", sql`${t.descuentoPct} >= 0 AND ${t.descuentoPct} < 1 AND (${t.descuentoPct} = 0 OR length(trim(coalesce(${t.descuentoMotivo}, ''))) > 0)`),
+  index("cotizacion_estado_idx").on(t.estado, t.creadoEn),
+  index("cotizacion_cliente_idx").on(t.clienteId),
+]);
+
+export const cotizacionItem = pgTable("cotizacion_item", {
+  id: uuid().primaryKey().defaultRandom(),
+  cotizacionId: uuid().notNull().references(() => cotizacion.id),
+  orden: integer().notNull(),
+  articuloId: uuid().references(() => articulo.id),
+  descripcion: text().notNull(), // del catálogo; nunca texto de la IA (DATA-MODEL)
+  cantidad: integer().notNull(),
+  estadoItem: text().notNull(), // ok | por_confirmar | a_pedido
+  duda: text(),
+  textoFuente: text(), // fragmento del texto del cliente que originó el ítem
+  precioNetoLista: numeric({ precision: 14, scale: 4, mode: "number" }),
+  recargoPct: numeric({ precision: 6, scale: 4, mode: "number" }),
+  precioUnitario: pesos(),
+  totalLinea: pesos(),
+  precioReferencia: pesos(),
+  referenciaCodigo: text(),
+  fijadoPor: uuid().references(() => usuario.id),
+  modificadoPor: uuid().references(() => usuario.id),
+  modificadoEn: timestamp({ withTimezone: true }),
+}, (t) => [
+  check("item_estado", sql`${t.estadoItem} in ('ok', 'por_confirmar', 'a_pedido')`),
+  check("item_cantidad", sql`${t.cantidad} > 0`),
+  check("item_ok_con_precio", sql`${t.estadoItem} <> 'ok' OR (${t.precioUnitario} IS NOT NULL AND ${t.totalLinea} = ${t.precioUnitario} * ${t.cantidad})`),
+  index("item_cotizacion_idx").on(t.cotizacionId, t.orden),
+]);
+
+// --- Cola y registro de IA (ADR-0006, AI.md) ---
+export const trabajoIa = pgTable("trabajo_ia", {
+  id: uuid().primaryKey().defaultRandom(),
+  cotizacionId: uuid().notNull().references(() => cotizacion.id),
+  estado: text().notNull().default("pendiente"),
+  intentos: integer().notNull().default(0),
+  tomadoEn: timestamp({ withTimezone: true }),
+  error: text(),
+  creadoEn: ahora(),
+}, (t) => [
+  check("trabajo_estado", sql`${t.estado} in ('pendiente', 'en_curso', 'listo', 'fallido')`),
+  index("trabajo_pendiente_idx").on(t.estado, t.creadoEn),
+]);
+
+export const llamadaIa = pgTable("llamada_ia", {
+  id: uuid().primaryKey().defaultRandom(),
+  trabajoId: uuid().notNull().references(() => trabajoIa.id),
+  proveedor: text().notNull(),
+  modelo: text(),
+  entradaRedactada: text().notNull(), // texto ya enmascarado: sin RUT, correo ni teléfono
+  salida: jsonb(),
+  tokensEntrada: integer(),
+  tokensSalida: integer(),
+  costoUsd: numeric({ precision: 10, scale: 6, mode: "number" }),
+  latenciaMs: integer(),
+  resultado: text().notNull(), // ok | invalida | error | timeout | tope
+  creadoEn: ahora(),
+}, (t) => [index("llamada_fecha_idx").on(t.creadoEn)]);
