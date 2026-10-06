@@ -47,5 +47,9 @@ describe("evaluación del intérprete (AI.md §6)", () => {
     expect(resumir([bien, amb, mal]).aprobado).toBe(true);
     expect(resumir([{ ...bien, latenciaMs: 20_000 }, amb, mal]).aprobado).toBe(false);
     expect(resumir([{ ...bien, costoUsd: 0.5 }, amb, mal]).criterios.at(-1)!.cumple).toBe(false);
+    // Sin tarifa el costo queda sin juzgar y no se aprueba en falso.
+    const sinTarifa = resumir([bien, amb, mal], false);
+    expect(sinTarifa.criterios.at(-1)!.cumple).toBeNull();
+    expect(sinTarifa.aprobado).toBe(false);
   });
 });

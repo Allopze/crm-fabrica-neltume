@@ -45,7 +45,7 @@ Validación (`src/ai/esquema.ts` + `mapear.ts`):
 - Certeza = el modelo existe y madera, rango de ancho y alto coinciden exactamente con un artículo.
   - Una medida entre rangos o alturas queda `a_pedido`, con precio de referencia del rango o altura superior.
   - Si no hay rango superior, el ítem queda `por_confirmar` sin referencia.
-- Si existe cualquier duda, el ítem es `por_confirmar`.
+- Si existe cualquier duda, el ítem es `por_confirmar`. Por eso el prompt reserva `dudas` para datos del producto que faltan, son ambiguos o no existen (frases breves, hasta 300 caracteres): una medida fuera de grilla no es duda (la resuelve el backend como `a_pedido`) y las instrucciones del cliente van en `alertas`.
 - Ítem o salida inválidos: se reintenta 1 vez; si vuelve a fallar, el borrador queda `ia_fallida` (cotización manual).
 
 ## 3. Herramientas

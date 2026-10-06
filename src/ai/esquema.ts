@@ -12,7 +12,7 @@ export const ItemPropuesto = z.strictObject({
   alto_m: z.number().min(1).max(3.5).nullable(),
   medida_accesorio: z.string().max(80).nullable(),
   cantidad: z.number().int().min(1).max(500).nullable(),
-  dudas: z.array(z.string().max(200)).max(10),
+  dudas: z.array(z.string().max(300)).max(10),
 });
 
 export const Propuesta = z.strictObject({

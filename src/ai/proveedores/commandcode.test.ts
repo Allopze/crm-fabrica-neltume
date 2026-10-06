@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ErrorIA, type InterpreteIA } from "../interfaz";
-import { interpretarConReintentos } from "../reintentos";
-import { CommandCodeIA } from "./commandcode";
+import { interpretarConReintentos, reintentosDesdeEntorno } from "../reintentos";
+import { baseDeApi, CommandCodeIA } from "./commandcode";
 
 const cfg = { apiKey: "clave-de-prueba", baseUrl: "https://ejemplo.invalid", modelo: "modelo-x", timeoutMs: 50, precioEntradaMTok: 1, precioSalidaMTok: 5 };
 const cat = { modelos: ["NELTUME"], maderas: ["RAULI"], anchos: [{ codigo: "4", etiqueta: "0,90 a 0,95" }], altosM: [2.1], accesorios: [] };
@@ -66,5 +66,26 @@ describe("reintentos acotados (AI.md §5)", () => {
     expect(inv.llamadas).toBe(2);
     const ok = ia([new ErrorIA("transitorio", "a")]);
     await expect(interpretarConReintentos(ok, "x", cat, { esperasMs: [1] })).resolves.toMatchObject({ proveedor: "falso" });
+  });
+});
+
+describe("URL base de la API", () => {
+  it("usa la raíz aunque se copie la ruta de un endpoint", () => {
+    expect(baseDeApi(undefined)).toBe("https://api.commandcode.ai");
+    expect(baseDeApi("https://api.commandcode.ai/")).toBe("https://api.commandcode.ai");
+    expect(baseDeApi("https://api.commandcode.ai/provider/v1/responses")).toBe("https://api.commandcode.ai");
+    expect(baseDeApi("https://api.commandcode.ai/provider/v1")).toBe("https://api.commandcode.ai");
+  });
+});
+
+describe("LLM_MAX_REINTENTOS", () => {
+  it("vacío o inválido usa 2; 0 desactiva los reintentos", () => {
+    expect(reintentosDesdeEntorno(undefined)).toBe(2);
+    expect(reintentosDesdeEntorno("")).toBe(2);
+    expect(reintentosDesdeEntorno("  ")).toBe(2);
+    expect(reintentosDesdeEntorno("abc")).toBe(2);
+    expect(reintentosDesdeEntorno("-1")).toBe(2);
+    expect(reintentosDesdeEntorno("0")).toBe(0);
+    expect(reintentosDesdeEntorno("1")).toBe(1);
   });
 });

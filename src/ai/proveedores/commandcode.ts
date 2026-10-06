@@ -12,13 +12,18 @@ export interface ConfigCommandCode {
   precioSalidaMTok: number;
 }
 
+/** Raíz de la API: acepta también una URL copiada con la ruta del endpoint (…/provider/v1/responses). */
+export function baseDeApi(url: string | undefined): string {
+  return (url || "https://api.commandcode.ai").trim().replace(/\/+$/, "").replace(/\/provider\/v1(\/.*)?$/, "");
+}
+
 export function configDesdeEntorno(): ConfigCommandCode {
   const apiKey = process.env.CMD_API_KEY;
   const modelo = process.env.CMD_MODEL;
   if (!apiKey || !modelo) throw new Error("Faltan CMD_API_KEY o CMD_MODEL para usar Command Code");
   return {
     apiKey, modelo,
-    baseUrl: (process.env.CMD_API_BASE_URL || "https://api.commandcode.ai").replace(/\/$/, ""),
+    baseUrl: baseDeApi(process.env.CMD_API_BASE_URL),
     timeoutMs: Number(process.env.LLM_TIMEOUT_MS || 12_000),
     precioEntradaMTok: Number(process.env.LLM_PRECIO_ENTRADA_USD_MTOK || 0),
     precioSalidaMTok: Number(process.env.LLM_PRECIO_SALIDA_USD_MTOK || 0),

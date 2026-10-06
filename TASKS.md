@@ -98,7 +98,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 ## Fase 2 — Puesta en producción (P1 + requisitos no funcionales)
 
 - [x] T2.1 (75) `eval/casos.json` (24 casos de AI.md) y `npm run eval:ia` con informe · AI §6, REQ-NFR-1, 2 · el propio informe · T1.24
-- [ ] T2.2 (90) Correr la evaluación con 2–3 modelos de `/models`, fijar `CMD_MODEL` y actualizar ADR-0001 · ADR-0001 · criterio de AI §6 · T2.1
+- [x] T2.2 (90) Correr la evaluación con 2–3 modelos de `/models`, fijar `CMD_MODEL` y actualizar ADR-0001 · ADR-0001 · criterio de AI §6 · T2.1
 - [x] T2.3 (75) Servicio `backup` con copia externa y runbook de restauración probado · REQ-NFR-4 · prueba de restauración · T0.3
 - [x] T2.4 (60) Pantalla de métricas de IA y alerta al 80 % del tope · DESIGN §5, SECURITY T4 · I `metricas` · T1.26 · [P]
 - [ ] T2.5 (90) Despliegue en el hosting: túnel real, política de Access y verificación de exposición · SECURITY §6, REQ-NFR-3 · chequeo externo de puertos · T0.15
