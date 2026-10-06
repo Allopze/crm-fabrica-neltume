@@ -93,11 +93,11 @@ En v1 el catálogo resumido va completo en el contexto (es pequeño), así que n
 | Salida | `max_tokens` = 2.000 (`LLM_MAX_TOKENS_SALIDA`) | ~550 |
 
 - **Tope de salida:** con 800 un pedido de cuatro líneas con dudas quedaba truncado y sin la herramienta; una respuesta cortada (`finish_reason: length`) es inválida, nunca se usa a medias (la tienda usa 8.192 y la misma regla).
-- **Costo estimado:** ~4.000 tokens de entrada y ~400 de salida. Con un modelo de gama media (tarifa nativa de su proveedor) son unos US$ 0,005–0,02 por cotización, y con un reintento queda bajo el tope de US$ 0,10 (REQ-NFR-2). Las tarifas exactas se confirman con `/models` y el plan contratado.
+- **Costo estimado:** ~4.000 tokens de entrada y ~400 de salida. Con un modelo de gama media son unos US$ 0,005–0,02 por cotización (REQ-NFR-2). Command Code registra tarifas públicas; Groq no se atribuye un costo si su API no lo informa.
 - **Topes:** 20 interpretaciones por usuario por hora y `LLM_TOPE_DIARIO_USD` (al alcanzarlo, `ia_fallida`). `LLM_PRESUPUESTO_MENSUAL_USD` solo alerta al 80 % (SECURITY T4). El costo de cada llamada queda en `llamada_ia`.
 - **Latencia:** el timeout es de 12 s por intento y el presupuesto total de 15 s p90 (REQ-NFR-1).
-- **Modelo:** se fija en `CMD_MODEL` tras correr el set de evaluación con 2 o 3 candidatos de `/models`. El primero que cumpla §6 con menor costo gana. `/provider/v1/models` no trae tarifas: se leen de la tabla pública `commandcode.ai/models` (como hace la tienda) y se cargan en `LLM_PRECIO_*`.
-- **Cabeceras:** `Authorization: Bearer` (clave en `CMD_API_KEY`) y `x-cmd-zdr: 1`.
+- **Modelo:** se elige desde `/administracion/ia`; catálogo Command Code y tarifas públicas se refrescan desde el worker. La selección se activa inmediatamente; §6 describe una verificación informativa, no un bloqueo.
+- **Credenciales:** cada proveedor tiene una variable (`CMD_API_KEY`, `GROQ_API_KEY`) en el entorno privado del worker. En desarrollo se carga `.env.worker.local`; en producción Compose solo las inyecta en `worker`. Ni la web ni Ajustes reciben o guardan las claves. Command Code conserva `x-cmd-zdr: 1`.
 
 ## 5. Baja confianza y fallas
 
@@ -106,14 +106,16 @@ En v1 el catálogo resumido va completo en el contexto (es pequeño), así que n
 | Ítem con dudas, modelo o madera inexistente, medida fuera de grilla | `por_confirmar` / `a_pedido`, visible y no aprobable hasta que una persona lo resuelva |
 | `alertas` no vacía o `sin_items` | Nota visible "revisar el texto del cliente" en el borrador |
 | Partes del pedido sin registrar | Una segunda pasada con esas partes; si falla o no cubre más, queda la primera con la alerta «No registré» |
-| Timeout, 5xx o 429 del proveedor | Reintento con espera exponencial (1 s, 3 s), hasta `LLM_MAX_REINTENTOS` = 2 |
+| Timeout, 5xx o 429 del proveedor | Reintento con espera (1 s, 3 s), hasta `LLM_MAX_REINTENTOS` = 2; en 429 respeta `Retry-After` hasta 30 s y no reintenta antes del plazo |
 | 4xx no transitorio, sin proveedor ZDR, salida inválida dos veces o tope de costo alcanzado | `ia_fallida` sin reintento, con aviso y botón "Cotizar a mano" (REQ-COT-2.7) |
 
 El doble determinista (`src/ai/doble.ts`) responde con un mapa fijo de texto a salida y simula timeout, error 500, salida inválida e injection. Se usa en unit, integración y E2E (TESTING.md).
 
-## 6. Set de evaluación y criterio de aprobación
+## 6. Evaluación informativa de calidad
 
-Corre aparte con el modelo real: `npm run eval:ia -- --modelo <id>` lee `eval/casos.json`, recorre el mismo camino que el worker (normalizar → enmascarar → modelo → mapeo determinista contra el catálogo importado) y guarda `eval/informes/<fecha>-<modelo>.md` y `.json` (sin el texto de los pedidos ni precios). Sale con código 1 si no cumple el criterio. Códigos: `MOD-MADERA-ANCHO-ALTO`, donde la madera es O/L/M/R, el ancho va de 1 a 9 (1 = 0,60–0,65 … 9 = 1,40–1,45) y el alto de A a G (2,0 … 2,6 m).
+Corre aparte con el modelo real: `npm run eval:ia` muestra un menú numerado en la terminal para elegir **1. CommandCode** o **2. Groq**, y después otro menú numerado con los modelos compatibles del catálogo guardado por Ajustes. Muestra las tarifas de CommandCode o los límites Free de referencia de Groq y su fecha; los modelos Preview e incompatibles aparecen deshabilitados con su motivo. También acepta `npm run eval:ia -- --proveedor groq --modelo <id>` para automatizar la selección.
+
+La evaluación usa casos sintéticos y `CMD_API_KEY` o `GROQ_API_KEY` desde `.env.worker.local`, sin cambiar el proveedor activo en Ajustes ni exigir una confirmación ZDR. Si el catálogo no tiene modelos, inicia el worker para que refresque la caché. Llama al proveedor real y puede consumir cuota/costo. Guarda informes sin textos de pedidos ni precios. Es informativa: no bloquea la activación inmediata del modelo. Para usar Groq en cotizaciones reales, la activación en Ajustes sigue requiriendo confirmar ZDR. Códigos: `MOD-MADERA-ANCHO-ALTO`, donde la madera es O/L/M/R, el ancho va de 1 a 9 y el alto de A a G.
 
 | # | Pedido | Esperado |
 |---|---|---|
@@ -144,9 +146,17 @@ Corre aparte con el modelo real: `npm run eval:ia -- --modelo <id>` lee `eval/ca
 
 Los casos 25–57 (`fuente: "tienda:…"`) son pedidos de un solo mensaje del cotizador de la tienda, anonimizados y convertidos con `scripts/convertir-evals-tienda.mts`: lo esperado se calcula con el mapeo determinista sobre el catálogo real y se revisa a mano. Suman el grupo `accesorio` (marcos, piezas T y molduras). El set se amplía con pedidos reales anonimizados a medida que lleguen.
 
-**Criterio para usar un modelo en producción o cambiarlo** (no habilita envío automático, que está fuera de alcance):
+**Criterios orientativos del informe** (no habilitan envío automático, que está fuera de alcance):
 Se mide por grupo (`grupo` de cada caso), no por rangos de ids:
 - ≥ 90 % de los ítems exactos en los casos claros y en los de accesorios.
 - 100 % de los casos ambiguos o inexistentes quedan `por_confirmar` o `a_pedido`, sin ninguno completado en silencio.
 - 100 % de los casos maliciosos sin efecto, con alerta donde corresponde y sin datos personales en la petición.
 - p90 ≤ 15 s y costo medio ≤ US$ 0,10.
+
+## 7. Configuración de proveedor desde Ajustes (REQ-ADM-4.x)
+
+`/administracion/ia` elige Command Code o Groq y usa una clave de entorno independiente por proveedor. Command Code muestra el catálogo autenticado, compatibilidad con Chat Completions, tarifas de entrada/salida por millón y fecha de consulta. Groq muestra el catálogo autenticado y RPM/RPD/TPM/TPD públicos del plan Free; son referencias, no las cuotas exactas de la organización. Los modelos Preview, no conversacionales, sin herramienta compatible o sin tarifa Command Code quedan deshabilitados con un motivo.
+
+Para Groq, quien configura confirma que activó Zero Data Retention en Console. La API no permite comprobarlo desde la app. Groq usa Chat Completions y la herramienta `proponer_items`, igual que Command Code; el precio queda sin informar en `llamada_ia` cuando el proveedor no lo devuelve. `Retry-After` se respeta en los reintentos acotados.
+
+Las API keys viven solo en el entorno del worker: `.env.worker.local` en desarrollo y variables del servicio en producción. Ajustes y su API solo guardan proveedor/modelo y ZDR; no aceptan ni devuelven claves. El worker captura proveedor/modelo al tomar el trabajo y usa la variable del proveedor para llamar al servicio. T6.1–T6.7 se detallan en TASKS.md y ADR-0009.

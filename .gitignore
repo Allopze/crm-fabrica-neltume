@@ -3,6 +3,7 @@
 .env
 .env.*
 !.env.example
+!.env.worker.example
 /node_modules
 /.next/
 /out/
@@ -23,3 +24,8 @@ npm-debug.log*
 
 # Proyecto de referencia (cotizador de la tienda): solo lectura local, con secretos y datos privados
 /referencia
+
+# Carpetas locales de herramientas de IA y diseño (no son del proyecto)
+/.commandcode/
+/.codex/
+/.impeccable/

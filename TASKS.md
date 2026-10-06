@@ -147,4 +147,16 @@ Aprobada el 06-10-2026. La tienda le envía a la fábrica notas de pedido en PDF
 - [x] T5.10 (60) Evaluación ampliada con los casos reales de la tienda · AI §6 · el propio informe · T5.6–T5.9
 - [x] T5.11 (60) Anclaje por línea (modelo, madera y medidas), corrección de omisiones e ítems no verificados · REQ-COT-2.15 · U `anclaje`, I `worker` · T5.9
 
-**Checkpoint F5:** flujo PDF de la tienda → pedido → producir faltante → lista → despacho, evaluación en verde y `npm test` verde. Espero tu OK.
+**Checkpoint F5:** flujo PDF de la tienda → pedido → producir faltante → lista → despacho, evaluación en verde y `npm test` verde. Espero tu OK. **OK del usuario: 06-10-2026.**
+
+## Fase 6 — Ajustes de IA (aprobada el 06-10-2026; ADR-0009)
+
+- [x] T6.1 Catálogos autenticados Command Code/Groq, tarifas públicas y límites Free con caché y fecha · REQ-ADM-4.2, 4.3 · U/I `catalogo-ia` · ADR-0009
+- [x] T6.2 Claves independientes en entorno privado de worker (`.env.worker.local` en dev, Compose en producción); catálogo y CLI las leen sin pasarlas a Next.js · REQ-ADM-4.1 · U/I `clave-ia` · T6.1
+- [x] T6.3 API protegida con `config.editar`, sin aceptar claves, auditoría sin secretos, ZDR Groq, 401/403 · REQ-ADM-4.1, 4.3 · I `ajustes-ia` · T6.2
+- [x] T6.4 Pantalla de Ajustes con proveedor/modelo, instrucciones para `.env.worker.local`, precios Command Code, límites Free Groq, fecha y confirmación ZDR · UX · E `17-ajustes-ia` · T6.1–T6.3
+- [x] T6.5 Adaptador Groq con herramienta forzada, esquema Zod, errores y `Retry-After` acotado · REQ-ADM-4.2 · U HTTP simulado · T1.22
+- [x] T6.6 Captura de configuración al tomar cada trabajo, activación inmediata y doble determinista en la suite · REQ-ADM-4.1 · U/I `worker-config-ia` · T6.1–T6.5
+- [x] T6.7 Selector interactivo de proveedor y modelo en `eval:ia`, con precio Command Code o límites Free Groq · AI §6 · revisión manual · T6.1–T6.6
+
+**Checkpoint F6:** definir claves en el entorno del worker, comprobar que la app y auditoría no las reciben, cambiar proveedor/modelo desde Ajustes, verificar que el siguiente trabajo usa la nueva configuración y elegir proveedor/modelo en `eval:ia`. Suite completa según el contrato del proyecto. La evaluación real queda informativa, no como bloqueo de activación. Tras este checkpoint me detengo para revisión.

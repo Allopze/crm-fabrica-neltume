@@ -17,7 +17,7 @@ export const PERMISOS = {
   "pedidos.gestionar": "Crear, cancelar y despachar notas de pedido",
   "clientes.ver": "Ver clientes",
   "clientes.editar": "Crear y editar clientes",
-  "config.editar": "Editar parámetros: mínimos, vigencia y recargos",
+  "config.editar": "Editar parámetros: mínimos, vigencia, recargos y proveedor de IA",
 } as const;
 
 export type Permiso = keyof typeof PERMISOS;

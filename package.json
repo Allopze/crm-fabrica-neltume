@@ -18,7 +18,7 @@
     "eval:ia": "tsx --env-file-if-exists=.env.local scripts/eval-ia.mts",
     "demo:preparar": "npm run db:migrar && tsx --env-file-if-exists=.env.local scripts/preparar-demo.mts",
     "typecheck": "next typegen && tsc --noEmit",
-    "worker": "tsx --env-file-if-exists=.env.local src/ai/worker.ts"
+    "worker": "tsx --env-file-if-exists=.env.worker.local src/ai/worker.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.1",

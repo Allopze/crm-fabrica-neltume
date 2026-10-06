@@ -8,7 +8,7 @@ El usuario definió que el LLM se consume vía Command Code. Su Provider API exp
 ## Decisión
 - Usar `/provider/v1/chat/completions` (formato OpenAI) con tool calling forzado a `proponer_items` y la cabecera `x-cmd-zdr: 1` siempre.
 - Detrás de una interfaz propia en `src/ai/` (`interpretarPedido(texto, catalogo) → Propuesta`). Lo específico del proveedor vive en `src/ai/proveedores/commandcode.ts`.
-- El modelo se configura en `CMD_MODEL` y se elige entre 2 o 3 candidatos con el set de AI.md §6: gana el más barato que cumpla el criterio.
+- El modelo se configura desde Ajustes de IA; `CMD_API_KEY` vive en el entorno privado del worker.
 - Validación estricta en el backend (Zod), sin depender de garantías de formato del proveedor.
 
 ## Evaluación y modelo elegido (T2.2, 06-10-2026)
@@ -29,7 +29,7 @@ Set de AI.md §6 (24 casos) con el mismo camino que el worker. Candidatos rápid
   - Esquema: `dudas` de hasta 300 caracteres.
   - Adaptador: tolera una `CMD_API_BASE_URL` copiada con la ruta del endpoint.
 - `gemini-3.8-flash` (evaluado a pedido del usuario): tarda 17–22 s en los casos ambiguos 13, 15, 18 y 19. Con el timeout de 12 s terminan en `ia_fallida` (cotización manual, nunca completados en silencio). Con 60 s de diagnóstico el p90 fue 17,4 s y el caso 13 respondió sin la herramienta. **No aprobado**; el usuario confirmó mantener `gemini-3.5-flash`.
-- Se vuelve a evaluar al cambiar de modelo, de prompt o al ampliar el set.
+- La reevaluación al cambiar modelo/prompt o ampliar el set sigue siendo recomendable; ADR-0009 determina que es informativa y no bloquea la activación inmediata desde Ajustes.
 
 ### Reevaluación con el set ampliado (T5.10, 06-10-2026)
 

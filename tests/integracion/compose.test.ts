@@ -22,10 +22,17 @@ describe("docker-compose.yml de producción (SECURITY §6, T8)", () => {
     expect(compose.services.app.networks?.every((n) => compose.networks[n].internal)).toBe(true);
   });
 
-  it("la clave del LLM solo llega al worker", () => {
+  it("las API keys de proveedores solo llegan al worker", () => {
     for (const [nombre, s] of Object.entries(compose.services)) {
-      if (nombre !== "worker") expect(Object.keys(s.environment ?? {})).not.toContain("CMD_API_KEY");
+      if (nombre !== "worker") {
+        expect(Object.keys(s.environment ?? {})).not.toContain("CMD_API_KEY");
+        expect(Object.keys(s.environment ?? {})).not.toContain("GROQ_API_KEY");
+      }
+      // No queda ninguna clave de cifrado de una versión anterior (ADR-0009): las claves no se guardan en la BD.
+      expect(Object.keys(s.environment ?? {}).filter((k) => k.startsWith("IA_CONFIG_"))).toEqual([]);
     }
+    expect(compose.services.worker.environment).toHaveProperty("CMD_API_KEY");
+    expect(compose.services.worker.environment).toHaveProperty("GROQ_API_KEY");
   });
 
   it("el túnel llega solo a la app, sin proxy intermedio (ADR-0011)", () => {

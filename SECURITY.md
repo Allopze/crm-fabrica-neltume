@@ -1,6 +1,6 @@
 # SECURITY.md — Autorización, auditoría, privacidad y amenazas
 
-Refs: REQ-ADM-1.x, 2.x, 3.x · REQ-COT-2.8, 2.9, 9.x · REQ-NFR-5, 7. Detalle de servicios en DESIGN.md; endpoints en API.md.
+Refs: REQ-ADM-1.x, 2.x, 3.x, 4.x · REQ-COT-2.8, 2.9, 9.x · REQ-NFR-5, 7. Detalle de servicios en DESIGN.md; endpoints en API.md.
 
 ## 1. Modelo de autorización
 
@@ -29,7 +29,7 @@ Refs: REQ-ADM-1.x, 2.x, 3.x · REQ-COT-2.8, 2.9, 9.x · REQ-NFR-5, 7. Detalle de
 | `descuentos.aplicar` | cotizaciones | aplicar descuento con motivo |
 | `pedidos.gestionar` | notas de pedido, reservas | crear desde cotización, cancelar, despachar |
 | `clientes.ver` / `clientes.editar` | clientes | ver / crear y editar |
-| `config.editar` | parámetros | mínimos, vigencia, recargos por tipo |
+| `config.editar` | parámetros y proveedor de IA | mínimos, vigencia, recargos y modelo; API keys solo por despliegue |
 
 ### Matriz rol × recurso × acción
 
@@ -86,7 +86,7 @@ Reglas verificables:
 
 - El enmascarado usa patrones de RUT chileno (`12.345.678-9`, `12345678-9`), correo, teléfono (`+56`, 9 dígitos) y URL, reemplazados por `[RUT]`, `[CORREO]`, `[TELEFONO]` y `[URL]`. Un test usa un corpus fijo y verifica que la petición y su registro no contienen nada de eso.
 - El registro de llamadas al LLM (`llamada_ia`) guarda el texto ya enmascarado, la respuesta, los tokens, el costo, la latencia y el resultado. No guarda datos del cliente.
-- Se usa el modo Zero Data Retention del proveedor (`x-cmd-zdr: 1`). Si no hay un proveedor con ZDR disponible, la llamada falla y se ofrece la cotización manual (ADR-0001).
+- Command Code usa `x-cmd-zdr: 1`. En Groq un administrador confirma en Ajustes que ZDR está habilitado en Console; la app no puede verificarlo por API. Si el proveedor no responde con la herramienta requerida, falla la interpretación y se ofrece la cotización manual (ADR-0009).
 - Ley chilena de datos personales: mínimo necesario, finalidad (cotizar y despachar) y acceso restringido a `clientes.ver`.
 
 ## 5. Top 8 amenazas
@@ -97,11 +97,17 @@ Reglas verificables:
 | T2 | Manipulación de precios desde el cliente (enviar `precio_unitario` en el JSON) | La API ignora y rechaza importes en la entrada; el servidor recalcula siempre con la versión de lista. Las cotizaciones aprobadas son de solo lectura | Integración: un POST/PATCH con `precio_unitario` o `total` da 400 y el total no cambia |
 | T3 | IDOR entre cotizaciones o pedidos (cambiar el id en la URL) | Lectura con filtro por actor y 404 si no aplica; ids UUID no secuenciales; el número correlativo es solo para mostrar | Integración: un usuario sin `cotizaciones.crear` pide un id existente y recibe 404, con la denegación auditada |
 | T4 | Abuso de costo del LLM (muchos envíos o textos enormes) | Texto máximo de 4.000 caracteres; límite de 20 interpretaciones por usuario por hora y tope diario global configurable; `max_tokens` en la salida; costo por llamada registrado y alerta a 80 % del tope mensual | Integración: la llamada 21 en la misma hora da 429 sin llamar al doble del LLM |
-| T5 | Exposición de API keys y secretos | Solo en variables de entorno (`.env`, ignorado por git); `.env.example` sin valores; los logs filtran `authorization` y `x-api-key`; la clave del LLM solo existe en `worker` | CI: escaneo de secretos sobre el repo. Unit: el logger redacta las cabeceras sensibles |
+| T5 | Exposición de API keys y secretos | Las claves se guardan en `.env.worker.local` durante el desarrollo y en el entorno privado del servicio `worker` en producción. `scripts/dev.mts` entrega variables vacías a Next.js; Compose no las inyecta en `app`. Ajustes, GET, logs y auditoría no aceptan ni exponen claves. `.env.worker.local` está excluido de git | Integración: API/UI/auditoría sin secretos. Compose: claves solo en `worker`. CI: escaneo del repo |
 | T6 | Suplantación de remitente (correo o WhatsApp) | **No aplica en v1**: no hay entrada externa (ADR-0003). Si se habilita, exigirá firma del webhook y lista de remitentes, con la cotización siempre en borrador | Pendiente hasta habilitar el canal; hoy, un test verifica que no existen rutas de webhook |
 | T7 | Robo de sesión o fuerza bruta en login (el login está en internet, sin Access: ADR-0010) | Contraseña de mínimo 8 caracteres con hash argon2id; 5 fallos cada 15 min por correo **o** por IP (un ataque repartido entre IPs contra una cuenta también se frena; riesgo aceptado: un atacante puede bloquear 15 min una cuenta); mensaje único «Correo o contraseña incorrectos» y verificación con hash falso (no revela si el correo existe); regla de limitación en Cloudflare para `POST /api/v1/sesion` (recomendada, RUNBOOK §3); cookie `HttpOnly`, `Secure`, `SameSite=Lax`; expiración de 8 h; token CSRF en mutaciones | Integración: el 6.º intento da 429 y se audita; una mutación sin CSRF da 403 |
 | T8 | Exposición de BD o paneles de administración | Ningún `ports:` público en Compose; BD solo en la red interna; acceso de administración por túnel SSH o `127.0.0.1`; el túnel solo apunta a la app (`app:3000`) | Test de configuración: `docker compose config` no tiene puertos en `0.0.0.0` |
 | T9 | PDF malicioso o engañoso subido como nota de la tienda | Máximo 5 MB y firma `%PDF-`; `pdfjs-dist` 6 solo extrae texto (sin XFA, sin fuentes del sistema, se detiene ante errores); el archivo no se guarda (solo su hash); vista previa y confirmación humana; el servidor vuelve a leer el PDF al confirmar; códigos validados contra el catálogo y precio siempre de la lista (ADR-0008) | Unit: lector con nota anulada, sin tabla y sin códigos; integración: no PDF → 400, código inexistente → bloquea, duplicado → 409, sin datos del cliente final en BD ni auditoría |
+
+### Claves de proveedores y ZDR (REQ-ADM-4.x)
+
+`CMD_API_KEY` y `GROQ_API_KEY` viven en `.env.worker.local` para desarrollo y en las variables privadas del servicio `worker` para producción. Next.js, el navegador y la API de Ajustes no las reciben. El CLI `eval:ia` lee el mismo archivo local. Las claves no se escriben en respuestas, logs, auditoría ni `parametro`, y no hay ninguna ruta de claves cifradas en la base (ADR-0009).
+
+Command Code exige `x-cmd-zdr: 1`. Para Groq, un administrador confirma en Ajustes que habilitó Zero Data Retention en Data Controls; la aplicación no puede verificar ese control por API. Los límites Free que se muestran en la UI son una referencia pública; las cuotas exactas de la organización se consultan en Groq Console.
 
 ## 6. Exposición de red
 

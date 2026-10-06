@@ -2,6 +2,7 @@
 import { HERRAMIENTA_PROPONER_ITEMS, Propuesta } from "../esquema";
 import { type CatalogoResumido, ErrorIA, type InterpreteIA, type OpcionesInterpretacion, type ResultadoInterpretacion } from "../interfaz";
 import { mensajeUsuario, promptSistema } from "../prompt";
+import { leerRetryAfterMs } from "../retry-after";
 
 export interface ConfigCommandCode {
   apiKey: string;
@@ -20,20 +21,6 @@ export function baseDeApi(url: string | undefined): string {
 }
 
 export const MAX_TOKENS_SALIDA = 2000;
-
-export function configDesdeEntorno(): ConfigCommandCode {
-  const apiKey = process.env.CMD_API_KEY;
-  const modelo = process.env.CMD_MODEL;
-  if (!apiKey || !modelo) throw new Error("Faltan CMD_API_KEY o CMD_MODEL para usar Command Code");
-  return {
-    apiKey, modelo,
-    baseUrl: baseDeApi(process.env.CMD_API_BASE_URL),
-    timeoutMs: Number(process.env.LLM_TIMEOUT_MS || 12_000),
-    maxTokensSalida: Number(process.env.LLM_MAX_TOKENS_SALIDA || MAX_TOKENS_SALIDA),
-    precioEntradaMTok: Number(process.env.LLM_PRECIO_ENTRADA_USD_MTOK || 0),
-    precioSalidaMTok: Number(process.env.LLM_PRECIO_SALIDA_USD_MTOK || 0),
-  };
-}
 
 export class CommandCodeIA implements InterpreteIA {
   readonly nombre = "commandcode";
@@ -65,7 +52,9 @@ export class CommandCodeIA implements InterpreteIA {
     if (!res.ok) {
       const detalle = (await res.text().catch(() => "")).slice(0, 300);
       if (/zdr|zero.?data/i.test(detalle)) throw new ErrorIA("sin_zdr", "No hay proveedor con retención cero disponible");
-      if (res.status === 408 || res.status === 429 || res.status >= 500) throw new ErrorIA("transitorio", `Proveedor respondió ${res.status}`);
+      if (res.status === 408 || res.status === 429 || res.status >= 500) {
+        throw new ErrorIA("transitorio", `Proveedor respondió ${res.status}`, res.status === 429 ? leerRetryAfterMs(res.headers.get("retry-after")) : undefined);
+      }
       throw new ErrorIA("permanente", `Proveedor respondió ${res.status}`);
     }
 

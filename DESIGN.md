@@ -11,7 +11,7 @@ flowchart LR
   T --> A[app<br/>Next.js: UI + API]
   A --> D[(db<br/>PostgreSQL)]
   W[worker<br/>src/ai/worker] --> D
-  W -->|HTTPS + x-cmd-zdr| L[Command Code<br/>Provider API]
+  W -->|HTTPS; ZDR según proveedor| L[Command Code o Groq]
   B[backup<br/>pg_dump diario] --> D
   B --> X[(copia externa)]
 ```
@@ -74,13 +74,13 @@ Días hábiles: lunes a viernes, descontando los feriados legales de Chile (calc
 |---|---|---|---|---|---|
 | `tunnel` | `cloudflare/cloudflared` | `borde`, `backend` | ninguno | `TUNNEL_TOKEN` | — |
 | `migrar` | build `.` (target `migrar`) | `datos` | ninguno | `DATABASE_ADMIN_URL`, `DATABASE_URL_OWNER`, `DATABASE_URL` | — |
-| `app` | build `.` (target `app`) | `backend`, `datos` | ninguno | `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `APP_TZ=America/Santiago`, `LLM_TOPE_DIARIO_USD`, `LLM_PRESUPUESTO_MENSUAL_USD` (solo para mostrar alertas) | `pdf_tmp` |
-| `worker` | build `.` (target `worker`) | `datos`, `salida` | ninguno | `DATABASE_URL`, `CMD_API_KEY`, `CMD_API_BASE_URL`, `CMD_MODEL`, `CMD_ZDR`, `LLM_TIMEOUT_MS`, `LLM_MAX_REINTENTOS`, `LLM_TOPE_DIARIO_USD`, `LLM_PRESUPUESTO_MENSUAL_USD` | — |
+| `app` | build `.` (target `app`) | `backend`, `datos` | ninguno | `DATABASE_URL`, `APP_URL`, `APP_TZ`, topes de gasto | — |
+| `worker` | build `.` (target `worker`) | `datos`, `salida` | ninguno | `DATABASE_URL`, `CMD_API_KEY`, `GROQ_API_KEY`, URLs opcionales, timeout, reintentos y topes | — |
 | `db` | `postgres:18` (digest al desplegar) | `datos` (internal) | `127.0.0.1:5432` solo con `docker-compose.admin.yml` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `pg_data` |
 | `backup` | `postgres` + cron | `datos` | ninguno | `PGPASSWORD`, `BACKUP_RETENCION_DIAS`, `BACKUP_DESTINO_EXTERNO` | `backups` |
 
 - `datos` y `backend` son `internal: true`. Solo `borde` (tunnel) y `salida` (worker) tienen egreso.
-- `app` no tiene la clave del LLM.
+- Las API keys de proveedor solo se inyectan en `worker`; `app` y el navegador no las reciben.
 - `.env.example` lista estos nombres con una descripción y sin valores.
 - Compose es solo de producción. Dev y test usan el PostgreSQL local: `npm run dev` aplica migraciones y semilla y levanta la app; `npm test` recrea las BD de test (TESTING.md §4).
 
@@ -125,3 +125,9 @@ Objetivos: pérdida máxima de 24 h y restauración en menos de 2 h (REQ-NFR-4).
 | C4 | REQ-NFR-1 pide ≤ 15 s y el worker es asíncrono con polling | El presupuesto de 15 s incluye la cola; con 1 worker y 50–200 cotizaciones/mes no hay espera |
 | C5 | AI.md y DATA-MODEL.md agregan `npm run eval:ia` y `npm run crear-admin`, que no están en los comandos de AGENTS.md | Resuelto: agregados a AGENTS.md |
 | C6 | SPEC REQ-COT-1.5 habla de ocultar costos a quien no tenga permiso, pero hoy el único rol los ve | Sin conflicto real: aplica cuando haya más perfiles (`costos.ver`) |
+
+## 9. Ajustes de IA (REQ-ADM-4.x, ADR-0009)
+
+`/administracion/ia` y `GET/PUT /api/v1/ajustes/ia` requieren `config.editar`. El worker consulta Command Code y Groq usando las claves del entorno (`CMD_API_KEY`, `GROQ_API_KEY`) y cachea modelos, compatibilidad, precios públicos de Command Code y límites Free de Groq en `parametro`; la UI solo lee la caché. En desarrollo las claves viven en `.env.worker.local`; en producción solo se inyectan en `worker`. Los catálogos llevan fecha y una falla externa conserva la última copia válida.
+
+Ajustes guarda proveedor, modelo y confirmación ZDR de Groq; no recibe ni persiste nuevas API keys. GET, respuestas, logs y auditoría nunca incluyen secretos. Cada trabajo captura proveedor/modelo al tomarlo y el worker usa la clave de entorno de ese proveedor; cambiar proveedor/modelo rige desde el siguiente trabajo. Command Code usa Chat Completions con `x-cmd-zdr: 1`; Groq usa `/openai/v1/chat/completions` y herramienta forzada. Preview y modelos sin chat/herramienta no se activan. La evaluación queda disponible como referencia, sin bloquear la selección inmediata.

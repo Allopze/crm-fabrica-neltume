@@ -22,15 +22,18 @@ export interface ResultadoInterpretacion {
   latenciaMs: number;
 }
 
+export type TipoProveedor = "commandcode" | "groq" | "doble";
 export type TipoErrorIA = "timeout" | "transitorio" | "permanente" | "invalida" | "sin_zdr";
+export const MAX_RETRY_AFTER_MS = 30_000;
 
 export class ErrorIA extends Error {
-  constructor(public readonly tipo: TipoErrorIA, mensaje: string) {
+  constructor(public readonly tipo: TipoErrorIA, mensaje: string, public readonly retryAfterMs?: number) {
     super(mensaje);
     this.name = "ErrorIA";
   }
   get reintentable() {
-    return this.tipo === "timeout" || this.tipo === "transitorio" || this.tipo === "invalida";
+    return (this.tipo === "timeout" || this.tipo === "transitorio" || this.tipo === "invalida")
+      && (this.retryAfterMs === undefined || this.retryAfterMs <= MAX_RETRY_AFTER_MS);
   }
 }
 

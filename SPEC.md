@@ -280,3 +280,10 @@ Facturación electrónica · portal de clientes · ventas de la tienda · envío
 | NC-12 | A la tienda se le vende al precio de venta de la lista vigente, sin recargo: su cotizador le suma su propio porcentaje (Fase 5) |
 | NC-13 | Feriados legales calculados por ley (portado del cotizador de la tienda), sin sincronizar con fuentes externas; los únicos se cargan a mano (REQ-COT-6.6) |
 | — | Nombre del cliente: nunca se envía a la IA (REQ-COT-2.9) |
+
+## 10. Ajustes de IA (ADR-0009, 06-10-2026)
+
+- **REQ-ADM-4.1:** Command Code y Groq usan claves independientes (`CMD_API_KEY`, `GROQ_API_KEY`) configuradas solo en el entorno privado del worker. Ajustes configura proveedor/modelo y ZDR; API, UI, logs y auditoría no reciben ni exponen las claves.
+- **REQ-ADM-4.2:** Ajustes lista modelos de Command Code y tarifas públicas por millón; modelos sin chat/herramienta o sin precio quedan deshabilitados con motivo. La configuración activa se aplica al iniciar el próximo trabajo.
+- **REQ-ADM-4.3:** Ajustes lista modelos autenticados de Groq, capacidades Free públicas (RPM, RPD, TPM, TPD) y fecha. Son referencias; la cuota real se consulta en Groq Console. Preview e incompatibles se deshabilitan. Activar Groq exige confirmar ZDR en Console.
+- La evaluación de AI.md es informativa y no bloquea cambiar proveedor o modelo; no habilita aprobación automática de cotizaciones.

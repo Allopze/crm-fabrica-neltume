@@ -1,31 +1,37 @@
 # RUNBOOK.md — Operación
 
-Pasos para levantar y operar el sistema. Nunca escribas secretos en este archivo ni en el repositorio: van en `.env.local` (dev) o `.env` (producción), ambos ignorados por git.
+Pasos para levantar y operar el sistema. Nunca escribas secretos en este archivo ni en el repositorio: las claves de IA van en `.env.worker.local` durante desarrollo y en `.env` de producción, ambos ignorados por git.
 
 ## 1. Desarrollo local (sin Docker)
 
 Requisitos: Node 24 (`.nvmrc`) y PostgreSQL local (Postgres.app en `localhost:5432`).
 
 1. `npm install`
-2. `cp .env.example .env.local` y completa:
+2. `cp .env.example .env.local` y completa la configuración de BD:
    - `DATABASE_ADMIN_URL`: superusuario local (Postgres.app: `postgres://<tu-usuario>@localhost:5432/postgres`).
    - `DATABASE_URL_OWNER`: `postgres://neltume_owner:<clave>@localhost:5432/neltume_dev`.
    - `DATABASE_URL`: `postgres://neltume_app:<clave>@localhost:5432/neltume_dev`.
    - Claves aleatorias: `openssl rand -hex 18`.
-3. `npm run db:setup`: crea los roles y las bases `neltume_dev`, `neltume_test` y `neltume_e2e`. Es idempotente.
-4. `npm run crear-admin`: primer usuario. La contraseña se pide por consola.
-5. `npm run dev`: migra la BD y levanta la app en `http://localhost:3000`.
+3. `cp .env.worker.example .env.worker.local` y pega las claves que usarás:
+   - `CMD_API_KEY`: API key de Command Code.
+   - `GROQ_API_KEY`: API key de Groq.
+   Puedes configurar una o ambas. No las pongas en `.env.local`; el worker y `eval:ia` leen `.env.worker.local`.
+4. `npm run db:setup`: crea los roles y las bases `neltume_dev`, `neltume_test` y `neltume_e2e`. Es idempotente.
+5. `npm run crear-admin`: primer usuario. La contraseña se pide por consola.
+6. `npm run dev`: migra la BD y levanta la app en `http://localhost:3000`. El worker carga las claves y actualiza los catálogos. Si agregas o cambias claves en `.env.worker.local` después de iniciarlo, reinicia `npm run dev` para que el worker las vuelva a cargar.
+7. En **Ajustes de IA**, elige proveedor y modelo; para Groq confirma ZDR en Console.
+8. `npm run eval:ia`: en la terminal, elige proveedor (1 Command Code, 2 Groq) y después el número del modelo del catálogo. Usa las claves de `.env.worker.local` y no cambia el proveedor activo. También acepta `--proveedor <commandcode|groq> --modelo <id>`. Usa casos sintéticos y no requiere la confirmación ZDR de Ajustes; el worker debe haber actualizado el catálogo. Llama al servicio real y puede consumir cuota.
 
 Pruebas: `npm test` (lint → typecheck → unit → integración → E2E). Siempre se corre completo. Recrea `neltume_test` y `neltume_e2e` y usa el Chrome instalado.
 
 ## 2. Producción (Docker Compose)
 
-1. En el servidor: `cp .env.example .env` y completa todas las variables. `DATABASE_URL_OWNER` y `DATABASE_URL` apuntan a `@db:5432/neltume`.
+1. En el servidor: `cp .env.example .env` y completa las variables de BD y despliegue, además de `CMD_API_KEY` y/o `GROQ_API_KEY`. Compose entrega esas claves solo a `worker`. `DATABASE_URL_OWNER` y `DATABASE_URL` apuntan a `@db:5432/neltume`.
 2. `docker compose up -d --build`. El servicio `migrar` crea los roles y la base, aplica las migraciones y termina; luego arranca `app`.
 3. Primer usuario: `docker compose run --rm -it migrar npx tsx scripts/crear-admin.mts`.
    - BOM reales (una vez; idempotente, no pisa lo editado después): `docker compose run --rm migrar npx tsx scripts/cargar-bom-real.mts`. En desarrollo: `npx tsx --env-file-if-exists=.env.local scripts/cargar-bom-real.mts` (ADR-0012).
-4. Cotizador con IA (desde la Fase 1): `docker compose --profile ia up -d worker`.
-5. Verifica la exposición:
+4. Cotizador con IA: `docker compose --profile ia up -d worker`. Los cambios de proveedor/modelo en Ajustes rigen desde el siguiente trabajo; al rotar API keys, reinicia el worker.
+6. Verifica la exposición:
    - `docker compose ps` no debe mostrar puertos publicados.
    - En el host, `ss -tlnp` no debe mostrar 5432 ni 3000 en `0.0.0.0`.
 
@@ -73,7 +79,7 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 **Preparar** (una vez, en el entorno de demo; idempotente):
 1. `npm run crear-admin` si la base está vacía.
 2. `npm run demo:preparar`: migra, importa `datos/Cotizador Puertas Neltume.Co-rev-4F.xlsx` (lista v1), crea 3 clientes ficticios, materias primas y BOM de ejemplo (NEL, MOL, ANC, marcados *demo*), recepciones y stock inicial: 2 NEL-R-4-B, 4 LIC-L-4-B, 6 ANC-O-3-A y 1 MOL-L-4-B. No imprime precios ni costos.
-3. `.env.local` con `LLM_PROVEEDOR=commandcode` y su clave. Para ensayar sin red ni costo, usa `LLM_PROVEEDOR=doble` (solo reconoce los textos de `tests/fixtures/ia-respuestas.json`).
+3. Ajustes de IA: activa el proveedor elegido; para pruebas deterministas sin un proveedor activo, usa `LLM_PROVEEDOR=doble` (reconoce los textos de `tests/fixtures/ia-respuestas.json`).
 4. `npm run dev` y abre `http://localhost:3000`.
 
 **Guion** (unos 20 minutos; cada paso cita lo que demuestra):
@@ -81,15 +87,16 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 | # | Pantalla | Acción | Qué mostrar |
 |---|---|---|---|
 | 1 | Login → Panel | Ingresar | Borradores, alertas bajo mínimo y pedidos con faltante (UX §1) |
-| 2 | Precios | Ver la lista v1 y el informe de importación; fijar recargos por tipo | 29 filas rechazadas con motivo; cada cambio crea una versión nueva (REQ-COT-1.x) |
-| 3 | Stock → NEL-R-4-B | Ver existencia 2; registrar un ajuste sin motivo y luego con motivo | Movimientos inmutables; el ajuste exige motivo (REQ-STK-5) |
-| 4 | Materias primas → Producción | Recepción de cola; orden de 2 MOL-L-4-B y cerrarla | Consume insumos según el BOM *demo* y suma puertas (REQ-MP-2–4) |
-| 5 | Cotizaciones → Desde texto | Cliente: Constructora Los Alerces. Texto: «Necesito cotizar 3 puertas Neltume en raulí de 90x210, 2 de roble con chapa y 2 Toltén raulí de 87x215» | Aviso «disponible 2 · faltan 1», roble *por confirmar*, Toltén *a pedido*; «Ver lo que recibió la IA» (REQ-COT-2) |
-| 6 | Revisión | Quitar el roble; en Toltén «Usar referencia» y «Fijar precio» | Nada se completa en silencio; el precio a pedido lo fija una persona (REQ-COT-2.5, 3) |
-| 7 | Revisión | Aprobar y descargar el PDF | Precios congelados, vigencia de 10 días hábiles, «flete aparte» (REQ-COT-4, 6) |
-| 8 | Convertir en pedido | Transporte: «Camión propio»; confirmar; PDF de la nota | Reserva 2, faltante 1 visible; stock disponible 0 (REQ-STK-7, REQ-COT-8) |
-| 9 | Cotizar a mano | 1 LIC-L-4-B para Ferretería Puyehue | Mismo cálculo que con IA (REQ-COT-5) |
-| 10 | Precios | Editar el precio de NEL-R-4-B | La cotización aprobada no cambia; un borrador ofrece «Recalcular» (REQ-COT-6.2, 6.3) |
-| 11 | Auditoría | Filtrar por actor y por resultado | Quién hizo qué y cuándo, con antes/después (REQ-ADM-3) |
+| 2 | Ajustes de IA | Elegir proveedor/modelo; las claves están en el entorno del worker; en Groq confirmar ZDR en Console | Catálogo y precios/límites tienen fecha (REQ-ADM-4.x) |
+| 3 | Precios | Ver la lista v1 y el informe de importación; fijar recargos por tipo | 29 filas rechazadas con motivo; cada cambio crea una versión nueva (REQ-COT-1.x) |
+| 4 | Stock → NEL-R-4-B | Ver existencia 2; registrar un ajuste sin motivo y luego con motivo | Movimientos inmutables; el ajuste exige motivo (REQ-STK-5) |
+| 5 | Materias primas → Producción | Recepción de cola; orden de 2 MOL-L-4-B y cerrarla | Consume insumos según el BOM *demo* y suma puertas (REQ-MP-2–4) |
+| 6 | Cotizaciones → Desde texto | Cliente: Constructora Los Alerces. Texto: «Necesito cotizar 3 puertas Neltume en raulí de 90x210, 2 de roble con chapa y 2 Toltén raulí de 87x215» | Aviso «disponible 2 · faltan 1», roble *por confirmar*, Toltén *a pedido*; «Ver lo que recibió la IA» (REQ-COT-2) |
+| 7 | Revisión | Quitar el roble; en Toltén «Usar referencia» y «Fijar precio» | Nada se completa en silencio; el precio a pedido lo fija una persona (REQ-COT-2.5, 3) |
+| 8 | Revisión | Aprobar y descargar el PDF | Precios congelados, vigencia de 10 días hábiles, «flete aparte» (REQ-COT-4, 6) |
+| 9 | Convertir en pedido | Transporte: «Camión propio»; confirmar; PDF de la nota | Reserva 2, faltante 1 visible; stock disponible 0 (REQ-STK-7, REQ-COT-8) |
+| 10 | Cotizar a mano | 1 LIC-L-4-B para Ferretería Puyehue | Mismo cálculo que con IA (REQ-COT-5) |
+| 11 | Precios | Editar el precio de NEL-R-4-B | La cotización aprobada no cambia; un borrador ofrece «Recalcular» (REQ-COT-6.2, 6.3) |
+| 12 | Auditoría | Filtrar por actor y por resultado | Quién hizo qué y cuándo, con antes/después (REQ-ADM-3) |
 
-Si la IA no responde, el borrador queda en «IA no disponible» con el texto guardado y el botón «Cotizar a mano» (REQ-COT-2.7). Con `LLM_PROVEEDOR=doble`, el texto «simular IA caída» lo provoca.
+Si la IA no responde, el borrador queda en «IA no disponible» con el texto guardado y el botón «Cotizar a mano» (REQ-COT-2.7). Con el doble determinista, el texto «simular IA caída» lo provoca.

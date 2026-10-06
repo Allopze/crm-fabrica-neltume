@@ -27,7 +27,8 @@ export async function interpretarConReintentos(
       // Una salida inválida se reintenta una sola vez (DESIGN §3, paso 6).
       const limite = error.tipo === "invalida" ? Math.min(1, max) : max;
       if (!error.reintentable || n >= limite) throw error;
-      await new Promise((r) => setTimeout(r, esperas[Math.min(n, esperas.length - 1)]));
+      const espera = Math.max(esperas[Math.min(n, esperas.length - 1)], error.retryAfterMs ?? 0);
+      await new Promise((r) => setTimeout(r, espera));
     }
   }
 }

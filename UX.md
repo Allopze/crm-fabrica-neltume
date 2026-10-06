@@ -17,7 +17,7 @@ Uso principal en PC (≥ 1280 px); las pantallas deben poder leerse en celular, 
 | Materias primas | Lista · Recepción · BOM por modelo · Órdenes de producción (cerrar) | `mp.*`, `produccion.gestionar` | REQ-MP |
 | Precios | Versiones de la lista · Editar (nueva versión) · Importar Excel con informe | `precios.editar`, `catalogo.editar` | REQ-COT-1, REQ-STK-1 |
 | Clientes | Lista · Ficha | `clientes.*` | REQ-COT-9 |
-| Administración | Usuarios · Roles y permisos · Auditoría · Métricas IA · Parámetros | `usuarios.gestionar`, `auditoria.ver`, `config.editar` | REQ-ADM |
+| Administración | Usuarios · Roles y permisos · Auditoría · Métricas IA · Feriados · Ajustes de IA (proveedor, modelo y ZDR; claves en entorno privado del worker) | `usuarios.gestionar`, `auditoria.ver`, `config.editar` | REQ-ADM |
 
 Navegación lateral fija; la opción de cotizar está siempre visible arriba.
 

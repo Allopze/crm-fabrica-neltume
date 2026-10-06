@@ -39,6 +39,8 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | GET `/auditoria?actor&recurso&accion&resultado&desde&hasta&antesDe&limite` | `auditoria.ver` | | Paginado por id (más nuevo primero); fechas en días de Santiago |
 | GET `/metricas/ia` | `auditoria.ver` | | Latencia, costo y tasa de fallas |
 | GET `/feriados?anio` · POST `/feriados` (`fecha, nombre`) · DELETE `/feriados/:fecha` | sesión / `config.editar` | | Legales calculados más adicionales; solo los adicionales se agregan o quitan (REQ-COT-6.6) |
+| GET `/ajustes/ia` | `config.editar` | | Proveedor/modelo activos y cachés. Las claves solo están en el entorno del worker y nunca se devuelven (REQ-ADM-4.x) |
+| PUT `/ajustes/ia` (`proveedorActivo?`, `modelo?`, `groqZdrConfirmado`) | `config.editar` | | Guarda proveedor/modelo y metadatos auditables; activar modelo requiere catálogo compatible y confirmación ZDR si Groq. API keys no se aceptan en el cuerpo |
 
 ### Catálogo, precios e importación (REQ-STK-1, REQ-COT-1)
 | Método y ruta | Permiso | Idem | Notas |

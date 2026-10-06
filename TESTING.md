@@ -8,7 +8,7 @@ Refs: AGENTS.md (pruebas y calidad), SPEC.md (REQ), AI.md §5–6, ADR-0005. `np
 |---|---|---|---|---|
 | Unit | Vitest | `src/domain` puro (precios, redondeo, IVA, días hábiles, mapeo a catálogo, validación de RUT, estados), `src/ai/esquema` y `src/ai/redaccion` | `src/**/*.test.ts` | ~150 |
 | Integración | Vitest + PostgreSQL local (BD `neltume_test`, recreada) | Route handlers con su permiso, transacciones, triggers de inmutabilidad, idempotencia, `audit_log`, importación del Excel mini, worker con el doble | `tests/integracion/**` | ~120 |
-| E2E | Playwright (`workers: 1`, `fullyParallel: false`, orden por nombre de archivo) | Recorrido de punta a punta en navegador, con estado compartido entre suites | `e2e/NN-*.spec.ts` | 14 suites |
+| E2E | Playwright (`workers: 1`, `fullyParallel: false`, orden por nombre de archivo) | Recorrido de punta a punta en navegador, con estado compartido entre suites | `e2e/NN-*.spec.ts` | 17 suites |
 | Evaluación IA | `npm run eval:ia` (modelo real) | Set de AI.md §6 | `eval/` | 24+ casos; **no** forma parte de `npm test` |
 
 `npm test` ejecuta `lint → typecheck → unit → integración → e2e` en ese orden y se detiene al primer fallo. Si alguna capa falla, la suite no está verde.
@@ -49,6 +49,7 @@ Cada suite parte del estado que dejó la anterior. Nunca se ejecuta una suite su
 | 14 | `14-auditoria` | Verifica en `audit_log` una fila por cada acción de 01–13 (incluidas denegaciones), que no existen UPDATE/DELETE y el filtro por actor | — |
 | 15 | `15-pedido-nota-tienda` | Registra la tienda, sube `nota-tienda-mini.pdf`, revisa la vista previa (medida solicitada y aviso de precio), crea el pedido, rechaza la misma nota otra vez y, con stock nuevo, completa la reserva, marca lista y despacha | Pedido de la tienda despachado |
 | 16 | `16-alias-accesorios` | Agrega el alias «fui» en pantalla y cotiza «2 Fui oregón 70x200 con su marco 2x4 de 2,10» con el doble: la puerta resuelve por alias y el marco por escuadría y largo, sin ítems por confirmar | Cotización D en borrador |
+| 17 | `17-ajustes-ia` | Elige proveedor y modelo en Ajustes de IA contra un Groq simulado local: catálogo y límites con fecha, confirmación ZDR obligatoria, la API no devuelve claves y el siguiente trabajo usa la configuración nueva | — |
 
 ## 4. Datos semilla y entorno
 
@@ -71,6 +72,7 @@ U = unit, I = integración, E = E2E (número de suite). Todo REQ P1 tiene al men
 | ADM-1.1, 1.2, 1.3 | P1 | I `auth.login`; E 02 |
 | ADM-2.1, 2.2, 2.3, 2.4 | P1 | U `politica`; I `usuarios`, chequeo `conPermiso`; E 02, 11 |
 | ADM-3.1, 3.2, 3.3, 3.4, 3.5 | P1 | I `audit.trigger`, `audit.denegaciones`; E 11, 14 |
+| ADM-4.1, 4.2, 4.3 | P1 | U `catalogos`, `groq`, `retry-after`; I `ajustes-ia` (403, auditoría sin claves, ZDR, modelo fuera de catálogo), `compose` (claves solo en `worker`); E 17 |
 | STK-1.1, 1.2, 1.3, 1.4, 1.5 | P1 | U `importar.mapeo`; I `importacion`; E 01, 10, 11 |
 | STK-2.1, 2.2, 2.3, 2.4 | P1 | U `stock.calculo`, `formato.cl`; I `stock.consulta`; E 05, 06, 11 |
 | STK-3.1, 3.2, 3.3, 3.4 | P1 | I `movimientos.entrada` (idempotencia); E 04, 11 |

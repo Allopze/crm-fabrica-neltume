@@ -10,6 +10,8 @@ import { alertasGasto, gastoIa } from "@/domain/metricas-ia";
 import { calcularLinea } from "@/domain/precios/calcular";
 import { registro } from "@/lib/registro";
 import { ErrorIA, type InterpreteIA } from "./interfaz";
+import { crearInterpreteDesdeAjustes } from "./index";
+import { leerConfiguracionPrivada } from "./ajustes";
 import { normalizarPedido, redactar } from "./redaccion";
 import { interpretarRevisado } from "./revision";
 
@@ -22,13 +24,14 @@ async function recuperarColgados() {
     .where(and(eq(trabajoIa.estado, "en_curso"), lt(trabajoIa.tomadoEn, sql`now() - interval '60 seconds'`), lt(trabajoIa.intentos, MAX_INTENTOS_TRABAJO)));
 }
 
-async function tomarTrabajo() {
+async function tomarTrabajo(tomarConfig: boolean) {
   return bd().transaction(async (tx) => {
     const { rows } = await tx.execute<{ id: string; cotizacion_id: string }>(sql`
       SELECT id, cotizacion_id FROM trabajo_ia WHERE estado = 'pendiente' ORDER BY creado_en FOR UPDATE SKIP LOCKED LIMIT 1`);
     if (!rows[0]) return null;
     await tx.update(trabajoIa).set({ estado: "en_curso", intentos: sql`${trabajoIa.intentos} + 1`, tomadoEn: sql`now()` }).where(eq(trabajoIa.id, rows[0].id));
-    return { id: rows[0].id, cotizacionId: rows[0].cotizacion_id };
+    const configIA = tomarConfig ? await leerConfiguracionPrivada(tx) : undefined;
+    return { id: rows[0].id, cotizacionId: rows[0].cotizacion_id, configIA };
   });
 }
 
@@ -48,21 +51,22 @@ async function fallar(trabajoId: string, cotizacionId: string, motivo: string) {
 }
 
 /** Procesa el siguiente trabajo pendiente. "vacio" si no hay nada que hacer. */
-export async function procesarSiguiente(ia: InterpreteIA, opciones: { esperasMs?: number[] } = {}): Promise<"vacio" | "listo" | "fallido"> {
+export async function procesarSiguiente(iaFija?: InterpreteIA, opciones: { esperasMs?: number[] } = {}): Promise<"vacio" | "listo" | "fallido"> {
   await recuperarColgados();
-  const t = await tomarTrabajo();
+  const t = await tomarTrabajo(!iaFija);
   if (!t) return "vacio";
   const [c] = await bd().select().from(cotizacion).where(eq(cotizacion.id, t.cotizacionId));
 
-  const tope = Number(process.env.LLM_TOPE_DIARIO_USD || 0);
-  if (tope > 0 && (await gastoDeHoyUsd()) >= tope) {
-    await bd().insert(llamadaIa).values({ trabajoId: t.id, proveedor: ia.nombre, entradaRedactada: "", resultado: "tope" });
-    await fallar(t.id, t.cotizacionId, "Se alcanzó el tope diario de gasto en IA");
-    return "fallido";
-  }
-
-  const texto = redactar(normalizarPedido(c.textoOriginal ?? "")).texto;
   try {
+    // Se resuelve tras tomar el trabajo: esta instantánea no cambia si Ajustes se edita durante la petición.
+    const ia = iaFija ?? await crearInterpreteDesdeAjustes(t.configIA);
+    const tope = Number(process.env.LLM_TOPE_DIARIO_USD || 0);
+    if (tope > 0 && (await gastoDeHoyUsd()) >= tope) {
+      await bd().insert(llamadaIa).values({ trabajoId: t.id, proveedor: ia.nombre, entradaRedactada: "", resultado: "tope" });
+      await fallar(t.id, t.cotizacionId, "Se alcanzó el tope diario de gasto en IA");
+      return "fallido";
+    }
+    const texto = redactar(normalizarPedido(c.textoOriginal ?? "")).texto;
     const cat = await catalogoResumido(bd());
     // REQ-COT-2.14/2.15: propuesta anclada al texto y, si omitió partes del pedido, una corrección pedida a la IA.
     const { resultado, anclada, corregida } = await interpretarRevisado(ia, texto, cat, { modelos: cat.modelos, alias: cat.alias ?? [] }, {

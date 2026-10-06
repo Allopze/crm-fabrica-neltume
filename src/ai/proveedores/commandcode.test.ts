@@ -46,6 +46,8 @@ describe("proveedor Command Code (ADR-0001)", () => {
     const con = (f: () => Promise<Response>) => new CommandCodeIA(cfg, f as unknown as typeof fetch).interpretar("x", cat);
     await expect(con(async () => new Response("boom", { status: 503 }))).rejects.toMatchObject({ tipo: "transitorio" });
     await expect(con(async () => new Response("rate", { status: 429 }))).rejects.toMatchObject({ tipo: "transitorio" });
+    await expect(new CommandCodeIA(cfg, (async () => new Response("rate", { status: 429, headers: { "retry-after": "3" } })) as unknown as typeof fetch).interpretar("x", cat))
+      .rejects.toMatchObject({ tipo: "transitorio", retryAfterMs: 3_000 });
     await expect(con(async () => new Response("no", { status: 401 }))).rejects.toMatchObject({ tipo: "permanente" });
     await expect(con(async () => new Response("no ZDR provider available", { status: 503 }))).rejects.toMatchObject({ tipo: "sin_zdr" });
     await expect(con(() => new Promise((_, rechazar) => setTimeout(() => rechazar(Object.assign(new Error("t"), { name: "TimeoutError" })), 5)))).rejects.toMatchObject({ tipo: "timeout" });
