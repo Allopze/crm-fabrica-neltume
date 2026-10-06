@@ -23,6 +23,7 @@ Pruebas: `npm test` (lint → typecheck → unit → integración → E2E). Siem
 1. En el servidor: `cp .env.example .env` y completa todas las variables. `DATABASE_URL_OWNER` y `DATABASE_URL` apuntan a `@db:5432/neltume`.
 2. `docker compose up -d --build`. El servicio `migrar` crea los roles y la base, aplica las migraciones y termina; luego arranca `app`.
 3. Primer usuario: `docker compose run --rm -it migrar npx tsx scripts/crear-admin.mts`.
+   - BOM reales (una vez; idempotente, no pisa lo editado después): `docker compose run --rm migrar npx tsx scripts/cargar-bom-real.mts`. En desarrollo: `npx tsx --env-file-if-exists=.env.local scripts/cargar-bom-real.mts` (ADR-0012).
 4. Cotizador con IA (desde la Fase 1): `docker compose --profile ia up -d worker`.
 5. Verifica la exposición:
    - `docker compose ps` no debe mostrar puertos publicados.

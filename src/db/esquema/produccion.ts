@@ -1,7 +1,7 @@
 // Materias primas, BOM y órdenes de producción (DATA-MODEL §2; REQ-MP-1–4).
 import { sql } from "drizzle-orm";
-import { boolean, check, index, integer, numeric, pgTable, primaryKey, serial, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { articulo, modelo } from "./catalogo";
+import { boolean, check, index, integer, numeric, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { articulo, madera, modelo } from "./catalogo";
 import { notaPedido } from "./comercial";
 import { usuario } from "./seguridad";
 
@@ -37,11 +37,29 @@ export const bom = pgTable("bom", {
   index("bom_modelo_idx").on(t.modeloId, t.vigenteDesde),
 ]);
 
+/**
+ * Línea del BOM: un insumo con su cantidad por puerta, o la «madera de la puerta» (ADR-0012): no nombra un insumo; al
+ * cerrar se descuentan las pulgadas del artículo × `cantidad` (factor; 1 = tal cual) de la materia prima de su madera.
+ */
 export const bomLinea = pgTable("bom_linea", {
+  id: uuid().primaryKey().defaultRandom(),
   bomId: uuid().notNull().references(() => bom.id, { onDelete: "cascade" }),
-  materiaPrimaId: uuid().notNull().references(() => materiaPrima.id),
+  materiaPrimaId: uuid().references(() => materiaPrima.id),
+  maderaPuerta: boolean().notNull().default(false),
   cantidad: numeric({ precision: 12, scale: 4, mode: "number" }).notNull(),
-}, (t) => [primaryKey({ columns: [t.bomId, t.materiaPrimaId] }), check("bom_cantidad", sql`${t.cantidad} > 0`)]);
+}, (t) => [
+  check("bom_cantidad", sql`${t.cantidad} > 0`),
+  check("bom_linea_tipo", sql`(${t.maderaPuerta} AND ${t.materiaPrimaId} IS NULL) OR (NOT ${t.maderaPuerta} AND ${t.materiaPrimaId} IS NOT NULL)`),
+  uniqueIndex("bom_linea_insumo_uk").on(t.bomId, t.materiaPrimaId).where(sql`${t.materiaPrimaId} IS NOT NULL`),
+  uniqueIndex("bom_linea_madera_uk").on(t.bomId).where(sql`${t.maderaPuerta}`),
+]);
+
+/** De qué materia prima se descuenta cada madera cuando un BOM usa la «madera de la puerta» (ADR-0012). */
+export const maderaInsumo = pgTable("madera_insumo", {
+  maderaId: uuid().primaryKey().references(() => madera.id),
+  materiaPrimaId: uuid().notNull().references(() => materiaPrima.id),
+  actualizadoEn: ahora(),
+});
 
 export const ordenProduccion = pgTable("orden_produccion", {
   id: uuid().primaryKey().defaultRandom(),

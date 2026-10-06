@@ -20,7 +20,7 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | 401 | `NO_AUTENTICADO` |
 | 403 | `SIN_PERMISO`, `CSRF` |
 | 404 | `NO_ENCONTRADO` (también cuando no hay permiso de lectura sobre el recurso, contra IDOR) |
-| 409 | `VERSION_OBSOLETA`, `ITEMS_POR_CONFIRMAR`, `NO_APROBADA`, `VENCIDA`, `YA_TIENE_PEDIDO`, `ORDEN_CERRADA`, `STOCK_INSUFICIENTE`, `INSUMOS_INSUFICIENTES`, `SIN_BOM` |
+| 409 | `VERSION_OBSOLETA`, `ITEMS_POR_CONFIRMAR`, `NO_APROBADA`, `VENCIDA`, `YA_TIENE_PEDIDO`, `ORDEN_CERRADA`, `STOCK_INSUFICIENTE`, `INSUMOS_INSUFICIENTES`, `SIN_BOM`, `BOM_INCOMPLETO` |
 | 413 | `CUERPO_GRANDE`: más de 1 MB, o 6 MB en `/importaciones` y `/pedidos/nota-tienda*`; se rechaza sin leer el cuerpo, o al pasar el límite si llega por trozos (ADR-0011) |
 | 422 | `IDEMPOTENCIA_CONFLICTO`, `ULTIMO_ADMIN` |
 | 429 | `LIMITE_IA`, `LIMITE_LOGIN` |
@@ -70,9 +70,10 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | PATCH `/materias-primas/:id/minimo` (`stockMinimo`) | `config.editar` | | Mínimo de reposición (REQ-MP-6.2) |
 | GET `/materias-primas/alertas` | `stock.ver` | | Bajo su mínimo, con `faltan`; las más urgentes (proporcionalmente) primero (REQ-MP-6.1) |
 | POST `/recepciones` (`materia_prima, cantidad, referencia`) | `mp.mover` | ✔ | |
-| GET `/bom?modelo` · PUT `/bom/:modelo` (`lineas[], origen`) | `stock.ver` / `mp.editar` | | Crea una nueva vigencia |
+| GET `/bom?modelo` · PUT `/bom/:modelo` (`lineas[], origen`) | `stock.ver` / `mp.editar` | | Crea una nueva vigencia. Cada línea es `{materiaPrimaId, cantidad}` o `{maderaPuerta: true, cantidad}` (factor sobre las pulgadas del artículo, una vez por BOM; ADR-0012) |
+| PUT `/maderas/:codigo/insumo` (`materiaPrimaId` o null) | `mp.editar` | | Materia prima de la que se descuenta esa madera (REQ-MP-3.5); 204; auditado |
 | GET/POST `/ordenes` · GET `/ordenes/:id` | `produccion.gestionar` | ✔ (POST) | |
-| POST `/ordenes/:id/cerrar` | `produccion.gestionar` | ✔ | Consumo + entrada, todo o nada; 409 `SIN_BOM`, `INSUMOS_INSUFICIENTES`, `ORDEN_CERRADA` |
+| POST `/ordenes/:id/cerrar` | `produccion.gestionar` | ✔ | Consumo + entrada, todo o nada; 409 `SIN_BOM`, `BOM_INCOMPLETO` (madera sin materia prima asociada o artículo sin pulgadas), `INSUMOS_INSUFICIENTES`, `ORDEN_CERRADA` |
 
 ### Cotizaciones, clientes y pedidos (REQ-COT)
 | Método y ruta | Permiso | Idem | Notas |

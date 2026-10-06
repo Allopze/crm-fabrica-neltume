@@ -40,7 +40,7 @@ export function metros(n: number, max = 3): number | null {
 const mm = (m: number) => String(Math.round(m * 1000));
 
 export const ALIAS_MADERA: Record<string, string> = { PINO: "PINO OREGON", OREGON: "PINO OREGON", "PINO OREGON": "PINO OREGON", RAULI: "RAULI", LENGA: "LENGA", MARA: "MARA" };
-const NOMBRE_MADERA: Record<string, string> = { "PINO OREGON": "Pino Oregón", RAULI: "Raulí", LENGA: "Lenga", MARA: "Mara" };
+export const NOMBRE_MADERA: Record<string, string> = { "PINO OREGON": "Pino Oregón", RAULI: "Raulí", LENGA: "Lenga", MARA: "Mara" };
 const TOL = 0.0051;
 const m2 = (n: number) => n.toFixed(2).replace(".", ",");
 const titulo = (s: string) => s.toLowerCase().replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase());

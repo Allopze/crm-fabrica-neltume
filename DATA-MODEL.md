@@ -25,6 +25,8 @@ erDiagram
   MODELO ||--o{ BOM : tiene
   BOM ||--o{ BOM_LINEA : contiene
   MATERIA_PRIMA ||--o{ BOM_LINEA : usa
+  MADERA ||--o| MADERA_INSUMO : se_descuenta_de
+  MATERIA_PRIMA ||--o{ MADERA_INSUMO : abastece
   ORDEN_PRODUCCION ||--o{ ORDEN_LINEA : contiene
   ARTICULO ||--o{ ORDEN_LINEA : produce
   CLIENTE ||--o{ COTIZACION : pide
@@ -82,7 +84,8 @@ Una edición en pantalla copia la versión vigente, aplica el cambio y crea `ver
 | `materia_prima` | `nombre` único, `unidad_codigo`, `stock_minimo` null, `activo` | |
 | `movimiento` | `ocurrido_en`, `bodega_id`, `articulo_id` XOR `materia_prima_id`, `tipo`, `cantidad` numeric (con signo), `motivo`, `ref_tipo` + `ref_id` (orden, pedido, recepción), `idempotencia_clave`, `usuario_id` | **Inmutable**: un trigger rechaza UPDATE y DELETE; el rol de la app no tiene esos grants |
 | `bom` | `modelo_id`, `rango_ancho_id` null, `alto_id` null, `vigente_desde`, `origen` (`real`/`demo`) | Por modelo, opcionalmente por medida (REQ-MP-3.1) |
-| `bom_linea` | `bom_id`, `materia_prima_id`, `cantidad` > 0 | |
+| `bom_linea` | `id`, `bom_id`, `materia_prima_id` null, `madera_puerta` (bool), `cantidad` > 0 | Un insumo con su cantidad por puerta, o la «madera de la puerta»: sin insumo y `cantidad` = factor sobre `articulo.pulgadas` (ADR-0012). CHECK: una cosa o la otra; únicos por BOM (insumo y madera) |
+| `madera_insumo` | `madera_id` (PK), `materia_prima_id`, `actualizado_en` | De qué materia prima se descuenta cada madera al cerrar una orden (REQ-MP-3.5) |
 | `orden_produccion` | `numero`, `estado` (`abierta`/`cerrada`/`anulada`), `nota_pedido_id` null, `cerrada_en` | Cerrar es idempotente (REQ-MP-4.4) |
 | `orden_linea` | `orden_id`, `articulo_id`, `cantidad` | |
 

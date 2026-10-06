@@ -15,6 +15,9 @@ export function EditorBom({ modelos, materias, csrf }: { modelos: { codigo: stri
   const [modelo, setModelo] = useState(modelos[0]?.codigo ?? "");
   const [origen, setOrigen] = useState<"real" | "demo">("real");
   const [lineas, setLineas] = useState([{ materiaPrimaId: materias[0]?.id ?? "", cantidad: "" }]);
+  // Madera de la puerta (ADR-0012): factor sobre las pulgadas de cada artículo; se descuenta de la madera de la puerta.
+  const [conMadera, setConMadera] = useState(false);
+  const [factor, setFactor] = useState("1");
   const [error, setError] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
 
@@ -23,7 +26,9 @@ export function EditorBom({ modelos, materias, csrf }: { modelos: { codigo: stri
   function guardar() {
     iniciar(async () => {
       try {
-        await pedir("PUT", `/api/v1/bom/${modelo}`, { csrf, cuerpo: { origen, lineas: lineas.map((l) => ({ materiaPrimaId: l.materiaPrimaId, cantidad: Number(l.cantidad.replace(",", ".")) })) } });
+        const insumos = lineas.map((l) => ({ materiaPrimaId: l.materiaPrimaId, cantidad: Number(l.cantidad.replace(",", ".")) }));
+        const madera = conMadera ? [{ maderaPuerta: true, cantidad: Number(factor.replace(",", ".")) }] : [];
+        await pedir("PUT", `/api/v1/bom/${modelo}`, { csrf, cuerpo: { origen, lineas: [...madera, ...insumos] } });
         setAbierto(false);
         router.refresh();
       } catch (e) {
@@ -47,13 +52,22 @@ export function EditorBom({ modelos, materias, csrf }: { modelos: { codigo: stri
         </label>
       </div>
       <p className="text-xs text-tinta-tenue">Cantidades por puerta. Aplica a todas las medidas del modelo.</p>
+      <div className="flex flex-wrap items-center gap-2 rounded-md bg-rauli-velo/40 px-3 py-2 text-sm">
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={conMadera} onChange={(e) => setConMadera(e.target.checked)} /> Incluir la madera de la puerta
+        </label>
+        {conMadera && (
+          <label className="flex items-center gap-2">× <input aria-label="Factor de madera" required inputMode="decimal" value={factor} onChange={(e) => setFactor(e.target.value)} className={`${campo} w-16 text-right`} /> pulgadas del artículo</label>
+        )}
+        <p className="basis-full text-xs text-tinta-tenue">Usa las pulgadas de cada medida del catálogo y las descuenta de la madera de la puerta (raulí, lenga, mara u oregón). Factor 1 = tal cual.</p>
+      </div>
       {lineas.map((l, i) => (
         <div key={i} className="flex gap-2">
           <select aria-label={`Materia prima ${i + 1}`} value={l.materiaPrimaId} onChange={(e) => setLineas(lineas.map((x, j) => (j === i ? { ...x, materiaPrimaId: e.target.value } : x)))} className={`${campo} flex-1`}>
             {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre} ({m.unidad})</option>)}
           </select>
           <input aria-label={`Cantidad ${i + 1}`} required inputMode="decimal" value={l.cantidad} onChange={(e) => setLineas(lineas.map((x, j) => (j === i ? { ...x, cantidad: e.target.value } : x)))} className={`${campo} w-24 text-right`} />
-          <button type="button" aria-label="Quitar línea" disabled={lineas.length === 1} onClick={() => setLineas(lineas.filter((_, j) => j !== i))} className="text-tinta-tenue hover:text-error disabled:opacity-30"><Trash2 className="h-4 w-4" /></button>
+          <button type="button" aria-label="Quitar línea" disabled={lineas.length === 1 && !conMadera} onClick={() => setLineas(lineas.filter((_, j) => j !== i))} className="text-tinta-tenue hover:text-error disabled:opacity-30"><Trash2 className="h-4 w-4" /></button>
         </div>
       ))}
       <div className="flex flex-wrap gap-2">

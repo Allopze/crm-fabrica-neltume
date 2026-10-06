@@ -3,9 +3,11 @@ import { desc, eq, inArray, sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
 import { articulo } from "@/db/esquema/catalogo";
 import { notaPedido } from "@/db/esquema/comercial";
-import { materiaPrima, ordenLinea, ordenProduccion } from "@/db/esquema/produccion";
+import { madera } from "@/db/esquema/catalogo";
+import { maderaInsumo, materiaPrima, ordenLinea, ordenProduccion } from "@/db/esquema/produccion";
 import { type Actor, type Origen, registrarAuditoria } from "./auditoria";
 import { bomVigentePara } from "./bom";
+import { NOMBRE_MADERA } from "./cotizaciones/mapear";
 import { ErrorDominio } from "./errores";
 import { completarReserva, ESTADOS_ABIERTOS } from "./pedidos/completar";
 import { type NuevoMovimiento, registrarMovimientos, saldo } from "./stock";
@@ -24,21 +26,32 @@ export async function crearOrden(tx: Tx, d: { lineas: { codigo: string; cantidad
 }
 
 async function lineasDe(tx: Tx, ordenId: string) {
-  return tx.select({ articuloId: articulo.id, codigo: articulo.codigo, modeloId: articulo.modeloId, anchoCodigo: articulo.anchoCodigo, altoCodigo: articulo.altoCodigo, cantidad: ordenLinea.cantidad })
-    .from(ordenLinea).innerJoin(articulo, eq(articulo.id, ordenLinea.articuloId)).where(eq(ordenLinea.ordenId, ordenId));
+  return tx.select({ articuloId: articulo.id, codigo: articulo.codigo, modeloId: articulo.modeloId, anchoCodigo: articulo.anchoCodigo, altoCodigo: articulo.altoCodigo,
+    maderaId: articulo.maderaId, madera: madera.nombre, pulgadas: articulo.pulgadas, cantidad: ordenLinea.cantidad })
+    .from(ordenLinea).innerJoin(articulo, eq(articulo.id, ordenLinea.articuloId)).innerJoin(madera, eq(madera.id, articulo.maderaId))
+    .where(eq(ordenLinea.ordenId, ordenId));
 }
 
 /** Consumos que causaría cerrar la orden, con lo disponible y faltante por insumo (vista previa, UX §4). */
 export async function planDeCierre(tx: Tx, ordenId: string, manuales: { materiaPrimaId: string; cantidad: number }[] = []) {
   const lineas = await lineasDe(tx, ordenId);
   const sinBom: string[] = [];
+  const incompletos: string[] = []; // la «madera de la puerta» no se puede resolver: nunca se completa en silencio
   const origenBom: Record<string, string> = {};
   const consumo = new Map<string, number>();
+  const sumar = (id: string, n: number) => consumo.set(id, (consumo.get(id) ?? 0) + n);
+  const insumoDeMadera = new Map((await tx.select().from(maderaInsumo)).map((m) => [m.maderaId, m.materiaPrimaId]));
   for (const l of lineas) {
     const b = await bomVigentePara(tx, l);
     if (!b) { sinBom.push(l.codigo); continue; }
     origenBom[l.codigo] = b.origen;
-    for (const x of b.lineas) consumo.set(x.materiaPrimaId, (consumo.get(x.materiaPrimaId) ?? 0) + Number(x.cantidad) * l.cantidad);
+    for (const x of b.lineas) {
+      if (!x.maderaPuerta) { sumar(x.materiaPrimaId!, Number(x.cantidad) * l.cantidad); continue; }
+      const mp = insumoDeMadera.get(l.maderaId);
+      if (!mp) incompletos.push(`${l.codigo}: la madera ${(NOMBRE_MADERA[l.madera] ?? l.madera).toLowerCase()} no tiene materia prima asociada`);
+      else if (!(Number(l.pulgadas) > 0)) incompletos.push(`${l.codigo}: el artículo no tiene pulgadas en el catálogo`);
+      else sumar(mp, Number(l.pulgadas) * Number(x.cantidad) * l.cantidad);
+    }
   }
   for (const m of manuales) consumo.set(m.materiaPrimaId, (consumo.get(m.materiaPrimaId) ?? 0) + m.cantidad);
   const nombres = consumo.size ? new Map((await tx.select().from(materiaPrima).where(inArray(materiaPrima.id, [...consumo.keys()]))).map((m) => [m.id, m])) : new Map();
@@ -48,7 +61,7 @@ export async function planDeCierre(tx: Tx, ordenId: string, manuales: { materiaP
     const usa = Number(cantidad.toFixed(3));
     insumos.push({ materiaPrimaId: id, nombre: nombres.get(id)?.nombre ?? "?", unidad: nombres.get(id)?.unidadCodigo ?? "", usa, existencia, faltante: Math.max(0, Number((usa - existencia).toFixed(3))) });
   }
-  return { lineas, sinBom, origenBom, insumos };
+  return { lineas, sinBom, incompletos, origenBom, insumos };
 }
 
 /** Cierra la orden: consume insumos y da entrada a las puertas en una sola transacción (REQ-MP-4.1–4.4). */
@@ -60,6 +73,9 @@ export async function cerrarOrden(tx: Tx, ordenId: string, manuales: { materiaPr
   const plan = await planDeCierre(tx, ordenId, manuales);
   if (plan.sinBom.length && !manuales.length) {
     throw new ErrorDominio("SIN_BOM", "Hay artículos sin BOM: registra el consumo de materias primas a mano antes de cerrar.", { sinBom: plan.sinBom });
+  }
+  if (plan.incompletos.length) {
+    throw new ErrorDominio("BOM_INCOMPLETO", "No se puede calcular la madera de la puerta: asocia cada madera a su materia prima en Producción.", { incompletos: plan.incompletos });
   }
   const faltantes = plan.insumos.filter((i) => i.faltante > 0);
   if (faltantes.length) throw new ErrorDominio("INSUMOS_INSUFICIENTES", "Faltan materias primas para cerrar la orden.", { faltantes });

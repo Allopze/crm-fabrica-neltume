@@ -65,6 +65,6 @@ Navegación lateral fija; la opción de cotizar está siempre visible arriba.
 - **Consulta de stock:** una tabla con existencia, reservado y disponible; mínimo en rojo con texto "bajo mínimo".
 - **Ajuste:** el motivo es obligatorio; se confirma con "Este movimiento no se puede editar ni borrar".
 - **Importar Excel:** se elige el archivo y se ve un informe (creadas, actualizadas y rechazadas, con fila y motivo) que se puede descargar.
-- **Cierre de producción:** vista previa de los consumos por BOM y de los faltantes antes de confirmar; si un BOM es de ejemplo, aparece la etiqueta "DEMO".
+- **Cierre de producción:** vista previa de los consumos por BOM y de los faltantes antes de confirmar; si un BOM es de ejemplo, aparece la etiqueta "DEMO". Si el BOM usa la madera de la puerta y una madera no tiene materia prima asociada, el cierre muestra qué falta y queda bloqueado; el panel «Madera de la puerta» permite asociarla (ADR-0012).
 - **Costos y márgenes:** columnas visibles solo con `costos.ver`.
 - **PDF:** logo, datos de la fábrica, cliente, ítems, subtotal, IVA, total, vigencia y la nota "valores puestos en fábrica, flete aparte".

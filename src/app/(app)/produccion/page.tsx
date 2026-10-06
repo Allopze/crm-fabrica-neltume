@@ -7,12 +7,13 @@ import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
 import { modelo } from "@/db/esquema/catalogo";
 import { requerirSesion } from "@/domain/auth/servidor";
-import { listarBoms } from "@/domain/bom";
+import { listarBoms, maderasConInsumo } from "@/domain/bom";
 import { listarMateriasPrimas } from "@/domain/materias-primas";
 import { listarOrdenes, planDeCierre } from "@/domain/ordenes";
 import { cn, fecha, numero } from "@/lib/formato";
 import { CierreOrden, NuevaOrden } from "./acciones-orden";
 import { EditorBom } from "./editor-bom";
+import { MaderaInsumo } from "./madera-insumo";
 
 export const metadata: Metadata = { title: "Producción y BOM" };
 const ESTADO = { abierta: ["Abierta", "pizarra"], cerrada: ["Cerrada", "musgo"], anulada: ["Anulada", "neutro"] } as const;
@@ -22,10 +23,12 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
   if (!sesion.permisos.has("stock.ver")) return <SinPermiso permiso="stock.ver" />;
   const gestiona = sesion.permisos.has("produccion.gestionar");
   const sp = await searchParams;
-  const [ordenes, boms, materias, modelos] = await Promise.all([
+  const [ordenes, boms, materias, modelos, maderas] = await Promise.all([
     gestiona ? listarOrdenes(bd()) : Promise.resolve([]), listarBoms(bd()), listarMateriasPrimas(bd()),
     bd().select({ codigo: modelo.codigo, nombre: modelo.nombre }).from(modelo).where(eq(modelo.familia, "puerta")).orderBy(asc(modelo.nombre)),
+    maderasConInsumo(bd()),
   ]);
+  const usaMadera = boms.some((b) => b.lineas.some((l) => l.maderaPuerta));
   const abiertas = ordenes.filter((o) => o.estado === "abierta");
   const elegida = abiertas.find((o) => o.id === sp.orden) ?? abiertas[0];
   const plan = elegida ? await planDeCierre(bd(), elegida.id) : null;
@@ -64,7 +67,7 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
               <p className="mb-4 text-sm text-tinta-suave">
                 Entrarán {plan.lineas.map((l) => <strong key={l.codigo} className="text-tinta">{l.cantidad} × <Placa codigo={l.codigo} /> </strong>)} al stock y se consumirá:
               </p>
-              <CierreOrden ordenId={elegida.id} numero={elegida.numero} insumos={plan.insumos} sinBom={plan.sinBom}
+              <CierreOrden ordenId={elegida.id} numero={elegida.numero} insumos={plan.insumos} sinBom={plan.sinBom} incompletos={plan.incompletos}
                 demo={Object.values(plan.origenBom).includes("demo")} materias={activas} csrf={sesion.csrf} />
             </Panel>
           )}
@@ -75,6 +78,12 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
         <h2 className="font-display text-2xl font-medium tracking-tight">Listas de materiales</h2>
         {sesion.permisos.has("mp.editar") && activas.length > 0 && modelos.length > 0 && <EditorBom modelos={modelos} materias={activas} csrf={sesion.csrf} />}
       </div>
+      {(usaMadera || maderas.some((m) => m.materiaPrimaId)) && (
+        <Panel className="mb-5" titulo="Madera de la puerta" accion={maderas.some((m) => !m.materiaPrimaId) && <Etiqueta tono="ambar">FALTA ASOCIAR</Etiqueta>}>
+          <p className="mb-2 text-sm text-tinta-suave">Al cerrar una orden, las pulgadas de cada artículo se descuentan de la materia prima de su madera.</p>
+          <MaderaInsumo maderas={maderas} materias={activas} editable={sesion.permisos.has("mp.editar")} csrf={sesion.csrf} />
+        </Panel>
+      )}
       {boms.length === 0 ? (
         <Panel><Vacio titulo="Aún no hay BOM">Defínelos con Producción o carga los de demostración con <code className="font-mono text-xs">npm run demo:preparar</code>.</Vacio></Panel>
       ) : (
@@ -84,7 +93,10 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
               <p className="mb-3 font-mono text-xs text-tinta-tenue">{b.ancho || b.alto ? `medida ${b.ancho ?? "*"}-${b.alto ?? "*"}` : "todas las medidas"} · por puerta</p>
               <ul className="space-y-1.5 text-sm">
                 {b.lineas.map((l) => (
-                  <li key={l.mpId} className="flex justify-between gap-3"><span className="truncate">{l.mp}</span><span className="shrink-0 font-mono tabular-nums">{numero(l.cantidad)} {l.unidad}</span></li>
+                  <li key={l.id} className="flex justify-between gap-3">
+                    <span className={cn("truncate", l.maderaPuerta && "font-medium")}>{l.mp}</span>
+                    <span className="shrink-0 font-mono tabular-nums">{l.maderaPuerta ? `× ${numero(l.cantidad)} pulg. del artículo` : `${numero(l.cantidad)} ${l.unidad}`}</span>
+                  </li>
                 ))}
               </ul>
             </Panel>

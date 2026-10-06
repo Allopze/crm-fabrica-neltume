@@ -5,6 +5,7 @@ import { poolApp } from "./bd";
 import { llamar, tokenDeCookie } from "./http";
 import * as rutaBomModelo from "@/app/api/v1/bom/[modelo]/route";
 import * as rutaBom from "@/app/api/v1/bom/route";
+import * as rutaMaderaInsumo from "@/app/api/v1/maderas/[codigo]/insumo/route";
 import * as rutaMp from "@/app/api/v1/materias-primas/route";
 import * as rutaCerrar from "@/app/api/v1/ordenes/[id]/cerrar/route";
 import * as rutaOrden from "@/app/api/v1/ordenes/[id]/route";
@@ -14,6 +15,8 @@ import * as rutaSesion from "@/app/api/v1/sesion/route";
 import * as rutaStockArt from "@/app/api/v1/stock/[codigo]/route";
 import { bd, cerrarBd } from "@/db/conexion";
 import { importarExcel } from "@/domain/importacion/importar";
+import { cargarBomReal } from "@/domain/bom-real";
+import { crearRol } from "@/domain/roles";
 import { crearUsuario } from "@/domain/usuarios";
 
 const app = poolApp();
@@ -88,5 +91,67 @@ describe("cierre de órdenes de producción (REQ-MP-4)", () => {
     const con = await llamar(rutaCerrar.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { consumosManuales: [{ materiaPrimaId: mp["Tabla raulí"], cantidad: 5 }] } }, { id });
     expect(con.estado).toBe(200);
     expect(await existenciaMp(mp["Tabla raulí"])).toBe(3);
+  });
+});
+
+describe("madera de la puerta (REQ-MP-3.4, 3.5; ADR-0012)", () => {
+  it("una receta para todas las maderas: descuenta las pulgadas del artículo de la materia prima de su madera", async () => {
+    const pulg = (await llamar(rutaMp.POST, "POST", "/x", { ...s, cuerpo: { nombre: "Pulgadas de raulí", unidadCodigo: "pulg" } })).cuerpo.id as string;
+    await llamar(rutaRecepcion.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { materiaPrimaId: pulg, cantidad: 100 } });
+    const bomNel = (lineas: unknown[]) => llamar(rutaBomModelo.PUT, "PUT", "/x", { ...s, cuerpo: { origen: "real", lineas } }, { modelo: "NEL" });
+    // Una línea es un insumo o la madera, nunca ambos; la madera va una sola vez.
+    expect((await bomNel([{ maderaPuerta: true, materiaPrimaId: pulg, cantidad: 1 }])).estado).toBe(400);
+    expect((await bomNel([{ maderaPuerta: true, cantidad: 1 }, { maderaPuerta: true, cantidad: 2 }])).estado).toBe(400);
+    expect((await bomNel([{ maderaPuerta: true, cantidad: 1 }])).estado).toBe(201);
+    const lista = await llamar(rutaBom.GET, "GET", "/api/v1/bom?modelo=NEL", s);
+    expect(lista.cuerpo.datos[0]).toMatchObject({ origen: "real", lineas: [expect.objectContaining({ maderaPuerta: true, cantidad: 1, mp: "Madera de la puerta" })] });
+
+    // Sin materia prima asociada a la madera no se cierra ni se completa en silencio.
+    const id = await crearOrden("NEL-R-4-B", 2);
+    const sin = await llamar(rutaCerrar.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: {} }, { id });
+    expect(sin.estado).toBe(409);
+    expect(sin.cuerpo.error).toMatchObject({ codigo: "BOM_INCOMPLETO", detalles: { incompletos: ["NEL-R-4-B: la madera raulí no tiene materia prima asociada"] } });
+
+    expect((await llamar(rutaMaderaInsumo.PUT, "PUT", "/x", { ...s, cuerpo: { materiaPrimaId: pulg } }, { codigo: "R" })).estado).toBe(204);
+    const { rows: [{ pulgadas }] } = await app.query("SELECT pulgadas::float AS pulgadas FROM articulo WHERE codigo = 'NEL-R-4-B'");
+    expect(pulgadas).toBeGreaterThan(0);
+    const previa = await llamar(rutaOrden.GET, "GET", "/x", s, { id });
+    expect(previa.cuerpo.plan.insumos).toEqual([expect.objectContaining({ nombre: "Pulgadas de raulí", usa: Number((pulgadas * 2).toFixed(3)) })]);
+    expect((await llamar(rutaCerrar.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: {} }, { id })).estado).toBe(200);
+    expect(await existenciaMp(pulg)).toBeCloseTo(100 - pulgadas * 2, 3);
+    const { rows } = await app.query("SELECT despues FROM audit_log WHERE recurso = 'madera_insumo' AND resultado = 'ok'");
+    expect(rows).toEqual([{ despues: { madera: "RAULI", materiaPrimaId: pulg } }]);
+  });
+
+  it("asociar la madera exige mp.editar: 403 auditado, y la madera debe existir", async () => {
+    const rol = await bd().transaction((tx) => crearRol(tx, "solo stock bom", ["stock.ver"], { tipo: "sistema" }, "consola"));
+    await bd().transaction((tx) => crearUsuario(tx, { email: "lee-bom@neltume.cl", nombre: "Lee", clave: "clave-lee-bom", rolId: rol.id }, { tipo: "sistema" }, "consola"));
+    const r = await llamar(rutaSesion.POST, "POST", "/api/v1/sesion", { cuerpo: { email: "lee-bom@neltume.cl", clave: "clave-lee-bom" }, ip: "10.10.0.9" });
+    const lector = { token: tokenDeCookie(r.res)!, csrf: r.cuerpo.csrf };
+    const denegado = await llamar(rutaMaderaInsumo.PUT, "PUT", "/api/v1/maderas/L/insumo", { ...lector, cuerpo: { materiaPrimaId: null } }, { codigo: "L" });
+    expect(denegado.cuerpo.error.codigo).toBe("SIN_PERMISO");
+    const { rows } = await app.query("SELECT 1 FROM audit_log WHERE resultado = 'denegado' AND accion = 'PUT /api/v1/maderas/L/insumo'");
+    expect(rows).toHaveLength(1);
+    expect((await llamar(rutaMaderaInsumo.PUT, "PUT", "/x", { ...s, cuerpo: { materiaPrimaId: null } }, { codigo: "Z" })).estado).toBe(404);
+  });
+});
+
+describe("carga de los BOM reales (T2.7, ADR-0012)", () => {
+  it("crea insumos, asocia maderas y un BOM real por modelo; es idempotente y no pisa un BOM real existente", async () => {
+    const { rows: [u] } = await app.query("SELECT id FROM usuario WHERE email = 'prod@neltume.cl'");
+    const actor = { tipo: "usuario" as const, id: u.id as string };
+    const { rows: [{ n: modelos }] } = await app.query("SELECT count(*)::int AS n FROM modelo");
+    const primera = await bd().transaction((tx) => cargarBomReal(tx, actor, "consola"));
+    // NEL ya tenía un BOM real (de la prueba anterior): se conserva; «Pulgadas de raulí» ya existía y R ya estaba asociada.
+    expect(primera).toMatchObject({ insumosCreados: 19, maderasAsociadas: 3, bomsCreados: modelos - 1, bomsConservados: 1 });
+    expect(await bd().transaction((tx) => cargarBomReal(tx, actor, "consola"))).toEqual({ insumosCreados: 0, maderasAsociadas: 0, bomsCreados: 0, bomsConservados: modelos });
+    const fuy = (await llamar(rutaBom.GET, "GET", "/api/v1/bom?modelo=FUY", s)).cuerpo.datos[0];
+    expect(fuy).toMatchObject({ origen: "real", lineas: expect.arrayContaining([
+      expect.objectContaining({ maderaPuerta: true, cantidad: 1 }),
+      expect.objectContaining({ mp: "Lija de banda manual grano 80", cantidad: 0.1 }),
+      expect.objectContaining({ mp: "Lija de banda industrial grano 100 (lijadora nueva)", cantidad: 0.0143 }),
+    ]) });
+    const nel = (await llamar(rutaBom.GET, "GET", "/api/v1/bom?modelo=NEL", s)).cuerpo.datos[0];
+    expect(nel.lineas).toHaveLength(1); // el BOM real definido a mano no se reemplaza
   });
 });

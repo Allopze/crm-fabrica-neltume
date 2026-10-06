@@ -81,6 +81,7 @@ U = unit, I = integración, E = E2E (número de suite). Todo REQ P1 tiene al men
 | MP-1.1, 1.2, 1.3 | P1 | I `mp.catalogo`; E 03, 11 |
 | MP-2.1, 2.2, 2.3, 2.4 | P1 | I `mp.recepcion`; E 03, 11 |
 | MP-3.1, 3.2, 3.3 | P1 | I `bom`; E 04, 11 |
+| MP-3.4, 3.5 | P1 | I `produccion` (madera de la puerta: BOM_INCOMPLETO, asociación con 403 y auditoría, carga real idempotente) |
 | MP-4.1, 4.2, 4.3, 4.4, 4.5 | P1 | I `produccion.cierre`; E 04, 11 |
 | MP-5.x, 6.x | P2 | I `mp.ajuste`, `mp.alertas` |
 | COT-1.1, 1.2, 1.3, 1.4, 1.5 | P1 | U `precios.calcular` (redondeo, IVA, recargo); I `listas-precio`; E 08, 10, 11 |

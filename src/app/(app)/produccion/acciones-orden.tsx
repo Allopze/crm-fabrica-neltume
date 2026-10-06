@@ -41,8 +41,8 @@ export function NuevaOrden({ csrf }: { csrf: string }) {
 interface Insumo { materiaPrimaId: string; nombre: string; unidad: string; usa: number; existencia: number; faltante: number }
 
 /** Vista previa y cierre de una orden (UX §4): muestra consumos y faltantes antes de confirmar. */
-export function CierreOrden({ ordenId, numero: num, insumos, sinBom, demo, materias, csrf }: {
-  ordenId: string; numero: number; insumos: Insumo[]; sinBom: string[]; demo: boolean; materias: { id: string; nombre: string; unidad: string }[]; csrf: string;
+export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos, demo, materias, csrf }: {
+  ordenId: string; numero: number; insumos: Insumo[]; sinBom: string[]; incompletos: string[]; demo: boolean; materias: { id: string; nombre: string; unidad: string }[]; csrf: string;
 }) {
   const { enviar, pendiente, error } = useEnvio();
   const [manual, setManual] = useState<{ materiaPrimaId: string; cantidad: string }>({ materiaPrimaId: materias[0]?.id ?? "", cantidad: "" });
@@ -51,6 +51,13 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, demo, mater
 
   return (
     <div>
+      {incompletos.length > 0 && (
+        <div role="alert" className="mb-4 rounded-md border border-error/30 bg-error-velo p-3 text-sm text-error">
+          <p className="font-medium">No se puede calcular la madera de la puerta:</p>
+          <ul className="mt-1 list-disc pl-5">{incompletos.map((t) => <li key={t}>{t}</li>)}</ul>
+          <p className="mt-1">Asocia cada madera a su materia prima en «Madera de la puerta», más abajo.</p>
+        </div>
+      )}
       {sinBom.length > 0 && (
         <div className="mb-4 rounded-md border border-ambar/30 bg-ambar-velo p-3 text-sm text-ambar">
           <p className="font-medium">Sin BOM: {sinBom.join(", ")}. Registra el consumo a mano:</p>
@@ -75,7 +82,7 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, demo, mater
           ))}
         </ul>
       )}
-      <Boton variante="primario" className="mt-5 h-10 w-full" disabled={pendiente || faltan || (sinBom.length > 0 && !manual.cantidad)}
+      <Boton variante="primario" className="mt-5 h-10 w-full" disabled={pendiente || faltan || incompletos.length > 0 || (sinBom.length > 0 && !manual.cantidad)}
         onClick={() => enviar(() => pedir("POST", `/api/v1/ordenes/${ordenId}/cerrar`, { csrf, idempotente: true, cuerpo }))}>
         <CheckCheck className="h-4 w-4" /> Cerrar orden {num} y mover stock
       </Boton>
