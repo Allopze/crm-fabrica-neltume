@@ -15,6 +15,8 @@ export async function asegurarRoles(urlAdmin: string, urlOwner: string, urlApp: 
       const { rows } = await cliente.query("SELECT format('%L', $1::text) AS clave", [rol.clave]);
       await cliente.query(`${verbo} ROLE ${ident(rol.usuario)} WITH LOGIN ${extra} PASSWORD ${rows[0].clave}`);
     }
+    // Solo dev/test: el dueño puede cortar conexiones (p. ej. del worker) al recrear las bases de prueba.
+    if (process.env.NODE_ENV !== "production") await cliente.query(`GRANT pg_signal_backend TO ${ident(owner.usuario)}`);
   } finally {
     await cliente.end();
   }

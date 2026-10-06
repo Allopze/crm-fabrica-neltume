@@ -18,6 +18,8 @@ const global_ = globalThis as unknown as { __neltumePool?: Pool; __neltumeBd?: B
 export function bd(): Bd {
   if (!global_.__neltumeBd) {
     global_.__neltumePool = new Pool({ connectionString: requerirEnv("DATABASE_URL"), max: 10 });
+    // Una conexión inactiva que el servidor corta (reinicio, recreación de base) no debe tumbar el proceso.
+    global_.__neltumePool.on("error", (e) => process.stderr.write(`${JSON.stringify({ nivel: "warn", mensaje: "conexión a BD cerrada; el pool se reconecta", error: e.message })}\n`));
     global_.__neltumeBd = drizzle(global_.__neltumePool, { schema: esquema, casing: "snake_case" });
   }
   return global_.__neltumeBd;

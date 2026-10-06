@@ -21,15 +21,21 @@ export default defineConfig({
     locale: "es-CL",
     timezoneId: "America/Santiago",
   },
-  webServer: {
-    command: `npx next dev -p ${PUERTO}`,
-    url: `http://localhost:${PUERTO}/login`,
-    reuseExistingServer: false,
-    timeout: 120_000,
-    env: {
-      NEXT_DIST_DIR: ".next-e2e",
-      DATABASE_URL: conBase(requerirEnv("DATABASE_URL"), "neltume_e2e"),
-      LLM_PROVEEDOR: "doble",
+  webServer: [
+    {
+      command: `npx next dev -p ${PUERTO}`,
+      url: `http://localhost:${PUERTO}/login`,
+      reuseExistingServer: false,
+      timeout: 120_000,
+      env: { NEXT_DIST_DIR: ".next-e2e", DATABASE_URL: conBase(requerirEnv("DATABASE_URL"), "neltume_e2e") },
     },
-  },
+    {
+      // Worker de IA con el doble determinista (TESTING §2): nunca llama al proveedor real.
+      command: "npx tsx src/ai/worker.ts",
+      url: `http://localhost:${PUERTO + 1}`,
+      reuseExistingServer: false,
+      timeout: 60_000,
+      env: { DATABASE_URL: conBase(requerirEnv("DATABASE_URL"), "neltume_e2e"), LLM_PROVEEDOR: "doble", WORKER_PUERTO_SALUD: String(PUERTO + 1), LLM_MAX_REINTENTOS: "1" },
+    },
+  ],
 });

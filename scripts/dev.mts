@@ -18,6 +18,9 @@ try {
   process.exit(1);
 }
 
+// App y worker de IA (cola de interpretaciones) en paralelo; si uno termina, se detiene el otro.
 const next = spawn("npx", ["next", "dev", ...process.argv.slice(2)], { stdio: "inherit" });
-for (const senal of ["SIGINT", "SIGTERM"] as const) process.on(senal, () => next.kill(senal));
-next.on("exit", (codigo) => process.exit(codigo ?? 0));
+const worker = spawn("npx", ["tsx", "src/ai/worker.ts"], { stdio: "inherit" });
+const procesos = [next, worker];
+for (const senal of ["SIGINT", "SIGTERM"] as const) process.on(senal, () => procesos.forEach((p) => p.kill(senal)));
+for (const p of procesos) p.on("exit", (codigo) => { procesos.forEach((q) => q.kill("SIGTERM")); process.exit(codigo ?? 0); });

@@ -15,7 +15,8 @@
     "db:migrar": "tsx --env-file-if-exists=.env.local scripts/migrar.mts",
     "db:generar": "drizzle-kit generate",
     "crear-admin": "tsx --env-file-if-exists=.env.local scripts/crear-admin.mts",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "worker": "tsx --env-file-if-exists=.env.local src/ai/worker.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.1",
