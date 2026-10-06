@@ -84,9 +84,9 @@ Base `/api/v1`, JSON UTF-8, solo detrás de Cloudflare Access. Todos los handler
 | POST `/cotizaciones/:id/aprobar` (`version`) | `cotizaciones.aprobar` | ✔ | 409 `ITEMS_POR_CONFIRMAR` |
 | GET `/cotizaciones/:id/pdf` | `cotizaciones.aprobar` + `clientes.ver` | | 409 `NO_APROBADA`; lleva datos del cliente; auditado |
 | GET/POST `/clientes` · GET/PATCH `/clientes/:id` | `clientes.ver` / `clientes.editar` | | RUT validado |
-| POST `/pedidos` (`cotizacion_id, despacho, transporte`) | `pedidos.gestionar` | ✔ | Crea la nota de pedido y las reservas; 409 `VENCIDA`, `YA_TIENE_PEDIDO`, `NO_APROBADA` |
+| POST `/pedidos` (`cotizacionId, direccionDespacho?, medioTransporte?`) | `pedidos.gestionar` | ✔ | Crea la nota de pedido y las reservas; 409 `VENCIDA`, `YA_TIENE_PEDIDO`, `NO_APROBADA` |
 | GET `/pedidos` · GET `/pedidos/:id` | `pedidos.gestionar` | | Muestra reservado y faltante por ítem |
-| POST `/pedidos/:id/cancelar` | `pedidos.gestionar` | ✔ | Libera las reservas |
+| POST `/pedidos/:id/cancelar` (`motivo`) | `pedidos.gestionar` | ✔ | Libera las reservas; 409 `NO_EDITABLE` si ya está cancelada o despachada |
 | GET `/pedidos/:id/pdf` | `pedidos.gestionar` | | Nota de pedido |
 
 ### Webhooks
