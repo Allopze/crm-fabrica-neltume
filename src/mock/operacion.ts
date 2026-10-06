@@ -1,4 +1,4 @@
-// Materias primas, producción, movimientos, listas de precio y auditoría simulados.
+// Materias primas, producción, movimientos y auditoría simulados.
 
 export interface MateriaPrima { id: string; nombre: string; unidad: string; existencia: number; minimo: number; ultimaRecepcion: string }
 export const materiasPrimas: MateriaPrima[] = [
@@ -33,13 +33,6 @@ export const movimientosDemo: Movimiento[] = [
   { fecha: "2026-10-03T11:30:00", tipo: "Entrada producción", cantidad: 4, ref: "Orden 28", usuario: "Paula R." },
   { fecha: "2026-09-29T09:05:00", tipo: "Ajuste", cantidad: -1, ref: "Conteo cíclico", usuario: "Paula R.", motivo: "Puerta con grieta en panel, descartada" },
   { fecha: "2026-09-20T15:44:00", tipo: "Salida despacho", cantidad: -2, ref: "Pedido 54", usuario: "Paula R." },
-];
-
-export interface VersionLista { version: number; origen: "Excel" | "Edición"; fecha: string; autor: string; cambios: string; vigente: boolean }
-export const listas: VersionLista[] = [
-  { version: 3, origen: "Edición", fecha: "2026-10-04T12:20:00", autor: "Paula R.", cambios: "Recargo tipo Especial 18 % → 20 %", vigente: true },
-  { version: 2, origen: "Excel", fecha: "2026-09-15T10:02:00", autor: "Paula R.", cambios: "8.772 filas · 214 precios actualizados", vigente: false },
-  { version: 1, origen: "Excel", fecha: "2026-09-01T09:00:00", autor: "Paula R.", cambios: "Carga inicial · 8.772 filas", vigente: false },
 ];
 
 export interface EventoAuditoria { fecha: string; actor: string; accion: string; recurso: string; resultado: "ok" | "denegado" | "error"; detalle: string }

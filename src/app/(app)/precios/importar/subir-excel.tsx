@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileSpreadsheet, Upload } from "lucide-react";
 import { Boton, Etiqueta } from "@/components/ui/base";
@@ -13,13 +13,15 @@ interface Informe {
 
 export function SubirExcel({ csrf }: { csrf: string }) {
   const router = useRouter();
-  const [archivo, setArchivo] = useState<File | null>(null);
+  const entrada = useRef<HTMLInputElement>(null);
   const [estado, setEstado] = useState<"listo" | "subiendo">("listo");
   const [informe, setInforme] = useState<Informe | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function subir() {
-    if (!archivo) return;
+    // Se lee del input al hacer clic: no depende de que el onChange haya alcanzado a actualizar el estado.
+    const archivo = entrada.current?.files?.[0];
+    if (!archivo) { setError("Elige un archivo .xlsx."); return; }
     setEstado("subiendo");
     setError(null);
     const form = new FormData();
@@ -45,10 +47,10 @@ export function SubirExcel({ csrf }: { csrf: string }) {
         <FileSpreadsheet className="h-10 w-10 text-musgo" strokeWidth={1.3} />
         <label className="min-w-0 flex-1 text-sm">
           <span className="block font-medium">Excel del cotizador (.xlsx, hojas Precio y Categorias)</span>
-          <input type="file" accept=".xlsx" aria-label="Archivo Excel" onChange={(e) => { setArchivo(e.target.files?.[0] ?? null); setInforme(null); }}
+          <input ref={entrada} type="file" accept=".xlsx" aria-label="Archivo Excel" onChange={() => { setInforme(null); setError(null); }}
             className="mt-2 block w-full text-sm file:mr-3 file:rounded-md file:border file:border-linea-fuerte file:bg-papel file:px-3 file:py-1.5 file:text-sm" />
         </label>
-        <Boton variante="primario" disabled={!archivo || estado === "subiendo"} onClick={subir}>
+        <Boton variante="primario" disabled={estado === "subiendo"} onClick={subir}>
           <Upload className="h-4 w-4" /> {estado === "subiendo" ? "Importando…" : "Importar"}
         </Boton>
       </div>

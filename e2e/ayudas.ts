@@ -12,3 +12,9 @@ export async function csrf(page: Page): Promise<string> {
   const r = await page.request.get("/api/v1/sesion");
   return (await r.json()).csrf;
 }
+
+/** Navega y espera a que la página termine de cargar e hidratar antes de interactuar. */
+export async function ir(page: Page, ruta: string) {
+  await page.goto(ruta);
+  await page.waitForLoadState("networkidle");
+}

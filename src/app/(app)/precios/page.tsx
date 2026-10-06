@@ -1,32 +1,52 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { desc } from "drizzle-orm";
 import { FileSpreadsheet, Upload } from "lucide-react";
-import { Boton, BotonLink, Encabezado, Etiqueta, Panel } from "@/components/ui/base";
+import { BotonLink, Encabezado, Etiqueta, Panel, Placa, Vacio } from "@/components/ui/base";
+import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
-import { recargos, type TipoPuerta } from "@/mock/catalogo";
-import { listas } from "@/mock/operacion";
-import { fechaHora } from "@/lib/formato";
+import { bd } from "@/db/conexion";
+import { importacion } from "@/db/esquema/catalogo";
+import { requerirSesion } from "@/domain/auth/servidor";
+import { listarVersiones, listaVigente, preciosDeLista, recargosDe } from "@/domain/precios/listas";
+import { clp, fechaHora, metros } from "@/lib/formato";
+import { EditarPrecio } from "./editar-precio";
+import { EditorRecargos } from "./editor-recargos";
 
 export const metadata: Metadata = { title: "Lista de precios" };
 
-const informe = [
-  { fila: 1204, motivo: "El código ANC-O-6-B no coincide con modelo, madera y medida de la fila" },
-  { fila: 5532, motivo: "Precio neto vacío" },
-];
+export default async function PreciosPage({ searchParams }: PageProps<"/precios">) {
+  const sesion = await requerirSesion();
+  if (!sesion.permisos.has("stock.ver")) return <SinPermiso permiso="stock.ver" />;
+  const sp = await searchParams;
+  const q = typeof sp.q === "string" ? sp.q : undefined;
+  const cursor = typeof sp.desde === "string" ? sp.desde : undefined;
+  const puedeEditar = sesion.permisos.has("precios.editar");
+  const puedeImportar = puedeEditar && sesion.permisos.has("catalogo.editar");
+  const verCostos = sesion.permisos.has("costos.ver");
 
-export default function PreciosPage() {
+  const vigente = await listaVigente();
+  const acciones = puedeImportar && <BotonLink href="/precios/importar" variante="primario"><Upload className="h-4 w-4" /> Importar Excel</BotonLink>;
+  const encabezado = (
+    <Encabezado antetitulo="Configuración · precios" titulo="Lista de precios" acciones={acciones}
+      descripcion="Cada cambio crea una versión nueva. Las cotizaciones aprobadas conservan el precio de la versión con que se emitieron." />
+  );
+  if (!vigente) {
+    return <>{encabezado}<Panel><Vacio titulo="Aún no hay lista de precios" accion={acciones}>Importa el Excel del cotizador para crear el catálogo y la versión 1.</Vacio></Panel></>;
+  }
+
+  const [versiones, recargos, precios, [ultima]] = await Promise.all([
+    listarVersiones(), recargosDe(vigente.id), preciosDeLista(vigente.version, { q, cursor, limite: 50 }, verCostos),
+    bd().select().from(importacion).orderBy(desc(importacion.creadoEn)).limit(1),
+  ]);
+
   return (
     <>
-      <Encabezado
-        antetitulo="Configuración · precios"
-        titulo="Lista de precios"
-        descripcion="Cada cambio crea una versión nueva. Las cotizaciones aprobadas conservan el precio de la versión con que se emitieron."
-        acciones={<BotonLink href="/precios/importar" variante="primario"><Upload className="h-4 w-4" /> Importar Excel</BotonLink>}
-      />
-
-      <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+      {encabezado}
+      <div className="mb-8 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
         <Panel titulo="Versiones" sinRelleno>
-          <ol className="relative">
-            {listas.map((l) => (
+          <ol>
+            {versiones.map((l) => (
               <li key={l.version} className="flex gap-4 border-b border-linea/70 px-5 py-4 last:border-0">
                 <span className={l.vigente
                   ? "grid h-10 w-10 shrink-0 place-items-center rounded-full bg-rauli font-display text-lg text-lamina"
@@ -34,51 +54,66 @@ export default function PreciosPage() {
                   v{l.version}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">{l.cambios}</p>
-                  <p className="text-sm text-tinta-tenue">{l.origen} · {l.autor} · {fechaHora(l.fecha)}</p>
+                  <p className="font-medium">{l.descripcion}</p>
+                  <p className="text-sm text-tinta-tenue">
+                    {l.origen === "excel" ? "Excel" : "Edición"} · {l.autor ?? "—"} · {fechaHora(new Date(l.creadoEn).toISOString())} · {l.articulos.toLocaleString("es-CL")} artículos
+                  </p>
                 </div>
                 {l.vigente && <Etiqueta tono="rauli">vigente</Etiqueta>}
               </li>
             ))}
           </ol>
         </Panel>
-
         <div className="space-y-8">
-          <Panel titulo="Recargo por tipo de puerta" accion={<Boton className="h-8">Editar</Boton>}>
-            <ul className="space-y-3">
-              {(Object.keys(recargos) as TipoPuerta[]).map((t) => (
-                <li key={t} className="flex items-center gap-4">
-                  <span className="w-20 text-sm">{t}</span>
-                  <span className="relative h-1.5 flex-1 rounded-full bg-papel-hundido">
-                    <span className="absolute inset-y-0 left-0 rounded-full bg-rauli" style={{ width: `${recargos[t] * 250}%` }} />
-                  </span>
-                  <span className="w-12 text-right font-mono text-sm tabular-nums">{Math.round(recargos[t] * 100)} %</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-4 text-xs text-tinta-tenue">Valores ficticios del prototipo. Se aplican sobre el precio neto de lista.</p>
+          <Panel titulo="Recargo por tipo de puerta">
+            <EditorRecargos recargos={recargos} csrf={sesion.csrf} puedeEditar={puedeEditar} />
           </Panel>
-
-          <Panel titulo="Última importación" accion={<Etiqueta tono="musgo">v2 · 15-09-2026</Etiqueta>}>
-            <div className="flex items-center gap-3 text-sm">
-              <FileSpreadsheet className="h-8 w-8 text-musgo" strokeWidth={1.4} />
-              <div>
-                <p className="font-medium">COTIZADOR_2026.xlsx</p>
-                <p className="text-tinta-tenue">hojas Precio y Categorias</p>
-              </div>
-            </div>
-            <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-md bg-musgo-velo py-2"><dt className="text-[11px] uppercase tracking-wider text-musgo">Creadas</dt><dd className="font-display text-xl">0</dd></div>
-              <div className="rounded-md bg-pizarra-velo py-2"><dt className="text-[11px] uppercase tracking-wider text-pizarra">Cambiadas</dt><dd className="font-display text-xl">214</dd></div>
-              <div className="rounded-md bg-error-velo py-2"><dt className="text-[11px] uppercase tracking-wider text-error">Rechazadas</dt><dd className="font-display text-xl">2</dd></div>
-            </dl>
-            <Tabla className="mt-4">
-              <thead><tr><Th>Fila</Th><Th>Motivo del rechazo</Th></tr></thead>
-              <tbody>{informe.map((r) => <Tr key={r.fila}><Td className="font-mono">{r.fila}</Td><Td className="text-tinta-suave">{r.motivo}</Td></Tr>)}</tbody>
-            </Tabla>
-          </Panel>
+          {ultima && (
+            <Panel titulo="Última importación">
+              <p className="flex items-center gap-3 text-sm">
+                <FileSpreadsheet className="h-7 w-7 text-musgo" strokeWidth={1.4} />
+                <span><span className="block font-medium">{ultima.nombreArchivo}</span>
+                  <span className="text-tinta-tenue">{ultima.creadas} creadas · {ultima.actualizadas} actualizadas · {ultima.rechazadas} rechazadas</span></span>
+              </p>
+            </Panel>
+          )}
         </div>
       </div>
+
+      <Panel titulo={<>Precios vigentes <span className="text-tinta-tenue">· v{vigente.version}</span></>}
+        accion={<form className="flex gap-2"><input name="q" defaultValue={q} placeholder="Código o modelo" aria-label="Buscar precio"
+          className="h-8 w-48 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none" /></form>} sinRelleno>
+        <Tabla>
+          <thead>
+            <tr>
+              <Th>Código</Th><Th>Modelo</Th><Th>Madera</Th><Th>Medida</Th><Th>Tipo</Th><Th alinear="der">Neto lista</Th>
+              <Th alinear="der">Venta</Th><Th alinear="der">Con IVA</Th>{verCostos && <><Th alinear="der">Costo</Th><Th alinear="der">Margen</Th></>}
+            </tr>
+          </thead>
+          <tbody>
+            {precios.datos.map((p) => (
+              <Tr key={p.codigo}>
+                <Td><Placa codigo={p.codigo} /></Td>
+                <Td className="font-medium capitalize">{p.modelo.toLowerCase()}</Td>
+                <Td className="text-tinta-suave capitalize">{p.madera.toLowerCase()}</Td>
+                <Td className="text-tinta-suave">{p.ancho} × {metros(Number(p.altoM))}</Td>
+                <Td className="text-tinta-suave capitalize">{p.tipo?.toLowerCase() ?? "accesorio"}</Td>
+                <Td alinear="der">{puedeEditar ? <EditarPrecio codigo={p.codigo} precioNeto={Number(p.precioNeto)} csrf={sesion.csrf} /> : clp(Number(p.precioNeto))}</Td>
+                <Td alinear="der" className="font-medium">{clp(p.precioVenta)}</Td>
+                <Td alinear="der" className="text-tinta-suave">{clp(p.precioVentaConIva)}</Td>
+                {verCostos && "costoTotal" in p && <>
+                  <Td alinear="der" className="text-tinta-suave">{p.costoTotal ? clp(Number(p.costoTotal)) : "—"}</Td>
+                  <Td alinear="der" className="text-tinta-suave">{p.margen !== null && p.margen !== undefined ? `${Math.round(Number(p.margen) * 100)} %` : "—"}</Td>
+                </>}
+              </Tr>
+            ))}
+          </tbody>
+        </Tabla>
+        {precios.datos.length === 0 && <Vacio titulo="Sin resultados">No hay artículos que coincidan con «{q}».</Vacio>}
+      </Panel>
+      {precios.siguiente && (
+        <p className="mt-4 text-sm"><Link className="text-rauli hover:underline" href={`/precios?${new URLSearchParams({ ...(q ? { q } : {}), desde: precios.siguiente })}`}>Ver más →</Link></p>
+      )}
     </>
   );
 }
