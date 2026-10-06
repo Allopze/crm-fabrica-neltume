@@ -38,7 +38,7 @@ export async function iniciarSesion(email: string, clave: string, ctx: Contexto)
 
     if (fallos >= MAX_FALLOS) {
       await registrarAuditoria(tx, { actor: visitante, accion: "login", recurso: "sesion", despues: { email: correo, motivo: "limite" }, resultado: "denegado", origen: "web", correlacionId: ctx.correlacionId });
-      return { error: "LIMITE_LOGIN" as const };
+      return { ok: false as const, error: "LIMITE_LOGIN" as const };
     }
 
     const [u] = await tx.select().from(usuario).where(and(eq(usuario.email, correo), eq(usuario.activo, true)));
@@ -47,7 +47,7 @@ export async function iniciarSesion(email: string, clave: string, ctx: Contexto)
 
     if (!u || !valida) {
       await registrarAuditoria(tx, { actor: visitante, accion: "login", recurso: "sesion", despues: { email: correo }, resultado: "denegado", origen: "web", correlacionId: ctx.correlacionId });
-      return { error: "CREDENCIALES" as const };
+      return { ok: false as const, error: "CREDENCIALES" as const };
     }
 
     const token = randomBytes(32).toString("base64url");
@@ -58,10 +58,10 @@ export async function iniciarSesion(email: string, clave: string, ctx: Contexto)
       .values({ tokenHash: hashToken(token), csrfToken: csrf, usuarioId: u.id, expiraEn, ip: ctx.ip ?? null, userAgent: ctx.userAgent ?? null })
       .returning({ id: sesion.id });
     await registrarAuditoria(tx, { actor: { tipo: "usuario", id: u.id, ip: ctx.ip, userAgent: ctx.userAgent }, accion: "login", recurso: "sesion", recursoId: s.id, resultado: "ok", origen: "web", correlacionId: ctx.correlacionId });
-    return { token, csrf, expiraEn, usuario: { id: u.id, email: u.email, nombre: u.nombre } };
+    return { ok: true as const, token, csrf, expiraEn, usuario: { id: u.id, email: u.email, nombre: u.nombre } };
   });
 
-  if ("error" in resultado) {
+  if (!resultado.ok) {
     const mensaje = resultado.error === "LIMITE_LOGIN"
       ? `Demasiados intentos. Espera ${VENTANA_MIN} minutos.`
       : "Correo o contraseña incorrectos.";

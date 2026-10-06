@@ -11,7 +11,7 @@ Refs: AGENTS.md (pruebas y calidad), SPEC.md (REQ), AI.md §5–6, ADR-0005. `np
 | E2E | Playwright (`workers: 1`, `fullyParallel: false`, orden por nombre de archivo) | Recorrido de punta a punta en navegador, con estado compartido entre suites | `e2e/NN-*.spec.ts` | 14 suites |
 | Evaluación IA | `npm run eval:ia` (modelo real) | Set de AI.md §6 | `eval/` | 24+ casos; **no** forma parte de `npm test` |
 
-`npm test` ejecuta `lint → unit → integración → e2e` en ese orden y se detiene al primer fallo. Si alguna capa falla, la suite no está verde.
+`npm test` ejecuta `lint → typecheck → unit → integración → e2e` en ese orden y se detiene al primer fallo. Si alguna capa falla, la suite no está verde.
 
 Chequeos estructurales (corren en integración):
 - Cada `route.ts` exporta solo handlers con `conPermiso` o `publico`.

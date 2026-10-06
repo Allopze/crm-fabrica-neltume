@@ -23,7 +23,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [ ] T0.5 (75) Drizzle y migración base: `permiso`, `rol`, `rol_permiso`, `usuario`, `sesion`, `intento_login`, `audit_log`, `idempotencia`; triggers solo-INSERT y grants del rol de la app · REQ-ADM-3.3 · I `audit.trigger` · T0.4
 - [ ] T0.6 (45) Semilla de los 18 permisos y del rol `administrador`; `npm run crear-admin` (contraseña por consola) · REQ-ADM-2.2 · I `usuarios.semilla` · T0.5
 - [ ] T0.7 (90) Sesiones propias en BD (ADR-0005), argon2id, sesión de 8 h, logout, límite de 5 intentos/15 min y auditoría de login · REQ-ADM-1.1–1.3, SECURITY T7 · I `auth.login` · T0.6
-- [ ] T0.8 (75) `conPermiso` y `publico`, CSRF, formato de error único, `correlacion_id` y 404 ante falta de lectura · REQ-ADM-2.2, 2.3, API §1–2 · U `politica` · T0.7
+- [ ] T0.8 (75) `conPermiso` y `publico`, CSRF, formato de error único, `correlacion_id` y 404 ante falta de lectura · REQ-ADM-2.2, 2.3, API §1–2 · I `politica` · T0.7
 - [ ] T0.9 (60) `registrarAuditoria` en la misma transacción, incluidas las denegaciones · REQ-ADM-3.1, 3.5 · I `audit.denegaciones` · T0.8
 - [ ] T0.10 (45) Middleware de `Idempotency-Key` (24 h, 422 si el cuerpo es distinto) · API §1 · I `idempotencia` · T0.8 · [P]
 - [ ] T0.11 (45) Logger JSON con redacción de cabeceras y datos de cliente · SECURITY T5 · U `logger` · T0.1 · [P]

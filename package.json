@@ -7,14 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --max-warnings=0",
-    "test": "npm run lint && npm run test:unit && npm run test:integracion && npm run test:e2e",
+    "test": "npm run lint && npm run typecheck && npm run test:unit && npm run test:integracion && npm run test:e2e",
     "test:unit": "vitest run --project unit",
     "test:integracion": "vitest run --project integracion",
     "test:e2e": "playwright test",
     "db:setup": "tsx --env-file-if-exists=.env.local scripts/db-setup.mts",
     "db:migrar": "tsx --env-file-if-exists=.env.local scripts/migrar.mts",
     "db:generar": "drizzle-kit generate",
-    "crear-admin": "tsx --env-file-if-exists=.env.local scripts/crear-admin.mts"
+    "crear-admin": "tsx --env-file-if-exists=.env.local scripts/crear-admin.mts",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.1",
