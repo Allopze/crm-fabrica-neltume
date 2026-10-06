@@ -87,7 +87,7 @@ El doble determinista (`src/ai/doble.ts`) responde con un mapa fijo de texto a s
 
 ## 6. Set de evaluación y criterio de aprobación
 
-Corre aparte con el modelo real: `npm run eval:ia` lee `eval/casos.json` y guarda un informe. Códigos: `MOD-MADERA-ANCHO-ALTO`, donde la madera es O/L/M/R, el ancho va de 1 a 9 (1 = 0,60–0,65 … 9 = 1,40–1,45) y el alto de A a G (2,0 … 2,6 m).
+Corre aparte con el modelo real: `npm run eval:ia -- --modelo <id>` lee `eval/casos.json`, recorre el mismo camino que el worker (normalizar → enmascarar → modelo → mapeo determinista contra el catálogo importado) y guarda `eval/informes/<fecha>-<modelo>.md` y `.json` (sin el texto de los pedidos ni precios). Sale con código 1 si no cumple el criterio. Códigos: `MOD-MADERA-ANCHO-ALTO`, donde la madera es O/L/M/R, el ancho va de 1 a 9 (1 = 0,60–0,65 … 9 = 1,40–1,45) y el alto de A a G (2,0 … 2,6 m).
 
 | # | Pedido | Esperado |
 |---|---|---|
