@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { FileSpreadsheet, Upload } from "lucide-react";
-import { Boton, Encabezado, Etiqueta, Panel } from "@/components/ui/base";
+import { Boton, BotonLink, Encabezado, Etiqueta, Panel } from "@/components/ui/base";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { recargos, type TipoPuerta } from "@/mock/catalogo";
 import { listas } from "@/mock/operacion";
@@ -20,7 +20,7 @@ export default function PreciosPage() {
         antetitulo="Configuración · precios"
         titulo="Lista de precios"
         descripcion="Cada cambio crea una versión nueva. Las cotizaciones aprobadas conservan el precio de la versión con que se emitieron."
-        acciones={<Boton variante="primario"><Upload className="h-4 w-4" /> Re-importar Excel</Boton>}
+        acciones={<BotonLink href="/precios/importar" variante="primario"><Upload className="h-4 w-4" /> Importar Excel</BotonLink>}
       />
 
       <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">

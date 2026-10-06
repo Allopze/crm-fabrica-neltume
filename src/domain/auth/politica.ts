@@ -7,7 +7,7 @@ import { bd } from "@/db/conexion";
 import { registro } from "@/lib/registro";
 import { registrarAuditoria } from "../auditoria";
 import { ESTADO_HTTP, ErrorDominio, type CodigoError } from "../errores";
-import { conIdempotencia } from "./idempotencia";
+import { conIdempotencia, huellaCuerpo } from "./idempotencia";
 import type { Permiso } from "./permisos";
 import { type SesionActiva, validarSesion } from "./sesiones";
 
@@ -85,11 +85,11 @@ function csrfValido(enviado: string | null, esperado: string): boolean {
 }
 
 /**
- * Exige sesión válida, CSRF en mutaciones y el permiso indicado ("sesion" = solo autenticado).
+ * Exige sesión válida, CSRF en mutaciones y el o los permisos indicados ("sesion" = solo autenticado).
  * Con `idempotente`, exige Idempotency-Key y no repite la acción (API §1).
  */
 export function conPermiso<P = Record<string, never>>(
-  permiso: Permiso | "sesion",
+  permiso: Permiso | Permiso[] | "sesion",
   manejador: Manejador<ContextoAutenticado<P>>,
   opciones: { idempotente?: boolean } = {},
 ): Ruta<P> {
@@ -104,7 +104,8 @@ export function conPermiso<P = Record<string, never>>(
       await auditarDenegacion(base, "CSRF", sesion.usuario.id);
       return respuestaError("CSRF", "Token de seguridad inválido. Recarga la página.", base.correlacionId);
     }
-    if (permiso !== "sesion" && !sesion.permisos.has(permiso)) {
+    const requeridos = permiso === "sesion" ? [] : Array.isArray(permiso) ? permiso : [permiso];
+    if (!requeridos.every((p) => sesion.permisos.has(p))) {
       await auditarDenegacion(base, "SIN_PERMISO", sesion.usuario.id);
       return respuestaError("SIN_PERMISO", "No tienes permiso para esta acción.", base.correlacionId);
     }
@@ -112,7 +113,7 @@ export function conPermiso<P = Record<string, never>>(
     const ctx = { ...base, sesion, actor };
     if (!opciones.idempotente) return ejecutar(ctx, manejador, sesion.usuario.id);
     return ejecutar(ctx, async (c) =>
-      conIdempotencia(req.headers.get("idempotency-key"), sesion.usuario.id, await req.clone().text(), () => manejador(c)),
+      conIdempotencia(req.headers.get("idempotency-key"), sesion.usuario.id, await huellaCuerpo(req), () => manejador(c)),
     sesion.usuario.id);
   };
 }

@@ -21,6 +21,7 @@ export default defineConfig({
           testTimeout: 20_000,
           hookTimeout: 60_000,
           globalSetup: ["tests/integracion/setup-global.ts"],
+          setupFiles: ["tests/integracion/base-por-archivo.ts"],
         },
       },
     ],

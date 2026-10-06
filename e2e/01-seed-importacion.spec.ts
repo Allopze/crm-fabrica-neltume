@@ -1,9 +1,11 @@
 import { execFileSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
 import { cargarEnvLocal, conBase, requerirEnv } from "../src/db/urls";
+import { ingresar } from "./ayudas";
 import { ADMIN } from "./datos";
 
-// Suite 01 (TESTING §3): BD vacía + crear-admin. La importación del Excel se agrega en la Fase 1 (T1.6).
+// Suite 01 (TESTING §3): BD vacía + crear-admin + importación del Excel mini desde la UI.
+test.describe.configure({ mode: "serial" });
 test("crear-admin crea el primer administrador desde la consola", () => {
   cargarEnvLocal();
   const salida = execFileSync("npx", ["tsx", "scripts/crear-admin.mts"], {
@@ -19,4 +21,23 @@ test("sin sesión, cualquier pantalla interna lleva al login", async ({ page }) 
   await page.goto("/stock");
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("heading", { name: "Ingresar" })).toBeVisible();
+});
+
+test("importa el Excel desde la UI e informa la fila rechazada", async ({ page }) => {
+  await ingresar(page, ADMIN.email, ADMIN.clave);
+  await page.goto("/precios/importar");
+  await page.getByLabel("Archivo Excel").setInputFiles("e2e/fixtures/cotizador-mini.xlsx");
+  await page.getByRole("button", { name: "Importar" }).click();
+  const informe = page.getByRole("region", { name: "Informe de importación" });
+  await expect(informe).toContainText("Lista de precios vigente: v1");
+  await expect(informe.getByText("Creadas").locator("..")).toContainText("69");
+  await expect(informe).toContainText("se esperaba NEL-O-3-C");
+});
+
+test("re-importar el mismo archivo no duplica nada", async ({ page }) => {
+  await ingresar(page, ADMIN.email, ADMIN.clave);
+  await page.goto("/precios/importar");
+  await page.getByLabel("Archivo Excel").setInputFiles("e2e/fixtures/cotizador-mini.xlsx");
+  await page.getByRole("button", { name: "Importar" }).click();
+  await expect(page.getByRole("region", { name: "Informe de importación" })).toContainText("ya se había importado");
 });

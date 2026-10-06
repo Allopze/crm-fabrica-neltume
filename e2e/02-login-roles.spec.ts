@@ -1,20 +1,8 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { csrf, ingresar } from "./ayudas";
 import { ADMIN, CONSULTA } from "./datos";
 
 // Suite 02 (TESTING §3): login, rol de prueba solo-consulta y regla del último administrador.
-async function ingresar(page: Page, email: string, clave: string, exito = true) {
-  await page.goto("/login");
-  await page.getByLabel("Correo").fill(email);
-  await page.getByLabel("Contraseña").fill(clave);
-  await page.getByRole("button", { name: "Ingresar" }).click();
-  if (exito) await expect(page).toHaveURL(/\/$/);
-}
-
-async function csrf(page: Page): Promise<string> {
-  const r = await page.request.get("/api/v1/sesion");
-  return (await r.json()).csrf;
-}
-
 test.describe.configure({ mode: "serial" });
 
 test("login con clave incorrecta muestra un error que no revela el motivo", async ({ page }) => {
