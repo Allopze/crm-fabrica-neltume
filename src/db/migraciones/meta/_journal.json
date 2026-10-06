@@ -50,6 +50,13 @@
       "when": 1791256129805,
       "tag": "0006_materias_primas_produccion",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791256815948,
+      "tag": "0007_clientes",
+      "breakpoints": true
     }
   ]
 }
