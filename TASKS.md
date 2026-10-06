@@ -49,10 +49,10 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T1.10 (75) API y UI de listas de precio: versiones, edición que crea versión, recargos, `costos.ver` · REQ-COT-1.1, 1.4, 1.5 · I `listas-precio` · T1.8
 
 ### Stock de puertas
-- [ ] T1.11 (60) Migración `movimiento`: trigger inmutable, CHECKs y vista `v_stock` · ADR-0002, REQ-STK-5.3 · I `movimiento.trigger` · T1.1
-- [ ] T1.12 (45) Dominio de stock: existencia, reservado, disponible y regla de no negativo · REQ-STK-2.1, 4.2 · U `stock.calculo` · T1.11
-- [ ] T1.13 (75) API de entradas, salidas y ajustes con idempotencia · REQ-STK-3.x, 4.x, 5.x · I `movimientos.*` · T1.12, T0.10
-- [ ] T1.14 (75) UI de consulta de stock con filtros, detalle con movimientos y formularios · REQ-STK-2.x · E `05-stock-movimientos` · T1.13, T1.7
+- [x] T1.11 (60) Migración `movimiento`: trigger inmutable, CHECKs y vista `v_stock` · ADR-0002, REQ-STK-5.3 · I `movimiento.trigger` · T1.1
+- [x] T1.12 (45) Dominio de stock: existencia, reservado, disponible y regla de no negativo · REQ-STK-2.1, 4.2 · U `stock.calculo` · T1.11
+- [x] T1.13 (75) API de entradas, salidas y ajustes con idempotencia · REQ-STK-3.x, 4.x, 5.x · I `movimientos.*` · T1.12, T0.10
+- [x] T1.14 (75) UI de consulta de stock con filtros, detalle con movimientos y formularios · REQ-STK-2.x · E `05-stock-movimientos` · T1.13, T1.7
 
 ### Materias primas y producción
 - [ ] T1.15 (45) Migración `unidad`, `materia_prima`, `bom`, `bom_linea`, `orden_produccion`, `orden_linea` · DATA-MODEL §2 · I `migraciones` · T1.11
