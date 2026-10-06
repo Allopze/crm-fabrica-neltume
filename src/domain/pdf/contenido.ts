@@ -15,7 +15,7 @@ export interface CotizacionPdf {
   vigenciaHasta: string;
   listaVersion: number | null;
   cliente: { nombre: string; rut: string | null; comuna: string | null; contacto: string | null } | null;
-  items: { codigo: string | null; descripcion: string; cantidad: number; precioUnitario: number; totalLinea: number }[];
+  items: { codigo: string | null; descripcion: string; medidaSolicitada?: string | null; cantidad: number; precioUnitario: number; totalLinea: number }[];
   subtotal: number; descuento: number; descuentoMotivo: string | null; iva: number; total: number;
 }
 
@@ -32,7 +32,7 @@ export function contenidoCotizacion(c: CotizacionPdf, empresa: DatosEmpresa = da
       ["Cliente", c.cliente.nombre], ["RUT", c.cliente.rut ?? "—"], ["Contacto", c.cliente.contacto ?? "—"], ["Comuna", c.cliente.comuna ?? "—"],
     ] as [string, string][],
     lineas: c.items.map((i) => ({
-      codigo: i.codigo ?? "A pedido", descripcion: i.descripcion, cantidad: String(i.cantidad),
+      codigo: i.codigo ?? "A pedido", descripcion: i.medidaSolicitada ? `${i.descripcion}\nMedida solicitada: ${i.medidaSolicitada}` : i.descripcion, cantidad: String(i.cantidad),
       unitario: clp(i.precioUnitario), total: clp(i.totalLinea),
     })),
     totales: [

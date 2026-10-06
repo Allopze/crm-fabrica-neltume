@@ -84,7 +84,7 @@ export async function procesarSiguiente(ia: InterpreteIA, opciones: { esperasMs?
         const ref = m.referencia ? await precioDeArticulo(tx, m.referencia.articuloId, listaId) : null;
         await tx.insert(cotizacionItem).values({
           cotizacionId: c.id, orden: orden + 1, articuloId: m.articuloId, descripcion: m.descripcion, cantidad: m.cantidad, estadoItem: m.estado,
-          duda: m.duda, textoFuente: m.textoFuente, precioNetoLista: p?.precioNetoLista, recargoPct: p?.recargoPct,
+          duda: m.duda, textoFuente: m.textoFuente, medidaSolicitada: m.medidaSolicitada, precioNetoLista: p?.precioNetoLista, recargoPct: p?.recargoPct,
           precioUnitario: p?.precioUnitario, totalLinea: p ? calcularLinea({ precioNetoLista: p.precioNetoLista, recargoPct: p.recargoPct, cantidad: m.cantidad }).totalLinea : null,
           precioReferencia: ref?.precioUnitario, referenciaCodigo: m.referencia?.codigo,
         });

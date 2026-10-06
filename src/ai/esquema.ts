@@ -8,10 +8,13 @@ export const ItemPropuesto = z.strictObject({
   tipo: z.enum(TIPOS_ITEM),
   modelo: z.string().max(60).nullable(),
   madera: z.string().max(60).nullable(),
-  ancho_m: z.number().min(0.3).max(3).nullable(),
-  alto_m: z.number().min(1).max(3.5).nullable(),
+  // En metros; si llegan en cm o mm el backend los convierte (≤ 10 m, ≤ 300 cm, ≤ 3000 mm; REQ-COT-2.12).
+  ancho_m: z.number().positive().max(3000).nullable(),
+  alto_m: z.number().positive().max(3000).nullable(),
   medida_accesorio: z.string().max(80).nullable(),
   cantidad: z.number().int().min(1).max(500).nullable(),
+  /** Solo si el cliente lo dice explícitamente; nunca se asume (REQ-COT-2.12). */
+  tipo_medida: z.enum(["hoja", "vano"]).nullable().optional(),
   dudas: z.array(z.string().max(300)).max(10),
 });
 

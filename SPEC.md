@@ -177,6 +177,7 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-COT-2.9: THE SYSTEM SHALL enviar al servicio de IA solo el texto del pedido, con RUT, correo y teléfono enmascarados, y nunca el nombre ni otros datos del cliente.
 - REQ-COT-2.10: IF un visitante o un usuario sin permiso de cotizar intenta usar el cotizador THEN THE SYSTEM SHALL denegarlo y registrar el intento.
 - REQ-COT-2.11: WHEN el pedido nombra un modelo con un alias registrado («coscos» por Coz Coz) THE SYSTEM SHALL resolverlo si el alias es seguro; IF el alias es dudoso o el nombre solo se parece a un modelo THEN THE SYSTEM SHALL dejar el ítem por confirmar con la sugerencia, sin aplicarla. Un modelo real siempre gana sobre un alias.
+- REQ-COT-2.12: WHEN el pedido trae medidas en metros, centímetros o milímetros THE SYSTEM SHALL interpretarlas por magnitud, dejar por confirmar las implausibles (fuera de 0,3 a 3 m) y registrar la medida solicitada, con «hoja» o «vano» solo si el cliente lo indicó.
 
 **H3 Revisar y resolver ítems (P1).** Como usuario, quiero ver lado a lado lo que dijo el cliente y lo que se entendió.
 - REQ-COT-3.1: WHEN un usuario abre un borrador THE SYSTEM SHALL mostrar el texto original junto a los ítems interpretados, con los "por confirmar" destacados.

@@ -40,6 +40,7 @@ export function TarjetaItem({ item, n, activo, bloqueado, listaVersion, onActiva
           {item.estadoItem === "a_pedido" && <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-pizarra"><Ruler className="h-3.5 w-3.5" /> A pedido</span>}
           {item.estadoItem === "ok" && item.fijadoPor && <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-pizarra"><Ruler className="h-3.5 w-3.5" /> A pedido · precio fijado</span>}
           <p className="mt-1 font-medium">{item.descripcion}</p>
+          {item.medidaSolicitada && <p className="text-xs text-tinta-tenue">Medida solicitada: {item.medidaSolicitada}</p>}
           {item.estadoItem !== "ok" && item.textoFuente && <p className="mt-0.5 text-sm text-tinta-tenue">Pedido: «{item.textoFuente}»</p>}
           {item.duda && item.estadoItem !== "ok" && <p className="mt-1 text-sm text-tinta-suave">{item.duda}</p>}
           {item.avisoStock && (

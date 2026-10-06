@@ -24,7 +24,16 @@ export interface ItemMapeado {
   descripcion: string; // del catálogo, nunca texto libre de la IA
   duda: string | null;
   textoFuente: string;
+  /** Medida pedida en mm (con hoja/vano si se dijo), cuando no es exactamente la del artículo o se indicó el tipo. */
+  medidaSolicitada: string | null;
 }
+
+/** Interpreta un número de medida: ≤ 10 en metros, ≤ 300 en cm, ≤ 3000 en mm. Fuera de 0,3–3 m es implausible (null). */
+export function metros(n: number): number | null {
+  const m = n <= 10 ? n : n <= 300 ? n / 100 : n <= 3000 ? n / 1000 : NaN;
+  return Number.isFinite(m) && m >= 0.3 && m <= 3 ? Number(m.toFixed(4)) : null;
+}
+const mm = (m: number) => String(Math.round(m * 1000));
 
 const ALIAS_MADERA: Record<string, string> = { PINO: "PINO OREGON", OREGON: "PINO OREGON", "PINO OREGON": "PINO OREGON", RAULI: "RAULI", LENGA: "LENGA", MARA: "MARA" };
 const NOMBRE_MADERA: Record<string, string> = { "PINO OREGON": "Pino Oregón", RAULI: "Raulí", LENGA: "Lenga", MARA: "Mara" };
@@ -33,7 +42,7 @@ const m2 = (n: number) => n.toFixed(2).replace(".", ",");
 const titulo = (s: string) => s.toLowerCase().replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase());
 
 export function mapearItem(p: ItemPropuesto, cat: CatalogoMapeo): ItemMapeado {
-  const base = { articuloId: null, codigo: null, referencia: null, cantidad: p.cantidad ?? 1, textoFuente: p.texto_fuente };
+  const base = { articuloId: null, codigo: null, referencia: null, cantidad: p.cantidad ?? 1, textoFuente: p.texto_fuente, medidaSolicitada: null };
   const porConfirmar = (duda: string): ItemMapeado => ({ ...base, estado: "por_confirmar", descripcion: "Ítem por confirmar", duda });
 
   if (p.tipo !== "puerta") return porConfirmar("Accesorio: el mapeo de marcos y molduras se confirma con la fábrica.");
@@ -51,24 +60,32 @@ export function mapearItem(p: ItemPropuesto, cat: CatalogoMapeo): ItemMapeado {
     return porConfirmar(p.madera ? `La madera «${p.madera}» no está en el catálogo (${lista}).` : "Falta la madera.");
   }
   if (p.ancho_m === null || p.alto_m === null) return porConfirmar("Falta la medida.");
+  const ancho = metros(p.ancho_m);
+  const altoM = metros(p.alto_m);
+  if (ancho === null || altoM === null) return porConfirmar(`La medida ${p.ancho_m} × ${p.alto_m} no es plausible para una puerta (0,30 a 3 m): confirma la unidad.`);
+  const tipo = p.tipo_medida ? ` (${p.tipo_medida})` : "";
 
-  const rangoExacto = cat.rangos.find((r) => p.ancho_m! >= r.minM - TOL && p.ancho_m! <= r.maxM + TOL);
-  const rangoSuperior = rangoExacto ?? [...cat.rangos].sort((a, b) => a.minM - b.minM).find((r) => r.minM > p.ancho_m!);
-  const altoExacto = cat.altos.find((a) => Math.abs(a.altoM - p.alto_m!) < TOL);
-  const altoSuperior = altoExacto ?? [...cat.altos].sort((a, b) => a.altoM - b.altoM).find((a) => a.altoM > p.alto_m!);
+  const rangoExacto = cat.rangos.find((r) => ancho >= r.minM - TOL && ancho <= r.maxM + TOL);
+  const rangoSuperior = rangoExacto ?? [...cat.rangos].sort((a, b) => a.minM - b.minM).find((r) => r.minM > ancho);
+  const altoExacto = cat.altos.find((a) => Math.abs(a.altoM - altoM) < TOL);
+  const altoSuperior = altoExacto ?? [...cat.altos].sort((a, b) => a.altoM - b.altoM).find((a) => a.altoM > altoM);
+  const pedida = `${mm(ancho)} × ${mm(altoM)} mm${tipo}`;
   const nombre = `${titulo(modelo.nombre)} · ${NOMBRE_MADERA[madera.nombre]}`;
 
   if (rangoExacto && altoExacto) {
     const art = cat.articulos.get(`${modelo.id}|${madera.id}|${rangoExacto.codigo}|${altoExacto.codigo}`);
     if (!art) return porConfirmar(`No existe la variante ${nombre} ${rangoExacto.etiqueta} × ${m2(altoExacto.altoM)} m.`);
-    return { ...base, estado: "ok", articuloId: art.id, codigo: art.codigo, duda: null, descripcion: `${nombre} · ${rangoExacto.etiqueta.replace(" A ", " a ")} × ${m2(altoExacto.altoM)} m` };
+    return {
+      ...base, estado: "ok", articuloId: art.id, codigo: art.codigo, duda: null, descripcion: `${nombre} · ${rangoExacto.etiqueta.replace(" A ", " a ")} × ${m2(altoExacto.altoM)} m`,
+      medidaSolicitada: tipo ? pedida : null,
+    };
   }
-  if (!rangoSuperior || !altoSuperior) return porConfirmar(`La medida ${m2(p.ancho_m)} × ${m2(p.alto_m)} m supera la grilla del catálogo.`);
+  if (!rangoSuperior || !altoSuperior) return porConfirmar(`La medida ${m2(ancho)} × ${m2(altoM)} m supera la grilla del catálogo.`);
   const ref = cat.articulos.get(`${modelo.id}|${madera.id}|${rangoSuperior.codigo}|${altoSuperior.codigo}`);
-  if (!ref) return porConfirmar(`No hay variante de referencia para ${nombre} ${m2(p.ancho_m)} × ${m2(p.alto_m)} m.`);
+  if (!ref) return porConfirmar(`No hay variante de referencia para ${nombre} ${m2(ancho)} × ${m2(altoM)} m.`);
   return {
     ...base, estado: "a_pedido", referencia: { articuloId: ref.id, codigo: ref.codigo },
-    descripcion: `${nombre} · ${m2(p.ancho_m)} × ${m2(p.alto_m)} m (medida especial)`,
+    descripcion: `${nombre} · ${m2(ancho)} × ${m2(altoM)} m (medida especial)`, medidaSolicitada: pedida,
     duda: "La medida queda fuera de la grilla: se fabrica a pedido. Una persona debe fijar el precio.",
   };
 }

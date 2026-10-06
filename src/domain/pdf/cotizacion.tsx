@@ -36,7 +36,7 @@ export async function pdfCotizacion(tx: Tx, id: string): Promise<{ numero: numbe
   const datos: CotizacionPdf = {
     numero: c.numero, aprobadaEn: c.aprobadaEn!, vigenciaHasta: c.vigenciaHasta!, listaVersion: c.lista.usada,
     cliente: c.cliente && { nombre: c.cliente.nombre, rut: c.cliente.rut ?? null, comuna: c.cliente.comuna ?? null, contacto: c.cliente.contacto ?? null },
-    items: c.items.map((i) => ({ codigo: i.articuloId ? codigos.get(i.articuloId) ?? null : null, descripcion: i.descripcion, cantidad: i.cantidad, precioUnitario: Number(i.precioUnitario), totalLinea: Number(i.totalLinea) })),
+    items: c.items.map((i) => ({ codigo: i.articuloId ? codigos.get(i.articuloId) ?? null : null, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, cantidad: i.cantidad, precioUnitario: Number(i.precioUnitario), totalLinea: Number(i.totalLinea) })),
     subtotal: Number(c.subtotal), descuento: Number(c.descuento), descuentoMotivo: c.descuentoMotivo, iva: Number(c.iva), total: Number(c.total),
   };
   return { numero: c.numero, pdf: await renderizarCotizacion(datos) };

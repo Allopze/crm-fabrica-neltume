@@ -1,0 +1,1 @@
+ALTER TABLE "cotizacion_item" ADD COLUMN "medida_solicitada" text;

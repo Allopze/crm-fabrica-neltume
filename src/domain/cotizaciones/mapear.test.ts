@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ItemPropuesto } from "@/ai/esquema";
-import { type CatalogoMapeo, mapearItem } from "./mapear";
+import { type CatalogoMapeo, mapearItem, metros } from "./mapear";
 
 const cat: CatalogoMapeo = {
   modelos: [{ id: "mN", nombre: "NELTUME", codigo: "NEL" }, { id: "mT", nombre: "TOLTEN", codigo: "TOLT" }],
@@ -58,5 +58,23 @@ describe("alias de modelos en el mapeo (REQ-COT-2.11)", () => {
   it("un alias dudoso o un nombre parecido queda por confirmar con la sugerencia", () => {
     expect(mapearItem(item({ modelo: "Nel tune" }), cat)).toMatchObject({ estado: "por_confirmar", duda: expect.stringContaining("¿Te refieres a «Neltume»?") });
     expect(mapearItem(item({ modelo: "Toltem" }), cat)).toMatchObject({ estado: "por_confirmar", duda: expect.stringContaining("«Tolten»") });
+  });
+});
+
+describe("medidas en m, cm o mm y vano/hoja (REQ-COT-2.12)", () => {
+  it("convierte la unidad por magnitud y rechaza lo implausible", () => {
+    expect([metros(0.9), metros(90), metros(900), metros(2.1), metros(210), metros(2100)]).toEqual([0.9, 0.9, 0.9, 2.1, 2.1, 2.1]);
+    expect([metros(0.2), metros(5), metros(4000)]).toEqual([null, null, null]);
+  });
+
+  it("80 × 210 en cm o 900 × 2100 en mm mapean al artículo", () => {
+    expect(mapearItem(item({ ancho_m: 90, alto_m: 210 }), cat)).toMatchObject({ estado: "ok", codigo: "NEL-R-4-B", medidaSolicitada: null });
+    expect(mapearItem(item({ ancho_m: 900, alto_m: 2100 }), cat)).toMatchObject({ estado: "ok", codigo: "NEL-R-4-B" });
+    expect(mapearItem(item({ ancho_m: 5, alto_m: 2.1 }), cat)).toMatchObject({ estado: "por_confirmar", duda: expect.stringContaining("no es plausible") });
+  });
+
+  it("guarda la medida solicitada si se dijo vano u hoja, o si es a pedido", () => {
+    expect(mapearItem(item({ tipo_medida: "vano" }), cat)).toMatchObject({ estado: "ok", medidaSolicitada: "900 × 2100 mm (vano)" });
+    expect(mapearItem(item({ modelo: "TOLTEN", ancho_m: 87, alto_m: 215 }), cat)).toMatchObject({ estado: "a_pedido", medidaSolicitada: "870 × 2150 mm" });
   });
 });

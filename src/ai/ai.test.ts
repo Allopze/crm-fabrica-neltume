@@ -17,7 +17,11 @@ describe("esquema de salida del LLM (AI.md §2, SECURITY T1–T2)", () => {
   it("rechaza cantidades y medidas fuera de rango", () => {
     expect(() => Propuesta.parse({ items: [{ ...item, cantidad: 0 }], alertas: [], sin_items: false })).toThrow();
     expect(() => Propuesta.parse({ items: [{ ...item, cantidad: 2.5 }], alertas: [], sin_items: false })).toThrow();
-    expect(() => Propuesta.parse({ items: [{ ...item, ancho_m: 90 }], alertas: [], sin_items: false })).toThrow();
+    expect(() => Propuesta.parse({ items: [{ ...item, ancho_m: -1 }], alertas: [], sin_items: false })).toThrow();
+    expect(() => Propuesta.parse({ items: [{ ...item, ancho_m: 5000 }], alertas: [], sin_items: false })).toThrow();
+    // 90 (cm) es válido en el esquema: el backend lo convierte (REQ-COT-2.12).
+    expect(Propuesta.parse({ items: [{ ...item, ancho_m: 90, tipo_medida: "vano" }], alertas: [], sin_items: false }).items[0].ancho_m).toBe(90);
+    expect(() => Propuesta.parse({ items: [{ ...item, tipo_medida: "marco" }], alertas: [], sin_items: false })).toThrow();
   });
 
   it("el JSON Schema de la herramienta no expone campos de precio y prohíbe propiedades extra", () => {

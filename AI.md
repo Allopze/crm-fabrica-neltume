@@ -39,7 +39,8 @@ El proveedor no documenta un modo de JSON schema nativo (ADR-0001). La salida se
 ```
 
 Validación (`src/ai/esquema.ts` + `mapear.ts`):
-- `cantidad` es un entero entre 1 y 500. `ancho_m` va entre 0,3 y 3,0 y `alto_m` entre 1,0 y 3,5, en metros.
+- `cantidad` es un entero entre 1 y 500. `ancho_m` y `alto_m` se piden en metros, pero el esquema acepta hasta 3000: el backend convierte por magnitud (≤ 10 en m, ≤ 300 en cm, ≤ 3000 en mm) y una medida fuera de 0,3–3 m queda `por_confirmar` (REQ-COT-2.12).
+- `tipo_medida` (`hoja` / `vano` / null) solo si el cliente lo dice; nunca se asume. Se guarda como «medida solicitada» en mm junto al ítem y se imprime en la cotización y en la nota de pedido.
 - Una cantidad o medida nula genera una duda.
 - `madera` se normaliza sin tildes. Un valor fuera de las 4 maderas queda `por_confirmar` (producto inexistente).
 - Certeza = el modelo existe y madera, rango de ancho y alto coinciden exactamente con un artículo.

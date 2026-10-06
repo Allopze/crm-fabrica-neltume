@@ -26,7 +26,7 @@ export async function crearPedido(tx: Tx, d: DatosPedido, actor: Actor & { id: s
       direccionDespacho: d.direccionDespacho?.trim() || cli?.direccionDespacho || cli?.direccion || null,
       medioTransporte: d.medioTransporte?.trim() || null,
     },
-    lineas: items.map((i) => ({ articuloId: i.articuloId, descripcion: i.descripcion, medidaSolicitada: null, cantidad: i.cantidad, precioUnitario: i.precioUnitario!, totalLinea: i.totalLinea! })),
+    lineas: items.map((i) => ({ articuloId: i.articuloId, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, cantidad: i.cantidad, precioUnitario: i.precioUnitario!, totalLinea: i.totalLinea! })),
   }, actor, origen, { cotizacion: c.numero });
   await tx.update(cotizacion).set({ estado: "aceptada", version: c.version + 1, actualizadoEn: sql`now()` }).where(eq(cotizacion.id, c.id));
   return p;
