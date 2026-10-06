@@ -21,7 +21,7 @@ scripts/     importar-excel: hojas Precio y Categorias de datos/COTIZADOR_2026.x
 e2e/         suites secuenciales con estado
 docs/adr/    ADR-NNNN-titulo.md
 ```
-Docs .md en la raíz, cada uno ≤ ~300 líneas: SPEC, DESIGN, AI, SECURITY, DATA-MODEL, API, UX, TESTING, TASKS. Si un doc citado no existe, no inventes su contenido: avísalo. IDs estables REQ-<MÓDULO>-n.m: STK puertas, MP materias primas, COT cotizador, ADM usuarios/auditoría.
+Docs .md en la raíz, cada uno ≤ ~300 líneas: SPEC, DESIGN, AI, SECURITY, DATA-MODEL, API, UX, TESTING, TASKS, RUNBOOK. Si un doc citado no existe, no inventes su contenido: avísalo. IDs estables REQ-<MÓDULO>-n.m: STK puertas, MP materias primas, COT cotizador, ADM usuarios/auditoría.
 
 ## Reglas de dominio (cada una con test)
 1. La IA no inventa precios, productos ni stock: el LLM solo interpreta el texto y propone ítems (código, cantidad, medidas) con un esquema estricto (Zod, propuesto); precios, descuentos, totales e IVA los calcula `src/domain` desde la BD. Su salida no tiene campos de importe ni de descuento; un monto escrito en texto libre ("$50.000", "50 lucas") nunca llega a una cotización.
