@@ -51,9 +51,3 @@ export const auditoria: EventoAuditoria[] = [
   { fecha: "2026-10-04T12:20:31", actor: "Paula R.", accion: "nueva versión", recurso: "Lista de precios v3", resultado: "ok", detalle: "Recargo Especial 0,18 → 0,20" },
   { fecha: "2026-09-29T09:05:10", actor: "Paula R.", accion: "ajuste", recurso: "PAL-R-4-B", resultado: "ok", detalle: "−1 · Puerta con grieta en panel" },
 ];
-
-export interface Usuario { nombre: string; email: string; rol: string; activo: boolean; ultimoIngreso: string }
-export const usuarios: Usuario[] = [
-  { nombre: "Paula Rivas", email: "paula@neltume.cl", rol: "Administrador", activo: true, ultimoIngreso: "2026-10-05T08:51:00" },
-  { nombre: "Marcela Oyarzún", email: "marcela@neltume.cl", rol: "Administrador", activo: true, ultimoIngreso: "2026-10-04T16:20:00" },
-];

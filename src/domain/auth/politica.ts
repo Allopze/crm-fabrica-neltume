@@ -41,12 +41,21 @@ function contextoBase<P>(req: NextRequest, params: P): ContextoBase<P> {
   return { req, params, correlacionId: randomUUID(), ip, userAgent: req.headers.get("user-agent") ?? undefined };
 }
 
-async function ejecutar<C extends ContextoBase<unknown>>(ctx: C, manejador: Manejador<C>): Promise<Response> {
+async function ejecutar<C extends ContextoBase<unknown>>(ctx: C, manejador: Manejador<C>, actorId?: string): Promise<Response> {
   try {
     const r = await manejador(ctx);
     r.headers.set("x-correlacion-id", ctx.correlacionId);
     return r;
   } catch (e) {
+    // REQ-ADM-3.5: una mutación que falla se audita aunque su transacción se haya revertido.
+    if (actorId && MUTANTES.has(ctx.req.method)) {
+      const codigo = e instanceof ErrorDominio ? e.codigo : e instanceof ZodError ? "VALIDACION" : "INTERNO";
+      await registrarAuditoria(bd(), {
+        actor: { tipo: "usuario", id: actorId, ip: ctx.ip, userAgent: ctx.userAgent },
+        accion: `${ctx.req.method} ${ctx.req.nextUrl.pathname}`, recurso: "api", despues: { codigo },
+        resultado: "error", origen: "web", correlacionId: ctx.correlacionId,
+      }).catch((err) => registro.error("no se pudo auditar el error", { correlacion_id: ctx.correlacionId, error: err }));
+    }
     if (e instanceof ErrorDominio) return respuestaError(e.codigo, e.message, ctx.correlacionId, e.detalles);
     if (e instanceof ZodError) {
       return respuestaError("VALIDACION", "Datos inválidos", ctx.correlacionId, e.issues.map((i) => ({ campo: i.path.join("."), mensaje: i.message })));
@@ -101,10 +110,10 @@ export function conPermiso<P = Record<string, never>>(
     }
     const actor = { tipo: "usuario" as const, id: sesion.usuario.id, ip: base.ip, userAgent: base.userAgent };
     const ctx = { ...base, sesion, actor };
-    if (!opciones.idempotente) return ejecutar(ctx, manejador);
+    if (!opciones.idempotente) return ejecutar(ctx, manejador, sesion.usuario.id);
     return ejecutar(ctx, async (c) =>
       conIdempotencia(req.headers.get("idempotency-key"), sesion.usuario.id, await req.clone().text(), () => manejador(c)),
-    );
+    sesion.usuario.id);
   };
 }
 
