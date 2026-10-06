@@ -37,15 +37,15 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 ## Fase 1 — Demo (todas las historias P1)
 
 ### Catálogo, precios e importación
-- [ ] T1.1 (60) Migración del catálogo: `modelo`, `madera`, `rango_ancho`, `alto`, `tipo_puerta`, `articulo`, `bodega`, `parametro`, `feriado` · DATA-MODEL §2 · I `migraciones` · T0.5
-- [ ] T1.2 (45) Migración de precios: `lista_precio`, `precio`, `recargo_tipo` · REQ-COT-1.1 · I `migraciones` · T1.1
-- [ ] T1.3 (60) Fixtures `cotizador-mini.xlsx` y `-v2` (anónimos, 1 fila inválida) · TESTING §4 · usados por E 01 y 10 · — · [P]
-- [ ] T1.4 (75) Importador, parte 1: lectura y mapeo de `Categorias` con normalización de tildes · REQ-STK-1.4, DESIGN C3 · U `importar.mapeo` · T1.1, T1.3
-- [ ] T1.5 (90) Importador, parte 2: `Precio` → artículos y lista versionada, rechazos por fila, idempotencia por hash, recargos al 0 % · REQ-STK-1.1–1.3, REQ-COT-1.1 · I `importacion` · T1.2, T1.4
-- [ ] T1.6 (60) POST `/importaciones` y UI de importación con informe · REQ-STK-1.1, 1.5 · E `01-seed-importacion` · T1.5
-- [ ] T1.7 (60) `formato.cl`: CLP, números y fechas · REQ-STK-2.3, REQ-NFR-9 · U `formato.cl` · T0.1 · [P]
-- [ ] T1.8 (60) `precios.calcular`: unitario redondeado, línea, subtotal, descuento, IVA y total · REQ-COT-1.2, 1.3, 2.2 · U `precios.calcular` · T1.2 · [P]
-- [ ] T1.9 (45) Días hábiles con `feriado` y cálculo de vigencia · REQ-COT-6.4 · U `vigencia.dias-habiles` · T1.1 · [P]
+- [x] T1.1 (60) Migración del catálogo: `modelo`, `madera`, `rango_ancho`, `alto`, `tipo_puerta`, `articulo`, `bodega`, `parametro`, `feriado` · DATA-MODEL §2 · I `migraciones` · T0.5
+- [x] T1.2 (45) Migración de precios: `lista_precio`, `precio`, `recargo_tipo` · REQ-COT-1.1 · I `migraciones` · T1.1
+- [x] T1.3 (60) Fixtures `cotizador-mini.xlsx` y `-v2` (anónimos, 1 fila inválida) · TESTING §4 · usados por E 01 y 10 · — · [P]
+- [x] T1.4 (75) Importador, parte 1: lectura y mapeo de `Categorias` con normalización de tildes · REQ-STK-1.4, DESIGN C3 · U `importar.mapeo` · T1.1, T1.3
+- [x] T1.5 (90) Importador, parte 2: `Precio` → artículos y lista versionada, rechazos por fila, idempotencia por hash, recargos al 0 % · REQ-STK-1.1–1.3, REQ-COT-1.1 · I `importacion` · T1.2, T1.4
+- [x] T1.6 (60) POST `/importaciones` y UI de importación con informe · REQ-STK-1.1, 1.5 · E `01-seed-importacion` · T1.5
+- [x] T1.7 (60) `formato.cl`: CLP, números y fechas · REQ-STK-2.3, REQ-NFR-9 · U `formato.cl` · T0.1 · [P]
+- [x] T1.8 (60) `precios.calcular`: unitario redondeado, línea, subtotal, descuento, IVA y total · REQ-COT-1.2, 1.3, 2.2 · U `precios.calcular` · T1.2 · [P]
+- [x] T1.9 (45) Días hábiles con `feriado` y cálculo de vigencia · REQ-COT-6.4 · U `vigencia.dias-habiles` · T1.1 · [P]
 - [ ] T1.10 (75) API y UI de listas de precio: versiones, edición que crea versión, recargos, `costos.ver` · REQ-COT-1.1, 1.4, 1.5 · I `listas-precio` · T1.8
 
 ### Stock de puertas
