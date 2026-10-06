@@ -141,6 +141,6 @@ Aprobada el 06-10-2026. La tienda le envía a la fábrica notas de pedido en PDF
 - [x] T5.7 (45) Medidas en m/cm/mm y vano/hoja · REQ-COT-2.12 · U `mapear` · —
 - [x] T5.8 (90) Accesorios: marcos, piezas T y molduras · REQ-COT-2.13, REQ-STK-1.4 · U `mapear`, E 16 · T5.7
 - [x] T5.9 (75) Verificación de cifras y cobertura del pedido · REQ-COT-2.14 · U `anclaje` · T5.7
-- [ ] T5.10 (60) Evaluación ampliada con los casos reales de la tienda · AI §6 · el propio informe · T5.6–T5.9
+- [x] T5.10 (60) Evaluación ampliada con los casos reales de la tienda · AI §6 · el propio informe · T5.6–T5.9
 
 **Checkpoint F5:** flujo PDF de la tienda → pedido → producir faltante → lista → despacho, evaluación en verde y `npm test` verde. Espero tu OK.

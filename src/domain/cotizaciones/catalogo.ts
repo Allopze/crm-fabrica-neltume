@@ -29,16 +29,17 @@ export async function cargarCatalogoMapeo(tx: Tx): Promise<CatalogoMapeo> {
 }
 
 export async function catalogoResumido(tx: Tx): Promise<CatalogoResumido> {
-  const [modelos, maderas, rangos, altos, accesorios] = await Promise.all([
+  const [modelos, maderas, rangos, altos, accesorios, alias] = await Promise.all([
     tx.select({ n: modelo.nombre }).from(modelo).where(eq(modelo.familia, "puerta")),
     tx.select({ n: madera.nombre }).from(madera),
     tx.select().from(rangoAncho),
     tx.select().from(alto),
     tx.select({ n: modelo.nombre }).from(modelo).where(eq(modelo.familia, "accesorio")),
+    tx.select({ alias: aliasModelo.alias, modelo: aliasModelo.modelo }).from(aliasModelo).where(eq(aliasModelo.tipo, "seguro")),
   ]);
   return {
     modelos: modelos.map((m) => m.n).sort(), maderas: maderas.map((m) => m.n).sort(),
     anchos: rangos.map((r) => ({ codigo: r.codigo, etiqueta: r.etiqueta })), altosM: altos.map((a) => Number(a.altoM)).sort(),
-    accesorios: accesorios.map((a) => a.n).sort(),
+    accesorios: accesorios.map((a) => a.n).sort(), alias,
   };
 }

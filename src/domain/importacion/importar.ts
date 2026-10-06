@@ -21,12 +21,16 @@ export interface InformeImportacion {
   correcciones: Correccion[];
 }
 
+/** Versión de las reglas de mapeo del Excel. Súbela cuando cambien (v2: correcciones por dos hipótesis, REQ-STK-1.6). */
+export const VERSION_REGLAS = "v2";
 const LOTE = 500;
 const enLotes = <T>(xs: T[]) => Array.from({ length: Math.ceil(xs.length / LOTE) }, (_, i) => xs.slice(i * LOTE, (i + 1) * LOTE));
 const MOLDURA_O_MARCO = new Set(["MARCO", "PIEZAS T", "PILASTRA", "ENDOLADO", "GUARDAPOLVO"]);
 
 export async function importarExcel(datos: ArrayBuffer, nombreArchivo: string, actor: Actor & { id: string }): Promise<InformeImportacion> {
-  const hash = createHash("sha256").update(Buffer.from(datos)).digest("hex");
+  // La huella incluye la versión de las reglas de lectura: si cambian (p. ej. T5.3, correcciones), el mismo Excel
+  // se vuelve a procesar en vez de tomarse como repetido.
+  const hash = createHash("sha256").update(`${VERSION_REGLAS}:`).update(Buffer.from(datos)).digest("hex");
   const [previa] = await bd().select().from(importacion).where(eq(importacion.archivoHash, hash)).orderBy(desc(importacion.creadoEn)).limit(1);
   if (previa) {
     const [lista] = previa.listaId ? await bd().select({ v: listaPrecio.version }).from(listaPrecio).where(eq(listaPrecio.id, previa.listaId)) : [];
@@ -59,7 +63,14 @@ export async function importarExcel(datos: ArrayBuffer, nombreArchivo: string, a
     for (const a of validos.filter((x) => existentes.has(x.codigo))) {
       const e = existentes.get(a.codigo)!;
       const f = fila(a);
-      const cambio = (Object.keys(f) as (keyof typeof f)[]).some((k) => k !== "codigo" && String(f[k] ?? "") !== String(e[k] ?? ""));
+      // Los numeric vuelven de la BD como texto («2.10»): se comparan como números, no como texto.
+      const distinto = (x: unknown, y: unknown) => {
+        const vacio = (v: unknown) => v === null || v === undefined || v === "";
+        if (vacio(x) || vacio(y)) return vacio(x) !== vacio(y);
+        const nx = Number(x), ny = Number(y);
+        return Number.isFinite(nx) && Number.isFinite(ny) ? nx !== ny : String(x) !== String(y);
+      };
+      const cambio = (Object.keys(f) as (keyof typeof f)[]).some((k) => k !== "codigo" && distinto(f[k], e[k]));
       if (cambio) { await tx.update(articulo).set(f).where(eq(articulo.id, e.id)); actualizadas++; }
     }
     const idArticulo = new Map((await tx.select({ id: articulo.id, codigo: articulo.codigo }).from(articulo)).map((a) => [a.codigo, a.id]));

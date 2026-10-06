@@ -280,6 +280,461 @@
     }
    ],
    "alerta": true
+  },
+  {
+   "id": 25,
+   "grupo": "claro",
+   "pedido": "4 coscos de 80 por 200 en lenga",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "COZ-L-3-A",
+     "cantidad": 4
+    }
+   ],
+   "fuente": "tienda:voz-coscos"
+  },
+  {
+   "id": 26,
+   "grupo": "ambiguo",
+   "pedido": "4 coscos de 80 por 200",
+   "esperado": [
+    {
+     "estado": "por_confirmar"
+    }
+   ],
+   "fuente": "tienda:reunion-sin-madera"
+  },
+  {
+   "id": 27,
+   "grupo": "claro",
+   "pedido": "Cotiza 3 Huilo Huilo en oregón de 80 × 2,10 para Juan Pérez, Temuco",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "HUIL-O-3-B",
+     "cantidad": 3
+    }
+   ],
+   "fuente": "tienda:ejemplo-pantalla"
+  },
+  {
+   "id": 28,
+   "grupo": "claro",
+   "pedido": "2 Neltume raulí 0,9 x 2,2",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "NEL-R-4-C",
+     "cantidad": 2
+    }
+   ],
+   "fuente": "tienda:metros-decimales"
+  },
+  {
+   "id": 29,
+   "grupo": "claro",
+   "pedido": "una Molco en mara de 800 x 2000 mm",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "MOL-M-3-A",
+     "cantidad": 1
+    }
+   ],
+   "fuente": "tienda:milimetros"
+  },
+  {
+   "id": 30,
+   "grupo": "ambiguo",
+   "pedido": "Huilo Huilo en Mara de 83,5 x 236 medida vano",
+   "esperado": [
+    {
+     "estado": "por_confirmar"
+    }
+   ],
+   "fuente": "tienda:vano-sin-cantidad"
+  },
+  {
+   "id": 31,
+   "grupo": "claro",
+   "pedido": "5 Ranco lenga 70x200 medida de hoja",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "RAN-L-2-A",
+     "cantidad": 5
+    }
+   ],
+   "fuente": "tienda:hoja"
+  },
+  {
+   "id": 32,
+   "grupo": "ambiguo",
+   "pedido": "2 Ranco de 70",
+   "esperado": [
+    {
+     "estado": "por_confirmar"
+    }
+   ],
+   "fuente": "tienda:sin-alto"
+  },
+  {
+   "id": 33,
+   "grupo": "ambiguo",
+   "pedido": "Puerta Futrono en lenga de 90 por 210",
+   "esperado": [
+    {
+     "estado": "por_confirmar"
+    }
+   ],
+   "fuente": "tienda:sin-cantidad"
+  },
+  {
+   "id": 34,
+   "grupo": "accesorio",
+   "pedido": "3 marcos 2x4 de 2,10 en oregón",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X4-B",
+     "cantidad": 3
+    }
+   ],
+   "fuente": "tienda:marcos"
+  },
+  {
+   "id": 35,
+   "grupo": "accesorio",
+   "pedido": "6 marcos de 4 en raulí de 2,2",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-R-2X4-C",
+     "cantidad": 6
+    }
+   ],
+   "fuente": "tienda:marcos-de-4"
+  },
+  {
+   "id": 36,
+   "grupo": "accesorio",
+   "pedido": "3 Lanco oregón 80x210, 2 Lanco oregón 70x210 y 5 marcos 2x4 oregón de 2,10",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "LAN-O-3-B",
+     "cantidad": 3
+    },
+    {
+     "estado": "ok",
+     "codigo": "LAN-O-2-B",
+     "cantidad": 2
+    },
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X4-B",
+     "cantidad": 5
+    }
+   ],
+   "fuente": "tienda:varios-items"
+  },
+  {
+   "id": 37,
+   "grupo": "claro",
+   "pedido": "tres Yelcho de lenga de 80 por 200",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "YEL-L-3-A",
+     "cantidad": 3
+    }
+   ],
+   "fuente": "tienda:cantidad-palabra"
+  },
+  {
+   "id": 38,
+   "grupo": "claro",
+   "pedido": "una docena de Toledo en mara 80x200",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "TOLE-M-3-A",
+     "cantidad": 12
+    }
+   ],
+   "fuente": "tienda:docena"
+  },
+  {
+   "id": 39,
+   "grupo": "claro",
+   "pedido": "2 Enco oregón 80x200 para Constructora Sur Ltda, RUT 76.123.456-7, giro construcción, fono +56 9 1234 5678, Av. Alemania 123, Valdivia, proyecto Edificio Mirador",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "ENC-O-3-A",
+     "cantidad": 2
+    }
+   ],
+   "fuente": "tienda:cliente-completo"
+  },
+  {
+   "id": 40,
+   "grupo": "ambiguo",
+   "pedido": "3 Pillo oregón 80×210",
+   "esperado": [
+    {
+     "estado": "por_confirmar"
+    }
+   ],
+   "fuente": "tienda:nombre-dudoso"
+  },
+  {
+   "id": 41,
+   "grupo": "claro",
+   "pedido": "dame 2 Pirihueico, una en lenga y otra en mara, ambas de 80x200",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "PIR-L-3-A",
+     "cantidad": 1
+    },
+    {
+     "estado": "ok",
+     "codigo": "PIR-M-3-A",
+     "cantidad": 1
+    }
+   ],
+   "fuente": "tienda:dos-maderas"
+  },
+  {
+   "id": 42,
+   "grupo": "claro",
+   "pedido": "Cotización para María José, comuna Panguipulli: 2 Panguipulli de oregón 80x200",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "PAN-O-3-A",
+     "cantidad": 2
+    }
+   ],
+   "fuente": "tienda:modelo-y-comuna"
+  },
+  {
+   "id": 43,
+   "grupo": "claro",
+   "pedido": "8 Riñihue raulí de 1 metro por 2,1",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "RIN-R-5-B",
+     "cantidad": 8
+    }
+   ],
+   "fuente": "tienda:un-metro"
+  },
+  {
+   "id": 44,
+   "grupo": "ambiguo",
+   "pedido": "6 Coz Coz 80x200, lo de siempre",
+   "esperado": [
+    {
+     "estado": "por_confirmar"
+    }
+   ],
+   "fuente": "tienda:sin-madera-habitual"
+  },
+  {
+   "id": 45,
+   "grupo": "accesorio",
+   "pedido": "10 pilastras 6x1 de oregón de 3 metros",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "PILAST-O-6X1-J",
+     "cantidad": 10
+    }
+   ],
+   "fuente": "tienda:pilastras"
+  },
+  {
+   "id": 46,
+   "grupo": "ambiguo",
+   "pedido": "20 guardapolvos 12x2 en lenga",
+   "esperado": [
+    {
+     "estado": "por_confirmar"
+    }
+   ],
+   "fuente": "tienda:guardapolvo-sin-largo"
+  },
+  {
+   "id": 47,
+   "grupo": "accesorio",
+   "pedido": "una Huerquehue lenga de 80x200 y un marco 2x4 lenga de 2",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "HUER-L-3-A",
+     "cantidad": 1
+    },
+    {
+     "estado": "ok",
+     "codigo": "MAR-L-2X4-A",
+     "cantidad": 1
+    }
+   ],
+   "fuente": "tienda:un-y-una"
+  },
+  {
+   "id": 48,
+   "grupo": "ambiguo",
+   "pedido": "Cotizar a Ana Rojas\nDespacho a Chillan\n2 unidades Huilo Huilo enchapada de\n0.82x2.27 mts (vano) con su marco de\n30x90 enchapado\n1 unidad ranco lenga solida 0.87x2.44 mts\n(vano) con su marco de 2x5 pulgadas en\nlenga",
+   "esperado": [
+    {
+     "estado": "por_confirmar"
+    },
+    {
+     "estado": "por_confirmar"
+    },
+    {
+     "estado": "a_pedido",
+     "referencia": "RAN-L-4-F"
+    },
+    {
+     "estado": "a_pedido",
+     "referencia": "MAR-L-2X5-F"
+    }
+   ],
+   "fuente": "tienda:cliente-enchapadas"
+  },
+  {
+   "id": 49,
+   "grupo": "accesorio",
+   "pedido": "Cotiza 15 marcos mara 2x6 de 2,5",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-M-2X6-F",
+     "cantidad": 15
+    }
+   ],
+   "fuente": "tienda:marcos-mara"
+  },
+  {
+   "id": 50,
+   "grupo": "accesorio",
+   "pedido": "9 marcos de 6 pulgadas en raulí de 2,3",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-R-2X6-D",
+     "cantidad": 9
+    }
+   ],
+   "fuente": "tienda:marco-6-pulgadas"
+  },
+  {
+   "id": 51,
+   "grupo": "ambiguo",
+   "pedido": "2 Petrohue en pino radiata de 140 x 250",
+   "esperado": [
+    {
+     "estado": "por_confirmar"
+    }
+   ],
+   "fuente": "tienda:pino-radiata"
+  },
+  {
+   "id": 52,
+   "grupo": "accesorio",
+   "pedido": "Cotiza 8 marcos de 4 en oregón de 2; 6 marcos pino 2x8 de 2; 5 juegos de marco 2x6 oregon de 3 m",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X4-A",
+     "cantidad": 8
+    },
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X8-A",
+     "cantidad": 6
+    },
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X6-H",
+     "cantidad": 5
+    }
+   ],
+   "fuente": "tienda:omision-tres-marcos"
+  },
+  {
+   "id": 53,
+   "grupo": "accesorio",
+   "pedido": "Cotiza 9 Baker de raulí de 105 x 240 con su marco 2x8 en raulí",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "BAK-R-5-E",
+     "cantidad": 9
+    },
+    {
+     "estado": "ok",
+     "codigo": "MAR-R-2X8-E",
+     "cantidad": 9
+    }
+   ],
+   "fuente": "tienda:con-su-marco"
+  },
+  {
+   "id": 54,
+   "grupo": "claro",
+   "pedido": "media docena de Pirihueico de mara medida 1,24 x 2,3",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "PIR-M-7-D",
+     "cantidad": 6
+    }
+   ],
+   "fuente": "tienda:media-docena"
+  },
+  {
+   "id": 55,
+   "grupo": "claro",
+   "pedido": "9 Futaleufu en lenga de 1230 x 2600 mm",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "FUTA-L-7-G",
+     "cantidad": 9
+    }
+   ],
+   "fuente": "tienda:milimetros-futaleufu"
+  },
+  {
+   "id": 56,
+   "grupo": "accesorio",
+   "pedido": "11 juegos de marco 2x5 pino de 2,5 m",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X5-F",
+     "cantidad": 11
+    }
+   ],
+   "fuente": "tienda:marco-2x5-pino"
+  },
+  {
+   "id": 57,
+   "grupo": "ambiguo",
+   "pedido": "precio de 3 Rupanco de 83 x 240",
+   "esperado": [
+    {
+     "estado": "por_confirmar"
+    }
+   ],
+   "fuente": "tienda:responder-indebido"
   }
  ]
 }

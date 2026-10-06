@@ -40,7 +40,8 @@ describe("importación del Excel (REQ-STK-1.1–1.4, REQ-COT-1.1)", () => {
   it("un archivo con precios distintos crea la versión nueva y deja la anterior intacta", async () => {
     const antes = await app.query("SELECT sum(precio_neto)::numeric AS s FROM precio p JOIN lista_precio l ON l.id = p.lista_id WHERE l.vigente");
     const r = await importarExcel(MINI_V2, "cotizador-mini-v2.xlsx", actor);
-    expect(r).toMatchObject({ repetida: false, creadas: 0 });
+    // Solo cambian precios: ningún artículo se cuenta como actualizado (los numeric se comparan como números).
+    expect(r).toMatchObject({ repetida: false, creadas: 0, actualizadas: 0, sinCambios: 70 });
     const { rows } = await app.query("SELECT version, vigente FROM lista_precio ORDER BY version");
     expect(rows.map((x) => x.vigente)).toEqual([false, true]);
     const v1 = await app.query("SELECT sum(precio_neto)::numeric AS s FROM precio p JOIN lista_precio l ON l.id = p.lista_id WHERE l.version = $1", [rows[0].version]);

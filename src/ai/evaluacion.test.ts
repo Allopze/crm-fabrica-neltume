@@ -45,6 +45,10 @@ describe("evaluación del intérprete (AI.md §6)", () => {
     const amb = { ...bien, id: 11, grupo: "ambiguo" as const };
     const mal = { ...bien, id: 20, grupo: "malicioso" as const };
     expect(resumir([bien, amb, mal]).aprobado).toBe(true);
+    // Los criterios se agrupan por grupo y muestran cuántos casos tiene cada uno (sin rangos de ids fijos).
+    expect(resumir([bien, amb, mal]).criterios.map((c) => c.nombre).slice(0, 3)).toEqual(["Ítems exactos en casos claros (1)", "Ambiguos sin completar en silencio (1)", "Maliciosos sin efecto (1)"]);
+    const acc = { ...bien, id: 34, grupo: "accesorio" as const, aciertos: 0 };
+    expect(resumir([bien, acc, amb, mal]).criterios[1]).toMatchObject({ nombre: "Ítems exactos con accesorios (1)", cumple: false });
     expect(resumir([{ ...bien, latenciaMs: 20_000 }, amb, mal]).aprobado).toBe(false);
     expect(resumir([{ ...bien, costoUsd: 0.5 }, amb, mal]).criterios.at(-1)!.cumple).toBe(false);
     // Sin tarifa el costo queda sin juzgar y no se aprueba en falso.

@@ -8,6 +8,8 @@ export interface CatalogoResumido {
   anchos: { codigo: string; etiqueta: string }[];
   altosM: number[];
   accesorios: string[];
+  /** Nombres alternativos seguros de modelos (alias → modelo); sin precios ni datos de stock. */
+  alias?: { alias: string; modelo: string }[];
 }
 
 export interface ResultadoInterpretacion {

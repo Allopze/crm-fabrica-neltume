@@ -23,12 +23,15 @@ describe("proveedor Command Code (ADR-0001)", () => {
     expect(cuerpo.messages[1].content).toBe("<pedido>\n3 Neltume\n</pedido>");
     expect(cuerpo.messages[0].content).not.toMatch(/\$|precio de lista/);
     expect(r.costoUsd).toBeCloseTo(0.006, 6); // 4000 × 1 + 400 × 5 por millón
+    expect(cuerpo.max_tokens).toBe(2000); // un pedido de varias líneas con dudas no cabía en 800
   });
 
   it("rechaza salidas con campos de precio (inválida) y respuestas sin la herramienta", async () => {
     const ia = (r: Response) => new CommandCodeIA(cfg, (async () => r) as unknown as typeof fetch);
     await expect(ia(respuesta({ ...propuesta, descuento: 0.9 })).interpretar("x", cat)).rejects.toMatchObject({ tipo: "invalida" });
     await expect(ia(new Response(JSON.stringify({ choices: [{ message: { content: "hola" } }] }))).interpretar("x", cat)).rejects.toMatchObject({ tipo: "invalida" });
+    await expect(ia(new Response(JSON.stringify({ choices: [{ finish_reason: "length", message: { content: "" } }] }))).interpretar("x", cat))
+      .rejects.toMatchObject({ tipo: "invalida", message: expect.stringMatching(/tope de tokens/) });
   });
 
   it("clasifica errores: 5xx/429 transitorio, 401 permanente, ZDR y timeout", async () => {

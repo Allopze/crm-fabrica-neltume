@@ -8,6 +8,8 @@ export interface ConfigCommandCode {
   baseUrl: string;
   modelo: string;
   timeoutMs: number;
+  /** Tope de tokens de salida: un pedido de varias líneas con dudas no debe quedar truncado. */
+  maxTokensSalida?: number;
   precioEntradaMTok: number; // USD por millón de tokens
   precioSalidaMTok: number;
 }
@@ -17,6 +19,8 @@ export function baseDeApi(url: string | undefined): string {
   return (url || "https://api.commandcode.ai").trim().replace(/\/+$/, "").replace(/\/provider\/v1(\/.*)?$/, "");
 }
 
+export const MAX_TOKENS_SALIDA = 2000;
+
 export function configDesdeEntorno(): ConfigCommandCode {
   const apiKey = process.env.CMD_API_KEY;
   const modelo = process.env.CMD_MODEL;
@@ -25,6 +29,7 @@ export function configDesdeEntorno(): ConfigCommandCode {
     apiKey, modelo,
     baseUrl: baseDeApi(process.env.CMD_API_BASE_URL),
     timeoutMs: Number(process.env.LLM_TIMEOUT_MS || 12_000),
+    maxTokensSalida: Number(process.env.LLM_MAX_TOKENS_SALIDA || MAX_TOKENS_SALIDA),
     precioEntradaMTok: Number(process.env.LLM_PRECIO_ENTRADA_USD_MTOK || 0),
     precioSalidaMTok: Number(process.env.LLM_PRECIO_SALIDA_USD_MTOK || 0),
   };
@@ -44,7 +49,7 @@ export class CommandCodeIA implements InterpreteIA {
         body: JSON.stringify({
           model: this.cfg.modelo,
           temperature: 0,
-          max_tokens: 800,
+          max_tokens: this.cfg.maxTokensSalida || MAX_TOKENS_SALIDA,
           messages: [{ role: "system", content: promptSistema(catalogo) }, { role: "user", content: mensajeUsuario(texto) }],
           tools: [HERRAMIENTA_PROPONER_ITEMS],
           tool_choice: { type: "function", function: { name: "proponer_items" } },
@@ -65,6 +70,7 @@ export class CommandCodeIA implements InterpreteIA {
     }
 
     const cuerpo = await res.json().catch(() => null);
+    if (cuerpo?.choices?.[0]?.finish_reason === "length") throw new ErrorIA("invalida", "La respuesta superó el tope de tokens de salida (LLM_MAX_TOKENS_SALIDA)");
     const llamada = cuerpo?.choices?.[0]?.message?.tool_calls?.[0];
     if (llamada?.function?.name !== "proponer_items") throw new ErrorIA("invalida", "La respuesta no usó la herramienta proponer_items");
     let argumentos: unknown;

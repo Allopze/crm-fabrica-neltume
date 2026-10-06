@@ -31,6 +31,23 @@ Set de AI.md §6 (24 casos) con el mismo camino que el worker. Candidatos rápid
 - `gemini-3.8-flash` (evaluado a pedido del usuario): tarda 17–22 s en los casos ambiguos 13, 15, 18 y 19. Con el timeout de 12 s terminan en `ia_fallida` (cotización manual, nunca completados en silencio). Con 60 s de diagnóstico el p90 fue 17,4 s y el caso 13 respondió sin la herramienta. **No aprobado**; el usuario confirmó mantener `gemini-3.5-flash`.
 - Se vuelve a evaluar al cambiar de modelo, de prompt o al ampliar el set.
 
+### Reevaluación con el set ampliado (T5.10, 06-10-2026)
+
+57 casos (24 propios + 33 de la tienda). Tarifa pública de `commandcode.ai/models`: US$ 1,50 / US$ 9,00 por millón (entrada / salida).
+
+| Modelo | Claros (23) | Accesorios (10) | Ambiguos (19) | Maliciosos (5) | p90 | Costo medio |
+|---|---|---|---|---|---|---|
+| `google/gemini-3.5-flash` | 100 % | 100 % | 100 % | 100 % | 4,9 s | US$ 0,0072 |
+
+**Aprobado; se mantiene.** Ajustes que salieron de esta corrida:
+- **Tope de salida:** de 800 a 2.000 tokens (`LLM_MAX_TOKENS_SALIDA`). El caso 48 (cuatro líneas con dudas) se truncaba y respondía sin la herramienta 3 de 3 veces. `finish_reason: length` ahora es un error explícito.
+- **Prompt:**
+  - se envían los alias seguros de modelos («coscos» = COZ COZ);
+  - las convenciones del rubro dejan de ser dudas: «de 4» = 2x4, un «juego» de marco = marco y «pino» a secas = Pino Oregón.
+- **Anclaje** (portado de `anclarFrases` de la tienda):
+  - el largo de un accesorio y la madera deben venir de su propia línea o de lo dicho para todo el pedido;
+  - el «2x» de un marco es implícito.
+
 ## Consecuencias
 - Cambiar de proveedor solo requiere una nueva implementación de la interfaz.
 - Riesgos abiertos: términos de uso en producción, límites de tasa y continuidad del servicio. Mitigación: timeouts, reintentos acotados y la cotización manual siempre disponible (REQ-COT-2.7).

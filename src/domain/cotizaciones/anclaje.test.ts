@@ -19,11 +19,11 @@ describe("verificación de cifras (REQ-COT-2.14)", () => {
 
   it("una cantidad que no está en su frase queda en duda; una dicha o heredada no", () => {
     const msj = "puertas Panguipulli lenga 80x210";
-    expect(anclarItems([puerta({ texto_fuente: msj, cantidad: 1, ancho_m: 0.8 })], msj)[0].dudas).toEqual(["La cantidad 1 no aparece en el pedido."]);
+    expect(anclarItems([puerta({ texto_fuente: msj, cantidad: 1, ancho_m: 0.8, madera: "LENGA" })], msj)[0].dudas).toEqual(["La cantidad 1 no aparece en el pedido."]);
     expect(anclarItems([puerta({})], "3 Neltume raulí 90x210")[0].dudas).toEqual([]);
     const conMarco = "2 Fuy oregón 70x200 con su marco 2x4 de 2,10";
     const items = anclarItems([
-      puerta({ texto_fuente: "2 Fuy oregón 70x200", cantidad: 2, ancho_m: 0.7, alto_m: 2 }),
+      puerta({ texto_fuente: "2 Fuy oregón 70x200", cantidad: 2, ancho_m: 0.7, alto_m: 2, madera: "PINO OREGON" }),
       { ...puerta({ texto_fuente: "con su marco 2x4 de 2,10", cantidad: 2, ancho_m: null, alto_m: 2.1 }), tipo: "marco", modelo: null, medida_accesorio: "2x4" },
     ], conMarco);
     expect(items.map((i) => i.dudas)).toEqual([[], []]);
@@ -34,6 +34,24 @@ describe("verificación de cifras (REQ-COT-2.14)", () => {
     expect(anclarItems([puerta({ texto_fuente: "3 Neltume raulí 900 x 2100 mm" })], "3 Neltume raulí 900 x 2100 mm")[0].dudas).toEqual([]);
     const marco = { ...puerta({ texto_fuente: "3 marcos de raulí", ancho_m: null, alto_m: null }), tipo: "marco" as const, medida_accesorio: "2x6" };
     expect(anclarItems([marco], "3 marcos de raulí")[0].dudas).toEqual(["La medida «2x6» no aparece en el pedido."]);
+  });
+
+  it("el largo de un accesorio va en su línea (no hereda el alto de la puerta); el «2x» del marco es implícito", () => {
+    const pedido = "2 Malalhue oregón 90x210 y 2 marcos de 4 pulgadas";
+    const marco = { ...puerta({ texto_fuente: "2 marcos de 4 pulgadas", cantidad: 2, ancho_m: null, alto_m: 2.1 }), tipo: "marco" as const, medida_accesorio: "4 pulgadas" };
+    expect(anclarItems([puerta({ texto_fuente: "2 Malalhue oregón 90x210", cantidad: 2 }), marco], pedido)[1].dudas).toEqual(["El largo 2,1 m no aparece en su línea."]);
+    const deCuatro = { ...marco, texto_fuente: "6 marcos de 4 en raulí de 2,2", cantidad: 6, alto_m: 2.2, medida_accesorio: "2x4" };
+    expect(anclarItems([deCuatro], "6 marcos de 4 en raulí de 2,2")[0].dudas).toEqual([]);
+  });
+
+  it("la madera sale de la línea o de lo dicho para todo el pedido, no de la línea de otro ítem", () => {
+    const pedido = "2 Malalhue oregón 90x210 y 2 marcos de 4 pulgadas";
+    const marco = { ...puerta({ texto_fuente: "2 marcos de 4 pulgadas", cantidad: 2, ancho_m: null, alto_m: null, madera: "PINO OREGON" }), tipo: "marco" as const, medida_accesorio: "4 pulgadas" };
+    const sinFuente = (texto: string, items: ItemPropuesto[]) => anclarItems(items, texto).map((i) => i.dudas.filter((d) => /madera/.test(d)));
+    expect(sinFuente(pedido, [puerta({ texto_fuente: "2 Malalhue oregón 90x210", cantidad: 2, madera: "PINO OREGON" }), marco])).toEqual([[], ["La madera «PINO OREGON» es de otra línea del pedido."]]);
+    expect(sinFuente(`${pedido}, todo en oregón`, [puerta({ texto_fuente: "2 Malalhue oregón 90x210", cantidad: 2, madera: "PINO OREGON" }), marco])[1]).toEqual([]);
+    expect(sinFuente("2 Fuy oregón 70x200 con su marco 2x4", [{ ...marco, texto_fuente: "con su marco 2x4", medida_accesorio: "2x4" }])[0]).toEqual([]);
+    expect(sinFuente("3 Neltume raulí 90x210", [puerta({ madera: "LENGA" })])[0]).toEqual(["La línea dice otra madera que «LENGA»."]);
   });
 
   it("si la frase no está literal en el pedido (parafraseada), no se exige la cantidad en ella", () => {

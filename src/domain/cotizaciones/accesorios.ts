@@ -18,9 +18,12 @@ const LARGO_LINEAL = 3; // desde 3 m es pieza lineal; bajo 3 m, kit
  */
 export function normalizarSeccion(texto: string | null, porPulgadas: boolean): string | null {
   if (!texto?.trim()) return null;
-  const s = normalizar(texto).replace(/[×*]/g, "X").replace(/PULGADAS?|PULG\.?|CMS?|"|''/g, "").replace(/\s+/g, "").replace(/\./g, ",");
-  if (porPulgadas && /^\d{1,2}$/.test(s)) return `2X${s}`;
-  return /^\d{1,2}(,\d)?X\d{1,2}(,\d)?$/.test(s) ? s : null;
+  const t = normalizar(texto).replace(/[×*]/g, "X").replace(/\./g, ",");
+  // Se toma la sección de cualquier frase: «de 4», «2 x 6 pulg», «12x4,5 cm», «6 pulgadas».
+  const par = /(\d{1,2}(?:,\d)?)\s*X\s*(\d{1,2}(?:,\d)?)/.exec(t);
+  if (par) return `${par[1]}X${par[2]}`;
+  const solo = /\b(\d{1,2})\b/.exec(t);
+  return porPulgadas && solo ? `2X${solo[1]}` : null;
 }
 
 const m2 = (n: number) => n.toFixed(2).replace(".", ",");

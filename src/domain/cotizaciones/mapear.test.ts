@@ -93,6 +93,8 @@ describe("accesorios: marcos, piezas T y molduras (REQ-COT-2.13)", () => {
     expect(mapearItem(marco({}), cat)).toMatchObject({ estado: "ok", codigo: "MAR-R-2X4-B", descripcion: "Marco · Raulí · 2x4 pulg. kit 2,10 m" });
     expect(mapearItem(marco({ medida_accesorio: "4 pulgadas" }), cat)).toMatchObject({ estado: "ok", codigo: "MAR-R-2X4-B" });
     expect(mapearItem(marco({ medida_accesorio: "4", alto_m: 3 }), cat)).toMatchObject({ estado: "ok", codigo: "MAR-R-2X4-H", descripcion: "Marco · Raulí · 2x4 pulg. × 3,00 m" });
+    expect(mapearItem(marco({ medida_accesorio: "de 4" }), cat)).toMatchObject({ estado: "ok", codigo: "MAR-R-2X4-B" });
+    expect(mapearItem(marco({ medida_accesorio: "2 x 4 pulgadas" }), cat)).toMatchObject({ estado: "ok", codigo: "MAR-R-2X4-B" });
   });
 
   it("molduras por sección en cm (4.5 → 4,5)", () => {

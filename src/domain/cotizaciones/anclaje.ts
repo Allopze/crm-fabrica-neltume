@@ -2,7 +2,7 @@
 // solo mensaje) del cotizador de la tienda: ninguna cantidad ni medida puede venir de la nada, y lo que la IA dejó
 // fuera queda como alerta. Puro: corre antes del mapeo; lo que no se respalda pasa a «dudas» → por confirmar.
 import type { ItemPropuesto, Propuesta } from "@/ai/esquema";
-import { metros } from "./mapear";
+import { ALIAS_MADERA, metros } from "./mapear";
 
 const plano = (t: string) => t.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
@@ -41,6 +41,30 @@ const CONTINUA = /\b(?:otr[oa]s?|igual(?:es)?|mism[oa]s?|con su|con sus)\b/;
 const aparece = (mensaje: string, frase: string) => plano(mensaje).replace(/\s+/g, " ").includes(plano(frase).replace(/\s+/g, " ").trim());
 const respaldaMedida = (valor: number, numeros: number[], max: number) => numeros.some((n) => { const m = metros(n, max); return m !== null && Math.abs(m - valor) <= 5e-4; });
 
+/** Maderas nombradas en un texto («oregón», «pino», «raulí»), con su nombre del catálogo. */
+function maderasEn(texto: string): Set<string> {
+  const t = plano(texto);
+  return new Set(Object.entries(ALIAS_MADERA).filter(([a]) => new RegExp(`\\b${plano(a)}\\b`).test(t)).map(([, m]) => m));
+}
+
+/**
+ * La madera de un ítem sale de su frase o de lo que el mensaje dice para todo el pedido («todas en lenga»), nunca de
+ * la frase de otro ítem (como `anclarFrases` de la tienda): «2 Malalhue oregón 90x210 y 2 marcos de 4» no da
+ * marcos de oregón. Una frase que continúa la anterior («con su marco», «otra igual») sí la hereda.
+ */
+function maderaAjena(items: ItemPropuesto[], k: number, mensaje: string): string | null {
+  const it = items[k];
+  const madera = it.madera && ALIAS_MADERA[plano(it.madera).toUpperCase()];
+  const frase = plano(it.texto_fuente);
+  if (!madera || !aparece(mensaje, frase) || CONTINUA.test(frase)) return null;
+  const propias = maderasEn(frase);
+  if (propias.size) return propias.has(madera) ? null : `La línea dice otra madera que «${it.madera}».`;
+  const otras = items.map((o) => plano(o.texto_fuente)).filter((f, j) => j !== k && f && !f.includes(frase) && !frase.includes(f));
+  const resto = otras.reduce((t, f) => t.split(f).join(" | "), plano(mensaje));
+  if (maderasEn(resto).has(madera) || !otras.some((f) => maderasEn(f).has(madera))) return null;
+  return `La madera «${it.madera}» es de otra línea del pedido.`;
+}
+
 /** Verifica cada ítem contra el texto: cantidades en su frase (o heredadas), medidas presentes en el pedido. */
 export function anclarItems(items: ItemPropuesto[], mensaje: string): ItemPropuesto[] {
   const numeros = cifras(mensaje);
@@ -53,16 +77,24 @@ export function anclarItems(items: ItemPropuesto[], mensaje: string): ItemPropue
       const una = it.cantidad === 1 && /\b(?:un|una|uno|otr[oa])\b/.test(plano(frase));
       if (!dichas.includes(it.cantidad) && !heredada && !una) dudas.push(`La cantidad ${it.cantidad} no aparece en el pedido.`);
     }
-    const max = it.tipo === "puerta" ? 3 : 6;
-    for (const [campo, valor] of [["ancho", it.ancho_m], [it.tipo === "puerta" ? "alto" : "largo", it.alto_m]] as const) {
+    const puerta = it.tipo === "puerta";
+    const max = puerta ? 3 : 6;
+    // El largo de un accesorio va en su propia frase («2 marcos de 4 pulgadas» no hereda el alto de la puerta),
+    // salvo que la frase continúe la anterior («con su marco»).
+    const propias = !puerta && aparece(mensaje, frase) && !CONTINUA.test(plano(frase)) ? cifras(frase) : numeros;
+    for (const [campo, valor] of [["ancho", it.ancho_m], [puerta ? "alto" : "largo", it.alto_m]] as const) {
       if (valor === null) continue;
       const v = metros(valor, max);
-      if (v !== null && !respaldaMedida(v, numeros, max)) dudas.push(`El ${campo} ${String(v).replace(".", ",")} m no aparece en el pedido.`);
+      if (v !== null && !respaldaMedida(v, propias, max)) dudas.push(`El ${campo} ${String(v).replace(".", ",")} m no aparece en ${propias === numeros ? "el pedido" : "su línea"}.`);
     }
     if (it.medida_accesorio) {
-      const faltan = cifras(it.medida_accesorio).filter((n) => !numeros.includes(n));
+      // En marcos y piezas T la escuadría «2x» va implícita («de 4» = 2x4).
+      const medida = it.tipo === "marco" || it.tipo === "piezas_t" ? it.medida_accesorio.replace(/^\s*2\s*[x×*]\s*/i, "") : it.medida_accesorio;
+      const faltan = cifras(medida).filter((n) => !numeros.includes(n));
       if (faltan.length) dudas.push(`La medida «${it.medida_accesorio}» no aparece en el pedido.`);
     }
+    const ajena = maderaAjena(items, k, mensaje);
+    if (ajena) dudas.push(ajena);
     return dudas.length === it.dudas.length ? it : { ...it, dudas };
   });
 }

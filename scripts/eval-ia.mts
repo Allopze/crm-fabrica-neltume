@@ -19,7 +19,7 @@ if (values.modelo) process.env.CMD_MODEL = values.modelo;
 if (values.proveedor) process.env.LLM_PROVEEDOR = values.proveedor;
 
 const pct = (n: number) => `${Math.round(n * 100)} %`;
-const valor = (nombre: string, v: number) => (nombre.startsWith("Latencia") ? `${(v / 1000).toFixed(1).replace(".", ",")} s` : nombre.startsWith("Costo") ? `US$ ${v.toFixed(4)}` : pct(v));
+const valor = (nombre: string, v: number) => (nombre.startsWith("Latencia") ? `${(v / 1000).toFixed(1).replace(".", ",")} s` : nombre.startsWith("Costo") ? `US$ ${v.toFixed(4).replace(".", ",")}` : pct(v));
 
 try {
   const { casos } = JSON.parse(readFileSync("eval/casos.json", "utf8")) as { casos: Caso[] };
