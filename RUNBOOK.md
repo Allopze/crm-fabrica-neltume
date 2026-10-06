@@ -53,3 +53,29 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 | Login responde "Demasiados intentos" | 5 fallos en 15 min (por correo o IP) | Esperar 15 min; queda auditado |
 | La app no arranca en producción | `migrar` falló | `docker compose logs migrar` |
 | Un usuario quedó sin acceso | Desactivado o rol sin permisos | Otro administrador lo reactiva en Usuarios y permisos |
+
+## 6. Demo: preparación y guion (T1.43)
+
+**Preparar** (una vez, en el entorno de demo; idempotente):
+1. `npm run crear-admin` si la base está vacía.
+2. `npm run demo:preparar`: migra, importa `datos/COTIZADOR_2026.xlsx` (lista v1), crea 3 clientes ficticios, materias primas y BOM de ejemplo (NEL, MOL, ANC, marcados *demo*), recepciones y stock inicial: 2 NEL-R-4-B, 4 LIC-L-4-B, 6 ANC-O-3-A y 1 MOL-L-4-B. No imprime precios ni costos.
+3. `.env.local` con `LLM_PROVEEDOR=commandcode` y su clave. Para ensayar sin red ni costo, usa `LLM_PROVEEDOR=doble` (solo reconoce los textos de `tests/fixtures/ia-respuestas.json`).
+4. `npm run dev` y abre `http://localhost:3000`.
+
+**Guion** (unos 20 minutos; cada paso cita lo que demuestra):
+
+| # | Pantalla | Acción | Qué mostrar |
+|---|---|---|---|
+| 1 | Login → Panel | Ingresar | Borradores, alertas bajo mínimo y pedidos con faltante (UX §1) |
+| 2 | Precios | Ver la lista v1 y el informe de importación; fijar recargos por tipo | 29 filas rechazadas con motivo; cada cambio crea una versión nueva (REQ-COT-1.x) |
+| 3 | Stock → NEL-R-4-B | Ver existencia 2; registrar un ajuste sin motivo y luego con motivo | Movimientos inmutables; el ajuste exige motivo (REQ-STK-5) |
+| 4 | Materias primas → Producción | Recepción de cola; orden de 2 MOL-L-4-B y cerrarla | Consume insumos según el BOM *demo* y suma puertas (REQ-MP-2–4) |
+| 5 | Cotizaciones → Desde texto | Cliente: Constructora Los Alerces. Texto: «Necesito cotizar 3 puertas Neltume en raulí de 90x210, 2 de roble con chapa y 2 Toltén raulí de 87x215» | Aviso «disponible 2 · faltan 1», roble *por confirmar*, Toltén *a pedido*; «Ver lo que recibió la IA» (REQ-COT-2) |
+| 6 | Revisión | Quitar el roble; en Toltén «Usar referencia» y «Fijar precio» | Nada se completa en silencio; el precio a pedido lo fija una persona (REQ-COT-2.5, 3) |
+| 7 | Revisión | Aprobar y descargar el PDF | Precios congelados, vigencia de 10 días hábiles, «flete aparte» (REQ-COT-4, 6) |
+| 8 | Convertir en pedido | Transporte: «Camión propio»; confirmar; PDF de la nota | Reserva 2, faltante 1 visible; stock disponible 0 (REQ-STK-7, REQ-COT-8) |
+| 9 | Cotizar a mano | 1 LIC-L-4-B para Ferretería Puyehue | Mismo cálculo que con IA (REQ-COT-5) |
+| 10 | Precios | Editar el precio de NEL-R-4-B | La cotización aprobada no cambia; un borrador ofrece «Recalcular» (REQ-COT-6.2, 6.3) |
+| 11 | Auditoría | Filtrar por actor y por resultado | Quién hizo qué y cuándo, con antes/después (REQ-ADM-3) |
+
+Si la IA no responde, el borrador queda en «IA no disponible» con el texto guardado y el botón «Cotizar a mano» (REQ-COT-2.7). Con `LLM_PROVEEDOR=doble`, el texto «simular IA caída» lo provoca.

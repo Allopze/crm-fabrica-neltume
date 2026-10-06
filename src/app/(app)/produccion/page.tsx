@@ -76,7 +76,7 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
         {sesion.permisos.has("mp.editar") && activas.length > 0 && modelos.length > 0 && <EditorBom modelos={modelos} materias={activas} csrf={sesion.csrf} />}
       </div>
       {boms.length === 0 ? (
-        <Panel><Vacio titulo="Aún no hay BOM">Defínelos con Producción o carga los de demostración con <code className="font-mono text-xs">npx tsx scripts/sembrar-demo.mts</code>.</Vacio></Panel>
+        <Panel><Vacio titulo="Aún no hay BOM">Defínelos con Producción o carga los de demostración con <code className="font-mono text-xs">npm run demo:preparar</code>.</Vacio></Panel>
       ) : (
         <div className="grid gap-5 md:grid-cols-3">
           {boms.map((b) => (
