@@ -129,7 +129,7 @@ Aprobada el 06-10-2026. La tienda le envía a la fábrica notas de pedido en PDF
 
 ### A — Base
 - [x] T5.1 (60) Feriados de Chile calculados por ley + adicionales editables · REQ-COT-6.6 · U `feriados`, I `feriados` · — · [P]
-- [ ] T5.2 (60) Marca real (logo oficial y datos de la empresa) en web y PDF · REQ-COT-4.2 · U `pdf.contenido` · — · [P]
+- [x] T5.2 (60) Marca real (logo oficial y datos de la empresa) en web y PDF · REQ-COT-4.2 · U `pdf.contenido` · — · [P]
 - [ ] T5.3 (60) Importador que corrige filas inconsistentes por dos hipótesis · REQ-STK-1.6 · U `importar.mapeo`, I `importacion`, E 01 · — · [P]
 
 ### B — Pedidos

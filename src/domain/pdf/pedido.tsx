@@ -1,14 +1,15 @@
 // PDF de la nota de pedido desde la copia congelada (ADR-0004; REQ-COT-8.1).
 import { Document, Page, renderToBuffer } from "@react-pdf/renderer";
 import type { Tx } from "@/db/conexion";
+import { MARCA } from "@/lib/marca";
 import { obtenerPedido } from "../pedidos/consulta";
 import { Datos, e, Membrete, Pie, TablaItems, Totales } from "./comun";
-import { contenidoPedido, EMPRESA, type PedidoPdf } from "./contenido";
+import { contenidoPedido, type PedidoPdf } from "./contenido";
 
 function DocumentoPedido({ p }: { p: PedidoPdf }) {
   const k = contenidoPedido(p);
   return (
-    <Document title={k.titulo} author={EMPRESA.nombre} creator={EMPRESA.nombre} producer={EMPRESA.nombre} creationDate={p.creadoEn} modificationDate={p.creadoEn}>
+    <Document title={k.titulo} author={MARCA.nombre} creator={MARCA.nombre} producer={MARCA.nombre} creationDate={p.creadoEn} modificationDate={p.creadoEn}>
       <Page size="A4" style={e.pagina}>
         <Membrete titulo={k.titulo} fechas={k.fechas} />
         <Datos pares={k.datos} />

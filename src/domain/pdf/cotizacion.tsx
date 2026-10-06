@@ -3,15 +3,16 @@ import { Document, Page, renderToBuffer } from "@react-pdf/renderer";
 import { inArray } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
 import { articulo } from "@/db/esquema/catalogo";
+import { MARCA } from "@/lib/marca";
 import { obtenerCotizacion } from "../cotizaciones/consulta";
 import { ErrorDominio } from "../errores";
 import { Datos, e, Membrete, Pie, TablaItems, Totales } from "./comun";
-import { type CotizacionPdf, contenidoCotizacion, EMPRESA } from "./contenido";
+import { type CotizacionPdf, contenidoCotizacion } from "./contenido";
 
 function DocumentoCotizacion({ c }: { c: CotizacionPdf }) {
   const k = contenidoCotizacion(c);
   return (
-    <Document title={k.titulo} author={EMPRESA.nombre} creator={EMPRESA.nombre} producer={EMPRESA.nombre} creationDate={c.aprobadaEn} modificationDate={c.aprobadaEn}>
+    <Document title={k.titulo} author={MARCA.nombre} creator={MARCA.nombre} producer={MARCA.nombre} creationDate={c.aprobadaEn} modificationDate={c.aprobadaEn}>
       <Page size="A4" style={e.pagina}>
         <Membrete titulo={k.titulo} fechas={k.fechas} />
         {k.cliente && <Datos pares={k.cliente} />}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { contenidoCotizacion, contenidoPedido, fechaSantiago } from "./contenido";
+import { datosEmpresa } from "@/lib/marca";
+import { contenidoCotizacion, contenidoPedido, fechaSantiago, lineasEmpresa } from "./contenido";
 
 const base = {
   numero: 124, aprobadaEn: new Date("2026-10-06T02:30:00Z"), vigenciaHasta: "2026-10-20", listaVersion: 3,
@@ -51,5 +52,15 @@ describe("pdf.contenido de la nota de pedido (REQ-COT-8.1)", () => {
     expect(k.filas).toEqual([["FUY-O-2-A", "Fuy", "3", "1", "$300.000"], ["A pedido", "Toltén", "1", "1", "$1.000"]]);
     expect(k.total).toBe("$358.190");
     expect(k.pie[0]).toContain("flete aparte");
+  });
+});
+
+describe("datos de la empresa en el membrete (marca real)", () => {
+  it("imprime solo los datos configurados, con nombre y correo por defecto", () => {
+    expect(lineasEmpresa(datosEmpresa({}))).toEqual(["Neltume.co"]);
+    expect(datosEmpresa({}).correo).toBe("Neltume.co@gmail.com");
+    const d = datosEmpresa({ NELTUME_EMPRESA_RUT: "11.111.111-1", NELTUME_EMPRESA_DIRECCION: "Camino a Neltume s/n", NELTUME_EMPRESA_WEB: "ejemplo.cl", NELTUME_EMPRESA_CORREO: "ventas@ejemplo.cl" });
+    expect(lineasEmpresa(d)).toEqual(["Neltume.co", "RUT 11.111.111-1", "Camino a Neltume s/n", "ejemplo.cl"]);
+    expect(contenidoCotizacion(base, d).pie[1]).toContain("ventas@ejemplo.cl");
   });
 });

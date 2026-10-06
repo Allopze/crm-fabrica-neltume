@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { Logo } from "@/components/ui/logo";
 import { MADERAS_LOGIN, Tablon } from "@/components/ui/tablon";
 import { sesionActual } from "@/domain/auth/servidor";
+import { MARCA } from "@/lib/marca";
 import { FormularioLogin } from "./formulario-login";
 
 export const metadata: Metadata = { title: "Ingresar" };
@@ -24,7 +26,8 @@ export default async function LoginPage() {
           ))}
         </div>
         <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-[var(--bosque)] via-[var(--bosque)]/80 to-transparent p-12 pb-40">
-          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-bosque-tinta/60">Neltume · Fábrica</p>
+          <Logo className="h-24 w-auto text-bosque-tinta" />
+          <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.25em] text-bosque-tinta/60">{MARCA.area}</p>
           <p className="mt-6 max-w-md font-display text-5xl leading-[1.05] font-medium text-bosque-tinta [font-variation-settings:'SOFT'_80]">
             Puertas de madera nativa, cotizadas en minutos.
           </p>

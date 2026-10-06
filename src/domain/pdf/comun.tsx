@@ -1,6 +1,8 @@
 // Piezas compartidas de los PDF (ADR-0004): estilos, membrete y tabla de ítems. Fuentes estándar: sin red.
-import { Circle, Rect, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
-import { EMPRESA } from "./contenido";
+import { Path, Rect, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
+import { LOGO } from "@/lib/logo-trazos";
+import { datosEmpresa } from "@/lib/marca";
+import { lineasEmpresa } from "./contenido";
 
 const TINTA = "#1d2920";
 export const TENUE = "#6b6b6b";
@@ -9,9 +11,9 @@ const RAULI = "#9a4524";
 export const e = StyleSheet.create({
   pagina: { paddingVertical: 48, paddingHorizontal: 52, fontFamily: "Helvetica", fontSize: 9.5, color: "#222" },
   cabecera: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  marca: { flexDirection: "row", alignItems: "center", gap: 10 },
-  nombre: { fontFamily: "Times-Roman", fontSize: 22, color: TINTA },
-  bajada: { fontSize: 7, letterSpacing: 1.6, color: TENUE, marginTop: 3, textTransform: "uppercase" },
+  marca: { flexDirection: "column", gap: 8 },
+  empresa: { fontSize: 7.5, color: TENUE, lineHeight: 1.45 },
+  empresaNombre: { fontFamily: "Helvetica-Bold", color: TINTA },
   titulo: { fontFamily: "Times-Roman", fontSize: 16, textAlign: "right" },
   fechas: { color: TENUE, marginTop: 4, textAlign: "right" },
   regla: { height: 1.2, backgroundColor: RAULI, marginVertical: 20, opacity: 0.6 },
@@ -29,18 +31,21 @@ export const e = StyleSheet.create({
   pie: { position: "absolute", left: 52, right: 52, bottom: 40, borderTopWidth: 0.5, borderTopColor: "#ddd", paddingTop: 8, fontSize: 8, color: TENUE, lineHeight: 1.5 },
 });
 
+/** Logo oficial (public/marca/logo-neltume.svg) y datos de la empresa configurados. */
 export function Membrete({ titulo, fechas }: { titulo: string; fechas: string }) {
+  const [nombre, ...resto] = lineasEmpresa(datosEmpresa());
   return (
     <>
       <View style={e.cabecera}>
         <View style={e.marca}>
-          <Svg width={24} height={34} viewBox="0 0 28 40">
-            <Rect x={1} y={1} width={26} height={38} rx={1.5} stroke={TINTA} strokeWidth={1.6} fill="none" />
-            <Rect x={5} y={5} width={18} height={13} stroke={TINTA} strokeWidth={1} fill="none" />
-            <Rect x={5} y={21} width={18} height={14} stroke={TINTA} strokeWidth={1} fill="none" />
-            <Circle cx={22.5} cy={20} r={1.3} fill={RAULI} />
+          <Svg width={58} height={65} viewBox={LOGO.viewBox}>
+            {LOGO.trazos.map((d, i) => <Path key={i} d={d} fill={TINTA} />)}
+            {LOGO.rects.map(([x, y, w, h], i) => <Rect key={`r${i}`} x={x} y={y} width={w} height={h} fill={TINTA} />)}
           </Svg>
-          <View><Text style={e.nombre}>{EMPRESA.nombre}</Text><Text style={e.bajada}>{EMPRESA.bajada} · {EMPRESA.contacto}</Text></View>
+          <View style={e.empresa}>
+            <Text style={e.empresaNombre}>{nombre}</Text>
+            {resto.map((l) => <Text key={l}>{l}</Text>)}
+          </View>
         </View>
         <View><Text style={e.titulo}>{titulo}</Text><Text style={e.fechas}>{fechas}</Text></View>
       </View>

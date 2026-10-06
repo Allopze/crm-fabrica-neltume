@@ -1,7 +1,12 @@
 // Contenido del PDF de cotización, separado del render para poder probarlo (REQ-COT-4.2; TESTING U `pdf.contenido`).
 import { clp, fecha } from "@/lib/formato";
+import { type DatosEmpresa, datosEmpresa } from "@/lib/marca";
 
-export const EMPRESA = { nombre: "Neltume", bajada: "Fábrica de puertas", contacto: "Neltume.co@gmail.com" };
+/** Líneas del bloque de la empresa bajo el logo; solo las que estén configuradas (NELTUME_EMPRESA_*). */
+export function lineasEmpresa(d: DatosEmpresa): string[] {
+  const contacto = [d.telefono && `Tel. ${d.telefono}`, d.web].filter(Boolean).join(" · ");
+  return [d.nombre, d.rut && `RUT ${d.rut}`, d.direccion, contacto].filter((x): x is string => Boolean(x));
+}
 export const NOTA_FLETE = "Valores puestos en fábrica, flete aparte.";
 
 export interface CotizacionPdf {
@@ -19,7 +24,7 @@ export function fechaSantiago(d: Date): string {
   return fecha(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santiago" }).format(d));
 }
 
-export function contenidoCotizacion(c: CotizacionPdf) {
+export function contenidoCotizacion(c: CotizacionPdf, empresa: DatosEmpresa = datosEmpresa()) {
   return {
     titulo: `Cotización N.º ${c.numero}`,
     fechas: `Fecha ${fechaSantiago(c.aprobadaEn)} · Válida hasta ${fecha(c.vigenciaHasta)}`,
@@ -38,7 +43,7 @@ export function contenidoCotizacion(c: CotizacionPdf) {
     total: clp(c.total),
     pie: [
       `${NOTA_FLETE} Precios de la lista v${c.listaVersion ?? "—"}, congelados al aprobar.`,
-      `Las medidas especiales se fabrican a pedido. Consultas: ${EMPRESA.contacto}`,
+      `Las medidas especiales se fabrican a pedido. Consultas: ${empresa.correo}`,
     ],
   };
 }

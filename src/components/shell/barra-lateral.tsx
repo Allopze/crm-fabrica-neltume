@@ -6,7 +6,9 @@ import { usePathname } from "next/navigation";
 import {
   CalendarDays, ClipboardList, FileText, Gauge, Hammer, Layers, LayoutDashboard, Package, ScrollText, Shield, Tag, Users,
 } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 import { cn } from "@/lib/formato";
+import { MARCA } from "@/lib/marca";
 
 const grupos = [
   {
@@ -38,18 +40,6 @@ const grupos = [
   },
 ];
 
-/** Marca: una puerta de dos tableros dibujada con líneas, como en un plano. */
-function Marca() {
-  return (
-    <svg viewBox="0 0 28 40" className="h-9 w-[25px]" aria-hidden>
-      <rect x="1" y="1" width="26" height="38" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      <rect x="5" y="5" width="18" height="13" fill="none" stroke="currentColor" strokeWidth="1" opacity=".7" />
-      <rect x="5" y="21" width="18" height="14" fill="none" stroke="currentColor" strokeWidth="1" opacity=".7" />
-      <circle cx="22.5" cy="20" r="1.3" fill="var(--pino-oregon)" />
-    </svg>
-  );
-}
-
 export function BarraLateral({ pie }: { pie: ReactNode }) {
   const ruta = usePathname();
   const activo = (href: string) =>
@@ -57,12 +47,9 @@ export function BarraLateral({ pie }: { pie: ReactNode }) {
 
   return (
     <aside className="veta sticky top-0 flex h-screen w-[248px] shrink-0 flex-col text-bosque-tinta">
-      <Link href="/" className="flex items-center gap-3 px-6 pt-7 pb-8 text-bosque-tinta">
-        <Marca />
-        <span className="leading-tight">
-          <span className="block font-display text-[1.35rem] font-medium tracking-tight">Neltume</span>
-          <span className="block font-mono text-[10px] uppercase tracking-[0.22em] text-bosque-tinta/55">Fábrica de puertas</span>
-        </span>
+      <Link href="/" className="flex items-end gap-3 px-6 pt-7 pb-8 text-bosque-tinta">
+        <Logo className="h-16 w-auto" titulo={`${MARCA.nombre} · inicio`} />
+        <span className="pb-1 font-mono text-[10px] uppercase leading-tight tracking-[0.22em] text-bosque-tinta/55">{MARCA.area}</span>
       </Link>
 
       <nav className="flex-1 space-y-7 overflow-y-auto px-3" aria-label="Principal">
