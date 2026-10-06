@@ -34,8 +34,11 @@ export class ErrorIA extends Error {
   }
 }
 
+/** Segunda pasada (REQ-COT-2.15): partes del pedido que la primera respuesta dejó sin registrar, ya redactadas. */
+export interface OpcionesInterpretacion { omitidos?: string[] }
+
 export interface InterpreteIA {
   readonly nombre: string;
   /** Recibe texto YA redactado. Devuelve una propuesta validada o lanza ErrorIA. */
-  interpretar(textoRedactado: string, catalogo: CatalogoResumido): Promise<ResultadoInterpretacion>;
+  interpretar(textoRedactado: string, catalogo: CatalogoResumido, opciones?: OpcionesInterpretacion): Promise<ResultadoInterpretacion>;
 }

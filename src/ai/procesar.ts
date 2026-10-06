@@ -4,7 +4,6 @@ import { bd } from "@/db/conexion";
 import { cotizacion, cotizacionItem, llamadaIa, trabajoIa } from "@/db/esquema/comercial";
 import { registrarAuditoria } from "@/domain/auditoria";
 import { listaVigenteId, precioDeArticulo, recalcularTotales } from "@/domain/cotizaciones/calculo";
-import { anclarPropuesta } from "@/domain/cotizaciones/anclaje";
 import { cargarCatalogoMapeo, catalogoResumido } from "@/domain/cotizaciones/catalogo";
 import { mapearItem } from "@/domain/cotizaciones/mapear";
 import { alertasGasto, gastoIa } from "@/domain/metricas-ia";
@@ -12,7 +11,7 @@ import { calcularLinea } from "@/domain/precios/calcular";
 import { registro } from "@/lib/registro";
 import { ErrorIA, type InterpreteIA } from "./interfaz";
 import { normalizarPedido, redactar } from "./redaccion";
-import { interpretarConReintentos } from "./reintentos";
+import { interpretarRevisado } from "./revision";
 
 export const MAX_INTENTOS_TRABAJO = 3;
 const WORKER = { tipo: "worker" as const };
@@ -65,7 +64,8 @@ export async function procesarSiguiente(ia: InterpreteIA, opciones: { esperasMs?
   const texto = redactar(normalizarPedido(c.textoOriginal ?? "")).texto;
   try {
     const cat = await catalogoResumido(bd());
-    const resultado = await interpretarConReintentos(ia, texto, cat, {
+    // REQ-COT-2.14/2.15: propuesta anclada al texto y, si omitió partes del pedido, una corrección pedida a la IA.
+    const { resultado, anclada, corregida } = await interpretarRevisado(ia, texto, cat, { modelos: cat.modelos, alias: cat.alias ?? [] }, {
       esperasMs: opciones.esperasMs,
       alIntentar: async (i) => {
         await bd().insert(llamadaIa).values({
@@ -79,8 +79,6 @@ export async function procesarSiguiente(ia: InterpreteIA, opciones: { esperasMs?
     await bd().transaction(async (tx) => {
       const catalogo = await cargarCatalogoMapeo(tx);
       const listaId = await listaVigenteId(tx);
-      // REQ-COT-2.14: cantidades y medidas respaldadas por el texto; lo omitido queda como alerta.
-      const anclada = anclarPropuesta(resultado.propuesta, texto, [...catalogo.modelos.map((m) => m.nombre), ...catalogo.alias.map((a) => a.alias)]);
       for (const [orden, propuesto] of anclada.items.entries()) {
         const m = mapearItem(propuesto, catalogo);
         const p = m.articuloId ? await precioDeArticulo(tx, m.articuloId, listaId) : null;
@@ -97,7 +95,7 @@ export async function procesarSiguiente(ia: InterpreteIA, opciones: { esperasMs?
       await tx.update(trabajoIa).set({ estado: "listo" }).where(eq(trabajoIa.id, t.id));
       await registrarAuditoria(tx, {
         actor: WORKER, accion: "interpretar", recurso: "cotizacion", recursoId: c.id, resultado: "ok", origen: "worker",
-        despues: { items: resultado.propuesta.items.length, alertas: resultado.propuesta.alertas.length, proveedor: resultado.proveedor, modelo: resultado.modelo, latenciaMs: resultado.latenciaMs, costoUsd: resultado.costoUsd },
+        despues: { items: resultado.propuesta.items.length, corregida, alertas: resultado.propuesta.alertas.length, proveedor: resultado.proveedor, modelo: resultado.modelo, latenciaMs: resultado.latenciaMs, costoUsd: resultado.costoUsd },
       });
     });
     // SECURITY T4: aviso al 80 % del tope diario y del presupuesto mensual (también en /administracion/metricas).

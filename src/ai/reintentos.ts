@@ -1,5 +1,5 @@
 // Reintentos acotados solo ante errores transitorios (AI.md §5): esperas de 1 s y 3 s.
-import { ErrorIA, type InterpreteIA, type CatalogoResumido, type ResultadoInterpretacion } from "./interfaz";
+import { ErrorIA, type InterpreteIA, type CatalogoResumido, type OpcionesInterpretacion, type ResultadoInterpretacion } from "./interfaz";
 
 export interface Intento { numero: number; error?: ErrorIA; resultado?: ResultadoInterpretacion; latenciaMs: number }
 
@@ -11,14 +11,14 @@ export function reintentosDesdeEntorno(valor = process.env.LLM_MAX_REINTENTOS): 
 
 export async function interpretarConReintentos(
   ia: InterpreteIA, texto: string, catalogo: CatalogoResumido,
-  opciones: { maxReintentos?: number; esperasMs?: number[]; alIntentar?: (i: Intento) => Promise<void> | void } = {},
+  opciones: { maxReintentos?: number; esperasMs?: number[]; alIntentar?: (i: Intento) => Promise<void> | void } & OpcionesInterpretacion = {},
 ): Promise<ResultadoInterpretacion> {
   const max = opciones.maxReintentos ?? reintentosDesdeEntorno();
   const esperas = opciones.esperasMs ?? [1_000, 3_000];
   for (let n = 0; ; n++) {
     const inicio = Date.now();
     try {
-      const resultado = await ia.interpretar(texto, catalogo);
+      const resultado = await ia.interpretar(texto, catalogo, opciones.omitidos?.length ? { omitidos: opciones.omitidos } : undefined);
       await opciones.alIntentar?.({ numero: n + 1, resultado, latenciaMs: Date.now() - inicio });
       return resultado;
     } catch (e) {

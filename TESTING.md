@@ -90,6 +90,8 @@ U = unit, I = integración, E = E2E (número de suite). Todo REQ P1 tiene al men
 | COT-2.7 | P1 | I `worker.reintentos`; E 13 |
 | COT-2.8, 2.9 | P1 | U `esquema`, `redaccion`; I `interpretacion.privacidad`; E 12 |
 | COT-2.10 | P1 | I chequeo `conPermiso`; E 11 |
+| COT-2.11, 2.12, 2.13 | P1 | U `mapear`, `modelos`, `accesorios`; I `alias`; E 16 |
+| COT-2.14, 2.15 | P1 | U `anclaje`; I `worker` (anclaje y corrección de omisiones); evaluación AI §6 |
 | COT-3.1, 3.2, 3.3, 3.4 | P1 | I `cotizacion.items`; E 07, 11 |
 | COT-4.1, 4.2, 4.3, 4.4, 4.5 | P1 | U `pdf.contenido`; I `aprobar`, `pdf`; E 08, 11 |
 | COT-5.1, 5.2, 5.3 | P1 | U igualdad de cálculo IA/manual; E 13 |

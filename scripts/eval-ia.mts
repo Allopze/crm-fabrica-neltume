@@ -8,9 +8,8 @@ import { crearInterprete } from "../src/ai";
 import { type Caso, evaluarCaso, type Obtenido, type ResultadoCaso, resumir } from "../src/ai/evaluacion";
 import type { InterpreteIA } from "../src/ai/interfaz";
 import { normalizarPedido, redactar } from "../src/ai/redaccion";
-import { interpretarConReintentos } from "../src/ai/reintentos";
+import { interpretarRevisado } from "../src/ai/revision";
 import { bd, cerrarBd } from "../src/db/conexion";
-import { anclarPropuesta } from "../src/domain/cotizaciones/anclaje";
 import { cargarCatalogoMapeo, catalogoResumido } from "../src/domain/cotizaciones/catalogo";
 import { mapearItem } from "../src/domain/cotizaciones/mapear";
 
@@ -26,7 +25,7 @@ try {
   const base = crearInterprete();
   let peticion = "";
   // Registra lo que realmente recibe el proveedor, para verificar que no viajan datos personales.
-  const ia: InterpreteIA = { nombre: base.nombre, interpretar: (t, c) => { peticion = t; return base.interpretar(t, c); } };
+  const ia: InterpreteIA = { nombre: base.nombre, interpretar: (t, c, o) => { peticion = t; return base.interpretar(t, c, o); } };
   const [resumido, catalogo] = await Promise.all([catalogoResumido(bd()), cargarCatalogoMapeo(bd())]);
   if (!catalogo.articulos.size) throw new Error("No hay catálogo: importa el Excel (npm run demo:preparar).");
   const modelo = process.env.CMD_MODEL ?? base.nombre;
@@ -38,10 +37,10 @@ try {
     const inicio = Date.now();
     peticion = "";
     try {
-      const r = await interpretarConReintentos(ia, redactar(normalizarPedido(c.pedido)).texto, resumido, {
+      const texto = redactar(normalizarPedido(c.pedido)).texto;
+      const { resultado: r, anclada } = await interpretarRevisado(ia, texto, resumido, { modelos: resumido.modelos, alias: resumido.alias ?? [] }, {
         alIntentar: (i) => { propuestas[c.id] = i.resultado?.propuesta ?? { error: i.error?.message }; },
       });
-      const anclada = anclarPropuesta(r.propuesta, redactar(normalizarPedido(c.pedido)).texto, [...catalogo.modelos.map((m) => m.nombre), ...catalogo.alias.map((a) => a.alias)]);
       const obtenidos: Obtenido[] = anclada.items.map((p) => {
         const m = mapearItem(p, catalogo);
         return { estado: m.estado, codigo: m.codigo, cantidad: m.cantidad, referencia: m.referencia?.codigo ?? null };

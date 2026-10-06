@@ -89,6 +89,19 @@ describe("worker de IA (REQ-COT-2.1–2.9, ADR-0006)", () => {
     expect(item).toMatchObject({ estado_item: "por_confirmar", duda: "La cantidad 1 no aparece en el pedido." });
   });
 
+  it("si la IA omite parte del pedido, se le pide una corrección y se usa si cubre más (REQ-COT-2.15)", async () => {
+    const c = await nueva("2 Neltume raulí 90x210 y 3 Neltume lenga 80x210 para la sala");
+    expect(await procesar()).toBe("listo");
+    expect(doble.correcciones.at(-1)).toEqual(["3 Neltume lenga 80x210 para la sala"]);
+    const { rows: [cot] } = await app.query("SELECT alertas, interpretacion_ia FROM cotizacion WHERE id = $1", [c.id]);
+    expect(cot.alertas).toEqual([]);
+    expect(cot.interpretacion_ia.items).toHaveLength(2);
+    const { rows: items } = await app.query("SELECT texto_fuente AS text_fuente FROM cotizacion_item WHERE cotizacion_id = $1 ORDER BY orden", [c.id]);
+    expect(items.map((i: { text_fuente: string }) => i.text_fuente)).toEqual(["2 Neltume raulí 90x210", "3 Neltume lenga 80x210"]);
+    const { rows: llamadas } = await app.query("SELECT l.resultado FROM llamada_ia l JOIN trabajo_ia t ON t.id = l.trabajo_id WHERE t.cotizacion_id = $1", [c.id]);
+    expect(llamadas).toHaveLength(2); // ambas pasadas quedan registradas
+  });
+
   it("limita a 20 interpretaciones por usuario y hora, y textos de más de 4.000 caracteres", async () => {
     await expect(nueva("x".repeat(4001))).rejects.toMatchObject({ codigo: "TEXTO_DEMASIADO_LARGO" });
     await app.query("INSERT INTO cotizacion (estado, origen, creado_por) SELECT 'ia_fallida', 'ia', $1 FROM generate_series(1, 20)", [actor.id]);

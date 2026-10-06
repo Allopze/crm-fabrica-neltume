@@ -3,6 +3,7 @@
 // fuera queda como alerta. Puro: corre antes del mapeo; lo que no se respalda pasa a «dudas» → por confirmar.
 import type { ItemPropuesto, Propuesta } from "@/ai/esquema";
 import { ALIAS_MADERA, metros } from "./mapear";
+import { compacto } from "./modelos";
 
 const plano = (t: string) => t.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
@@ -47,54 +48,92 @@ function maderasEn(texto: string): Set<string> {
   return new Set(Object.entries(ALIAS_MADERA).filter(([a]) => new RegExp(`\\b${plano(a)}\\b`).test(t)).map(([, m]) => m));
 }
 
+/** Nombres de modelo para verificar el texto: los del catálogo y sus alias SEGUROS (un alias dudoso nunca respalda). */
+export interface NombresModelo { modelos: string[]; alias: { alias: string; modelo: string; tipo?: string }[] }
+
+/** Formas en que el texto puede nombrar el modelo que propuso la IA: el nombre real, sus alias seguros y lo que escribió. */
+function formasDeModelo(modelo: string, n: NombresModelo): { canonico: string | null; formas: string[] } {
+  const c = compacto(modelo);
+  const seguros = n.alias.filter((a) => (a.tipo ?? "seguro") === "seguro");
+  const canonico = n.modelos.find((m) => compacto(m) === c) ?? seguros.find((a) => compacto(a.alias) === c)?.modelo ?? null;
+  const formas = canonico ? [canonico, ...seguros.filter((a) => a.modelo === canonico).map((a) => a.alias)] : [modelo];
+  return { canonico, formas: formas.map(compacto).filter(Boolean) };
+}
+const nombra = (texto: string, formas: string[]) => { const t = compacto(texto); return formas.some((f) => t.includes(f)); };
+const modelosEn = (texto: string, n: NombresModelo) => n.modelos.filter((m) => nombra(texto, formasDeModelo(m, n).formas));
+
 /**
- * La madera de un ítem sale de su frase o de lo que el mensaje dice para todo el pedido («todas en lenga»), nunca de
- * la frase de otro ítem (como `anclarFrases` de la tienda): «2 Malalhue oregón 90x210 y 2 marcos de 4» no da
- * marcos de oregón. Una frase que continúa la anterior («con su marco», «otra igual») sí la hereda.
+ * Contexto de cada ítem: su frase (si está tal cual en el mensaje), el resto del mensaje sin las frases de los demás
+ * ítems (lo dicho para todo el pedido, «todas en lenga») y si la frase continúa la anterior («otra igual», «con su
+ * marco»; en puertas, también una frase sin modelo: «… y 2 de 70x210»). Como `anclarFrases` de la tienda.
  */
-function maderaAjena(items: ItemPropuesto[], k: number, mensaje: string): string | null {
+function contexto(items: ItemPropuesto[], k: number, mensaje: string, n: NombresModelo) {
+  const frase = plano(items[k].texto_fuente);
+  const literal = !!frase.trim() && aparece(mensaje, frase);
+  const otras = items.map((o) => plano(o.texto_fuente)).filter((f, j) => j !== k && f.trim() && aparece(mensaje, f) && !f.includes(frase) && !frase.includes(f));
+  const resto = otras.reduce((t, f) => t.split(f.replace(/\s+/g, " ").trim()).join(" | "), plano(mensaje).replace(/\s+/g, " "));
+  const continua = CONTINUA.test(frase) || (items[k].tipo === "puerta" && k > 0 && !modelosEn(frase, n).length);
+  return { frase, literal, otras, resto, continua };
+}
+
+/** El modelo de una puerta debe estar escrito en su línea (o dicho para todo el pedido, o heredado al continuar). */
+function modeloAjeno(items: ItemPropuesto[], k: number, cx: ReturnType<typeof contexto>, n: NombresModelo): string | null {
   const it = items[k];
+  if (it.tipo !== "puerta" || !it.modelo || !cx.literal || !n.modelos.length) return null;
+  const { canonico, formas } = formasDeModelo(it.modelo, n);
+  if (nombra(cx.frase, formas)) return null;
+  const heredado = cx.continua && items.some((o, j) => j < k && o.modelo && formasDeModelo(o.modelo, n).canonico === canonico);
+  if (heredado || (!modelosEn(cx.frase, n).length && nombra(cx.resto, formas))) return null;
+  return modelosEn(cx.frase, n).length ? `La línea nombra otro modelo que «${it.modelo}».` : `El modelo «${it.modelo}» no aparece en su línea.`;
+}
+
+/**
+ * La madera de un ítem sale de su frase o de lo que el mensaje dice para todo el pedido, nunca de la frase de otro
+ * ítem: «2 Malalhue oregón 90x210 y 2 marcos de 4» no da marcos de oregón. Una frase que continúa la anterior sí la hereda.
+ */
+function maderaAjena(it: ItemPropuesto, cx: ReturnType<typeof contexto>): string | null {
   const madera = it.madera && ALIAS_MADERA[plano(it.madera).toUpperCase()];
-  const frase = plano(it.texto_fuente);
-  if (!madera || !aparece(mensaje, frase) || CONTINUA.test(frase)) return null;
-  const propias = maderasEn(frase);
+  if (!madera || !cx.literal || cx.continua) return null;
+  const propias = maderasEn(cx.frase);
   if (propias.size) return propias.has(madera) ? null : `La línea dice otra madera que «${it.madera}».`;
-  const otras = items.map((o) => plano(o.texto_fuente)).filter((f, j) => j !== k && f && !f.includes(frase) && !frase.includes(f));
-  const resto = otras.reduce((t, f) => t.split(f).join(" | "), plano(mensaje));
-  if (maderasEn(resto).has(madera) || !otras.some((f) => maderasEn(f).has(madera))) return null;
+  if (maderasEn(cx.resto).has(madera) || !cx.otras.some((f) => maderasEn(f).has(madera))) return null;
   return `La madera «${it.madera}» es de otra línea del pedido.`;
 }
 
-/** Verifica cada ítem contra el texto: cantidades en su frase (o heredadas), medidas presentes en el pedido. */
-export function anclarItems(items: ItemPropuesto[], mensaje: string): ItemPropuesto[] {
+/**
+ * Verifica cada ítem contra el texto (REQ-COT-2.14): cantidades en su frase (o heredadas); medidas, modelo y madera
+ * en su línea o en lo dicho para todo el pedido, nunca tomados de la línea de otro ítem. Nada se corrige: lo que no
+ * se respalda pasa a `dudas` y el ítem queda por confirmar.
+ */
+export function anclarItems(items: ItemPropuesto[], mensaje: string, nombres: NombresModelo = { modelos: [], alias: [] }): ItemPropuesto[] {
   const numeros = cifras(mensaje);
   return items.map((it, k) => {
     const dudas = [...it.dudas];
-    const frase = it.texto_fuente;
-    if (it.cantidad !== null && aparece(mensaje, frase)) {
-      const dichas = cantidadesDichas(frase);
-      const heredada = CONTINUA.test(plano(frase)) && items.some((o, j) => j !== k && o.cantidad === it.cantidad);
-      const una = it.cantidad === 1 && /\b(?:un|una|uno|otr[oa])\b/.test(plano(frase));
+    const cx = contexto(items, k, mensaje, nombres);
+    if (it.cantidad !== null && cx.literal) {
+      const dichas = cantidadesDichas(cx.frase);
+      const heredada = CONTINUA.test(cx.frase) && items.some((o, j) => j !== k && o.cantidad === it.cantidad);
+      const una = it.cantidad === 1 && /\b(?:un|una|uno|otr[oa])\b/.test(cx.frase);
       if (!dichas.includes(it.cantidad) && !heredada && !una) dudas.push(`La cantidad ${it.cantidad} no aparece en el pedido.`);
     }
     const puerta = it.tipo === "puerta";
     const max = puerta ? 3 : 6;
-    // El largo de un accesorio va en su propia frase («2 marcos de 4 pulgadas» no hereda el alto de la puerta),
-    // salvo que la frase continúe la anterior («con su marco»).
-    const propias = !puerta && aparece(mensaje, frase) && !CONTINUA.test(plano(frase)) ? cifras(frase) : numeros;
+    // Medidas: de su línea o de lo dicho para todo el pedido; al continuar la anterior se heredan.
+    const propias = cx.literal && !cx.continua ? [...cifras(cx.frase), ...cifras(cx.resto)] : numeros;
     for (const [campo, valor] of [["ancho", it.ancho_m], [puerta ? "alto" : "largo", it.alto_m]] as const) {
       if (valor === null) continue;
       const v = metros(valor, max);
-      if (v !== null && !respaldaMedida(v, propias, max)) dudas.push(`El ${campo} ${String(v).replace(".", ",")} m no aparece en ${propias === numeros ? "el pedido" : "su línea"}.`);
+      if (v === null || respaldaMedida(v, propias, max)) continue;
+      const texto = String(v).replace(".", ",");
+      dudas.push(respaldaMedida(v, numeros, max) ? `El ${campo} ${texto} m es de otra línea del pedido.` : `El ${campo} ${texto} m no aparece en el pedido.`);
     }
     if (it.medida_accesorio) {
       // En marcos y piezas T la escuadría «2x» va implícita («de 4» = 2x4).
       const medida = it.tipo === "marco" || it.tipo === "piezas_t" ? it.medida_accesorio.replace(/^\s*2\s*[x×*]\s*/i, "") : it.medida_accesorio;
-      const faltan = cifras(medida).filter((n) => !numeros.includes(n));
+      const faltan = cifras(medida).filter((x) => !numeros.includes(x));
       if (faltan.length) dudas.push(`La medida «${it.medida_accesorio}» no aparece en el pedido.`);
     }
-    const ajena = maderaAjena(items, k, mensaje);
-    if (ajena) dudas.push(ajena);
+    for (const ajena of [modeloAjeno(items, k, cx, nombres), maderaAjena(it, cx)]) if (ajena) dudas.push(ajena);
     return dudas.length === it.dudas.length ? it : { ...it, dudas };
   });
 }
@@ -121,12 +160,28 @@ export function pedidosSinRegistrar(mensaje: string, frases: string[], modelos: 
     });
 }
 
-/** Aplica el anclaje a la propuesta completa: ítems con dudas nuevas y alertas por lo no registrado. */
-export function anclarPropuesta(propuesta: Propuesta, mensaje: string, modelos: string[]): Propuesta {
-  const omitidos = pedidosSinRegistrar(mensaje, propuesta.items.map((i) => i.texto_fuente), modelos);
+/** Ítems cuya frase no está tal cual en el mensaje: no se pudieron verificar contra su línea. */
+export function sinVerificar(items: ItemPropuesto[], mensaje: string): number[] {
+  return items.flatMap((it, k) => (it.texto_fuente.trim() && aparece(mensaje, it.texto_fuente) ? [] : [k + 1]));
+}
+
+/**
+ * Aplica el anclaje a la propuesta completa: ítems con dudas nuevas y alertas por lo no registrado y por lo que no se
+ * pudo verificar. Devuelve también lo omitido, para pedir una corrección a la IA (src/ai/revision.ts).
+ */
+export function anclarPropuesta(propuesta: Propuesta, mensaje: string, nombres: NombresModelo): { propuesta: Propuesta; omitidos: string[] } {
+  const omitidos = pedidosSinRegistrar(mensaje, propuesta.items.map((i) => i.texto_fuente), [...nombres.modelos, ...nombres.alias.map((a) => a.alias)]);
+  const noVerificados = sinVerificar(propuesta.items, mensaje);
   return {
-    ...propuesta,
-    items: anclarItems(propuesta.items, mensaje),
-    alertas: [...propuesta.alertas, ...omitidos.map((o) => `No registré: «${o}». Agrégalo a mano si corresponde.`)],
+    omitidos,
+    propuesta: {
+      ...propuesta,
+      items: anclarItems(propuesta.items, mensaje, nombres),
+      alertas: [
+        ...propuesta.alertas,
+        ...omitidos.map((o) => `No registré: «${o}». Agrégalo a mano si corresponde.`),
+        ...noVerificados.map((n) => `No pude verificar el ítem ${n} contra el pedido (la IA no citó el texto tal cual): revísalo.`),
+      ],
+    },
   };
 }

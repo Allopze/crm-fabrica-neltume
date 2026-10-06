@@ -28,4 +28,14 @@ export function promptSistema(cat: CatalogoResumido): string {
   ].join("\n");
 }
 
-export const mensajeUsuario = (textoRedactado: string) => `<pedido>\n${textoRedactado.replaceAll("</pedido>", "")}\n</pedido>`;
+const sinEtiquetas = (t: string) => t.replace(/<\/?(?:pedido|omitidos)>/gi, "");
+
+/**
+ * Mensaje del usuario: el pedido delimitado y, en la segunda pasada, las partes que quedaron sin registrar (también
+ * texto del cliente: dato, nunca instrucciones).
+ */
+export function mensajeUsuario(textoRedactado: string, omitidos: string[] = []): string {
+  const pedido = `<pedido>\n${sinEtiquetas(textoRedactado)}\n</pedido>`;
+  if (!omitidos.length) return pedido;
+  return `${pedido}\n\nRevisión del sistema: estas partes del pedido no quedaron en ningún ítem. Vuelve a llamar a proponer_items con TODOS los ítems del pedido (también los que ya tenías); si una parte no es un producto, explícalo en alertas.\n<omitidos>\n${omitidos.map((o) => `- ${sinEtiquetas(o)}`).join("\n")}\n</omitidos>`;
+}

@@ -47,6 +47,7 @@ Set de AI.md §6 (24 casos) con el mismo camino que el worker. Candidatos rápid
 - **Anclaje** (portado de `anclarFrases` de la tienda):
   - el largo de un accesorio y la madera deben venir de su propia línea o de lo dicho para todo el pedido;
   - el «2x» de un marco es implícito.
+- **T5.11** (anclaje por línea del modelo, la madera y las medidas, más una segunda pasada ante omisiones): sigue **aprobado**. 100 % en los cuatro grupos, p90 5,9 s, US$ 0,0077 por pedido; la segunda pasada sube los tokens medios de entrada de 1.586 a 1.676.
 
 ## Consecuencias
 - Cambiar de proveedor solo requiere una nueva implementación de la interfaz.

@@ -63,9 +63,13 @@ Validación (`src/ai/esquema.ts` + `mapear.ts`):
 **Verificación de cifras y cobertura (REQ-COT-2.14).** Corre después de la IA y antes del mapeo (`src/domain/cotizaciones/anclaje.ts`, portado del cotizador de la tienda):
 - **Cantidades:** cada una debe estar en la frase del ítem, en dígitos o palabras («tres», «un par», «media docena»), sin contar medidas. También vale si es heredada («otra igual», «con su marco») o si es 1 con «un/una/otra».
 - **Medidas:** cada una debe aparecer en el texto, en m, cm o mm. El largo de un accesorio va en su propia línea («2 marcos de 4 pulgadas» no hereda el alto de la puerta) salvo que continúe la anterior («con su marco»); en marcos y piezas T el «2x» de la escuadría es implícito.
-- **Madera:** sale de la línea del ítem o de lo dicho para todo el pedido («todo en oregón»), nunca de la línea de otro ítem; una línea que nombra otra madera también deja duda (como `anclarFrases` de la tienda).
+- **Por línea (REQ-COT-2.15, como `anclarFrases` de la tienda):** modelo, madera y medidas salen de la línea del ítem o de lo dicho para todo el pedido («todo en oregón»), nunca de la línea de otro ítem. «Lanco 90x210 y 1 Chauquen» no da una Chauquen de 90x210.
+  - **Modelo:** debe estar escrito en su línea, con su nombre o un alias **seguro**. Un alias dudoso («pillo») no respalda: la IA no puede cambiar un nombre por un modelo real parecido.
+  - **Continuar la anterior:** una línea que continúa («otra igual», «con su marco» o, en puertas, una línea sin modelo como «… y 2 de 70x210») hereda lo que no dice.
+- **Nunca corrige:** a diferencia de la tienda, ningún dato se reemplaza por lo que «dice la frase»; todo lo no respaldado queda en duda.
 - **Si no se cumple,** se agrega una duda y el ítem queda `por_confirmar`.
-- **Cobertura:** lo que el texto pide y la IA no registró (un fragmento con un número y un modelo, alias o tipo de producto) se muestra como alerta «No registré: «…»».
+- **Cobertura:** lo que el texto pide y la IA no registró (un fragmento con un número y un modelo, alias o tipo de producto) genera **una** segunda pasada (REQ-COT-2.15, `src/ai/revision.ts`). Se le envían a la IA esas partes, delimitadas en `<omitidos>` como dato, y se usa la nueva respuesta solo si cubre más sin perder ítems. Lo que siga sin registrar se muestra como alerta «No registré: «…»». Ambas pasadas quedan en `llamada_ia` y el costo se suma.
+- **No verificado:** si la IA no citó tal cual el fragmento de un ítem, ese ítem no se puede anclar a su línea: queda la alerta «No pude verificar el ítem N…» para revisarlo (en la tienda, ese caso apagaba la revisión sin aviso).
 - **Registro:** la interpretación cruda de la IA se guarda tal cual en `interpretacion_ia`.
 
 ## 3. Herramientas
@@ -101,6 +105,7 @@ En v1 el catálogo resumido va completo en el contexto (es pequeño), así que n
 |---|---|
 | Ítem con dudas, modelo o madera inexistente, medida fuera de grilla | `por_confirmar` / `a_pedido`, visible y no aprobable hasta que una persona lo resuelva |
 | `alertas` no vacía o `sin_items` | Nota visible "revisar el texto del cliente" en el borrador |
+| Partes del pedido sin registrar | Una segunda pasada con esas partes; si falla o no cubre más, queda la primera con la alerta «No registré» |
 | Timeout, 5xx o 429 del proveedor | Reintento con espera exponencial (1 s, 3 s), hasta `LLM_MAX_REINTENTOS` = 2 |
 | 4xx no transitorio, sin proveedor ZDR, salida inválida dos veces o tope de costo alcanzado | `ia_fallida` sin reintento, con aviso y botón "Cotizar a mano" (REQ-COT-2.7) |
 
