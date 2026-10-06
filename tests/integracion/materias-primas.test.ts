@@ -63,6 +63,18 @@ describe("materias primas y recepciones (REQ-MP-1, 2, 5)", () => {
     expect((await llamar(rutaAjuste.POST, "POST", "/x", { ...admin, cabeceras: idem(), cuerpo: { materiaPrimaId: tabla, cantidad: -500, motivo: "Error" } })).estado).toBe(409);
   });
 
+  it("ajuste de MP: motivo obligatorio, sin stock.ajustar → 403, y queda auditado (REQ-MP-5.1, 5.2)", async () => {
+    expect((await llamar(rutaAjuste.POST, "POST", "/x", { ...admin, cabeceras: idem(), cuerpo: { materiaPrimaId: tabla, cantidad: 2 } })).estado).toBe(400);
+    expect((await llamar(rutaAjuste.POST, "POST", "/x", { ...admin, cabeceras: idem(), cuerpo: { materiaPrimaId: tabla, cantidad: 2, motivo: " " } })).estado).toBe(400);
+    const r = await llamar(rutaAjuste.POST, "POST", "/api/v1/movimientos/ajustes", { ...lector, cabeceras: idem(), cuerpo: { materiaPrimaId: tabla, cantidad: 2, motivo: "Conteo" } });
+    expect(r.cuerpo.error.codigo).toBe("SIN_PERMISO");
+    expect(await existencia(tabla)).toBe(120);
+    const { rows } = await app.query("SELECT resultado, despues FROM audit_log WHERE recurso = 'materia_prima' AND accion = 'ajuste' ORDER BY id");
+    expect(rows.at(-1)).toMatchObject({ resultado: "ok", despues: { cantidad: -0.5, motivo: "Merma por humedad" } });
+    const den = await app.query("SELECT 1 FROM audit_log WHERE resultado = 'denegado' AND accion = 'POST /api/v1/movimientos/ajustes'");
+    expect(den.rows).toHaveLength(1);
+  });
+
   it("mínimo editable con mp.editar; sin permiso → 403", async () => {
     expect((await llamar(rutaMpId.PATCH, "PATCH", "/x", { ...admin, cuerpo: { stockMinimo: 150 } }, { id: tabla })).cuerpo.stockMinimo).toBe(150);
     expect((await llamar(rutaMp.POST, "POST", "/x", { ...lector, cuerpo: { nombre: "Barniz", unidadCodigo: "lt" } })).estado).toBe(403);

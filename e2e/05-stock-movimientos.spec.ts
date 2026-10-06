@@ -58,3 +58,16 @@ test("los movimientos no se pueden editar ni borrar", async ({ page }) => {
     expect([404, 405]).toContain(r.status());
   }
 });
+
+test("un ajuste de materia prima exige motivo y queda registrado (REQ-MP-5)", async ({ page }) => {
+  await ingresar(page, ADMIN.email, ADMIN.clave);
+  await ir(page, "/materias-primas");
+  const form = page.getByRole("form", { name: "Ajuste de materia prima" });
+  await form.getByLabel("Materia prima").selectOption({ label: "Tabla raulí 1\"" });
+  await form.getByLabel("Cantidad (+ suma, − resta)").fill("-1,5");
+  await form.getByRole("button", { name: "Registrar ajuste" }).click();
+  expect(await form.getByLabel("Motivo").evaluate((e) => (e as HTMLInputElement).validity.valueMissing)).toBe(true);
+  await form.getByLabel("Motivo").fill("Conteo físico de fin de mes");
+  await form.getByRole("button", { name: "Registrar ajuste" }).click();
+  await expect(form.getByRole("status")).toContainText("Ajuste registrado.");
+});

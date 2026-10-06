@@ -6,7 +6,7 @@ import { bd } from "@/db/conexion";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { listarMateriasPrimas, listarUnidades } from "@/domain/materias-primas";
 import { cn, fecha, numero } from "@/lib/formato";
-import { FormularioNuevaMp, FormularioRecepcion } from "./formularios-mp";
+import { FormularioAjusteMp, FormularioNuevaMp, FormularioRecepcion } from "./formularios-mp";
 
 export const metadata: Metadata = { title: "Materias primas" };
 
@@ -15,6 +15,7 @@ export default async function MateriasPrimasPage() {
   if (!sesion.permisos.has("stock.ver")) return <SinPermiso permiso="stock.ver" />;
   const [materias, unidades] = await Promise.all([listarMateriasPrimas(bd()), listarUnidades(bd())]);
   const activas = materias.filter((m) => m.activo);
+  const opciones = activas.map((m) => ({ id: m.id, nombre: m.nombre, unidad: m.unidad }));
   const bajas = activas.filter((m) => m.stockMinimo !== null && m.existencia < m.stockMinimo).length;
 
   return (
@@ -52,11 +53,18 @@ export default async function MateriasPrimasPage() {
             </Tabla>
           )}
         </Panel>
-        {sesion.permisos.has("mp.mover") && activas.length > 0 && (
-          <Panel titulo="Registrar recepción" className="self-start">
-            <FormularioRecepcion materias={activas.map((m) => ({ id: m.id, nombre: m.nombre, unidad: m.unidad }))} csrf={sesion.csrf} />
-          </Panel>
-        )}
+        <div className="space-y-8 self-start">
+          {sesion.permisos.has("mp.mover") && activas.length > 0 && (
+            <Panel titulo="Registrar recepción">
+              <FormularioRecepcion materias={opciones} csrf={sesion.csrf} />
+            </Panel>
+          )}
+          {sesion.permisos.has("stock.ajustar") && activas.length > 0 && (
+            <Panel titulo="Ajuste con motivo">
+              <FormularioAjusteMp materias={opciones} csrf={sesion.csrf} />
+            </Panel>
+          )}
+        </div>
       </div>
     </>
   );
