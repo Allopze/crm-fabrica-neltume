@@ -57,9 +57,9 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 ### Materias primas y producción
 - [x] T1.15 (45) Migración `unidad`, `materia_prima`, `bom`, `bom_linea`, `orden_produccion`, `orden_linea` · DATA-MODEL §2 · I `migraciones` · T1.11
 - [x] T1.16 (75) API y UI de materias primas y recepción · REQ-MP-1.x, 2.x · E `03-materias-primas-recepcion` · T1.15 · [P]
-- [ ] T1.17 (60) API y UI de BOM con vigencia y origen; semilla de 3 BOM demo · REQ-MP-3.x · I `bom` · T1.15 · [P]
-- [ ] T1.18 (90) Órdenes: crear y cerrar (consumo + entrada atómica e idempotente; sin BOM o faltantes → 409) · REQ-MP-4.x · I `produccion.cierre` · T1.17, T1.13
-- [ ] T1.19 (60) UI de órdenes con vista previa de consumos y etiqueta DEMO · REQ-MP-4.1 · E `04-produccion-entrada` · T1.18
+- [x] T1.17 (60) API y UI de BOM con vigencia y origen; semilla de 3 BOM demo · REQ-MP-3.x · I `bom` · T1.15 · [P]
+- [x] T1.18 (90) Órdenes: crear y cerrar (consumo + entrada atómica e idempotente; sin BOM o faltantes → 409) · REQ-MP-4.x · I `produccion.cierre` · T1.17, T1.13
+- [x] T1.19 (60) UI de órdenes con vista previa de consumos y etiqueta DEMO · REQ-MP-4.1 · E `04-produccion-entrada` · T1.18
 
 ### Clientes
 - [ ] T1.20 (75) Migración, validación de RUT, API y UI de clientes · REQ-COT-9.x · U `rut`, I `clientes` · T0.9 · [P]
