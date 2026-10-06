@@ -19,13 +19,21 @@ describe("catálogo y precios: migración y referencia (T1.1–T1.2)", () => {
 
   it("los precios son de solo inserción, incluso para el dueño", async () => {
     await expect(app.query("UPDATE precio SET precio_neto = 1")).rejects.toThrow(/permission denied/);
-    await expect(owner.query("UPDATE precio SET precio_neto = 1")).resolves.toBeDefined(); // sin filas: no dispara
+    await expect(app.query("DELETE FROM precio")).rejects.toThrow(/permission denied/);
     await expect(owner.query("TRUNCATE precio")).rejects.toThrow(/solo inserción/);
   });
 
   it("solo puede haber una lista vigente", async () => {
-    await owner.query("INSERT INTO lista_precio (origen, descripcion, vigente) VALUES ('excel', 'a', true)");
-    await expect(owner.query("INSERT INTO lista_precio (origen, descripcion, vigente) VALUES ('excel', 'b', true)")).rejects.toThrow(/lista_una_vigente/);
-    await owner.query("DELETE FROM lista_precio");
+    // La BD es compartida entre archivos: se prueba dentro de una transacción que se revierte.
+    const c = await owner.connect();
+    try {
+      await c.query("BEGIN");
+      await c.query("UPDATE lista_precio SET vigente = false");
+      await c.query("INSERT INTO lista_precio (origen, descripcion, vigente) VALUES ('excel', 'a', true)");
+      await expect(c.query("INSERT INTO lista_precio (origen, descripcion, vigente) VALUES ('excel', 'b', true)")).rejects.toThrow(/lista_una_vigente/);
+    } finally {
+      await c.query("ROLLBACK");
+      c.release();
+    }
   });
 });
