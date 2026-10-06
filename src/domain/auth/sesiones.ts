@@ -3,7 +3,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt, isNull, or, sql } from "drizzle-orm";
 import { bd } from "@/db/conexion";
-import { intentoLogin, rolPermiso, sesion, usuario } from "@/db/esquema/seguridad";
+import { intentoLogin, rol, rolPermiso, sesion, usuario } from "@/db/esquema/seguridad";
 import { registrarAuditoria } from "../auditoria";
 import { ErrorDominio } from "../errores";
 import { hashFalso, verificarPassword } from "./password";
@@ -16,7 +16,7 @@ export const VENTANA_MIN = 15;
 export interface SesionActiva {
   sesionId: string;
   csrf: string;
-  usuario: { id: string; email: string; nombre: string };
+  usuario: { id: string; email: string; nombre: string; rol: string };
   permisos: ReadonlySet<Permiso>;
 }
 
@@ -74,9 +74,10 @@ export async function iniciarSesion(email: string, clave: string, ctx: Contexto)
 export async function validarSesion(token: string | undefined): Promise<SesionActiva | null> {
   if (!token) return null;
   const filas = await bd()
-    .select({ sesionId: sesion.id, csrf: sesion.csrfToken, id: usuario.id, email: usuario.email, nombre: usuario.nombre, permiso: rolPermiso.permisoCodigo })
+    .select({ sesionId: sesion.id, csrf: sesion.csrfToken, id: usuario.id, email: usuario.email, nombre: usuario.nombre, rol: rol.nombre, permiso: rolPermiso.permisoCodigo })
     .from(sesion)
     .innerJoin(usuario, eq(usuario.id, sesion.usuarioId))
+    .innerJoin(rol, eq(rol.id, usuario.rolId))
     .leftJoin(rolPermiso, eq(rolPermiso.rolId, usuario.rolId))
     .where(and(eq(sesion.tokenHash, hashToken(token)), isNull(sesion.revocadaEn), gt(sesion.expiraEn, sql`now()`), eq(usuario.activo, true)));
   if (filas.length === 0) return null;
@@ -84,7 +85,7 @@ export async function validarSesion(token: string | undefined): Promise<SesionAc
   return {
     sesionId: f.sesionId,
     csrf: f.csrf,
-    usuario: { id: f.id, email: f.email, nombre: f.nombre },
+    usuario: { id: f.id, email: f.email, nombre: f.nombre, rol: f.rol },
     permisos: new Set(filas.map((x) => x.permiso).filter(Boolean) as Permiso[]),
   };
 }

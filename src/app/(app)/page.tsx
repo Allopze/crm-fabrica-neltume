@@ -4,9 +4,13 @@ import { Cifra, Encabezado, Etiqueta, Panel, Placa } from "@/components/ui/base"
 import { articulos, disponible } from "@/mock/catalogo";
 import { cotizaciones, nombreCliente, pedidos } from "@/mock/comercial";
 import { materiasPrimas } from "@/mock/operacion";
+import { requerirSesion } from "@/domain/auth/servidor";
 import { clp, fechaHora, numero } from "@/lib/formato";
 
-export default function PanelPage() {
+export default async function PanelPage() {
+  const sesion = await requerirSesion();
+  const nombre = sesion.usuario.nombre.split(/\s+/)[0];
+  const hoy = new Intl.DateTimeFormat("es-CL", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "America/Santiago" }).format(new Date());
   const bajoMinimo = articulos.filter((a) => disponible(a) < a.minimo);
   const mpBajas = materiasPrimas.filter((m) => m.existencia < m.minimo);
   const borradores = cotizaciones.filter((c) => c.estado === "borrador" || c.estado === "ia_fallida");
@@ -15,8 +19,8 @@ export default function PanelPage() {
   return (
     <>
       <Encabezado
-        antetitulo="Lunes 5 de octubre · 2026"
-        titulo={<>Buenos días, Paula.</>}
+        antetitulo={hoy}
+        titulo={<>Hola, {nombre}.</>}
         descripcion={
           <>
             Tienes <strong className="text-tinta">{borradores.length} cotizaciones</strong> por revisar y{" "}

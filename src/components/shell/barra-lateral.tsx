@@ -1,9 +1,10 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  ClipboardList, FileText, Hammer, Layers, LayoutDashboard, LogOut, Package, ScrollText, Shield, Tag, Users,
+  ClipboardList, FileText, Hammer, Layers, LayoutDashboard, Package, ScrollText, Shield, Tag, Users,
 } from "lucide-react";
 import { cn } from "@/lib/formato";
 
@@ -47,7 +48,7 @@ function Marca() {
   );
 }
 
-export function BarraLateral() {
+export function BarraLateral({ pie }: { pie: ReactNode }) {
   const ruta = usePathname();
   const activo = (href: string) =>
     href === "/" ? ruta === "/" : ruta === href || (ruta.startsWith(href + "/") && !(href === "/administracion" && ruta.startsWith("/administracion/auditoria")));
@@ -95,16 +96,7 @@ export function BarraLateral() {
         ))}
       </nav>
 
-      <div className="m-3 flex items-center gap-3 rounded-md border border-white/10 bg-black/20 px-3 py-2.5">
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--lenga)] font-display text-sm text-white">PR</span>
-        <span className="min-w-0 flex-1 leading-tight">
-          <span className="block truncate text-sm text-white">Paula Rivas</span>
-          <span className="block text-[11px] text-bosque-tinta/50">Administrador</span>
-        </span>
-        <Link href="/login" aria-label="Cerrar sesión" className="rounded p-1 text-bosque-tinta/60 hover:text-white">
-          <LogOut className="h-4 w-4" />
-        </Link>
-      </div>
+      {pie}
     </aside>
   );
 }

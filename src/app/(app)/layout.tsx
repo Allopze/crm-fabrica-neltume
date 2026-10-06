@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
+import { AvisoConexion } from "@/components/shell/aviso-conexion";
 import { BarraLateral } from "@/components/shell/barra-lateral";
+import { UsuarioActual } from "@/components/shell/usuario-actual";
+import { requerirSesion } from "@/domain/auth/servidor";
 
-export default function AppLayout({ children }: LayoutProps<"/">) {
+export default async function AppLayout({ children }: LayoutProps<"/">) {
+  const sesion = await requerirSesion();
   return (
     <div className="flex min-h-screen">
-      <BarraLateral />
+      <BarraLateral pie={<UsuarioActual nombre={sesion.usuario.nombre} rol={sesion.usuario.rol} csrf={sesion.csrf} />} />
       <div className="flex min-w-0 flex-1 flex-col">
+        <AvisoConexion />
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-linea bg-papel/85 px-8 backdrop-blur">
           <label className="relative flex max-w-md flex-1 items-center">
             <Search className="pointer-events-none absolute left-3 h-4 w-4 text-tinta-tenue" />

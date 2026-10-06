@@ -1,11 +1,11 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 // Chequeos estructurales de AGENTS.md y SECURITY §2. Recorren los archivos versionados o por versionar.
 const archivos = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" })
   .split("\n")
-  .filter(Boolean);
+  .filter((f) => f && existsSync(f));
 const fuente = archivos.filter((f) => /\.(ts|tsx|mts|js|mjs)$/.test(f) && !f.startsWith("src/db/migraciones/"));
 const leer = (f: string) => readFileSync(f, "utf8");
 const METODOS = ["GET", "POST", "PUT", "PATCH", "DELETE"];
