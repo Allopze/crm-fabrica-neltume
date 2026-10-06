@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  ClipboardList, FileText, Gauge, Hammer, Layers, LayoutDashboard, Package, ScrollText, Shield, Tag, Users,
+  CalendarDays, ClipboardList, FileText, Gauge, Hammer, Layers, LayoutDashboard, Package, ScrollText, Shield, Tag, Users,
 } from "lucide-react";
 import { cn } from "@/lib/formato";
 
@@ -33,6 +33,7 @@ const grupos = [
       { href: "/administracion", texto: "Usuarios y permisos", icono: Shield },
       { href: "/administracion/auditoria", texto: "Auditoría", icono: ScrollText },
       { href: "/administracion/metricas", texto: "Métricas de IA", icono: Gauge },
+      { href: "/administracion/feriados", texto: "Feriados", icono: CalendarDays },
     ],
   },
 ];
@@ -52,7 +53,7 @@ function Marca() {
 export function BarraLateral({ pie }: { pie: ReactNode }) {
   const ruta = usePathname();
   const activo = (href: string) =>
-    href === "/" ? ruta === "/" : ruta === href || (ruta.startsWith(href + "/") && !(href === "/administracion" && /^\/administracion\/(auditoria|metricas)/.test(ruta)));
+    href === "/" ? ruta === "/" : ruta === href || (ruta.startsWith(href + "/") && !(href === "/administracion" && /^\/administracion\/(auditoria|metricas|feriados)/.test(ruta)));
 
   return (
     <aside className="veta sticky top-0 flex h-screen w-[248px] shrink-0 flex-col text-bosque-tinta">

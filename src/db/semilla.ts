@@ -8,15 +8,6 @@ const RANGOS: [string, string, number, number][] = [
   ["7", "1,20 A 1,25", 1.2, 1.25], ["8", "1,30 A 1,35", 1.3, 1.35], ["9", "1,40 A 1,45", 1.4, 1.45],
 ];
 const ALTOS: [string, number][] = [["A", 2.0], ["B", 2.1], ["C", 2.2], ["D", 2.3], ["E", 2.4], ["F", 2.5], ["G", 2.6]];
-// Feriados de Chile 2026 (verificar con el calendario oficial; editables en la tabla feriado).
-const FERIADOS_2026: [string, string][] = [
-  ["2026-01-01", "Año Nuevo"], ["2026-04-03", "Viernes Santo"], ["2026-04-04", "Sábado Santo"],
-  ["2026-05-01", "Día del Trabajo"], ["2026-05-21", "Glorias Navales"], ["2026-06-21", "Pueblos Indígenas"],
-  ["2026-06-29", "San Pedro y San Pablo"], ["2026-07-16", "Virgen del Carmen"], ["2026-08-15", "Asunción de la Virgen"],
-  ["2026-09-18", "Independencia Nacional"], ["2026-09-19", "Glorias del Ejército"], ["2026-10-12", "Encuentro de Dos Mundos"],
-  ["2026-10-31", "Iglesias Evangélicas y Protestantes"], ["2026-11-01", "Todos los Santos"],
-  ["2026-12-08", "Inmaculada Concepción"], ["2026-12-25", "Navidad"],
-];
 
 /** Permisos, rol administrador y datos de referencia. Idempotente: corre tras cada migración. */
 export async function sembrar(cliente: Client): Promise<void> {
@@ -49,9 +40,6 @@ export async function sembrar(cliente: Client): Promise<void> {
       await cliente.query("INSERT INTO unidad (codigo, nombre) VALUES ($1, $2) ON CONFLICT DO NOTHING", [codigo, nombre]);
     }
     await cliente.query(`INSERT INTO parametro (clave, valor) VALUES ('vigencia_dias_habiles', '10'), ('iva', '0.19') ON CONFLICT DO NOTHING`);
-    for (const [fecha, nombre] of FERIADOS_2026) {
-      await cliente.query("INSERT INTO feriado (fecha, nombre) VALUES ($1, $2) ON CONFLICT DO NOTHING", [fecha, nombre]);
-    }
     await cliente.query("COMMIT");
   } catch (e) {
     await cliente.query("ROLLBACK");

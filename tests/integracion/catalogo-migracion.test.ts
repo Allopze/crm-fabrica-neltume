@@ -6,13 +6,13 @@ const owner = poolOwner();
 afterAll(async () => { await app.end(); await owner.end(); });
 
 describe("catálogo y precios: migración y referencia (T1.1–T1.2)", () => {
-  it("siembra bodega, tipos, 9 rangos de ancho, 7 altos, parámetros y feriados", async () => {
+  it("siembra bodega, tipos, 9 rangos de ancho, 7 altos y parámetros; los feriados legales se calculan (REQ-COT-6.6)", async () => {
     const n = async (t: string) => (await app.query(`SELECT count(*)::int AS n FROM ${t}`)).rows[0].n;
     expect(await n("bodega")).toBe(1);
     expect(await n("tipo_puerta")).toBe(3);
     expect(await n("rango_ancho")).toBe(9);
     expect(await n("alto")).toBe(7);
-    expect(await n("feriado")).toBeGreaterThanOrEqual(15);
+    expect(await n("feriado")).toBe(0); // solo guarda adicionales
     expect(await n("unidad")).toBe(7);
     const { rows } = await app.query("SELECT valor FROM parametro WHERE clave = 'vigencia_dias_habiles'");
     expect(rows[0].valor).toBe(10);

@@ -37,6 +37,7 @@ Base `/api/v1`, JSON UTF-8, solo detrás de Cloudflare Access. Todos los handler
 | GET `/roles` · POST `/roles` · PUT `/roles/:id/permisos` | `usuarios.gestionar` | | |
 | GET `/auditoria?actor&recurso&accion&resultado&desde&hasta&antesDe&limite` | `auditoria.ver` | | Paginado por id (más nuevo primero); fechas en días de Santiago |
 | GET `/metricas/ia` | `auditoria.ver` | | Latencia, costo y tasa de fallas |
+| GET `/feriados?anio` · POST `/feriados` (`fecha, nombre`) · DELETE `/feriados/:fecha` | sesión / `config.editar` | | Legales calculados más adicionales; solo los adicionales se agregan o quitan (REQ-COT-6.6) |
 
 ### Catálogo, precios e importación (REQ-STK-1, REQ-COT-1)
 | Método y ruta | Permiso | Idem | Notas |

@@ -198,6 +198,7 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-COT-6.3: WHEN se abre un borrador cuya versión de lista ya no es la vigente THE SYSTEM SHALL avisar la diferencia y ofrecer recalcular con la versión actual, sin hacerlo automáticamente.
 - REQ-COT-6.4: WHEN vence la vigencia de una cotización THE SYSTEM SHALL marcarla vencida y no permitir convertirla en pedido sin recotizar.
 - REQ-COT-6.5: IF un usuario sin permiso intenta modificar una cotización aprobada THEN THE SYSTEM SHALL denegarlo y registrar el intento.
+- REQ-COT-6.6: THE SYSTEM SHALL contar los días hábiles de la vigencia descontando los feriados nacionales de Chile calculados por ley para cualquier año, más los feriados adicionales (elecciones, leyes puntuales) que un usuario con permiso de configuración registre.
 
 **H7 Descuento manual (P2).** Como usuario, quiero aplicar un descuento puntual con motivo.
 - REQ-COT-7.1: WHEN un usuario aplica un descuento con motivo THE SYSTEM SHALL calcularlo en el servidor y auditar quién, cuánto y por qué.
@@ -260,4 +261,6 @@ Facturación electrónica · portal de clientes · ventas de la tienda · envío
 | NC-9 | Flete fuera de alcance; el PDF dice "flete aparte" (REQ-COT-4.2) |
 | NC-10 | Cotizador rev-4F como fuente de verdad (06-10-2026): su calculadora de flete (1.500 × km) **no** se incorpora y el flete sigue fuera de alcance; su % por línea con signo se cubre con el recargo por tipo y el descuento global con motivo; se mantienen la vigencia de 10 días hábiles y la nota "valores puestos en fábrica" aunque la rev-4F ya no las imprima |
 | NC-11 | Sin entrada por correo ni mensajería: la empresa no usa Google Workspace (ADR-0007 rechazado; sigue ADR-0003) |
+| NC-12 | A la tienda se le vende al precio de venta de la lista vigente, sin recargo: su cotizador le suma su propio porcentaje (Fase 5) |
+| NC-13 | Feriados legales calculados por ley (portado del cotizador de la tienda), sin sincronizar con fuentes externas; los únicos se cargan a mano (REQ-COT-6.6) |
 | — | Nombre del cliente: nunca se envía a la IA (REQ-COT-2.9) |

@@ -70,7 +70,7 @@ Cada petición lleva un `correlacion_id` que viaja a logs, `audit_log` y `llamad
 | 13 | PDF: generado en el servidor desde datos congelados; descarga | `GET .../pdf` (ADR-0004) | 409 si no está aprobada |
 | 14 | Aceptación del cliente → nota de pedido + reservas (lo disponible; el faltante se marca) | `POST /api/v1/pedidos` | 409 si está vencida o ya tiene pedido |
 
-Días hábiles: lunes a viernes, descontando los feriados de Chile de la tabla `feriado`, que se carga por año.
+Días hábiles: lunes a viernes, descontando los feriados legales de Chile (calculados por ley para cualquier año, `src/domain/precios/feriados.ts`) y los adicionales de la tabla `feriado` (REQ-COT-6.6).
 
 ## 4. Servicios de docker-compose.yml (sin valores)
 

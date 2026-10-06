@@ -61,7 +61,7 @@ erDiagram
 | `tipo_puerta` | `nombre` (BLOQUE, PANEL, ESPECIAL) | |
 | `articulo` | `codigo` único (`NEL-R-4-B`), `modelo_id`, `madera_id`, `ancho_codigo` (1–9 en puertas; `2X4`, `6X1`… en accesorios), `ancho_etiqueta`, `alto_codigo`, `alto_m` (alto o largo), `espesor`, `pulgadas`, `tipo_puerta_id` null, `stock_minimo` null, `activo` | Único por (modelo, madera, ancho_codigo, alto_codigo). `rango_ancho` y `alto` quedan como referencia de puertas para el mapeo exacto |
 | `bodega` | `nombre` ("Fábrica"), `zona` | Una sola en v1 (supuesto S1) |
-| `feriado` | `fecha` PK, `nombre` | Para la vigencia en días hábiles |
+| `feriado` | `fecha` PK, `nombre` | Solo feriados **adicionales** (elecciones, leyes puntuales); los legales se calculan en `src/domain/precios/feriados.ts` (REQ-COT-6.6) |
 | `parametro` | `clave`, `valor` jsonb | `vigencia_dias_habiles`=10, `iva`=0.19, topes de IA |
 
 ### Precios versionados (REQ-COT-1)
@@ -144,4 +144,4 @@ Fuente: `datos/Cotizador Puertas Neltume.Co-rev-4F.xlsx` (fuente de verdad desde
 
 ## 6. Datos semilla
 
-Rol `administrador` con todos los permisos · primer usuario creado por `npm run crear-admin` (la contraseña se pide por consola y no se guarda en archivos) · bodega "Fábrica" · unidades · parámetros · feriados del año en curso · en demo, BOM de ejemplo (`origen=demo`) para 3 modelos.
+Rol `administrador` con todos los permisos · primer usuario creado por `npm run crear-admin` (la contraseña se pide por consola y no se guarda en archivos) · bodega "Fábrica" · unidades · parámetros · en demo, BOM de ejemplo (`origen=demo`) para 3 modelos.

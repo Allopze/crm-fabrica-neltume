@@ -2,10 +2,11 @@
 // Desde aquí la cotización es de solo lectura (trigger). Nada se envía al cliente sin esta acción humana.
 import { and, count, eq, ne, sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
-import { feriado, parametro } from "@/db/esquema/catalogo";
+import { parametro } from "@/db/esquema/catalogo";
 import { cotizacion, cotizacionItem } from "@/db/esquema/comercial";
 import { type Actor, type Origen, registrarAuditoria } from "../auditoria";
 import { ErrorDominio } from "../errores";
+import { cargarFeriados } from "../precios/calendario";
 import { hoySantiago, sumarDiasHabiles } from "../precios/dias-habiles";
 import { recalcularTotales } from "./calculo";
 
@@ -22,8 +23,8 @@ export async function aprobarCotizacion(tx: Tx, id: string, version: number, act
 
   const totales = await recalcularTotales(tx, id);
   const [p] = await tx.select().from(parametro).where(eq(parametro.clave, "vigencia_dias_habiles"));
-  const feriados = new Set((await tx.select({ f: feriado.fecha }).from(feriado)).map((x) => x.f));
-  const vigenciaHasta = sumarDiasHabiles(hoySantiago(), Number(p?.valor ?? 10), feriados);
+  const hoy = hoySantiago();
+  const vigenciaHasta = sumarDiasHabiles(hoy, Number(p?.valor ?? 10), await cargarFeriados(tx, hoy));
   await tx.update(cotizacion).set({
     estado: "aprobada", aprobadaPor: actor.id, aprobadaEn: sql`now()`, vigenciaHasta, version: c.version + 1, actualizadoEn: sql`now()`,
   }).where(eq(cotizacion.id, id));
