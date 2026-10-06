@@ -55,8 +55,8 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T1.14 (75) UI de consulta de stock con filtros, detalle con movimientos y formularios · REQ-STK-2.x · E `05-stock-movimientos` · T1.13, T1.7
 
 ### Materias primas y producción
-- [ ] T1.15 (45) Migración `unidad`, `materia_prima`, `bom`, `bom_linea`, `orden_produccion`, `orden_linea` · DATA-MODEL §2 · I `migraciones` · T1.11
-- [ ] T1.16 (75) API y UI de materias primas y recepción · REQ-MP-1.x, 2.x · E `03-materias-primas-recepcion` · T1.15 · [P]
+- [x] T1.15 (45) Migración `unidad`, `materia_prima`, `bom`, `bom_linea`, `orden_produccion`, `orden_linea` · DATA-MODEL §2 · I `migraciones` · T1.11
+- [x] T1.16 (75) API y UI de materias primas y recepción · REQ-MP-1.x, 2.x · E `03-materias-primas-recepcion` · T1.15 · [P]
 - [ ] T1.17 (60) API y UI de BOM con vigencia y origen; semilla de 3 BOM demo · REQ-MP-3.x · I `bom` · T1.15 · [P]
 - [ ] T1.18 (90) Órdenes: crear y cerrar (consumo + entrada atómica e idempotente; sin BOM o faltantes → 409) · REQ-MP-4.x · I `produccion.cierre` · T1.17, T1.13
 - [ ] T1.19 (60) UI de órdenes con vista previa de consumos y etiqueta DEMO · REQ-MP-4.1 · E `04-produccion-entrada` · T1.18
