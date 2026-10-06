@@ -122,3 +122,25 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 Entrada por correo o mensajería: fuera de alcance (ADR-0003). Antes de planificar tareas exige un ADR nuevo, que el cotizador interno pase la evaluación de AI.md y tu aprobación.
 
 Estado (06-10-2026): **descartada**. ADR-0007 (entrada por correo, Gmail) fue rechazado porque la empresa no usa Google Workspace; el único canal sigue siendo la webapp (ADR-0003).
+
+## Fase 5 — Lo útil del cotizador de la tienda (`referencia/`)
+
+Aprobada el 06-10-2026. La tienda le envía a la fábrica notas de pedido en PDF con los mismos códigos; sus piezas probadas (feriados, correcciones del Excel, alias, verificación de cifras, accesorios) se portan aquí. Precio a la tienda: venta de la lista vigente sin recargo (NC-12).
+
+### A — Base
+- [ ] T5.1 (60) Feriados de Chile calculados por ley + adicionales editables · REQ-COT-6.6 · U `feriados`, I `feriados` · — · [P]
+- [ ] T5.2 (60) Marca real (logo oficial y datos de la empresa) en web y PDF · REQ-COT-4.2 · U `pdf.contenido` · — · [P]
+- [ ] T5.3 (60) Importador que corrige filas inconsistentes por dos hipótesis · REQ-STK-1.6 · U `importar.mapeo`, I `importacion`, E 01 · — · [P]
+
+### B — Pedidos
+- [ ] T5.4 (90) Ciclo del pedido: producción, completar reserva, lista y despacho · REQ-STK-4.5, 7.5, REQ-COT-8.5 · I `pedidos.ciclo` · —
+- [ ] T5.5 (120) Pedido directo desde el PDF de la nota de la tienda · REQ-COT-8.6–8.9, ADR-0008 · U `nota-tienda`, I `pedido-directo`, E 15 · T5.4
+
+### C — IA
+- [ ] T5.6 (60) Alias de modelos (seguros y posibles) · REQ-COT-2.11 · U `mapear`, I `alias` · —
+- [ ] T5.7 (45) Medidas en m/cm/mm y vano/hoja · REQ-COT-2.12 · U `mapear` · —
+- [ ] T5.8 (90) Accesorios: marcos, piezas T y molduras · REQ-COT-2.13, REQ-STK-1.4 · U `mapear`, E 16 · T5.7
+- [ ] T5.9 (75) Verificación de cifras y cobertura del pedido · REQ-COT-2.14 · U `anclaje` · T5.7
+- [ ] T5.10 (60) Evaluación ampliada con los casos reales de la tienda · AI §6 · el propio informe · T5.6–T5.9
+
+**Checkpoint F5:** flujo PDF de la tienda → pedido → producir faltante → lista → despacho, evaluación en verde y `npm test` verde. Espero tu OK.
