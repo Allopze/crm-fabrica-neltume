@@ -11,3 +11,6 @@
 *.tsbuildinfo
 next-env.d.ts
 npm-debug.log*
+/.next-e2e/
+/test-results/
+/playwright-report/
