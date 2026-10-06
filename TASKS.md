@@ -46,7 +46,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T1.7 (60) `formato.cl`: CLP, números y fechas · REQ-STK-2.3, REQ-NFR-9 · U `formato.cl` · T0.1 · [P]
 - [x] T1.8 (60) `precios.calcular`: unitario redondeado, línea, subtotal, descuento, IVA y total · REQ-COT-1.2, 1.3, 2.2 · U `precios.calcular` · T1.2 · [P]
 - [x] T1.9 (45) Días hábiles con `feriado` y cálculo de vigencia · REQ-COT-6.4 · U `vigencia.dias-habiles` · T1.1 · [P]
-- [ ] T1.10 (75) API y UI de listas de precio: versiones, edición que crea versión, recargos, `costos.ver` · REQ-COT-1.1, 1.4, 1.5 · I `listas-precio` · T1.8
+- [x] T1.10 (75) API y UI de listas de precio: versiones, edición que crea versión, recargos, `costos.ver` · REQ-COT-1.1, 1.4, 1.5 · I `listas-precio` · T1.8
 
 ### Stock de puertas
 - [ ] T1.11 (60) Migración `movimiento`: trigger inmutable, CHECKs y vista `v_stock` · ADR-0002, REQ-STK-5.3 · I `movimiento.trigger` · T1.1
