@@ -20,3 +20,6 @@ npm-debug.log*
 /*.xlsx
 /*.xls
 /*.xlsm
+
+# Proyecto de referencia (cotizador de la tienda): solo lectura local, con secretos y datos privados
+/referencia
