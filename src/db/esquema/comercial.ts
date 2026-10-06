@@ -118,3 +118,41 @@ export const llamadaIa = pgTable("llamada_ia", {
   resultado: text().notNull(), // ok | invalida | error | timeout | tope
   creadoEn: ahora(),
 }, (t) => [index("llamada_fecha_idx").on(t.creadoEn)]);
+
+// --- Notas de pedido (REQ-COT-8, REQ-STK-7). Copia congelada de los ítems de la cotización aceptada. ---
+export const ESTADOS_PEDIDO = ["pendiente", "en_produccion", "lista", "despachada", "cancelada"] as const;
+
+export const notaPedido = pgTable("nota_pedido", {
+  id: uuid().primaryKey().defaultRandom(),
+  numero: serial().notNull().unique(),
+  cotizacionId: uuid().notNull().unique().references(() => cotizacion.id), // una por cotización (REQ-COT-8.3)
+  clienteId: uuid().notNull().references(() => cliente.id),
+  direccionDespacho: text(),
+  medioTransporte: text(),
+  estado: text().notNull().default("pendiente"),
+  creadoPor: uuid().notNull().references(() => usuario.id),
+  creadoEn: ahora(),
+  canceladaPor: uuid().references(() => usuario.id),
+  canceladaEn: timestamp({ withTimezone: true }),
+  motivoCancelacion: text(),
+}, (t) => [
+  check("pedido_estado", sql`${t.estado} in ('pendiente', 'en_produccion', 'lista', 'despachada', 'cancelada')`),
+  check("pedido_cancelacion", sql`${t.estado} <> 'cancelada' OR length(trim(coalesce(${t.motivoCancelacion}, ''))) > 0`),
+  index("pedido_estado_idx").on(t.estado, t.creadoEn),
+]);
+
+export const pedidoItem = pgTable("pedido_item", {
+  id: uuid().primaryKey().defaultRandom(),
+  notaPedidoId: uuid().notNull().references(() => notaPedido.id),
+  orden: integer().notNull(),
+  articuloId: uuid().references(() => articulo.id), // nulo en ítems a pedido: se fabrican
+  descripcion: text().notNull(),
+  cantidad: integer().notNull(),
+  reservado: integer().notNull().default(0),
+  faltante: integer().notNull().default(0),
+  precioUnitario: pesos().notNull(),
+  totalLinea: pesos().notNull(),
+}, (t) => [
+  check("pedido_item_cantidades", sql`${t.cantidad} > 0 AND ${t.reservado} >= 0 AND ${t.faltante} >= 0 AND ${t.reservado} + ${t.faltante} = ${t.cantidad}`),
+  index("pedido_item_pedido_idx").on(t.notaPedidoId, t.orden),
+]);

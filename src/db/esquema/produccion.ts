@@ -2,6 +2,7 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, index, integer, numeric, pgTable, primaryKey, serial, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { articulo, modelo } from "./catalogo";
+import { notaPedido } from "./comercial";
 import { usuario } from "./seguridad";
 
 const ahora = () => timestamp({ withTimezone: true }).notNull().defaultNow();
@@ -46,7 +47,7 @@ export const ordenProduccion = pgTable("orden_produccion", {
   id: uuid().primaryKey().defaultRandom(),
   numero: serial().notNull().unique(),
   estado: text().notNull().default("abierta"),
-  notaPedidoId: uuid(), // FK a nota_pedido en la migración de pedidos (T1.35)
+  notaPedidoId: uuid().references(() => notaPedido.id),
   observacion: text(),
   creadaEn: ahora(),
   creadoPor: uuid().notNull().references(() => usuario.id),
