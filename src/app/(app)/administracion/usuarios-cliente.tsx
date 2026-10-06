@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { Boton, Etiqueta } from "@/components/ui/base";
+import { LARGO_MINIMO_CLAVE } from "@/domain/auth/reglas";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { pedir } from "@/lib/api-cliente";
 import { fechaHora } from "@/lib/formato";
@@ -44,7 +45,7 @@ export function UsuariosCliente({ usuarios, roles, csrf, yo }: { usuarios: Usuar
         <form action={crear} className="grid gap-3 border-b border-linea p-5 md:grid-cols-2">
           <input name="nombre" required placeholder="Nombre" className={campo} aria-label="Nombre" />
           <input name="email" type="email" required placeholder="correo@neltume.cl" className={campo} aria-label="Correo" />
-          <input name="clave" type="password" required minLength={12} placeholder="Contraseña inicial (mín. 12)" className={campo} aria-label="Contraseña inicial" autoComplete="new-password" />
+          <input name="clave" type="password" required minLength={LARGO_MINIMO_CLAVE} placeholder={`Contraseña inicial (mín. ${LARGO_MINIMO_CLAVE})`} className={campo} aria-label="Contraseña inicial" autoComplete="new-password" />
           <select name="rolId" className={campo} aria-label="Rol" defaultValue={roles.find((r) => r.nombre === "administrador")?.id}>
             {roles.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
           </select>

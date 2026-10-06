@@ -1,11 +1,14 @@
 import { hash, verify } from "@node-rs/argon2";
+import { ErrorDominio } from "../errores";
+import { LARGO_MINIMO_CLAVE } from "./reglas";
 
 // argon2id con parámetros mínimos recomendados por OWASP (19 MiB, 2 iteraciones).
 const OPCIONES = { memoryCost: 19_456, timeCost: 2, parallelism: 1 } as const;
-export const LARGO_MINIMO = 12;
 
 export function hashPassword(clave: string): Promise<string> {
-  if (clave.length < LARGO_MINIMO) throw new Error(`La contraseña debe tener al menos ${LARGO_MINIMO} caracteres`);
+  if (clave.length < LARGO_MINIMO_CLAVE) {
+    throw new ErrorDominio("VALIDACION", `La contraseña debe tener al menos ${LARGO_MINIMO_CLAVE} caracteres`);
+  }
   return hash(clave, OPCIONES);
 }
 

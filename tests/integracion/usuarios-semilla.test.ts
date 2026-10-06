@@ -35,6 +35,7 @@ describe("crear usuario", () => {
     const crear = (email: string, clave: string) =>
       bd().transaction((tx) => crearUsuario(tx, { email, nombre: "X", clave }, { tipo: "sistema" }, "consola"));
     await expect(crear("paula@neltume.cl", "otra-clave-larga")).rejects.toThrow(/Ya existe/);
-    await expect(crear("nuevo@neltume.cl", "corta")).rejects.toThrow(/al menos 12/);
+    await expect(crear("nuevo@neltume.cl", "corta12")).rejects.toThrow(/al menos 8/);
+    await expect(crear("ocho@neltume.cl", "ocho1234")).resolves.toMatchObject({ email: "ocho@neltume.cl" });
   });
 });

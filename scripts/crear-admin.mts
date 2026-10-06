@@ -2,7 +2,7 @@
 import { createInterface } from "node:readline";
 import { Writable } from "node:stream";
 import { bd, cerrarBd } from "../src/db/conexion";
-import { LARGO_MINIMO } from "../src/domain/auth/password";
+import { LARGO_MINIMO_CLAVE } from "../src/domain/auth/reglas";
 import { crearUsuario } from "../src/domain/usuarios";
 
 let silenciar = false;
@@ -22,7 +22,7 @@ async function preguntar(texto: string, oculto = false): Promise<string> {
 
 const email = await preguntar("Correo: ");
 const nombre = await preguntar("Nombre: ");
-const clave = await preguntar(`Contraseña (mín. ${LARGO_MINIMO} caracteres): `, true);
+const clave = await preguntar(`Contraseña (mín. ${LARGO_MINIMO_CLAVE} caracteres): `, true);
 rl.close();
 
 try {

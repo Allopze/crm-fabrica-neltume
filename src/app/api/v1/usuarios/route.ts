@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { bd } from "@/db/conexion";
 import { conPermiso } from "@/domain/auth/politica";
+import { LARGO_MINIMO_CLAVE } from "@/domain/auth/reglas";
 import { crearUsuario, listarUsuarios } from "@/domain/usuarios";
 
 const NuevoUsuario = z.strictObject({
   email: z.string().max(254),
   nombre: z.string().min(1).max(120),
-  clave: z.string().min(12).max(200),
+  clave: z.string().min(LARGO_MINIMO_CLAVE).max(200),
   rolId: z.uuid(),
 });
 
