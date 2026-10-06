@@ -5,6 +5,8 @@ import { NivelStock } from "@/components/ui/nivel-stock";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
+import { TriangleAlert } from "lucide-react";
+import { puertasBajoMinimo } from "@/domain/alertas";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { listarStock } from "@/domain/stock";
 import { cn, metros } from "@/lib/formato";
@@ -22,7 +24,7 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
   const sp = await searchParams;
   const texto = (k: string) => (typeof sp[k] === "string" && sp[k] ? (sp[k] as string) : undefined);
   const filtro = { q: texto("q"), madera: texto("madera"), tipo: texto("tipo"), bajoMinimo: texto("bajoMinimo") === "1", cursor: texto("desde") };
-  const { datos, siguiente } = await listarStock(bd(), filtro);
+  const [{ datos, siguiente }, alertas] = await Promise.all([listarStock(bd(), filtro), puertasBajoMinimo(bd())]);
   const tipos = [...(sesion.permisos.has("stock.mover") ? (["entrada", "salida"] as const) : []), ...(sesion.permisos.has("stock.ajustar") ? (["ajuste"] as const) : [])];
 
   return (
@@ -33,6 +35,14 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
         descripcion="El saldo es la suma de los movimientos: nadie lo edita a mano. Para corregir, registra un ajuste con motivo."
         acciones={tipos.length > 0 && <AccionesMovimiento tipos={[...tipos]} csrf={sesion.csrf} />}
       />
+
+      {alertas.length > 0 && !filtro.bajoMinimo && (
+        <Link href="/stock?bajoMinimo=1" role="status" className="mb-5 flex items-center gap-2 rounded-lg border border-ambar/30 bg-ambar-velo px-5 py-3 text-sm text-ambar hover:underline">
+          <TriangleAlert className="h-4 w-4" />
+          {alertas.length === 1 ? "1 puerta está" : `${alertas.length} puertas están`} bajo su mínimo disponible
+          (faltan {alertas.reduce((t, a) => t + a.faltan, 0)} en total). Ver solo esas →
+        </Link>
+      )}
 
       <form className="mb-5 flex flex-wrap items-center gap-2" aria-label="Filtros">
         <input type="search" name="q" defaultValue={filtro.q} placeholder="Código o modelo" aria-label="Buscar" className={`${campo} w-56`} />

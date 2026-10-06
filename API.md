@@ -53,7 +53,7 @@ Base `/api/v1`, JSON UTF-8, solo detrás de Cloudflare Access. Todos los handler
 | Método y ruta | Permiso | Idem | Notas |
 |---|---|---|---|
 | GET `/stock?…filtros` | `stock.ver` | | Existencia, reservado y disponible |
-| GET `/stock/alertas` | `stock.ver` | | REQ-STK-6.1 (P2) |
+| GET `/stock/alertas` | `stock.ver` | | Puertas con disponible bajo su mínimo, con `faltan`; las más urgentes primero (REQ-STK-6.1) |
 | GET `/movimientos?articulo&tipo&desde&hasta` | `stock.ver` | | Paginado |
 | POST `/movimientos/entradas` (`articulo, cantidad, orden_id`) | `stock.mover` | ✔ | |
 | POST `/movimientos/salidas` (`articulo, cantidad, pedido_id`) | `stock.mover` | ✔ | 409 `STOCK_INSUFICIENTE`; libera la reserva |

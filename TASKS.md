@@ -109,7 +109,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 
 ## Fase 3 — P2
 
-- [ ] T3.1 (60) Mínimos y alertas de stock de puertas · REQ-STK-6.x · I `stock.alertas` · — · [P]
+- [x] T3.1 (60) Mínimos y alertas de stock de puertas · REQ-STK-6.x · I `stock.alertas` · — · [P]
 - [ ] T3.2 (45) UI de ajuste de materias primas · REQ-MP-5.x · I `mp.ajuste` · — · [P]
 - [ ] T3.3 (45) Alertas de reposición de materias primas · REQ-MP-6.x · I `mp.alertas` · — · [P]
 - [ ] T3.4 (75) Descuento manual con motivo, en el servidor e ignorado si viene del texto o de la IA · REQ-COT-7.x · I `descuento`, E 12 · —

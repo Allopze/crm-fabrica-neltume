@@ -113,7 +113,7 @@ export default async function PanelPage() {
                   {alertas.mp.map((m) => (
                     <li key={m.id} className="flex items-center justify-between gap-3 px-5 py-3">
                       <Link href="/materias-primas" className="truncate text-sm">{m.nombre}</Link>
-                      <span className="text-sm tabular-nums"><strong className="text-ambar">{numero(m.existencia)}</strong><span className="text-tinta-tenue"> / {numero(m.stockMinimo!)} {m.unidad}</span></span>
+                      <span className="text-sm tabular-nums"><strong className="text-ambar">{numero(m.existencia)}</strong><span className="text-tinta-tenue"> / {numero(m.minimo)} {m.unidad}</span></span>
                     </li>
                   ))}
                 </ul>

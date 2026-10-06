@@ -2,8 +2,7 @@
 import { and, count, desc, eq, gte, inArray, notInArray, sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
 import { cliente, cotizacion, cotizacionItem, notaPedido, pedidoItem } from "@/db/esquema/comercial";
-import { listarMateriasPrimas } from "./materias-primas";
-import { listarStock } from "./stock";
+import { materiasParaReponer, puertasBajoMinimo } from "./alertas";
 
 const ABIERTOS = ["cancelada", "despachada"];
 const inicioMes = sql`date_trunc('month', now() AT TIME ZONE 'America/Santiago') AT TIME ZONE 'America/Santiago'`;
@@ -34,9 +33,8 @@ export async function cifrasDelMes(tx: Tx) {
 }
 
 export async function alertasStock(tx: Tx) {
-  const puertas = (await listarStock(tx, { bajoMinimo: true, limite: 5 })).datos;
-  const mp = (await listarMateriasPrimas(tx)).filter((m) => m.activo && m.stockMinimo !== null && m.existencia < m.stockMinimo).slice(0, 5);
-  return { puertas, mp };
+  const [puertas, mp] = await Promise.all([puertasBajoMinimo(tx, 5), materiasParaReponer(tx)]);
+  return { puertas, mp: mp.slice(0, 5) };
 }
 
 export async function pedidosConFaltante(tx: Tx, verCliente: boolean) {
