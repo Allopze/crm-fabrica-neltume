@@ -258,4 +258,6 @@ Facturación electrónica · portal de clientes · ventas de la tienda · envío
 | NC-7 | Borrador en ≤ 15 s (p90); costo de IA ≤ US$ 0,10 por cotización (REQ-NFR-1, 2) |
 | NC-8 | Precios: re-importar el Excel y editar en pantalla, ambos versionados; referencia `Cotizador Puertas Neltume.Co-rev-4F.xlsx` (REQ-COT-1.1) |
 | NC-9 | Flete fuera de alcance; el PDF dice "flete aparte" (REQ-COT-4.2) |
+| NC-10 | Cotizador rev-4F como fuente de verdad (06-10-2026): su calculadora de flete (1.500 × km) **no** se incorpora y el flete sigue fuera de alcance; su % por línea con signo se cubre con el recargo por tipo y el descuento global con motivo; se mantienen la vigencia de 10 días hábiles y la nota "valores puestos en fábrica" aunque la rev-4F ya no las imprima |
+| NC-11 | Sin entrada por correo ni mensajería: la empresa no usa Google Workspace (ADR-0007 rechazado; sigue ADR-0003) |
 | — | Nombre del cliente: nunca se envía a la IA (REQ-COT-2.9) |
