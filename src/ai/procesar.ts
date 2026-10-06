@@ -4,6 +4,7 @@ import { bd } from "@/db/conexion";
 import { cotizacion, cotizacionItem, llamadaIa, trabajoIa } from "@/db/esquema/comercial";
 import { registrarAuditoria } from "@/domain/auditoria";
 import { listaVigenteId, precioDeArticulo, recalcularTotales } from "@/domain/cotizaciones/calculo";
+import { anclarPropuesta } from "@/domain/cotizaciones/anclaje";
 import { cargarCatalogoMapeo, catalogoResumido } from "@/domain/cotizaciones/catalogo";
 import { mapearItem } from "@/domain/cotizaciones/mapear";
 import { alertasGasto, gastoIa } from "@/domain/metricas-ia";
@@ -78,7 +79,9 @@ export async function procesarSiguiente(ia: InterpreteIA, opciones: { esperasMs?
     await bd().transaction(async (tx) => {
       const catalogo = await cargarCatalogoMapeo(tx);
       const listaId = await listaVigenteId(tx);
-      for (const [orden, propuesto] of resultado.propuesta.items.entries()) {
+      // REQ-COT-2.14: cantidades y medidas respaldadas por el texto; lo omitido queda como alerta.
+      const anclada = anclarPropuesta(resultado.propuesta, texto, [...catalogo.modelos.map((m) => m.nombre), ...catalogo.alias.map((a) => a.alias)]);
+      for (const [orden, propuesto] of anclada.items.entries()) {
         const m = mapearItem(propuesto, catalogo);
         const p = m.articuloId ? await precioDeArticulo(tx, m.articuloId, listaId) : null;
         const ref = m.referencia ? await precioDeArticulo(tx, m.referencia.articuloId, listaId) : null;
@@ -89,7 +92,7 @@ export async function procesarSiguiente(ia: InterpreteIA, opciones: { esperasMs?
           precioReferencia: ref?.precioUnitario, referenciaCodigo: m.referencia?.codigo,
         });
       }
-      await tx.update(cotizacion).set({ estado: "borrador", interpretacionIa: resultado.propuesta, alertas: resultado.propuesta.alertas, listaId }).where(eq(cotizacion.id, c.id));
+      await tx.update(cotizacion).set({ estado: "borrador", interpretacionIa: resultado.propuesta, alertas: anclada.alertas, listaId }).where(eq(cotizacion.id, c.id));
       await recalcularTotales(tx, c.id);
       await tx.update(trabajoIa).set({ estado: "listo" }).where(eq(trabajoIa.id, t.id));
       await registrarAuditoria(tx, {

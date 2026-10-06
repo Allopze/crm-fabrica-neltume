@@ -10,6 +10,7 @@ import type { InterpreteIA } from "../src/ai/interfaz";
 import { normalizarPedido, redactar } from "../src/ai/redaccion";
 import { interpretarConReintentos } from "../src/ai/reintentos";
 import { bd, cerrarBd } from "../src/db/conexion";
+import { anclarPropuesta } from "../src/domain/cotizaciones/anclaje";
 import { cargarCatalogoMapeo, catalogoResumido } from "../src/domain/cotizaciones/catalogo";
 import { mapearItem } from "../src/domain/cotizaciones/mapear";
 
@@ -40,11 +41,12 @@ try {
       const r = await interpretarConReintentos(ia, redactar(normalizarPedido(c.pedido)).texto, resumido, {
         alIntentar: (i) => { propuestas[c.id] = i.resultado?.propuesta ?? { error: i.error?.message }; },
       });
-      const obtenidos: Obtenido[] = r.propuesta.items.map((p) => {
+      const anclada = anclarPropuesta(r.propuesta, redactar(normalizarPedido(c.pedido)).texto, [...catalogo.modelos.map((m) => m.nombre), ...catalogo.alias.map((a) => a.alias)]);
+      const obtenidos: Obtenido[] = anclada.items.map((p) => {
         const m = mapearItem(p, catalogo);
         return { estado: m.estado, codigo: m.codigo, cantidad: m.cantidad, referencia: m.referencia?.codigo ?? null };
       });
-      resultados.push(evaluarCaso(c, { obtenidos, alertas: r.propuesta.alertas, peticion, latenciaMs: Date.now() - inicio, costoUsd: r.costoUsd ?? 0, tokensEntrada: r.tokensEntrada, tokensSalida: r.tokensSalida }));
+      resultados.push(evaluarCaso(c, { obtenidos, alertas: anclada.alertas, peticion, latenciaMs: Date.now() - inicio, costoUsd: r.costoUsd ?? 0, tokensEntrada: r.tokensEntrada, tokensSalida: r.tokensSalida }));
     } catch (e) {
       resultados.push(evaluarCaso(c, { obtenidos: [], alertas: [], peticion, latenciaMs: Date.now() - inicio, costoUsd: 0, error: (e as Error).message.slice(0, 120) }));
     }

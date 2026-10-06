@@ -60,6 +60,13 @@ Validación (`src/ai/esquema.ts` + `mapear.ts`):
 - **Describe el artículo:** «kit» bajo 3 m y pieza lineal desde 3 m.
 - **«Con su marco»:** es un ítem marco aparte, con la cantidad de las puertas.
 
+**Verificación de cifras y cobertura (REQ-COT-2.14).** Corre después de la IA y antes del mapeo (`src/domain/cotizaciones/anclaje.ts`, portado del cotizador de la tienda):
+- **Cantidades:** cada una debe estar en la frase del ítem, en dígitos o palabras («tres», «un par», «media docena»), sin contar medidas. También vale si es heredada («otra igual», «con su marco») o si es 1 con «un/una/otra».
+- **Medidas:** cada una debe aparecer en el texto, en m, cm o mm.
+- **Si no se cumple,** se agrega una duda y el ítem queda `por_confirmar`.
+- **Cobertura:** lo que el texto pide y la IA no registró (un fragmento con un número y un modelo, alias o tipo de producto) se muestra como alerta «No registré: «…»».
+- **Registro:** la interpretación cruda de la IA se guarda tal cual en `interpretacion_ia`.
+
 ## 3. Herramientas
 
 | Herramienta | Tipo | Estado |

@@ -215,6 +215,26 @@
     "alertas": [],
     "sin_items": false
    }
+  },
+  {
+   "clave": "puertas neltume rauli 90x210 para la obra",
+   "propuesta": {
+    "items": [
+     {
+      "texto_fuente": "puertas Neltume raulí 90x210 para la obra",
+      "tipo": "puerta",
+      "modelo": "NELTUME",
+      "madera": "RAULI",
+      "ancho_m": 0.9,
+      "alto_m": 2.1,
+      "medida_accesorio": null,
+      "cantidad": 1,
+      "dudas": []
+     }
+    ],
+    "alertas": [],
+    "sin_items": false
+   }
   }
  ]
 }

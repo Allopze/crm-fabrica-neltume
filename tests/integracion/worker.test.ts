@@ -79,6 +79,16 @@ describe("worker de IA (REQ-COT-2.1–2.9, ADR-0006)", () => {
     expect((await app.query("SELECT estado FROM cotizacion WHERE id = $1", [c.id])).rows[0].estado).toBe("borrador");
   });
 
+  it("una cantidad que la IA inventa queda por confirmar y lo omitido queda como alerta (REQ-COT-2.14)", async () => {
+    const c = await nueva("Quiero puertas Neltume raulí 90x210 para la obra; además 4 Lican lenga 80x210");
+    expect(await procesar()).toBe("listo");
+    const { rows: [cot] } = await app.query("SELECT alertas, interpretacion_ia FROM cotizacion WHERE id = $1", [c.id]);
+    expect(cot.alertas).toEqual(["No registré: «además 4 Lican lenga 80x210». Agrégalo a mano si corresponde."]);
+    expect(cot.interpretacion_ia.items[0].cantidad).toBe(1); // la interpretación cruda de la IA se guarda tal cual (regla 3)
+    const { rows: [item] } = await app.query("SELECT estado_item, duda FROM cotizacion_item WHERE cotizacion_id = $1", [c.id]);
+    expect(item).toMatchObject({ estado_item: "por_confirmar", duda: "La cantidad 1 no aparece en el pedido." });
+  });
+
   it("limita a 20 interpretaciones por usuario y hora, y textos de más de 4.000 caracteres", async () => {
     await expect(nueva("x".repeat(4001))).rejects.toMatchObject({ codigo: "TEXTO_DEMASIADO_LARGO" });
     await app.query("INSERT INTO cotizacion (estado, origen, creado_por) SELECT 'ia_fallida', 'ia', $1 FROM generate_series(1, 20)", [actor.id]);
