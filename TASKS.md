@@ -86,7 +86,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T1.37 (75) UI de pedidos y PDF de nota de pedido · REQ-COT-8.1 · E `09-pedido-reserva` · T1.36, T1.33
 
 ### Auditoría, panel y E2E
-- [ ] T1.38 (60) API y UI de auditoría con filtros y paginación · REQ-ADM-3.2, 3.4 · E `14-auditoria` · T0.9 · [P]
+- [x] T1.38 (60) API y UI de auditoría con filtros y paginación · REQ-ADM-3.2, 3.4 · E `14-auditoria` · T0.9 · [P]
 - [ ] T1.39 (45) Panel de inicio: borradores, alertas y pedidos con faltante · UX §1 · E 06 (navegación) · T1.36
 - [ ] T1.40 (90) E2E 01–05 encadenadas · TESTING §3 · `npm test` · T1.6, T1.14, T1.16, T1.19, T0.13
 - [ ] T1.41 (90) E2E 06–10 encadenadas · TESTING §3 · `npm test` · T1.29–T1.37

@@ -35,7 +35,7 @@ Base `/api/v1`, JSON UTF-8, solo detrás de Cloudflare Access. Todos los handler
 | GET `/salud` | público | | `{ estado: ok\|degradado }` |
 | GET `/usuarios` · POST `/usuarios` · PATCH `/usuarios/:id` | `usuarios.gestionar` | | La desactivación respeta REQ-ADM-2.4 (422 `ULTIMO_ADMIN`) |
 | GET `/roles` · POST `/roles` · PUT `/roles/:id/permisos` | `usuarios.gestionar` | | |
-| GET `/auditoria?actor&recurso&accion&desde&hasta` | `auditoria.ver` | | Paginado |
+| GET `/auditoria?actor&recurso&accion&resultado&desde&hasta&antesDe&limite` | `auditoria.ver` | | Paginado por id (más nuevo primero); fechas en días de Santiago |
 | GET `/metricas/ia` | `auditoria.ver` | | Latencia, costo y tasa de fallas |
 
 ### Catálogo, precios e importación (REQ-STK-1, REQ-COT-1)
