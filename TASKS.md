@@ -65,12 +65,12 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T1.20 (75) Migración, validación de RUT, API y UI de clientes · REQ-COT-9.x · U `rut`, I `clientes` · T0.9 · [P]
 
 ### Cotizador
-- [ ] T1.21 (60) Migración `cotizacion`, `cotizacion_item`, `trabajo_ia`, `llamada_ia` y trigger de solo lectura tras aprobar · DATA-MODEL §2 · I `cotizacion.inmutable` · T1.2
-- [ ] T1.22 (60) `src/ai`: interfaz, esquema Zod estricto y `redaccion` (RUT, correo, teléfono, URL) · REQ-COT-2.8, 2.9, REQ-NFR-5 · U `esquema`, `redaccion` · T0.1 · [P]
-- [ ] T1.23 (45) Doble del LLM y `ia-respuestas.json` (válido, dudas, timeout, 500, inválido, sin ZDR, injection) · AI §5, TESTING §2 · U `doble` · T1.22
-- [ ] T1.24 (90) Proveedor Command Code: chat/completions con herramienta forzada, `x-cmd-zdr`, timeout, reintentos y costo · ADR-0001 · U con HTTP simulado · T1.22
-- [ ] T1.25 (45) `normalizar` y `mapear` (exacto, `por_confirmar`, `a_pedido` con referencia superior) · REQ-COT-2.3–2.5 · U `mapear` · T1.1 · [P]
-- [ ] T1.26 (90) Worker: cola con SKIP LOCKED, estados, reintentos, recuperación tras 60 s, topes de costo y registro en `llamada_ia` · ADR-0006, REQ-COT-2.7 · I `worker.reintentos` · T1.21, T1.23, T1.25
+- [x] T1.21 (60) Migración `cotizacion`, `cotizacion_item`, `trabajo_ia`, `llamada_ia` y trigger de solo lectura tras aprobar · DATA-MODEL §2 · I `cotizacion.inmutable` · T1.2
+- [x] T1.22 (60) `src/ai`: interfaz, esquema Zod estricto y `redaccion` (RUT, correo, teléfono, URL) · REQ-COT-2.8, 2.9, REQ-NFR-5 · U `esquema`, `redaccion` · T0.1 · [P]
+- [x] T1.23 (45) Doble del LLM y `ia-respuestas.json` (válido, dudas, timeout, 500, inválido, sin ZDR, injection) · AI §5, TESTING §2 · U `doble` · T1.22
+- [x] T1.24 (90) Proveedor Command Code: chat/completions con herramienta forzada, `x-cmd-zdr`, timeout, reintentos y costo · ADR-0001 · U con HTTP simulado · T1.22
+- [x] T1.25 (45) `normalizar` y `mapear` (exacto, `por_confirmar`, `a_pedido` con referencia superior) · REQ-COT-2.3–2.5 · U `mapear` · T1.1 · [P]
+- [x] T1.26 (90) Worker: cola con SKIP LOCKED, estados, reintentos, recuperación tras 60 s, topes de costo y registro en `llamada_ia` · ADR-0006, REQ-COT-2.7 · I `worker.reintentos` · T1.21, T1.23, T1.25
 - [ ] T1.27 (60) API de interpretaciones (202, límite 429, texto ≤ 4.000) y GET de cotización con avisos de stock · REQ-COT-2.1, 2.2, 2.6, 2.10 · I `interpretacion`, `interpretacion.privacidad` · T1.26, T1.12
 - [ ] T1.28 (75) UI nueva cotización con polling, estado `ia_fallida` y "Cotizar a mano" · REQ-COT-2.7 · E `13-ia-caida-manual` · T1.27, T0.14
 - [ ] T1.29 (90) UI de revisión lado a lado con resaltado del texto fuente, alertas e ítems `por_confirmar`/`a_pedido` · REQ-COT-3.1, UX §3 · E `06-cotizacion-lenguaje-natural` · T1.28
