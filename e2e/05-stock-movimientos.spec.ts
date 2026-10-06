@@ -1,0 +1,60 @@
+import { expect, test } from "@playwright/test";
+import { csrf, ingresar, ir } from "./ayudas";
+import { ADMIN } from "./datos";
+
+// Suite 05 (TESTING §3): entrada, salida sin stock, ajuste con motivo, movimientos inmutables.
+// Usa ANC-O-3-A para no interferir con NEL-R-4-B, que alimenta la suite del cotizador.
+test.describe.configure({ mode: "serial" });
+
+test("registra una entrada por producción y el stock la refleja", async ({ page }) => {
+  await ingresar(page, ADMIN.email, ADMIN.clave);
+  await ir(page, "/stock");
+  await page.getByRole("button", { name: "Entrada" }).click();
+  const form = page.getByRole("form", { name: "Entrada por producción" });
+  await form.getByLabel("Código").fill("ANC-O-3-A");
+  await form.getByLabel("Cantidad").fill("5");
+  await form.getByLabel("Referencia").fill("Orden E2E");
+  await form.getByRole("button", { name: "Registrar" }).click();
+  await expect(page.getByRole("status")).toContainText("registrada");
+  await expect(page.getByRole("row").filter({ hasText: "ANC-O-3-A" })).toContainText("5");
+});
+
+test("una salida mayor al disponible se rechaza con el faltante", async ({ page }) => {
+  await ingresar(page, ADMIN.email, ADMIN.clave);
+  await ir(page, "/stock/ANC-O-3-A");
+  await page.getByRole("button", { name: "Salida" }).click();
+  const form = page.getByRole("form", { name: "Salida por despacho" });
+  await form.getByLabel("Cantidad").fill("9");
+  await form.getByRole("button", { name: "Registrar" }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("No hay stock suficiente");
+});
+
+test("un ajuste exige motivo y queda en el historial", async ({ page }) => {
+  await ingresar(page, ADMIN.email, ADMIN.clave);
+  const token = await csrf(page);
+  const sinMotivo = await page.request.post("/api/v1/movimientos/ajustes", {
+    headers: { "x-csrf-token": token, "idempotency-key": crypto.randomUUID() }, data: { codigo: "ANC-O-3-A", cantidad: -1 },
+  });
+  expect(sinMotivo.status()).toBe(400);
+
+  await ir(page, "/stock/ANC-O-3-A");
+  await page.getByRole("button", { name: "Ajuste" }).click();
+  const form = page.getByRole("form", { name: "Ajuste con motivo" });
+  await form.getByLabel("Cantidad").fill("-1");
+  await form.getByLabel("Motivo").fill("Puerta con grieta en el panel");
+  await form.getByRole("button", { name: "Registrar" }).click();
+  await expect(page.getByText("Motivo: Puerta con grieta en el panel")).toBeVisible();
+  await expect(page.getByText("Existencia").locator("..")).toContainText("4");
+});
+
+test("los movimientos no se pueden editar ni borrar", async ({ page }) => {
+  await ingresar(page, ADMIN.email, ADMIN.clave);
+  await ir(page, "/stock/ANC-O-3-A");
+  await expect(page.getByText("inmutables")).toBeVisible();
+  await expect(page.getByRole("button", { name: /editar movimiento|borrar/i })).toHaveCount(0);
+  const token = await csrf(page);
+  for (const metodo of ["put", "patch", "delete"] as const) {
+    const r = await page.request[metodo]("/api/v1/movimientos/cualquiera", { headers: { "x-csrf-token": token } });
+    expect([404, 405]).toContain(r.status());
+  }
+});
