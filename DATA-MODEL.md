@@ -101,7 +101,7 @@ Disponible = existencia − reservado. Se calcula con la vista `v_stock` (suma p
 |---|---|---|
 | `cliente` | `nombre`, `rut` (único, validado módulo 11), `giro`, `direccion`, `direccion_despacho`, `comuna`, `contacto`, `email`, `telefono`, `tipo` (`tienda`/`directo`) | Datos personales; solo con `clientes.ver` |
 | `cotizacion` | `numero` (correlativo, solo para mostrar), `cliente_id` null en borrador, `estado`, `origen` (`ia`/`manual`), `texto_original`, `interpretacion_ia` jsonb, `lista_id`, `subtotal`, `descuento_pct`, `descuento_motivo`, `iva`, `total`, `vigencia_hasta`, `aprobada_por`, `aprobada_en`, `version` | Inmutable desde `aprobada` (trigger) |
-| `cotizacion_item` | `cotizacion_id`, `orden`, `articulo_id` null, `descripcion`, `cantidad`, `estado_item` (`ok`/`por_confirmar`/`a_pedido`), `duda`, `precio_neto_lista`, `recargo_pct`, `precio_unitario` (entero), `total_linea`, `precio_referencia`, `fijado_por`, `modificado_por`, `modificado_en` | El precio se congela al aprobar |
+| `cotizacion_item` | `cotizacion_id`, `orden`, `articulo_id` null, `descripcion` (generada desde el catálogo; nunca texto de la IA), `cantidad`, `estado_item` (`ok`/`por_confirmar`/`a_pedido`), `duda`, `precio_neto_lista`, `recargo_pct`, `precio_unitario` (entero), `total_linea`, `precio_referencia`, `fijado_por`, `modificado_por`, `modificado_en` | El precio se congela al aprobar |
 | `nota_pedido` | `numero`, `cotizacion_id` único, `cliente_id`, `direccion_despacho`, `medio_transporte`, `estado` (`pendiente`/`en_produccion`/`lista`/`despachada`/`cancelada`) | Una por cotización (REQ-COT-8.3) |
 | `pedido_item` | `nota_pedido_id`, `articulo_id`, `cantidad`, `reservado`, `faltante`, `precio_unitario`, `total_linea` | Copia congelada |
 
@@ -138,7 +138,7 @@ Fuente: `datos/COTIZADOR_2026.xlsx` (fuera de git), hojas `Categorias` y `Precio
 
 - La importación es idempotente: si el hash del archivo ya se importó, no hace nada (REQ-STK-1.3). Si cambia el archivo, crea una nueva `lista_precio` y hace upsert de artículos por código.
 - Corre en una transacción. Un fallo de fila no detiene las demás (REQ-STK-1.2), pero un fallo de estructura (falta una hoja o columna) aborta todo.
-- Informe: creadas, actualizadas y rechazadas, con fila y motivo, guardado en `audit_log` (`origen=importacion`).
+- Informe: creadas, actualizadas y rechazadas, con fila y motivo, devuelto al usuario. En `audit_log` (`origen=importacion`) se guardan solo conteos, hash del archivo y números de fila rechazados, nunca valores de costo o precio.
 - Los fixtures de test usan un Excel reducido y anónimo (`e2e/fixtures/cotizador-mini.xlsx`, unas 50 filas con costos ficticios) con la misma estructura.
 
 ## 6. Datos semilla

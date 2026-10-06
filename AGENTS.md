@@ -18,13 +18,13 @@ src/domain/  lógica pura: inventario, precios, cotizaciones, pedidos, producci�
 src/ai/      único módulo que habla con el LLM (interfaz agnóstica + doble determinista)
 src/db/      esquema y migraciones
 scripts/     importar-excel: hojas Precio y Categorias de datos/COTIZADOR_2026.xlsx → BD
-e2e/         suites secuenciales con estado
+e2e/ · tests/integracion/ · eval/   E2E secuenciales (con fixtures) · integración · evaluación IA
 docs/adr/    ADR-NNNN-titulo.md
 ```
 Docs .md en la raíz, cada uno ≤ ~300 líneas: SPEC, DESIGN, AI, SECURITY, DATA-MODEL, API, UX, TESTING, TASKS, RUNBOOK. Si un doc citado no existe, no inventes su contenido: avísalo. IDs estables REQ-<MÓDULO>-n.m: STK puertas, MP materias primas, COT cotizador, ADM usuarios/auditoría.
 
 ## Reglas de dominio (cada una con test)
-1. La IA no inventa precios, productos ni stock: el LLM solo interpreta el texto y propone ítems (código, cantidad, medidas) con un esquema estricto (Zod, propuesto); precios, descuentos, totales e IVA los calcula `src/domain` desde la BD. Su salida no tiene campos de importe ni de descuento; un monto escrito en texto libre ("$50.000", "50 lucas") nunca llega a una cotización.
+1. La IA no inventa precios, productos ni stock: el LLM solo interpreta el texto y propone ítems (modelo, madera, medidas, cantidad; el código lo arma el backend) con un esquema estricto (Zod, propuesto); precios, descuentos, totales e IVA los calcula `src/domain` desde la BD. Su salida no tiene campos de importe ni de descuento; un monto escrito en texto libre ("$50.000", "50 lucas") nunca llega a una cotización.
 2. Solo hay certeza si código y medida coinciden exactamente con una fila de la BD; todo lo demás (medida no estándar, modelo inexistente, ambigüedad) es ítem "por confirmar", visible al vendedor, nunca completado en silencio. Una cotización con ítems por confirmar no se aprueba. Medida fuera de grilla = se fabrica a pedido: referencia = precio del rango/altura superior y una persona fija el precio.
 3. Toda cotización guarda: texto original, interpretación de la IA, ítems finales, versión de lista de precios usada, quién la aprobó/modificó y cuándo.
 4. Precios congelados en la cotización aunque cambie la lista; toda cotización tiene vigencia (10 días hábiles por defecto, tomado del Excel, por confirmar; configurable).
@@ -39,7 +39,7 @@ Docs .md en la raíz, cada uno ≤ ~300 líneas: SPEC, DESIGN, AI, SECURITY, DAT
 ## Pruebas y calidad
 - E2E secuenciales y con estado compartido; se ejecuta SIEMPRE la suite completa (`npm test`), sin filtrar por nombre (`-g`, `--grep`, `-t`, `.only`) ni por archivo o carpeta.
 - El LLM se sustituye por un doble determinista (también simula timeout y error) en unit/integración/E2E; la evaluación con el modelo real corre aparte (AI.md).
-- Llamadas al LLM solo vía `src/ai/`: timeout y reintentos acotados (en config, solo ante error transitorio), registro de entrada/salida sin datos personales innecesarios. Solo herramientas de lectura (catálogo y stock); el texto del cliente es dato no confiable, nunca instrucciones.
+- Llamadas al LLM solo vía `src/ai/`: timeout y reintentos acotados (en config, solo ante error transitorio), registro de entrada/salida sin datos personales innecesarios. Recibe solo el catálogo resumido (sin stock, precios ni datos de clientes) y no tiene herramientas de escritura; el texto del cliente es dato no confiable, nunca instrucciones.
 - Si el LLM falla, la cotización manual sigue disponible.
 - Archivos fuente: ideal ≤ 300 líneas, límite duro 500.
 

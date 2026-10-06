@@ -27,9 +27,9 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T0.9 (60) `registrarAuditoria` en la misma transacción, incluidas las denegaciones · REQ-ADM-3.1, 3.5 · I `audit.denegaciones` · T0.8
 - [x] T0.10 (45) Middleware de `Idempotency-Key` (24 h, 422 si el cuerpo es distinto) · API §1 · I `idempotencia` · T0.8 · [P]
 - [x] T0.11 (45) Logger JSON con redacción de cabeceras y datos de cliente · SECURITY T5 · U `logger` · T0.1 · [P]
-- [x] T0.12 (60) Chequeos estructurales: rutas con `conPermiso`, sin `/webhooks`, archivos ≤ 500 líneas, escaneo de secretos, puertos de Compose · AGENTS, SECURITY §2 · I `estructura` · T0.8
+- [x] T0.12 (60) Chequeos estructurales: rutas con `conPermiso`, sin `/webhooks`, archivos ≤ 500 líneas, escaneo de secretos, puertos de Compose · AGENTS, SECURITY §2, REQ-NFR-7 · I `estructura` · T0.8
 - [x] T0.13 (60) Usuarios y roles: API y UI (crear, desactivar, permisos, último admin) · REQ-ADM-2.1–2.4 · I `usuarios` · T0.9
-- [x] T0.14 (75) Layout, navegación, login y estados comunes (vacío, carga, error, sin permiso, sin conexión, conflicto) · UX §1–2 · E `02-login-roles` (parcial) · T0.7 · [P]
+- [x] T0.14 (75) Layout, navegación, login y estados comunes (vacío, carga, error, sin permiso, sin conexión, conflicto) · UX §1–2, REQ-NFR-6 · E `02-login-roles` (parcial) · T0.7 · [P]
 - [x] T0.15 (45) Caddyfile, `/salud`, healthchecks y runbook de túnel + Cloudflare Access (sin secretos) · SECURITY §6, DESIGN §5 · I `salud` · T0.3 · [P]
 
 **Checkpoint F0:** `docker compose up -d` levanta todo, el login funciona, una denegación se audita y `npm test` está verde. Espero tu OK.
@@ -44,7 +44,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [ ] T1.5 (90) Importador, parte 2: `Precio` → artículos y lista versionada, rechazos por fila, idempotencia por hash, recargos al 0 % · REQ-STK-1.1–1.3, REQ-COT-1.1 · I `importacion` · T1.2, T1.4
 - [ ] T1.6 (60) POST `/importaciones` y UI de importación con informe · REQ-STK-1.1, 1.5 · E `01-seed-importacion` · T1.5
 - [ ] T1.7 (60) `formato.cl`: CLP, números y fechas · REQ-STK-2.3, REQ-NFR-9 · U `formato.cl` · T0.1 · [P]
-- [ ] T1.8 (60) `precios.calcular`: unitario redondeado, línea, subtotal, descuento, IVA y total · REQ-COT-1.2, 1.3 · U `precios.calcular` · T1.2 · [P]
+- [ ] T1.8 (60) `precios.calcular`: unitario redondeado, línea, subtotal, descuento, IVA y total · REQ-COT-1.2, 1.3, 2.2 · U `precios.calcular` · T1.2 · [P]
 - [ ] T1.9 (45) Días hábiles con `feriado` y cálculo de vigencia · REQ-COT-6.4 · U `vigencia.dias-habiles` · T1.1 · [P]
 - [ ] T1.10 (75) API y UI de listas de precio: versiones, edición que crea versión, recargos, `costos.ver` · REQ-COT-1.1, 1.4, 1.5 · I `listas-precio` · T1.8
 
@@ -66,18 +66,18 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 
 ### Cotizador
 - [ ] T1.21 (60) Migración `cotizacion`, `cotizacion_item`, `trabajo_ia`, `llamada_ia` y trigger de solo lectura tras aprobar · DATA-MODEL §2 · I `cotizacion.inmutable` · T1.2
-- [ ] T1.22 (60) `src/ai`: interfaz, esquema Zod estricto y `redaccion` (RUT, correo, teléfono, URL) · REQ-COT-2.8, 2.9 · U `esquema`, `redaccion` · T0.1 · [P]
+- [ ] T1.22 (60) `src/ai`: interfaz, esquema Zod estricto y `redaccion` (RUT, correo, teléfono, URL) · REQ-COT-2.8, 2.9, REQ-NFR-5 · U `esquema`, `redaccion` · T0.1 · [P]
 - [ ] T1.23 (45) Doble del LLM y `ia-respuestas.json` (válido, dudas, timeout, 500, inválido, sin ZDR, injection) · AI §5, TESTING §2 · U `doble` · T1.22
 - [ ] T1.24 (90) Proveedor Command Code: chat/completions con herramienta forzada, `x-cmd-zdr`, timeout, reintentos y costo · ADR-0001 · U con HTTP simulado · T1.22
 - [ ] T1.25 (45) `normalizar` y `mapear` (exacto, `por_confirmar`, `a_pedido` con referencia superior) · REQ-COT-2.3–2.5 · U `mapear` · T1.1 · [P]
 - [ ] T1.26 (90) Worker: cola con SKIP LOCKED, estados, reintentos, recuperación tras 60 s, topes de costo y registro en `llamada_ia` · ADR-0006, REQ-COT-2.7 · I `worker.reintentos` · T1.21, T1.23, T1.25
-- [ ] T1.27 (60) API de interpretaciones (202, límite 429, texto ≤ 4.000) y GET de cotización con avisos de stock · REQ-COT-2.1, 2.6, 2.10 · I `interpretacion`, `interpretacion.privacidad` · T1.26, T1.12
+- [ ] T1.27 (60) API de interpretaciones (202, límite 429, texto ≤ 4.000) y GET de cotización con avisos de stock · REQ-COT-2.1, 2.2, 2.6, 2.10 · I `interpretacion`, `interpretacion.privacidad` · T1.26, T1.12
 - [ ] T1.28 (75) UI nueva cotización con polling, estado `ia_fallida` y "Cotizar a mano" · REQ-COT-2.7 · E `13-ia-caida-manual` · T1.27, T0.14
 - [ ] T1.29 (90) UI de revisión lado a lado con resaltado del texto fuente, alertas e ítems `por_confirmar`/`a_pedido` · REQ-COT-3.1, UX §3 · E `06-cotizacion-lenguaje-natural` · T1.28
 - [ ] T1.30 (75) API de ítems (agregar, editar, eliminar, fijar precio `a_pedido`) con versión optimista y recálculo auditado · REQ-COT-3.2–3.4 · I `cotizacion.items` · T1.27, T1.8
 - [ ] T1.31 (60) Cotización manual (API y UI) con el mismo cálculo · REQ-COT-5.x · U igualdad IA/manual · T1.30
-- [ ] T1.32 (60) Aprobar: bloqueo si hay pendientes, congelado, vigencia y aprobador · REQ-COT-4.1, 4.4, 6.1, 6.2 · I `aprobar` · T1.30, T1.9
-- [ ] T1.33 (90) PDF de cotización (logo, totales, vigencia, "flete aparte") · ADR-0004, REQ-COT-4.2, 4.3 · U `pdf.contenido`, I `pdf` · T1.32
+- [ ] T1.32 (60) Aprobar: bloqueo si hay pendientes, congelado, vigencia y aprobador · REQ-COT-4.1, 4.4, 4.5, 6.1, 6.2, 6.5 · I `aprobar` · T1.30, T1.9
+- [ ] T1.33 (90) PDF de cotización (logo, totales, vigencia, "flete aparte") · ADR-0004, REQ-COT-4.2, 4.3, 4.5 · U `pdf.contenido`, I `pdf` · T1.32
 - [ ] T1.34 (45) Banner de lista desactualizada y "Recalcular" · REQ-COT-6.3 · E `10-precios-congelados` · T1.30, T1.10
 
 ### Pedidos y reservas

@@ -68,7 +68,7 @@ Reglas verificables:
 ## 3. Auditoría
 
 - **Tabla `audit_log`.** Campos: `id`, `ocurrido_en` (UTC), `actor_id` (o `null` + `actor_tipo` = `visitante`/`sistema`/`worker`), `accion`, `recurso`, `recurso_id`, `antes` (jsonb), `despues` (jsonb), `resultado` (`ok`/`denegado`/`error`), `origen` (`web`/`api`/`worker`/`importacion`/`consola`), `ip`, `user_agent`, `correlacion_id`.
-- **Qué se audita.** Toda mutación y toda denegación (REQ-ADM-3.5): login, fallo de login, logout, usuarios, roles, importaciones, artículos, precios, recargos, movimientos, órdenes, BOM, clientes, cotizaciones (crear, editar ítem, resolver, descuento, aprobar, PDF), pedidos y configuración.
+- **Qué se audita.** Toda mutación y toda denegación (REQ-ADM-3.5): login, fallo de login, logout, usuarios, roles, importaciones, artículos, precios, recargos, movimientos, órdenes, BOM, clientes, cotizaciones (crear, interpretar con IA, editar ítem, resolver, recalcular, descuento, aprobar, PDF), pedidos (crear, cancelar con liberación de reservas, despachar, PDF de nota de pedido) y configuración.
 - **Qué no se guarda en `antes`/`despues`.** Hashes de contraseña ni tokens. Los datos de cliente se guardan como cambio de campo; el texto del pedido se guarda en la cotización, no se duplica en la auditoría.
 - **Inmutable.** Solo INSERT; un trigger rechaza UPDATE y DELETE (REQ-ADM-3.3).
 - **Retención.** Mínimo 6 años (plazo de documentos comerciales en Chile); no se purga en v1.

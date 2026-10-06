@@ -51,6 +51,8 @@ Navegación lateral fija; la opción de cotizar está siempre visible arriba.
 ```
 
 - Al pasar sobre un ítem se resalta su `texto_fuente` en el texto original.
+- Si la cantidad del ítem no coincide con la cifra del fragmento original, se resalta para que el revisor la confirme.
+- Todo texto que venga de la IA (dudas, alertas, fragmentos) se muestra como texto escapado, nunca como HTML.
 - `❓ por confirmar` y `✏ a pedido` usan color y texto (no solo color) y no se pueden aprobar hasta resolverlos (REQ-COT-3.3). El botón Aprobar indica cuántos quedan.
 - El aviso de stock es informativo y nunca bloquea (REQ-COT-2.6).
 - Si la lista de la cotización no es la vigente, aparece un banner con "Recalcular" (REQ-COT-6.3).
