@@ -71,7 +71,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T1.24 (90) Proveedor Command Code: chat/completions con herramienta forzada, `x-cmd-zdr`, timeout, reintentos y costo · ADR-0001 · U con HTTP simulado · T1.22
 - [x] T1.25 (45) `normalizar` y `mapear` (exacto, `por_confirmar`, `a_pedido` con referencia superior) · REQ-COT-2.3–2.5 · U `mapear` · T1.1 · [P]
 - [x] T1.26 (90) Worker: cola con SKIP LOCKED, estados, reintentos, recuperación tras 60 s, topes de costo y registro en `llamada_ia` · ADR-0006, REQ-COT-2.7 · I `worker.reintentos` · T1.21, T1.23, T1.25
-- [ ] T1.27 (60) API de interpretaciones (202, límite 429, texto ≤ 4.000) y GET de cotización con avisos de stock · REQ-COT-2.1, 2.2, 2.6, 2.10 · I `interpretacion`, `interpretacion.privacidad` · T1.26, T1.12
+- [x] T1.27 (60) API de interpretaciones (202, límite 429, texto ≤ 4.000) y GET de cotización con avisos de stock · REQ-COT-2.1, 2.2, 2.6, 2.10 · I `interpretacion`, `interpretacion.privacidad` · T1.26, T1.12
 - [ ] T1.28 (75) UI nueva cotización con polling, estado `ia_fallida` y "Cotizar a mano" · REQ-COT-2.7 · E `13-ia-caida-manual` · T1.27, T0.14
 - [ ] T1.29 (90) UI de revisión lado a lado con resaltado del texto fuente, alertas e ítems `por_confirmar`/`a_pedido` · REQ-COT-3.1, UX §3 · E `06-cotizacion-lenguaje-natural` · T1.28
 - [ ] T1.30 (75) API de ítems (agregar, editar, eliminar, fijar precio `a_pedido`) con versión optimista y recálculo auditado · REQ-COT-3.2–3.4 · I `cotizacion.items` · T1.27, T1.8
