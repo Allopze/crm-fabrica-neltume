@@ -90,6 +90,11 @@ Base `/api/v1`, JSON UTF-8, solo detrás de Cloudflare Access. Todos los handler
 | GET `/pedidos` · GET `/pedidos/:id` | `pedidos.gestionar` | | Muestra reservado y faltante por ítem |
 | POST `/pedidos/:id/cancelar` (`motivo`) | `pedidos.gestionar` | ✔ | Libera las reservas; 409 `NO_EDITABLE` si ya está cancelada o despachada |
 | GET `/pedidos/:id/pdf` | `pedidos.gestionar` + `clientes.ver` | | Nota de pedido; auditado |
+| PATCH `/pedidos/:id` (`direccionDespacho?, medioTransporte?, entregaComprometida?, observaciones?`) | `pedidos.gestionar` | | Hasta despachar; 409 `NO_EDITABLE` |
+| POST `/pedidos/:id/produccion` | `pedidos.gestionar` + `produccion.gestionar` | ✔ | Pendiente → en producción; crea la orden por el faltante de catálogo (REQ-COT-8.5) |
+| POST `/pedidos/:id/completar-reserva` | `pedidos.gestionar` | ✔ | Reserva el faltante con el stock disponible (REQ-STK-7.5) |
+| POST `/pedidos/:id/lista` (`confirmarAPedido`) | `pedidos.gestionar` | ✔ | 409 `STOCK_INSUFICIENTE` si falta reservar; los ítems a pedido se confirman |
+| POST `/pedidos/:id/despachar` | `pedidos.gestionar` | ✔ | Libera la reserva y descuenta el stock (REQ-STK-4.4) |
 
 ### Webhooks
 No hay. El único canal es la webapp (ADR-0003). Un test verifica que no existen rutas `/webhooks/*`.

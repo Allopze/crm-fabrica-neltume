@@ -10,7 +10,9 @@ import { requerirSesion } from "@/domain/auth/servidor";
 import { ErrorDominio } from "@/domain/errores";
 import { obtenerPedido } from "@/domain/pedidos/consulta";
 import { clp, fecha } from "@/lib/formato";
+import { AccionesCiclo } from "./acciones-ciclo";
 import { CancelarPedido } from "./cancelar-pedido";
+import { FormularioDespacho } from "./despacho";
 
 export const metadata: Metadata = { title: "Nota de pedido" };
 
@@ -21,6 +23,9 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
   const p = await obtenerPedido(bd(), id, sesion.permisos.has("clientes.ver")).catch((e) => { if (e instanceof ErrorDominio) notFound(); throw e; });
   const e = estadoPedido(p.estado);
   const cancelada = p.estado === "cancelada";
+  const abierta = !cancelada && p.estado !== "despachada";
+  const faltanteCatalogo = p.items.filter((i) => i.codigo).reduce((t, i) => t + i.faltante, 0);
+  const itemsAPedido = p.items.filter((i) => !i.codigo).length;
 
   return (
     <>
@@ -46,13 +51,26 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
         </p>
       )}
 
+      {p.estado === "despachada" && p.despachadaEn && (
+        <p role="status" className="mb-6 rounded-lg border border-musgo/30 bg-musgo-velo px-5 py-3 text-sm text-musgo">
+          Despachada el {fecha(new Date(p.despachadaEn).toISOString())}: la reserva se liberó y el stock se descontó.
+        </p>
+      )}
+      {abierta && (
+        <Panel titulo="Avance" className="mb-8">
+          <AccionesCiclo id={p.id} estado={p.estado} faltanteCatalogo={faltanteCatalogo} itemsAPedido={itemsAPedido}
+            puedeProducir={sesion.permisos.has("produccion.gestionar")} csrf={sesion.csrf} />
+        </Panel>
+      )}
+
       <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
         <Panel titulo="Ítems y reserva">
           <ul className="space-y-6">
             {p.items.map((i) => (
               <li key={i.id}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="flex items-center gap-3">{i.codigo ? <Placa codigo={i.codigo} /> : <span className="text-xs font-semibold uppercase tracking-wider text-pizarra">A pedido</span>}<span className="text-sm">{i.descripcion}</span></span>
+                  <span className="flex items-center gap-3">{i.codigo ? <Placa codigo={i.codigo} /> : <span className="text-xs font-semibold uppercase tracking-wider text-pizarra">A pedido</span>}
+                    <span className="text-sm">{i.descripcion}{i.medidaSolicitada && <span className="block text-xs text-tinta-tenue">Medida solicitada: {i.medidaSolicitada}</span>}</span></span>
                   <span className="text-sm tabular-nums text-tinta-suave">{cancelada ? `${i.cantidad} u` : `${i.reservado} de ${i.cantidad} reservadas`}</span>
                 </div>
                 {/* Una celda por puerta (hasta 40): reservada (llena) o por fabricar (rayada) */}
@@ -68,7 +86,7 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
                 {!cancelada && i.faltante > 0 && (
                   <p className="mt-2 flex items-center justify-between text-sm text-pizarra">
                     <span>Faltan {i.faltante} por fabricar</span>
-                    <Link href="/produccion" className="inline-flex items-center gap-1 hover:underline"><Hammer className="h-3.5 w-3.5" /> Ir a producción</Link>
+                    {i.codigo && <Link href="/produccion" className="inline-flex items-center gap-1 hover:underline"><Hammer className="h-3.5 w-3.5" /> Ir a producción</Link>}
                   </p>
                 )}
               </li>
@@ -76,13 +94,30 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
           </ul>
         </Panel>
 
-        <Panel titulo="Despacho">
-          <dl className="space-y-3 text-sm">
-            <div><dt className="text-tinta-tenue">Dirección de despacho</dt><dd className="mt-0.5">{p.direccionDespacho ?? "Retira en fábrica"}</dd></div>
-            <div><dt className="text-tinta-tenue">Medio de transporte</dt><dd className="mt-0.5">{p.medioTransporte ?? "—"}</dd></div>
-            <div><dt className="text-tinta-tenue">Total (precios congelados de la cotización)</dt><dd className="mt-0.5 font-display text-2xl tabular-nums">{clp(Number(p.cotizacion.total))}</dd></div>
-          </dl>
-        </Panel>
+        <div className="space-y-8">
+          <Panel titulo="Despacho">
+            {abierta ? (
+              <FormularioDespacho id={p.id} csrf={sesion.csrf} inicial={{ direccionDespacho: p.direccionDespacho, medioTransporte: p.medioTransporte, entregaComprometida: p.entregaComprometida, observaciones: p.observaciones }} />
+            ) : (
+              <dl className="space-y-3 text-sm">
+                <div><dt className="text-tinta-tenue">Dirección de despacho</dt><dd className="mt-0.5">{p.direccionDespacho ?? "Retira en fábrica"}</dd></div>
+                <div><dt className="text-tinta-tenue">Medio de transporte</dt><dd className="mt-0.5">{p.medioTransporte ?? "—"}</dd></div>
+                <div><dt className="text-tinta-tenue">Entrega comprometida</dt><dd className="mt-0.5">{p.entregaComprometida ? fecha(p.entregaComprometida) : "—"}</dd></div>
+                {p.observaciones && <div><dt className="text-tinta-tenue">Observaciones</dt><dd className="mt-0.5 whitespace-pre-wrap">{p.observaciones}</dd></div>}
+              </dl>
+            )}
+            <p className="mt-5 flex items-baseline justify-between border-t border-linea pt-4 text-sm"><span className="text-tinta-tenue">Total (precios congelados)</span><span className="font-display text-2xl tabular-nums">{clp(Number(p.cotizacion.total))}</span></p>
+          </Panel>
+          {p.ordenes.length > 0 && (
+            <Panel titulo="Órdenes de producción">
+              <ul className="space-y-2 text-sm">
+                {p.ordenes.map((o) => (
+                  <li key={o.id} className="flex justify-between"><Link href="/produccion" className="text-rauli hover:underline">Orden N.º {o.numero}</Link><span className="text-tinta-suave">{o.estado}</span></li>
+                ))}
+              </ul>
+            </Panel>
+          )}
+        </div>
       </div>
     </>
   );

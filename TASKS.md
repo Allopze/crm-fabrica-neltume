@@ -133,7 +133,7 @@ Aprobada el 06-10-2026. La tienda le envía a la fábrica notas de pedido en PDF
 - [x] T5.3 (60) Importador que corrige filas inconsistentes por dos hipótesis · REQ-STK-1.6 · U `importar.mapeo`, I `importacion`, E 01 · — · [P]
 
 ### B — Pedidos
-- [ ] T5.4 (90) Ciclo del pedido: producción, completar reserva, lista y despacho · REQ-STK-4.5, 7.5, REQ-COT-8.5 · I `pedidos.ciclo` · —
+- [x] T5.4 (90) Ciclo del pedido: producción, completar reserva, lista y despacho · REQ-STK-4.4, 7.5, REQ-COT-8.5 · I `pedidos.ciclo` · —
 - [ ] T5.5 (120) Pedido directo desde el PDF de la nota de la tienda · REQ-COT-8.6–8.9, ADR-0008 · U `nota-tienda`, I `pedido-directo`, E 15 · T5.4
 
 ### C — IA

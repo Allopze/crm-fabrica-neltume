@@ -2,10 +2,12 @@
 import { desc, eq, inArray, sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
 import { articulo } from "@/db/esquema/catalogo";
+import { notaPedido } from "@/db/esquema/comercial";
 import { materiaPrima, ordenLinea, ordenProduccion } from "@/db/esquema/produccion";
 import { type Actor, type Origen, registrarAuditoria } from "./auditoria";
 import { bomVigentePara } from "./bom";
 import { ErrorDominio } from "./errores";
+import { completarReserva, ESTADOS_ABIERTOS } from "./pedidos/completar";
 import { type NuevoMovimiento, registrarMovimientos, saldo } from "./stock";
 
 export async function crearOrden(tx: Tx, d: { lineas: { codigo: string; cantidad: number }[]; observacion?: string; notaPedidoId?: string }, actor: Actor & { id: string }, origen: Origen) {
@@ -69,6 +71,11 @@ export async function cerrarOrden(tx: Tx, ordenId: string, manuales: { materiaPr
   await registrarMovimientos(tx, movs, actor, origen, clave);
   await tx.update(ordenProduccion).set({ estado: "cerrada", cerradaEn: sql`now()`, cerradoPor: actor.id }).where(eq(ordenProduccion.id, ordenId));
   await registrarAuditoria(tx, { actor, accion: "cerrar", recurso: "orden_produccion", recursoId: ordenId, antes: { estado: "abierta" }, despues: { estado: "cerrada", insumos: plan.insumos.map((i) => ({ mp: i.nombre, usa: i.usa })), bom: plan.origenBom }, resultado: "ok", origen });
+  // Lo producido para un pedido se le reserva de inmediato (REQ-STK-7.5), si el pedido sigue abierto.
+  if (o.notaPedidoId) {
+    const [p] = await tx.select({ estado: notaPedido.estado }).from(notaPedido).where(eq(notaPedido.id, o.notaPedidoId));
+    if (p && (ESTADOS_ABIERTOS as readonly string[]).includes(p.estado)) await completarReserva(tx, o.notaPedidoId, actor, origen);
+  }
   return { numero: o.numero, insumos: plan.insumos, puertas: plan.lineas.map((l) => ({ codigo: l.codigo, cantidad: l.cantidad })) };
 }
 

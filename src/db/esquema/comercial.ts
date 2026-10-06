@@ -135,6 +135,11 @@ export const notaPedido = pgTable("nota_pedido", {
   canceladaPor: uuid().references(() => usuario.id),
   canceladaEn: timestamp({ withTimezone: true }),
   motivoCancelacion: text(),
+  entregaComprometida: date({ mode: "string" }),
+  observaciones: text(),
+  listaEn: timestamp({ withTimezone: true }),
+  despachadaEn: timestamp({ withTimezone: true }),
+  despachadaPor: uuid().references(() => usuario.id),
 }, (t) => [
   check("pedido_estado", sql`${t.estado} in ('pendiente', 'en_produccion', 'lista', 'despachada', 'cancelada')`),
   check("pedido_cancelacion", sql`${t.estado} <> 'cancelada' OR length(trim(coalesce(${t.motivoCancelacion}, ''))) > 0`),
@@ -147,6 +152,7 @@ export const pedidoItem = pgTable("pedido_item", {
   orden: integer().notNull(),
   articuloId: uuid().references(() => articulo.id), // nulo en ítems a pedido: se fabrican
   descripcion: text().notNull(),
+  medidaSolicitada: text(), // la que pidió el cliente si difiere del artículo (p. ej. «830 × 2360 mm, vano»)
   cantidad: integer().notNull(),
   reservado: integer().notNull().default(0),
   faltante: integer().notNull().default(0),

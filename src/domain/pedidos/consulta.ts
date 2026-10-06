@@ -3,6 +3,7 @@ import { and, asc, desc, eq, lt, sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
 import { articulo } from "@/db/esquema/catalogo";
 import { cliente, cotizacion, notaPedido, pedidoItem } from "@/db/esquema/comercial";
+import { ordenProduccion } from "@/db/esquema/produccion";
 import { ErrorDominio } from "../errores";
 
 export async function obtenerPedido(tx: Tx, id: string, verCliente: boolean) {
@@ -10,12 +11,14 @@ export async function obtenerPedido(tx: Tx, id: string, verCliente: boolean) {
   const [p] = await tx.select({ pedido: notaPedido, cotizacion: { id: cotizacion.id, numero: cotizacion.numero, subtotal: cotizacion.subtotal, descuento: cotizacion.descuento, iva: cotizacion.iva, total: cotizacion.total } })
     .from(notaPedido).innerJoin(cotizacion, eq(cotizacion.id, notaPedido.cotizacionId)).where(eq(notaPedido.id, id));
   if (!p) throw new ErrorDominio("NO_ENCONTRADO", "Nota de pedido no encontrada");
-  const items = await tx.select({ id: pedidoItem.id, codigo: articulo.codigo, descripcion: pedidoItem.descripcion, cantidad: pedidoItem.cantidad,
+  const items = await tx.select({ id: pedidoItem.id, codigo: articulo.codigo, descripcion: pedidoItem.descripcion, medidaSolicitada: pedidoItem.medidaSolicitada, cantidad: pedidoItem.cantidad,
     reservado: pedidoItem.reservado, faltante: pedidoItem.faltante, precioUnitario: pedidoItem.precioUnitario, totalLinea: pedidoItem.totalLinea })
     .from(pedidoItem).leftJoin(articulo, eq(articulo.id, pedidoItem.articuloId)).where(eq(pedidoItem.notaPedidoId, id)).orderBy(asc(pedidoItem.orden));
   const [cli] = verCliente ? await tx.select().from(cliente).where(eq(cliente.id, p.pedido.clienteId)) : [];
+  const ordenes = await tx.select({ id: ordenProduccion.id, numero: ordenProduccion.numero, estado: ordenProduccion.estado })
+    .from(ordenProduccion).where(eq(ordenProduccion.notaPedidoId, id)).orderBy(asc(ordenProduccion.numero));
   return {
-    ...p.pedido, cotizacion: p.cotizacion, items,
+    ...p.pedido, cotizacion: p.cotizacion, items, ordenes,
     cliente: cli ? { nombre: cli.nombre, rut: cli.rut, comuna: cli.comuna, contacto: cli.contacto, telefono: cli.telefono } : { nombre: "(oculto)" },
   };
 }

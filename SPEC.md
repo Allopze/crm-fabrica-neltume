@@ -104,6 +104,7 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-STK-4.1: WHEN un usuario registra una salida con artículo, cantidad y referencia de pedido THE SYSTEM SHALL crear un movimiento inmutable que reduce la existencia y consumir la reserva asociada si existe.
 - REQ-STK-4.2: IF la salida dejaría el disponible o la existencia en negativo THEN THE SYSTEM SHALL rechazarla e indicar el faltante.
 - REQ-STK-4.3: IF un usuario sin permiso de movimientos intenta registrarla THEN THE SYSTEM SHALL denegarla y registrar el intento.
+- REQ-STK-4.4: WHEN se registra el despacho de una nota de pedido lista THE SYSTEM SHALL liberar su reserva y descontar la existencia de cada artículo con movimientos de salida, en una sola operación, sin dejar el stock en negativo.
 
 **H5 Ajuste con motivo (P1).** Como usuario, quiero corregir diferencias sin borrar historia.
 - REQ-STK-5.1: WHEN un usuario registra un ajuste con cantidad (positiva o negativa) y motivo THE SYSTEM SHALL crear un movimiento de ajuste inmutable.
@@ -120,6 +121,7 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-STK-7.2: WHEN un pedido se cancela THE SYSTEM SHALL liberar sus reservas con un movimiento.
 - REQ-STK-7.3: IF al confirmar el pedido el disponible no alcanza THEN THE SYSTEM SHALL reservar solo lo disponible, marcar el faltante en el pedido de forma visible y nunca dejar el disponible en negativo.
 - REQ-STK-7.4: IF un usuario sin permiso de pedidos intenta reservar o liberar THEN THE SYSTEM SHALL denegarlo y registrar el intento.
+- REQ-STK-7.5: WHEN entra stock de un artículo con faltante en un pedido abierto (al cerrar su orden de producción o a pedido del usuario) THE SYSTEM SHALL reservarle lo disponible y actualizar el faltante.
 
 ### 4.3 Materias primas y producción (REQ-MP)
 
@@ -211,6 +213,7 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-COT-8.2: IF la cotización no está aprobada o está vencida THEN THE SYSTEM SHALL rechazar la conversión.
 - REQ-COT-8.3: IF la cotización ya tiene nota de pedido THEN THE SYSTEM SHALL no crear otra.
 - REQ-COT-8.4: IF un usuario sin permiso de pedidos intenta crearla THEN THE SYSTEM SHALL denegarlo y registrar el intento.
+- REQ-COT-8.5: THE SYSTEM SHALL llevar la nota de pedido por pendiente → en producción (creando la orden por el faltante de catálogo) → lista (todo reservado y los ítems a pedido confirmados por una persona) → despachada, con entrega comprometida y observaciones editables hasta el despacho, cada paso auditado.
 
 **H9 Clientes (P1).** Como usuario, quiero registrar clientes con datos mínimos.
 - REQ-COT-9.1: WHEN un usuario crea o edita un cliente (nombre, RUT, giro, dirección, comuna, contacto, correo, teléfono) THE SYSTEM SHALL validar el RUT y guardar el cambio con auditoría.

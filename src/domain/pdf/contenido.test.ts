@@ -42,14 +42,16 @@ describe("pdf.contenido de la nota de pedido (REQ-COT-8.1)", () => {
     const k = contenidoPedido({
       numero: 7, creadoEn: new Date("2026-10-06T15:00:00Z"), estado: "pendiente", cotizacionNumero: 124,
       cliente: { nombre: "Ferretería Puyehue", rut: "11.111.111-1", contacto: null, telefono: null },
-      direccionDespacho: null, medioTransporte: "Camión propio",
-      items: [{ codigo: "FUY-O-2-A", descripcion: "Fuy", cantidad: 3, faltante: 1, totalLinea: 300000 }, { codigo: null, descripcion: "Toltén", cantidad: 1, faltante: 1, totalLinea: 1000 }],
+      direccionDespacho: null, medioTransporte: "Camión propio", entregaComprometida: "2026-11-20", observaciones: "Llamar antes",
+      items: [{ codigo: "FUY-O-2-A", descripcion: "Fuy", medidaSolicitada: null, cantidad: 3, faltante: 1, totalLinea: 300000 }, { codigo: null, descripcion: "Toltén", medidaSolicitada: "870 × 2150 mm (vano)", cantidad: 1, faltante: 1, totalLinea: 1000 }],
       subtotal: 301000, descuento: 0, iva: 57190, total: 358190,
     });
     expect(k.titulo).toBe("Nota de pedido N.º 7");
     expect(k.fechas).toBe("Fecha 06-10-2026 · Cotización N.º 124");
     expect(k.datos).toContainEqual(["Despacho", "Retira en fábrica"]);
-    expect(k.filas).toEqual([["FUY-O-2-A", "Fuy", "3", "1", "$300.000"], ["A pedido", "Toltén", "1", "1", "$1.000"]]);
+    expect(k.filas).toEqual([["FUY-O-2-A", "Fuy", "3", "1", "$300.000"], ["A pedido", "Toltén\nMedida solicitada: 870 × 2150 mm (vano)", "1", "1", "$1.000"]]);
+    expect(k.datos).toContainEqual(["Entrega", "20-11-2026"]);
+    expect(k.observaciones).toBe("Llamar antes");
     expect(k.total).toBe("$358.190");
     expect(k.pie[0]).toContain("flete aparte");
   });

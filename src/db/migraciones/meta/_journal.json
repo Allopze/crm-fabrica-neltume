@@ -85,6 +85,13 @@
       "when": 1791309305635,
       "tag": "0011_importacion_correcciones",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791309515255,
+      "tag": "0012_pedido_ciclo",
+      "breakpoints": true
     }
   ]
 }

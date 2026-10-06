@@ -25,6 +25,9 @@ export const e = StyleSheet.create({
   cCodigo: { width: "16%", fontFamily: "Courier", fontSize: 8.5 },
   cDesc: { width: "42%" },
   cNum: { width: "14%", textAlign: "right" },
+  cListo: { width: "6%", alignItems: "flex-end", textAlign: "right" },
+  casilla: { width: 8, height: 8, borderWidth: 0.8, borderColor: "#222" },
+  observaciones: { marginTop: 18, borderWidth: 0.5, borderColor: "#bbb", padding: 8, minHeight: 44 },
   totales: { marginTop: 16, marginLeft: "auto", width: 210 },
   lineaTotal: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
   total: { flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#222", paddingTop: 6, fontFamily: "Times-Roman", fontSize: 14 },
@@ -59,17 +62,21 @@ export function Datos({ pares }: { pares: [string, string][] }) {
 }
 
 /** Tabla de 5 columnas: la primera en monoespaciada (código) y las tres últimas alineadas a la derecha. */
-export function TablaItems({ columnas, filas }: { columnas: [string, string, string, string, string]; filas: string[][] }) {
+/** Tabla de 5 columnas (código monoespaciado; las tres últimas a la derecha). Con `casilla`, una columna «Listo» para marcar a mano. */
+export function TablaItems({ columnas, filas, casilla }: { columnas: [string, string, string, string, string]; filas: string[][]; casilla?: boolean }) {
+  const desc = casilla ? { ...e.cDesc, width: "36%" } : e.cDesc;
   return (
     <>
       <View style={e.encabezadoTabla}>
-        <Text style={e.cCodigo}>{columnas[0]}</Text><Text style={e.cDesc}>{columnas[1]}</Text>
+        <Text style={e.cCodigo}>{columnas[0]}</Text><Text style={desc}>{columnas[1]}</Text>
         {columnas.slice(2).map((c) => <Text key={c} style={e.cNum}>{c}</Text>)}
+        {casilla && <Text style={e.cListo}>Listo</Text>}
       </View>
       {filas.map((f, i) => (
         <View key={i} style={e.fila} wrap={false}>
-          <Text style={e.cCodigo}>{f[0]}</Text><Text style={e.cDesc}>{f[1]}</Text>
+          <Text style={e.cCodigo}>{f[0]}</Text><Text style={desc}>{f[1]}</Text>
           {f.slice(2).map((v, k) => <Text key={k} style={e.cNum}>{v}</Text>)}
+          {casilla && <View style={e.cListo}><View style={e.casilla} /></View>}
         </View>
       ))}
     </>

@@ -51,8 +51,8 @@ export function contenidoCotizacion(c: CotizacionPdf, empresa: DatosEmpresa = da
 export interface PedidoPdf {
   numero: number; creadoEn: Date; estado: string; cotizacionNumero: number;
   cliente: { nombre: string; rut: string | null; contacto: string | null; telefono: string | null };
-  direccionDespacho: string | null; medioTransporte: string | null;
-  items: { codigo: string | null; descripcion: string; cantidad: number; faltante: number; totalLinea: number }[];
+  direccionDespacho: string | null; medioTransporte: string | null; entregaComprometida: string | null; observaciones: string | null;
+  items: { codigo: string | null; descripcion: string; medidaSolicitada: string | null; cantidad: number; faltante: number; totalLinea: number }[];
   subtotal: number; descuento: number; iva: number; total: number;
 }
 
@@ -63,8 +63,11 @@ export function contenidoPedido(p: PedidoPdf) {
     datos: [
       ["Cliente", p.cliente.nombre], ["RUT", p.cliente.rut ?? "—"], ["Contacto", p.cliente.contacto ?? "—"], ["Teléfono", p.cliente.telefono ?? "—"],
       ["Despacho", p.direccionDespacho ?? "Retira en fábrica"], ["Transporte", p.medioTransporte ?? "—"],
+      ["Entrega", p.entregaComprometida ? fecha(p.entregaComprometida) : "por comprometer"],
     ] as [string, string][],
-    filas: p.items.map((i) => [i.codigo ?? "A pedido", i.descripcion, String(i.cantidad), i.faltante ? String(i.faltante) : "—", clp(i.totalLinea)]),
+    filas: p.items.map((i) => [i.codigo ?? "A pedido", i.medidaSolicitada ? `${i.descripcion}\nMedida solicitada: ${i.medidaSolicitada}` : i.descripcion,
+      String(i.cantidad), i.faltante ? String(i.faltante) : "—", clp(i.totalLinea)]),
+    observaciones: p.observaciones,
     totales: [
       ["Subtotal neto", clp(p.subtotal)],
       ...(p.descuento > 0 ? [["Descuento", `−${clp(p.descuento)}`]] : []),
