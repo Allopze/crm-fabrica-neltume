@@ -6,7 +6,7 @@ import { clp } from "@/lib/formato";
 export interface Opcion { codigo: string; modelo: string; madera: string; ancho: string; altoM: number; precioVenta: number }
 
 /** Busca artículos en la lista vigente (código o modelo) y devuelve el código elegido. */
-export function SelectorArticulo({ version, onElegir, etiqueta = "Buscar artículo del catálogo" }: { version: number | null; onElegir: (codigo: string, opcion: Opcion) => void; etiqueta?: string }) {
+export function SelectorArticulo({ version, onElegir, etiqueta = "Buscar artículo del catálogo", id }: { version: number | null; onElegir: (codigo: string, opcion: Opcion) => void; etiqueta?: string; id?: string }) {
   const [q, setQ] = useState("");
   const [opciones, setOpciones] = useState<Opcion[]>([]);
 
@@ -26,7 +26,7 @@ export function SelectorArticulo({ version, onElegir, etiqueta = "Buscar artícu
 
   return (
     <div className="relative min-w-60 flex-1">
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Código o modelo (p. ej. NEL-R-4-B)" aria-label={etiqueta}
+      <input id={id} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Código o modelo (p. ej. NEL-R-4-B)" aria-label={etiqueta}
         className="h-9 w-full rounded-md border border-linea-fuerte bg-lamina px-3 font-mono text-sm uppercase placeholder:normal-case focus:border-tinta focus:outline-none" />
       {q.trim().length >= 2 && opciones.length > 0 && (
         <ul role="listbox" className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-linea-fuerte bg-lamina shadow-lg">

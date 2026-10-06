@@ -90,7 +90,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T1.39 (45) Panel de inicio: borradores, alertas y pedidos con faltante · UX §1 · E 06 (navegación) · T1.36
 - [x] T1.40 (90) E2E 01–05 encadenadas · TESTING §3 · `npm test` · T1.6, T1.14, T1.16, T1.19, T0.13
 - [x] T1.41 (90) E2E 06–10 encadenadas · TESTING §3 · `npm test` · T1.29–T1.37
-- [ ] T1.42 (90) E2E 11–14 (otro rol, injection, IA caída, auditoría) · TESTING §3 · `npm test` · T1.41
+- [x] T1.42 (90) E2E 11–14 (otro rol, injection, IA caída, auditoría) · TESTING §3 · `npm test` · T1.41
 - [ ] T1.43 (60) Guion de demo, clientes ficticios, recargos configurados y Excel real importado en el entorno de demo · SPEC §2 · prueba manual guiada · T1.42
 
 **Checkpoint F1 (demo):** recorrido completo del guion delante tuyo y `npm test` verde. Espero tu OK antes de presentarlo a las encargadas.

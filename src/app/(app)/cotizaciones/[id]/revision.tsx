@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Download, Eye, Lock, Plus, RotateCcw, ShieldAlert, Truck } from "lucide-react";
+import { Check, Download, Eye, Lock, PencilLine, Plus, RotateCcw, ShieldAlert, Truck } from "lucide-react";
 import { Boton, BotonDescarga, BotonLink } from "@/components/ui/base";
 import { pedir } from "@/lib/api-cliente";
 import { clp, cn, fecha } from "@/lib/formato";
@@ -87,9 +87,10 @@ export function Revision({ inicial, csrf, puedeAprobar, clientes }: Props) {
 
         <section>
           {c.estado === "ia_fallida" && (
-            <p role="alert" className="mb-3 rounded-md border border-error/25 bg-error-velo px-4 py-3 text-sm text-error">
-              <strong>No pudimos interpretar el pedido.</strong> El texto quedó guardado: agrega los ítems a mano.
-            </p>
+            <div role="alert" className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-error/25 bg-error-velo px-4 py-3 text-sm text-error">
+              <p><strong>No pudimos interpretar el pedido.</strong> El texto quedó guardado a la izquierda.</p>
+              <Boton variante="peligro" onClick={() => document.getElementById("agregar-item")?.focus()}><PencilLine className="h-4 w-4" /> Cotizar a mano</Boton>
+            </div>
           )}
           <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-tinta-tenue">Ítems · {c.items.length}</h2>
           <div className="space-y-3">
@@ -106,7 +107,7 @@ export function Revision({ inicial, csrf, puedeAprobar, clientes }: Props) {
           {!aprobada && (
             <div className="mt-3 flex items-center gap-2 rounded-md border border-dashed border-linea-fuerte p-3">
               <Plus className="h-4 w-4 text-tinta-tenue" />
-              <SelectorArticulo version={c.lista.vigente} etiqueta="Agregar ítem del catálogo" onElegir={(codigo) => accion(() => pedir("POST", `${base}/items`, { csrf, cuerpo: { codigo, cantidad: 1, version: c.version } }))} />
+              <SelectorArticulo id="agregar-item" version={c.lista.vigente} etiqueta="Agregar ítem del catálogo" onElegir={(codigo) => accion(() => pedir("POST", `${base}/items`, { csrf, cuerpo: { codigo, cantidad: 1, version: c.version } }))} />
             </div>
           )}
 
