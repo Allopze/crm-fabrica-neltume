@@ -1,6 +1,6 @@
 # API.md — Contratos HTTP
 
-Base `/api/v1`, JSON UTF-8, solo detrás de Cloudflare Access. Todos los handlers van envueltos en `conPermiso` (SECURITY §2). Los importes van en CLP enteros y las fechas en ISO 8601; el formato chileno se aplica en la UI y en el PDF.
+Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin Cloudflare Access (ADR-0010): sin sesión solo responden `POST /sesion` y `GET /salud`. Todos los handlers van envueltos en `conPermiso` (SECURITY §2). Los importes van en CLP enteros y las fechas en ISO 8601; el formato chileno se aplica en la UI y en el PDF.
 
 ## 1. Convenciones
 

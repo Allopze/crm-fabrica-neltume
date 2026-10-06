@@ -7,7 +7,7 @@ Refs: REQ-ADM-1.x, 2.x, 3.x · REQ-COT-2.8, 2.9, 9.x · REQ-NFR-5, 7. Detalle de
 - **Permiso** es la unidad de autorización. Un **rol** es solo un conjunto de permisos (REQ-ADM-2.2).
 - Hoy existe un rol, `administrador`, con todos los permisos. Un perfil nuevo se crea como datos, sin tocar código.
 - Por defecto se niega todo: un endpoint sin permiso declarado no compila (ver §2).
-- Una sesión válida es requisito previo. Además, Cloudflare Access protege todo el hostname (defensa en profundidad, §6).
+- Una sesión válida es requisito previo. La app está expuesta a internet por Cloudflare Tunnel **sin Cloudflare Access** (ADR-0010): el login propio es la única barrera de entrada (T7, §6).
 
 ### Permisos
 
@@ -52,7 +52,7 @@ Refs: REQ-ADM-1.x, 2.x, 3.x · REQ-COT-2.8, 2.9, 9.x · REQ-NFR-5, 7. Detalle de
 
 | Capa | Mecanismo | Qué garantiza |
 |---|---|---|
-| Borde | Cloudflare Access (política de correo o grupo) | Solo personas autorizadas llegan al origen |
+| Borde | Cloudflare Tunnel (TLS de Cloudflare; regla de limitación del login, opcional) | El origen no abre puertos; Cloudflare filtra tráfico abusivo |
 | Proxy interno | Encabezados de seguridad y límite de tamaño de cuerpo (1 MB) | Rechazos tempranos |
 | Ruta API | Cada `src/app/api/**/route.ts` exporta handlers envueltos en `conPermiso('<permiso>', handler)` (`src/domain/auth/politica.ts`) | Sesión válida, permiso explícito, auditoría de la denegación |
 | Dominio | Las funciones de `src/domain` reciben un `Actor` y vuelven a verificar el permiso en las operaciones sensibles (aprobar, ajustar, precios) | Ningún llamador interno salta el control |
@@ -99,7 +99,7 @@ Reglas verificables:
 | T4 | Abuso de costo del LLM (muchos envíos o textos enormes) | Texto máximo de 4.000 caracteres; límite de 20 interpretaciones por usuario por hora y tope diario global configurable; `max_tokens` en la salida; costo por llamada registrado y alerta a 80 % del tope mensual | Integración: la llamada 21 en la misma hora da 429 sin llamar al doble del LLM |
 | T5 | Exposición de API keys y secretos | Solo en variables de entorno (`.env`, ignorado por git); `.env.example` sin valores; los logs filtran `authorization` y `x-api-key`; la clave del LLM solo existe en `worker` | CI: escaneo de secretos sobre el repo. Unit: el logger redacta las cabeceras sensibles |
 | T6 | Suplantación de remitente (correo o WhatsApp) | **No aplica en v1**: no hay entrada externa (ADR-0003). Si se habilita, exigirá firma del webhook y lista de remitentes, con la cotización siempre en borrador | Pendiente hasta habilitar el canal; hoy, un test verifica que no existen rutas de webhook |
-| T7 | Robo de sesión o fuerza bruta en login | Cloudflare Access delante; contraseña de mínimo 8 caracteres con hash argon2id; 5 intentos por usuario e IP cada 15 min; cookie `HttpOnly`, `Secure`, `SameSite=Lax`; expiración de 8 h; token CSRF en mutaciones | Integración: el 6.º intento da 429 y se audita; una mutación sin CSRF da 403 |
+| T7 | Robo de sesión o fuerza bruta en login (el login está en internet, sin Access: ADR-0010) | Contraseña de mínimo 8 caracteres con hash argon2id; 5 fallos cada 15 min por correo **o** por IP (un ataque repartido entre IPs contra una cuenta también se frena; riesgo aceptado: un atacante puede bloquear 15 min una cuenta); mensaje único «Correo o contraseña incorrectos» y verificación con hash falso (no revela si el correo existe); regla de limitación en Cloudflare para `POST /api/v1/sesion` (recomendada, RUNBOOK §3); cookie `HttpOnly`, `Secure`, `SameSite=Lax`; expiración de 8 h; token CSRF en mutaciones | Integración: el 6.º intento da 429 y se audita; una mutación sin CSRF da 403 |
 | T8 | Exposición de BD o paneles de administración | Ningún `ports:` público en Compose; BD solo en la red interna; acceso de administración por túnel SSH o `127.0.0.1`; el túnel solo apunta al proxy | Test de configuración: `docker compose config` no tiene puertos en `0.0.0.0` |
 | T9 | PDF malicioso o engañoso subido como nota de la tienda | Máximo 5 MB y firma `%PDF-`; `pdfjs-dist` 6 solo extrae texto (sin XFA, sin fuentes del sistema, se detiene ante errores); el archivo no se guarda (solo su hash); vista previa y confirmación humana; el servidor vuelve a leer el PDF al confirmar; códigos validados contra el catálogo y precio siempre de la lista (ADR-0008) | Unit: lector con nota anulada, sin tabla y sin códigos; integración: no PDF → 400, código inexistente → bloquea, duplicado → 409, sin datos del cliente final en BD ni auditoría |
 
@@ -108,7 +108,7 @@ Reglas verificables:
 | Componente | Expuesto | Cómo |
 |---|---|---|
 | `proxy` → `app` | Sí, solo vía Cloudflare Tunnel | `tunnel` (cloudflared) sale hacia Cloudflare; no se abre ningún puerto entrante en el host |
-| Cloudflare Access | Delante de todo el hostname | Política por correo de las personas autorizadas; la sesión de la app se exige además |
+| Superficie pública | Sí, sin Cloudflare Access (ADR-0010) | Sin sesión solo responden la página de login, `POST /api/v1/sesion`, `GET /api/v1/salud` (solo `ok`/`degradado`) y los estáticos; todo lo demás exige sesión y permiso (§2). Next.js y dependencias se mantienen al día (RUNBOOK §5) |
 | `app`, `worker` | No | Red interna `backend` |
 | `db` | No | Red interna `datos`; para administración opcional, `127.0.0.1:5432` solo con el perfil `admin` |
 | `backup` | No | Red interna `datos`; escribe en un volumen y en una copia externa (DESIGN.md §6) |

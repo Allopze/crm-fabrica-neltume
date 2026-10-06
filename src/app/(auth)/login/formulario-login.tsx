@@ -48,7 +48,7 @@ export function FormularioLogin() {
         <Lock className="h-4 w-4" /> {enviando ? "Ingresando…" : "Ingresar"}
       </button>
       <p className="mt-6 text-center text-xs text-tinta-tenue">
-        Protegido por Cloudflare Access. ¿Olvidaste tu contraseña? Pídela a quien administra los usuarios.
+        ¿Olvidaste tu contraseña? Pídela a quien administra los usuarios.
       </p>
     </form>
   );

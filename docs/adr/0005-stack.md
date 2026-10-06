@@ -13,7 +13,7 @@ El equipo es pequeño, el volumen es de 50–200 cotizaciones al mes, el desplie
 | Worker IA | Mismo código, entrypoint `src/ai/worker.ts` |
 | BD | PostgreSQL (versión mayor fija en Compose) + Drizzle ORM y migraciones |
 | Validación | Zod |
-| Auth | Sesiones propias en BD: cookie HttpOnly con token aleatorio, hash SHA-256 en `sesion`, contraseñas argon2id (`@node-rs/argon2`), revocación inmediata; Cloudflare Access delante. Se descartó Auth.js porque con credenciales obliga a JWT no revocable (decisión del usuario, Fase 0) |
+| Auth | Sesiones propias en BD: cookie HttpOnly con token aleatorio, hash SHA-256 en `sesion`, contraseñas argon2id (`@node-rs/argon2`), revocación inmediata. Sin Cloudflare Access delante: el login propio es la barrera (ADR-0010). Se descartó Auth.js porque con credenciales obliga a JWT no revocable (decisión del usuario, Fase 0) |
 | Entornos | Producción: Docker Compose. Dev y test: PostgreSQL local (Postgres.app); `npm run dev` migra y levanta la app (decisión del usuario, Fase 0) |
 | PDF | @react-pdf/renderer (ADR-0004) |
 | Proxy / túnel | Caddy · cloudflared |

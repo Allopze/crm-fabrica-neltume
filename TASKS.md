@@ -101,7 +101,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T2.2 (90) Correr la evaluación con 2–3 modelos de `/models`, fijar `CMD_MODEL` y actualizar ADR-0001 · ADR-0001 · criterio de AI §6 · T2.1
 - [x] T2.3 (75) Servicio `backup` con copia externa y runbook de restauración probado · REQ-NFR-4 · prueba de restauración · T0.3
 - [x] T2.4 (60) Pantalla de métricas de IA y alerta al 80 % del tope · DESIGN §5, SECURITY T4 · I `metricas` · T1.26 · [P]
-- [ ] T2.5 (90) Despliegue en el hosting: túnel real, política de Access y verificación de exposición · SECURITY §6, REQ-NFR-3 · chequeo externo de puertos · T0.15
+- [ ] T2.5 (90) Despliegue en el hosting: túnel real sin Access (ADR-0010), regla de limitación del login en Cloudflare y verificación de exposición · SECURITY §6, REQ-NFR-3 · chequeo externo de puertos · T0.15
 - [x] T2.6 (45) Prueba de volumen: importar ~8.800 filas en ≤ 60 s y consulta en ≤ 1 s · REQ-NFR-8 · I `importacion.volumen` · T1.5 · [P]
 - [ ] T2.7 (60) Carga de BOM reales cuando Producción los entregue (reemplazan los demo) · REQ-MP-3.1 · I `bom` · T1.17
 

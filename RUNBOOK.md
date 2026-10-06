@@ -30,14 +30,16 @@ Pruebas: `npm test` (lint → typecheck → unit → integración → E2E). Siem
 
 Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-compose.yml -f docker-compose.admin.yml up -d db`. Expone `127.0.0.1:5432`. Ciérralo al terminar.
 
-## 3. Cloudflare Tunnel y Access
+## 3. Cloudflare Tunnel (sin Access, ADR-0010)
 
 1. Cloudflare Zero Trust → Networks → Tunnels → crear un túnel de tipo *cloudflared*. Copia el token a `TUNNEL_TOKEN` en `.env`.
 2. En el túnel, agrega un *Public hostname*. Por ejemplo, `fabrica.<dominio>` → servicio `http://proxy:80`. Es la única ruta de entrada.
-3. Access → Applications → *Self-hosted* para ese hostname, con una política *Allow* que liste los correos autorizados. La app exige además su propio login.
+3. No se usa Cloudflare Access: la webapp queda pública y su login es la barrera. Recomendado: en el dominio, Security → WAF → *Rate limiting rules*, una regla para `POST /api/v1/sesion` (por ejemplo, 20 peticiones por minuto por IP → bloquear 10 min). Complementa el límite propio de la app (SECURITY T7).
 4. Comprueba desde fuera de la red:
-   - El hostname pide primero Cloudflare Access.
-   - `curl -I https://fabrica.<dominio>/api/v1/salud` sin Access debe ser rechazado por Cloudflare.
+   - `https://fabrica.<dominio>` muestra el login de la app.
+   - `curl -s https://fabrica.<dominio>/api/v1/salud` responde `{"estado":"ok"}` y nada más.
+   - `curl -s -o /dev/null -w "%{http_code}" https://fabrica.<dominio>/api/v1/cotizaciones` responde `401` (sin sesión no hay datos).
+   - Ningún puerto del host está abierto hacia internet (§2).
 
 ## 4. Salud, logs y respaldos
 
@@ -62,6 +64,8 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 | Login responde "Demasiados intentos" | 5 fallos en 15 min (por correo o IP) | Esperar 15 min; queda auditado |
 | La app no arranca en producción | `migrar` falló | `docker compose logs migrar` |
 | Un usuario quedó sin acceso | Desactivado o rol sin permisos | Otro administrador lo reactiva en Usuarios y permisos |
+
+**Actualizaciones** (la app está expuesta sin Access): revisar mensualmente `npm audit --omit=dev` y los avisos de seguridad de Next.js; aplicar los parches de seguridad sin esperar al ciclo mensual.
 
 ## 6. Demo: preparación y guion (T1.43)
 
