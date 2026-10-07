@@ -19,7 +19,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           <MenuMovil pie={pie} />
           <Link href="/" className="text-tinta lg:hidden"><Logo className="h-8 w-auto" titulo={`${MARCA.nombre} · inicio`} /></Link>
           {process.env.NODE_ENV !== "production" && (
-            <span className="hidden items-center gap-2 rounded-full border border-dashed border-ambar/50 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-ambar md:inline-flex">
+            <span className="hidden items-center gap-2 rounded-full border border-dashed border-ambar/50 px-3 py-1 text-xs font-medium text-ambar md:inline-flex">
               Entorno de desarrollo
             </span>
           )}

@@ -120,6 +120,20 @@
       "when": 1791325160312,
       "tag": "0016_bom_madera_puerta",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791392291693,
+      "tag": "0017_auditoria_anonima",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791394617796,
+      "tag": "0018_defensa_bd",
+      "breakpoints": true
     }
   ]
 }

@@ -14,7 +14,7 @@ export function Th({ className, alinear, ...p }: ComponentProps<"th"> & { alinea
   return (
     <th
       className={cn(
-        "border-b border-linea-fuerte px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-tinta-tenue",
+        "border-b border-linea-fuerte px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.08em] text-tinta-tenue",
         alinear === "der" && "text-right",
         className,
       )}

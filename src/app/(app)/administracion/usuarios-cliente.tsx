@@ -7,6 +7,7 @@ import { Boton, Etiqueta } from "@/components/ui/base";
 import { LARGO_MINIMO_CLAVE } from "@/domain/auth/reglas";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { pedir } from "@/lib/api-cliente";
+import { DialogoClave } from "@/components/shell/dialogo-clave";
 import { fechaHora } from "@/lib/formato";
 
 interface UsuarioFila { id: string; email: string; nombre: string; activo: boolean; rol: string; ultimoIngreso: string | null }
@@ -18,6 +19,7 @@ export function UsuariosCliente({ usuarios, roles, csrf, yo }: { usuarios: Usuar
   const [abierto, setAbierto] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
+  const [restablecer, setRestablecer] = useState<UsuarioFila | null>(null);
 
   function accion(fn: () => Promise<unknown>) {
     setError(null);
@@ -69,7 +71,8 @@ export function UsuariosCliente({ usuarios, roles, csrf, yo }: { usuarios: Usuar
               <Td>{u.rol}</Td>
               <Td className="text-tinta-suave">{u.ultimoIngreso ? fechaHora(new Date(u.ultimoIngreso).toISOString()) : "—"}</Td>
               <Td>{u.activo ? <Etiqueta tono="musgo">Activo</Etiqueta> : <Etiqueta>Inactivo</Etiqueta>}</Td>
-              <Td className="text-right">
+              <Td className="whitespace-nowrap text-right">
+                {u.id !== yo && <Boton variante="fantasma" className="h-8" disabled={pendiente} onClick={() => setRestablecer(u)}>Restablecer clave</Boton>}
                 <Boton variante="fantasma" className="h-8" disabled={pendiente}
                   onClick={() => accion(() => pedir("PATCH", `/api/v1/usuarios/${u.id}`, { csrf, cuerpo: { activo: !u.activo } }))}>
                   {u.activo ? "Desactivar" : "Activar"}
@@ -79,6 +82,7 @@ export function UsuariosCliente({ usuarios, roles, csrf, yo }: { usuarios: Usuar
           ))}
         </tbody>
       </Tabla>
+      <DialogoClave modo="restablecer" usuario={restablecer ?? undefined} csrf={csrf} abierto={restablecer !== null} alCerrar={() => setRestablecer(null)} />
     </div>
   );
 }

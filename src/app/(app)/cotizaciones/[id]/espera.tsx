@@ -32,7 +32,7 @@ export function EsperaInterpretacion({ texto }: { texto: string }) {
   return (
     <div className="grid grid-cols-1 gap-6 [&>*]:min-w-0 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
       <section className="relative overflow-hidden rounded-lg border border-linea bg-papel-hundido/50 p-6">
-        <h2 className="mb-4 font-mono text-[11px] uppercase tracking-[0.18em] text-tinta-tenue">Texto original · tal como llegó</h2>
+        <h2 className="mb-4 text-sm font-semibold text-tinta-suave">Texto original · tal como llegó</h2>
         <p className="whitespace-pre-wrap font-display text-[1.2rem] leading-[1.85] text-tinta-suave">{texto}</p>
         {!agotado && (
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">

@@ -97,6 +97,14 @@ body {
   :is(input, select, textarea):focus-visible {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--rauli) 24%, transparent);
   }
+  /* Tailwind deja el placeholder al 50 % (3:1); con la tinta tenue llega a AA. */
+  ::placeholder {
+    color: var(--tinta-tenue);
+    opacity: 1;
+  }
+  input, textarea {
+    caret-color: var(--rauli);
+  }
 }
 
 /* Veta de madera para la barra lateral. */

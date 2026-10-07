@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { bd } from "@/db/conexion";
 import { conPermiso } from "@/domain/auth/politica";
+import { CantidadInsumo } from "../esquema";
 import { aplicarABoms } from "@/domain/bom";
 
 const Cuerpo = z.strictObject({
   modelos: z.array(z.string().min(1).max(10)).min(1).max(200),
   operacion: z.discriminatedUnion("tipo", [
     z.strictObject({ tipo: z.literal("factor"), factor: z.number().positive().max(10) }),
-    z.strictObject({ tipo: z.literal("insumo"), materiaPrimaId: z.uuid(), cantidad: z.number().positive().max(1e6) }),
+    z.strictObject({ tipo: z.literal("insumo"), materiaPrimaId: z.uuid(), cantidad: CantidadInsumo }),
     z.strictObject({ tipo: z.literal("quitar"), materiaPrimaId: z.uuid() }),
   ]),
 });

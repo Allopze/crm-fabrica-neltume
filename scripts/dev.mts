@@ -1,6 +1,7 @@
 // `npm run dev`: migra la BD local y levanta Next.js (decisión del usuario: todo con un comando).
 import { spawn } from "node:child_process";
 import { migrar } from "../src/db/migrar";
+import { urlWorker } from "../src/db/urls";
 
 const owner = process.env.DATABASE_URL_OWNER;
 const app = process.env.DATABASE_URL;
@@ -21,7 +22,8 @@ try {
 // App y worker de IA (cola de interpretaciones) en paralelo; si uno termina, se detiene el otro.
 const entornoNext = { ...process.env, CMD_API_KEY: "", GROQ_API_KEY: "" };
 const next = spawn("npx", ["next", "dev", ...process.argv.slice(2)], { stdio: "inherit", env: entornoNext });
-const entornoWorker = { ...process.env };
+// El worker usa su propio rol de BD, con permisos mínimos (ADR-0017).
+const entornoWorker: NodeJS.ProcessEnv = { ...process.env, DATABASE_URL: urlWorker(app) };
 for (const clave of ["CMD_API_KEY", "GROQ_API_KEY", "CMD_API_BASE_URL", "GROQ_API_BASE_URL"]) delete entornoWorker[clave];
 const worker = spawn("npx", ["tsx", "--env-file-if-exists=.env.worker.local", "src/ai/worker.ts"], { stdio: "inherit", env: entornoWorker });
 const procesos = [next, worker];

@@ -69,13 +69,14 @@ U = unit, I = integración, E = E2E (número de suite). Todo REQ P1 tiene al men
 
 | REQ | Prio | Tests |
 |---|---|---|
-| ADM-1.1, 1.2, 1.3 | P1 | I `auth.login`; E 02 |
+| ADM-1.4, 2.5 | P1 | I `claves` (401/403, auditoría sin hash, sesiones cerradas, clave actual incorrecta cuenta como fallo) |
+| ADM-1.1, 1.2, 1.3 | P1 | I `auth.login` (incluye 20 intentos simultáneos → ≤ 5 evaluados); E 02 |
 | ADM-2.1, 2.2, 2.3, 2.4 | P1 | U `politica`; I `usuarios`, chequeo `conPermiso`; E 02, 11 |
-| ADM-3.1, 3.2, 3.3, 3.4, 3.5 | P1 | I `audit.trigger`, `audit.denegaciones`; E 11, 14 |
+| ADM-3.1, 3.2, 3.3, 3.4, 3.5 | P1 | I `audit.trigger`, `audit.denegaciones` (anónimas agregadas por IP, ADR-0016); E 11, 14 |
 | ADM-4.1, 4.2, 4.3 | P1 | U `catalogos`, `groq`, `retry-after`; I `ajustes-ia` (403, auditoría sin claves, ZDR, modelo fuera de catálogo), `compose` (claves solo en `worker`); E 17 |
 | STK-1.1, 1.2, 1.3, 1.4, 1.5 | P1 | U `importar.mapeo`; I `importacion`; E 01, 10, 11 |
 | STK-2.1, 2.2, 2.3, 2.4 | P1 | U `stock.calculo`, `formato.cl`; I `stock.consulta`; E 05, 06, 11 |
-| STK-3.1, 3.2, 3.3, 3.4 | P1 | I `movimientos.entrada` (idempotencia); E 04, 11 |
+| STK-3.1, 3.2, 3.3, 3.4 | P1 | I `movimientos.entrada`, `idempotencia` (misma clave concurrente = 1 efecto, otra ruta = 422); E 04, 11 |
 | STK-4.1, 4.2, 4.3 | P1 | I `movimientos.salida`; E 05, 11 |
 | STK-5.1, 5.2, 5.3, 5.4 | P1 | I `movimientos.ajuste`, `movimiento.trigger`; E 05, 11 |
 | STK-6.1, 6.2 | P2 | I `stock.alertas` |
@@ -91,11 +92,11 @@ U = unit, I = integración, E = E2E (número de suite). Todo REQ P1 tiene al men
 | COT-2.1, 2.2 | P1 | U `mapear`; I `interpretacion` (doble); E 06 |
 | COT-2.3, 2.4, 2.5 | P1 | U `mapear` (ambiguo, inexistente, fuera de grilla); E 06, 07 |
 | COT-2.6 | P1 | U `aviso.stock`; E 06 |
-| COT-2.7 | P1 | I `worker.reintentos`; E 13 |
-| COT-2.8, 2.9 | P1 | U `esquema`, `redaccion`; I `interpretacion.privacidad`; E 12 |
+| COT-2.7 | P1 | I `worker.reintentos`, `worker` (trabajo colgado sin intentos → `ia_fallida`; dos workers → un solo resultado; tope diario de llamadas); E 13 |
+| COT-2.8, 2.9 | P1 | U `esquema`, `datos-personales` (corpus adversarial); I `worker` (payload al proveedor y `llamada_ia` sin datos personales); E 12 |
 | COT-2.10 | P1 | I chequeo `conPermiso`; E 11 |
 | COT-2.11, 2.12, 2.13 | P1 | U `mapear`, `modelos`, `accesorios`; I `alias`; E 16 |
-| COT-2.14, 2.15, 2.16 | P1 | U `anclaje`, `correcciones` (ADR-0013), `revision` (ADR-0014), `evaluacion` (emparejamiento y extras), `prompt`, `reintentos`, `casos-generados` (la lectura ideal pasa el anclaje); I `worker` (anclaje y corrección de omisiones); evaluación AI §6 |
+| COT-2.14, 2.15, 2.16 | P1 | U `anclaje` (frase no literal y montos → por confirmar, ADR-0016), `correcciones` (ADR-0013), `revision` (ADR-0014), `evaluacion` (emparejamiento y extras), `prompt`, `reintentos`, `casos-generados` (la lectura ideal pasa el anclaje); I `worker` (anclaje y corrección de omisiones); evaluación AI §6 |
 | COT-3.1, 3.2, 3.3, 3.4 | P1 | I `cotizacion.items`; E 07, 11 |
 | COT-4.1, 4.2, 4.3, 4.4, 4.5 | P1 | U `pdf.contenido`; I `aprobar`, `pdf`; E 08, 11 |
 | COT-5.1, 5.2, 5.3 | P1 | U igualdad de cálculo IA/manual; E 13 |
@@ -105,9 +106,10 @@ U = unit, I = integración, E = E2E (número de suite). Todo REQ P1 tiene al men
 | COT-9.1, 9.2, 9.3 | P1 | U `rut`; I `clientes`; E 08, 11 |
 | COT-10.1, 10.2 | P2 | I `cotizaciones.lista`, IDOR |
 | NFR-1, NFR-2 | — | `eval:ia` (p90 y costo); I tope de costo y límite 429 |
-| NFR-3, NFR-4 | — | Healthcheck en Compose; prueba mensual de restauración (runbook) |
+| NFR-3, NFR-4 | — | Healthcheck en Compose (también del respaldo); I `backup` (un `pg_dump` que falla no informa éxito ni poda); prueba mensual de restauración (runbook) |
 | NFR-5 | — | I `interpretacion.privacidad`; E 12 |
 | NFR-6 | — | E con viewport de celular en 02 y 06 (legibilidad) |
+| NFR-5, NFR-7 (BD) | — | I `defensa-bd` (rol del worker sin acceso a usuarios, clientes, stock ni costos e interpretación completa con ese rol; stock negativo, notas cerradas y `llamada_ia` rechazados por la BD); U `csp` y vigilancia de violaciones de CSP en los E2E |
 | NFR-7 | — | Chequeo `conPermiso` + E 14 |
 | NFR-8 | — | I importación completa con un Excel sintético de ~8.800 filas ≤ 60 s |
 | NFR-9 | — | U `formato.cl`; E 08 (PDF) |

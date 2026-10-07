@@ -57,6 +57,11 @@ export async function planDeCierre(tx: Tx, ordenId: string, manuales: { materiaP
   const nombres = consumo.size ? new Map((await tx.select().from(materiaPrima).where(inArray(materiaPrima.id, [...consumo.keys()]))).map((m) => [m.id, m])) : new Map();
   const insumos = [];
   for (const [id, cantidad] of consumo) {
+    // El stock guarda 3 decimales: un consumo que quedaría en 0,000 no se completa en silencio (auditoría H-13).
+    if (Number(cantidad.toFixed(3)) === 0) {
+      incompletos.push(`${nombres.get(id)?.nombre ?? "un insumo"}: la orden consume menos de 0,001 ${nombres.get(id)?.unidadCodigo ?? ""}; revisa su cantidad en la receta`.trimEnd());
+      continue;
+    }
     const { existencia } = await saldo(tx, { materiaPrimaId: id });
     const usa = Number(cantidad.toFixed(3));
     insumos.push({ materiaPrimaId: id, nombre: nombres.get(id)?.nombre ?? "?", unidad: nombres.get(id)?.unidadCodigo ?? "", usa, existencia, faltante: Math.max(0, Number((usa - existencia).toFixed(3))) });
@@ -75,7 +80,7 @@ export async function cerrarOrden(tx: Tx, ordenId: string, manuales: { materiaPr
     throw new ErrorDominio("SIN_BOM", "Hay artículos sin BOM: registra el consumo de materias primas a mano antes de cerrar.", { sinBom: plan.sinBom });
   }
   if (plan.incompletos.length) {
-    throw new ErrorDominio("BOM_INCOMPLETO", "No se puede calcular la madera de la puerta: asocia cada madera a su materia prima en Producción.", { incompletos: plan.incompletos });
+    throw new ErrorDominio("BOM_INCOMPLETO", "No se puede calcular el consumo de la receta: revisa lo que falta en Producción.", { incompletos: plan.incompletos });
   }
   const faltantes = plan.insumos.filter((i) => i.faltante > 0);
   if (faltantes.length) throw new ErrorDominio("INSUMOS_INSUFICIENTES", "Faltan materias primas para cerrar la orden.", { faltantes });

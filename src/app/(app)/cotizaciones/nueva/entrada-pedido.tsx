@@ -36,14 +36,16 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
       <div className="entrada entrada-2">
         <div className="relative overflow-hidden rounded-lg border border-linea-fuerte bg-lamina shadow-[0_18px_40px_-30px_rgb(30_40_30/0.5)] focus-within:border-tinta">
           <div className="flex items-center justify-between border-b border-linea px-5 py-2.5">
-            <label htmlFor="pedido" className="font-mono text-[11px] uppercase tracking-[0.18em] text-tinta-tenue">Texto del cliente</label>
-            <span className="font-mono text-[11px] tabular-nums text-tinta-tenue">{texto.length.toLocaleString("es-CL")} / 4.000</span>
+            <label htmlFor="pedido" className="text-sm font-semibold text-tinta-suave">Texto del cliente</label>
+            <span className="text-xs tabular-nums text-tinta-tenue">{texto.length.toLocaleString("es-CL")} / 4.000</span>
           </div>
           <textarea
             id="pedido"
             value={texto}
             maxLength={LIMITE}
             onChange={(e) => setTexto(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && texto.trim() && !enviando) { e.preventDefault(); void interpretar(); } }}
+            aria-describedby="atajo-interpretar"
             disabled={enviando}
             rows={11}
             placeholder="Pega aquí el correo o mensaje del cliente, tal cual llegó…"
@@ -74,6 +76,7 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
             {enviando ? "Enviando a interpretar…" : "Interpretar pedido"}
           </Boton>
           <BotonLink href="/cotizaciones/manual" variante="fantasma"><PencilLine className="h-4 w-4" /> Prefiero cotizar a mano</BotonLink>
+          <p id="atajo-interpretar" className="text-xs text-tinta-tenue">Atajo: <kbd className="rounded border border-linea-fuerte px-1 font-sans">Ctrl</kbd> + <kbd className="rounded border border-linea-fuerte px-1 font-sans">Enter</kbd></p>
         </div>
       </div>
 

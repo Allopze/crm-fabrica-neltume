@@ -35,6 +35,12 @@ describe("docker-compose.yml de producción (SECURITY §6, T8)", () => {
     expect(compose.services.worker.environment).toHaveProperty("GROQ_API_KEY");
   });
 
+  it("la app recibe los datos de la empresa que imprimen los PDF", () => {
+    const ejemplo = readFileSync(".env.example", "utf8").match(/^NELTUME_EMPRESA_[A-Z]+(?==)/gm) ?? [];
+    expect(ejemplo.length).toBeGreaterThan(0);
+    for (const v of ejemplo) expect(compose.services.app.environment, v).toHaveProperty(v);
+  });
+
   it("el túnel llega solo a la app, sin proxy intermedio (ADR-0011)", () => {
     expect(compose.services.proxy).toBeUndefined();
     expect(compose.services.tunnel.networks).toEqual(["borde", "backend"]);
@@ -52,6 +58,27 @@ describe("docker-compose.yml de producción (SECURITY §6, T8)", () => {
     const admin = parse(readFileSync("docker-compose.admin.yml", "utf8")) as { services: Record<string, Servicio> };
     for (const s of Object.values(admin.services)) {
       for (const p of s.ports ?? []) expect(p).toMatch(/^127\.0\.0\.1:/);
+    }
+  });
+
+  it("el respaldo tiene healthcheck: sin respaldo verificado en 26 h queda unhealthy (H-01, REQ-NFR-4)", () => {
+    const backup = compose.services.backup as Servicio & { healthcheck?: { test: string[] } };
+    expect(backup.healthcheck?.test.join(" ")).toContain("/backups/ultimo-ok -mmin -1560");
+  });
+
+  it("toda imagen externa está fijada por digest (auditoría H-16, DESIGN §4)", () => {
+    const imagenes = Object.values(compose.services).map((x) => (x as Servicio & { image?: string }).image).filter(Boolean) as string[];
+    expect(imagenes.length).toBeGreaterThan(0);
+    for (const i of imagenes) expect(i, i).toMatch(/@sha256:[0-9a-f]{64}$/);
+    const bases = readFileSync("Dockerfile", "utf8").match(/^FROM\s+\S+/gm)!.map((l) => l.split(/\s+/)[1]).filter((b) => b.includes(":"));
+    expect(bases.length).toBeGreaterThan(0);
+    for (const b of bases) expect(b, b).toMatch(/@sha256:[0-9a-f]{64}$/);
+  });
+
+  it("el contexto de Docker excluye respaldos, referencia, Excel y secretos (H-11, AGENTS regla 10)", () => {
+    const ignorados = readFileSync(".dockerignore", "utf8").split("\n").map((l) => l.trim());
+    for (const e of ["respaldos-externos", "referencia", "/*.xlsx", "docs/plantillas/*.xlsx", "datos", ".env", ".env.*", ".claude"]) {
+      expect(ignorados, e).toContain(e);
     }
   });
 });

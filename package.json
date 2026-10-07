@@ -6,6 +6,7 @@
     "dev": "tsx --env-file-if-exists=.env.local scripts/dev.mts",
     "build": "next build",
     "start": "next start",
+    "deploy": "bash scripts/deploy.sh",
     "lint": "eslint --max-warnings=0",
     "test": "npm run lint && npm run typecheck && npm run test:unit && npm run test:integracion && npm run test:e2e",
     "test:unit": "vitest run --project unit",

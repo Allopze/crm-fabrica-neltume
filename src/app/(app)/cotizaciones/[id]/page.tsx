@@ -28,15 +28,15 @@ export default async function CotizacionPage({ params }: PageProps<"/cotizacione
   return (
     <>
       <nav aria-label="Ruta" className="mb-4 flex items-center gap-1 text-sm text-tinta-tenue">
-        <Link href="/cotizaciones" className="hover:text-tinta">Cotizaciones</Link><ChevronRight className="h-3.5 w-3.5" /><span className="text-tinta">#{c.numero}</span>
+        <Link href="/cotizaciones" className="hover:text-tinta">Cotizaciones</Link><ChevronRight className="h-3.5 w-3.5" /><span className="text-tinta">N.º {c.numero}</span>
       </nav>
       <Encabezado
-        antetitulo={`Cotizador · ${c.estado === "borrador" || c.estado === "interpretando" ? "paso 2 de 3" : c.estado === "ia_fallida" ? "paso 2 de 3 · a mano" : "paso 3 de 3"} · ${fechaHora(new Date(c.creadoEn).toISOString())}`}
-        titulo={<>Cotización <span className="text-rauli">#{c.numero}</span></>}
+        titulo={<>Cotización <span className="text-rauli">N.º {c.numero}</span></>}
+        meta={`Creada el ${fechaHora(new Date(c.creadoEn).toISOString())} · ${c.origen === "ia" ? "desde el texto del cliente" : "a mano"}`}
         descripcion={<>{c.cliente ? <>Para <strong className="text-tinta">{c.cliente.nombre}</strong>. </> : null}{c.estado === "ia_fallida" ? "La IA no pudo interpretar el pedido: arma los ítems a mano." : c.origen === "ia" && !aprobada ? "Revisa lo que entendió la IA: nada se envía sin tu aprobación." : !aprobada ? "Revisa los ítems: nada se envía sin tu aprobación." : null}</>}
         acciones={
           <div className="flex items-center gap-2">
-            {c.vencida ? <Etiqueta>Vencida</Etiqueta> : <EstadoCotizacionEtiqueta estado={c.estado as never} />}
+            {c.vencida ? <Etiqueta>Vencida</Etiqueta> : <EstadoCotizacionEtiqueta estado={c.estado as never} pedidoEstado={c.pedido?.estado} />}
             {c.lista.usada && <Etiqueta tono="pizarra">Lista v{c.lista.usada}{c.lista.desactualizada ? " · hay una más nueva" : ""}</Etiqueta>}
           </div>
         }

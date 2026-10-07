@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
 import { auditLog } from "@/db/esquema/seguridad";
 
@@ -47,4 +48,26 @@ export async function registrarAuditoria(tx: Tx, e: EventoAuditoria): Promise<vo
     userAgent: e.actor.userAgent ?? null,
     correlacionId: e.correlacionId ?? null,
   });
+}
+
+/** Ventana de agregación de las denegaciones sin usuario (ADR-0016). */
+export const VENTANA_ANONIMA_MIN = 15;
+
+/**
+ * Denegación sin usuario (sin sesión, login fallido o bloqueado): a lo más una fila por IP, acción y motivo cada
+ * 15 min, con `agregado: true` (ADR-0016, REQ-ADM-3.5). Así el tráfico anónimo no hace crecer sin límite una tabla
+ * que no se puede purgar. Devuelve si escribió la fila; el llamador registra cada evento en el log JSON.
+ */
+export async function registrarDenegacionAnonima(tx: Tx, e: Omit<EventoAuditoria, "resultado" | "actor"> & { actor: Actor; motivo: string }): Promise<boolean> {
+  const despues = limpiar({ ...(e.despues && typeof e.despues === "object" ? e.despues : {}), motivo: e.motivo, agregado: true });
+  const ip = e.actor.ip ?? null;
+  const r = await tx.execute(sql`
+    INSERT INTO audit_log (actor_tipo, accion, recurso, recurso_id, despues, resultado, origen, ip, user_agent, correlacion_id)
+    SELECT 'visitante', ${e.accion}, ${e.recurso}, ${e.recursoId ?? null}, ${JSON.stringify(despues)}::jsonb, 'denegado', ${e.origen}, ${ip}, ${e.actor.userAgent ?? null}, ${e.correlacionId ?? null}
+    WHERE NOT EXISTS (
+      SELECT 1 FROM audit_log
+      WHERE actor_tipo = 'visitante' AND ip IS NOT DISTINCT FROM ${ip} AND accion = ${e.accion} AND despues->>'motivo' = ${e.motivo}
+        AND ocurrido_en > now() - make_interval(mins => ${VENTANA_ANONIMA_MIN})
+    )`);
+  return (r.rowCount ?? 0) > 0;
 }

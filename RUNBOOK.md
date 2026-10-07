@@ -16,7 +16,7 @@ Requisitos: Node 24 (`.nvmrc`) y PostgreSQL local (Postgres.app en `localhost:54
    - `CMD_API_KEY`: API key de Command Code.
    - `GROQ_API_KEY`: API key de Groq.
    Puedes configurar una o ambas. No las pongas en `.env.local`; el worker y `eval:ia` leen `.env.worker.local`.
-4. `npm run db:setup`: crea los roles y las bases `neltume_dev`, `neltume_test` y `neltume_e2e`. Es idempotente.
+4. `npm run db:setup`: crea los roles (dueño, app y `neltume_worker`, el rol con permisos mínimos del worker de IA, ADR-0017) y las bases `neltume_dev`, `neltume_test` y `neltume_e2e`. Es idempotente; vuelve a correrlo si actualizas desde una versión sin el rol del worker. En desarrollo la clave del worker se deriva de `DATABASE_URL` si no defines `DATABASE_URL_WORKER`.
 5. `npm run crear-admin`: primer usuario. La contraseña se pide por consola.
 6. `npm run dev`: migra la BD y levanta la app en `http://localhost:3000`. El worker carga las claves y actualiza los catálogos. Si agregas o cambias claves en `.env.worker.local` después de iniciarlo, reinicia `npm run dev` para que el worker las vuelva a cargar.
 7. En **Ajustes de IA**, elige proveedor y modelo; para Groq confirma ZDR en Console.
@@ -26,14 +26,16 @@ Pruebas: `npm test` (lint → typecheck → unit → integración → E2E). Siem
 
 ## 2. Producción (Docker Compose)
 
-1. En el servidor: `cp .env.example .env` y completa las variables de BD y despliegue, además de `CMD_API_KEY` y/o `GROQ_API_KEY`. Compose entrega esas claves solo a `worker`. `DATABASE_URL_OWNER` y `DATABASE_URL` apuntan a `@db:5432/neltume`.
+1. En el servidor: `cp .env.example .env` y completa las variables de BD y despliegue, además de `CMD_API_KEY` y/o `GROQ_API_KEY`. Compose entrega esas claves solo a `worker`. `DATABASE_URL_OWNER`, `DATABASE_URL` y `DATABASE_URL_WORKER` (usuario `neltume_worker`, clave propia; ADR-0017) apuntan a `@db:5432/neltume`.
 2. `docker compose up -d --build`. El servicio `migrar` crea los roles y la base, aplica las migraciones y termina; luego arranca `app`.
 3. Primer usuario: `docker compose run --rm -it migrar npx tsx scripts/crear-admin.mts`.
    - BOM reales (una vez; idempotente, no pisa lo editado después): `docker compose run --rm migrar npx tsx scripts/cargar-bom-real.mts`. En desarrollo: `npx tsx --env-file-if-exists=.env.local scripts/cargar-bom-real.mts` (ADR-0012).
-4. Cotizador con IA: `docker compose --profile ia up -d worker`. Los cambios de proveedor/modelo en Ajustes rigen desde el siguiente trabajo; al rotar API keys, reinicia el worker.
+4. Cotizador con IA: `docker compose --profile ia up -d worker` (o `COMPOSE_PROFILES=ia` en `.env`, que usa `npm run deploy`). Los cambios de proveedor/modelo en Ajustes rigen desde el siguiente trabajo; al rotar API keys, reinicia el worker.
 6. Verifica la exposición:
    - `docker compose ps` no debe mostrar puertos publicados.
    - En el host, `ss -tlnp` no debe mostrar 5432 ni 3000 en `0.0.0.0`.
+
+Despliegue desde el equipo de desarrollo: `npm run deploy` (`scripts/deploy.sh`). Requiere el `.env` de producción **fuera del repositorio**, en `~/.config/neltume/produccion.env` (u otra ruta con `DEPLOY_ENV_FILE`): dentro del repo, `next dev` lo cargaría y `next build` lo copiaría a `.next/standalone` (auditoría H-15). Para mover uno existente: `mkdir -p ~/.config/neltume && mv .env ~/.config/neltume/produccion.env && chmod 600 ~/.config/neltume/produccion.env && rm -rf .next/standalone`. El script rechaza un archivo cuyo `DATABASE_URL` o `DATABASE_URL_WORKER` no apunten a `@db:5432` y avisa si queda un `.env` en la raíz. Requiere SSH al host `debian` y `rsync` en ambos extremos. Sube por rsync lo que versiona git y aparte ese archivo como `.env` (con permisos 600) a `/server/crm_fabrica_puertas`, borra allí el código obsoleto (conserva `respaldos-externos/` y `datos/`) y ejecuta `docker compose up -d --build --remove-orphans`. Otro destino: `DEPLOY_HOST=… DEPLOY_DIR=… npm run deploy`. El primer usuario y los BOM reales (paso 3) siguen siendo manuales.
 
 Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-compose.yml -f docker-compose.admin.yml up -d db`. Expone `127.0.0.1:5432`. Ciérralo al terminar.
 
@@ -41,7 +43,7 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 
 1. Cloudflare Zero Trust → Networks → Tunnels → crear un túnel de tipo *cloudflared*. Copia el token a `TUNNEL_TOKEN` en `.env`.
 2. En el túnel, agrega un *Public hostname*. Por ejemplo, `fabrica.<dominio>` → servicio `http://app:3000` (sin proxy intermedio, ADR-0011). Es la única ruta de entrada.
-3. No se usa Cloudflare Access: la webapp queda pública y su login es la barrera. Recomendado: en el dominio, Security → WAF → *Rate limiting rules*, una regla para `POST /api/v1/sesion` (por ejemplo, 20 peticiones por minuto por IP → bloquear 10 min). Complementa el límite propio de la app (SECURITY T7).
+3. No se usa Cloudflare Access: la webapp queda pública y su login es la barrera. **Obligatorio** antes de abrir el acceso: en el dominio, Security → WAF → *Rate limiting rules*, una regla para `POST /api/v1/sesion` (por ejemplo, 20 peticiones por minuto por IP → bloquear 10 min) y otra para `/api/v1/*` sin la cookie `neltume_sesion` (por ejemplo, 120 por minuto por IP). Complementan el bloqueo propio del login y la auditoría agregada de denegaciones anónimas (SECURITY T7, ADR-0016).
 4. Comprueba desde fuera de la red:
    - `https://fabrica.<dominio>` muestra el login de la app.
    - `curl -s https://fabrica.<dominio>/api/v1/salud` responde `{"estado":"ok"}` y nada más.
@@ -54,7 +56,7 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 - Logs: JSON en stdout (`docker compose logs app`), con datos sensibles redactados. Cada error lleva su `correlacion_id`, que también se ve en pantalla y en `audit_log`.
 - Respaldos: el servicio `backup` hace `pg_dump` diario a las 02:00 en el volumen `backups` (30 días) y lo copia a `BACKUP_DESTINO_EXTERNO`, verificando el checksum. `backups/ultimo-ok` guarda la fecha del último respaldo completo.
   - Respaldo manual (antes de un cambio riesgoso): `docker compose exec backup sh /backup.sh --una-vez`.
-  - Revisar: `docker compose logs backup` no debe tener líneas `"nivel":"error"` (por ejemplo, destino externo sin montar).
+  - Revisar: `docker compose ps` muestra `backup` como *healthy*; queda *unhealthy* si no hubo un respaldo verificado en 26 h (el volcado se valida con `pg_restore --list`; un respaldo fallido no poda los anteriores ni actualiza `ultimo-ok`). `docker compose logs backup` no debe tener líneas `"nivel":"error"` (por ejemplo, destino externo sin montar).
 - Prueba de restauración (mensual; meta < 2 h, pérdida máxima 24 h, REQ-NFR-4): `docker compose exec backup sh /restaurar-prueba.sh` restaura el último respaldo en una BD temporal, verifica checksum y conteos, informa el tiempo y la borra. Para probar la copia externa: `sh /restaurar-prueba.sh /externo/<archivo>.dump`. Anota fecha y resultado en el registro de abajo.
 - Restaurar de verdad (desastre): detener `app` y `worker`; `docker compose exec backup pg_restore --clean --if-exists --no-owner --role=<usuario de DATABASE_URL_OWNER> -d neltume /backups/<archivo>.dump` (así las tablas siguen siendo del owner y las migraciones futuras funcionan); volver a correr `migrar` (reaplica permisos) y levantar todo.
 - En desarrollo, con Postgres.app: exporta `PGHOST`, `PGUSER`, `PGPASSWORD` del superusuario, `PGDATABASE=neltume_dev`, `BACKUP_DIR` y `BACKUP_EXTERNO_DIR`, y corre los mismos scripts con `sh scripts/…`.
@@ -72,7 +74,7 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 | La app no arranca en producción | `migrar` falló | `docker compose logs migrar` |
 | Un usuario quedó sin acceso | Desactivado o rol sin permisos | Otro administrador lo reactiva en Usuarios y permisos |
 
-**Actualizaciones** (la app está expuesta sin Access): revisar mensualmente `npm audit --omit=dev` y los avisos de seguridad de Next.js; aplicar los parches de seguridad sin esperar al ciclo mensual.
+**Actualizaciones** (la app está expuesta sin Access): revisar mensualmente `npm audit --omit=dev` y los avisos de seguridad de Next.js; aplicar los parches de seguridad sin esperar al ciclo mensual. Al revisar un aviso, importa si el paquete va a producción y si el código vulnerable es alcanzable (p. ej., `uuid` dentro de `exceljs` no recibe `buf`); no apliques el «fix» que propone `npm audit` cuando es un downgrade mayor. En el mismo ciclo, renueva los digests de las imágenes de `docker-compose.yml` y la base del `Dockerfile` (`docker buildx imagetools inspect <imagen>`).
 
 ## 6. Demo: preparación y guion (T1.43)
 

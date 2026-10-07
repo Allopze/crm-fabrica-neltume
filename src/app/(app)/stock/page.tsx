@@ -30,7 +30,6 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
   return (
     <>
       <Encabezado
-        antetitulo="Taller · producto terminado"
         titulo="Stock de puertas"
         descripcion="El saldo es la suma de los movimientos: nadie lo edita a mano. Para corregir, registra un ajuste con motivo."
         acciones={tipos.length > 0 && <AccionesMovimiento tipos={[...tipos]} csrf={sesion.csrf} />}
@@ -67,8 +66,8 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
           <Tabla etiqueta="Stock de puertas">
             <thead>
               <tr>
-                <Th>Código</Th><Th>Modelo</Th><Th>Madera</Th><Th>Medida</Th><Th>Tipo</Th>
-                <Th alinear="der">Existencia</Th><Th alinear="der">Reservado</Th><Th alinear="der">Disponible</Th><Th>Nivel</Th>
+                <Th>Código</Th><Th className="hidden sm:table-cell">Modelo</Th><Th className="hidden md:table-cell">Madera</Th><Th className="hidden md:table-cell">Medida</Th><Th className="hidden lg:table-cell">Tipo</Th>
+                <Th alinear="der" className="hidden sm:table-cell">Existencia</Th><Th alinear="der" className="hidden sm:table-cell">Reservado</Th><Th alinear="der">Disponible</Th><Th className="hidden md:table-cell">Nivel</Th>
               </tr>
             </thead>
             <tbody>
@@ -77,18 +76,18 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
                 return (
                   <Tr key={a.codigo}>
                     <Td><Link href={`/stock/${encodeURIComponent(a.codigo)}`}><Placa codigo={a.codigo} className="hover:border-tinta" /></Link></Td>
-                    <Td className="font-medium capitalize">{a.modelo.toLowerCase()}</Td>
-                    <Td><span className="inline-flex items-center gap-1.5 text-sm capitalize text-tinta-suave">
+                    <Td className="hidden font-medium capitalize sm:table-cell">{a.modelo.toLowerCase()}</Td>
+                    <Td className="hidden md:table-cell"><span className="inline-flex items-center gap-1.5 text-sm capitalize text-tinta-suave">
                       <span aria-hidden className="swatch h-3.5 w-5 rounded-[2px] ring-1 ring-black/10" style={{ backgroundColor: COLOR[a.maderaCodigo] }} />
                       {MADERAS.find(([c]) => c === a.maderaCodigo)?.[1] ?? a.madera.toLowerCase()}</span></Td>
-                    <Td className="whitespace-nowrap text-tinta-suave">{a.ancho} × {metros(Number(a.altoM))}</Td>
-                    <Td className="capitalize text-tinta-suave">{a.tipo?.toLowerCase() ?? "accesorio"}</Td>
-                    <Td alinear="der">{a.existencia}</Td>
-                    <Td alinear="der" className="text-tinta-suave">{a.reservado || "—"}</Td>
+                    <Td className="hidden whitespace-nowrap text-tinta-suave md:table-cell">{a.ancho} × {metros(Number(a.altoM))}</Td>
+                    <Td className="hidden capitalize text-tinta-suave lg:table-cell">{a.tipo?.toLowerCase() ?? "accesorio"}</Td>
+                    <Td alinear="der" className="hidden sm:table-cell">{a.existencia}</Td>
+                    <Td alinear="der" className="hidden text-tinta-suave sm:table-cell">{a.reservado || "—"}</Td>
                     <Td alinear="der" className={cn("font-semibold", bajo && "text-ambar")}>
-                      {a.disponible}{bajo && <span className="ml-1 text-[10px] font-medium uppercase tracking-wide">bajo mín.</span>}
+                      {a.disponible}{bajo && <span className="ml-1 text-xs font-medium">bajo mín.</span>}
                     </Td>
-                    <Td><NivelStock existencia={a.existencia} reservado={a.reservado} minimo={a.minimo} /></Td>
+                    <Td className="hidden md:table-cell"><NivelStock existencia={a.existencia} reservado={a.reservado} minimo={a.minimo} /></Td>
                   </Tr>
                 );
               })}

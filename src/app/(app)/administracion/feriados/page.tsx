@@ -23,7 +23,7 @@ export default async function FeriadosPage({ searchParams }: PageProps<"/adminis
 
   return (
     <>
-      <Encabezado antetitulo="Configuración · calendario" titulo="Feriados"
+      <Encabezado titulo="Feriados"
         descripcion="La vigencia de las cotizaciones se cuenta en días hábiles. Los feriados legales se calculan solos; los decretados por única vez (elecciones, leyes puntuales) se agregan aquí."
         acciones={edita && <NuevoFeriado csrf={sesion.csrf} />} />
       <nav aria-label="Año" className="mb-5 flex gap-1.5">

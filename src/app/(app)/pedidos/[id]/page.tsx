@@ -34,14 +34,13 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
         <span className="text-tinta">N.º {p.numero}</span>
       </nav>
       <Encabezado
-        antetitulo={`${p.cotizacion ? `Desde cotización #${p.cotizacion.numero}` : `Desde la nota N.º ${p.refExterna} de la tienda`} · ${fecha(new Date(p.creadoEn).toISOString())}`}
-        titulo={<>Nota de pedido <span className="text-rauli">{p.numero}</span></>}
+        titulo={<>Nota de pedido <span className="text-rauli">N.º {p.numero}</span></>}
+        meta={`${p.cotizacion ? `Desde la cotización N.º ${p.cotizacion.numero}` : `Desde la nota N.º ${p.refExterna} de la tienda`} · ${fecha(new Date(p.creadoEn).toISOString())}`}
         descripcion={<>{p.cliente.nombre}{p.proyecto && <> · proyecto {p.proyecto}</>}{p.cotizacion && <> · <Link href={`/cotizaciones/${p.cotizacion.id}`} className="text-rauli hover:underline">ver cotización</Link></>}</>}
         acciones={
           <>
             <Etiqueta tono={e.tono}>{e.texto}</Etiqueta>
             {sesion.permisos.has("clientes.ver") && <BotonDescarga href={`/api/v1/pedidos/${p.id}/pdf`}><Download className="h-4 w-4" /> PDF</BotonDescarga>}
-            {!cancelada && p.estado !== "despachada" && <CancelarPedido id={p.id} csrf={sesion.csrf} />}
           </>
         }
       />
@@ -60,6 +59,10 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
         <Panel titulo="Avance" className="mb-8">
           <AccionesCiclo id={p.id} estado={p.estado} faltanteCatalogo={faltanteCatalogo} itemsAPedido={itemsAPedido}
             puedeProducir={sesion.permisos.has("produccion.gestionar")} csrf={sesion.csrf} />
+          <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-linea pt-4">
+            <p className="text-sm text-tinta-tenue">¿El cliente desistió? Cancelar libera las reservas.</p>
+            <CancelarPedido id={p.id} csrf={sesion.csrf} />
+          </div>
         </Panel>
       )}
 
@@ -71,10 +74,10 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="flex items-center gap-3">{i.codigo ? <Placa codigo={i.codigo} /> : <span className="text-xs font-semibold uppercase tracking-wider text-pizarra">A pedido</span>}
                     <span className="text-sm">{i.descripcion}{i.medidaSolicitada && <span className="block text-xs text-tinta-tenue">Medida solicitada: {i.medidaSolicitada}</span>}</span></span>
-                  <span className="text-sm tabular-nums text-tinta-suave">{cancelada ? `${i.cantidad} u` : `${i.reservado} de ${i.cantidad} reservadas`}</span>
+                  <span className="text-sm tabular-nums text-tinta-suave">{cancelada ? `${i.cantidad} u` : p.estado === "despachada" ? `${i.cantidad} ${i.cantidad === 1 ? "despachada" : "despachadas"}` : `${i.reservado} de ${i.cantidad} reservadas`}</span>
                 </div>
                 {/* Una celda por puerta (hasta 40): reservada (llena) o por fabricar (rayada) */}
-                {!cancelada && i.cantidad <= 40 && (
+                {abierta && i.cantidad <= 40 && (
                   <div className="mt-2.5 flex gap-1" aria-label={`${i.reservado} reservadas y ${i.faltante} por fabricar`}>
                     {Array.from({ length: i.cantidad }, (_, k) => (
                       <span key={k} className={k < i.reservado
@@ -83,10 +86,10 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
                     ))}
                   </div>
                 )}
-                {!cancelada && i.faltante > 0 && (
+                {abierta && i.faltante > 0 && (
                   <p className="mt-2 flex items-center justify-between text-sm text-pizarra">
-                    <span>Faltan {i.faltante} por fabricar</span>
-                    {i.codigo && <Link href="/produccion" className="inline-flex items-center gap-1 hover:underline"><Hammer className="h-3.5 w-3.5" /> Ir a producción</Link>}
+                    <span>{i.faltante === 1 ? "Falta 1" : `Faltan ${i.faltante}`} por fabricar</span>
+                    {i.codigo && <Link href="/produccion" className="-my-2 inline-flex items-center gap-1 py-2 hover:underline"><Hammer className="h-3.5 w-3.5" /> Ir a producción</Link>}
                   </p>
                 )}
               </li>
@@ -112,7 +115,7 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
             <Panel titulo="Órdenes de producción">
               <ul className="space-y-2 text-sm">
                 {p.ordenes.map((o) => (
-                  <li key={o.id} className="flex justify-between"><Link href="/produccion" className="text-rauli hover:underline">Orden N.º {o.numero}</Link><span className="text-tinta-suave">{o.estado}</span></li>
+                  <li key={o.id} className="flex items-center justify-between"><Link href="/produccion" className="text-rauli hover:underline">Orden N.º {o.numero}</Link><Etiqueta tono={o.estado === "abierta" ? "pizarra" : o.estado === "cerrada" ? "musgo" : "neutro"}>{o.estado.charAt(0).toUpperCase() + o.estado.slice(1)}</Etiqueta></li>
                 ))}
               </ul>
             </Panel>

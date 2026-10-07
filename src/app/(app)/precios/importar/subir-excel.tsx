@@ -4,7 +4,9 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileSpreadsheet, Upload } from "lucide-react";
 import { Boton, Etiqueta } from "@/components/ui/base";
+import { CampoArchivo } from "@/components/ui/campo-archivo";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
+import { enviarIdempotente, huellaFormulario } from "@/lib/api-cliente";
 
 interface Informe {
   repetida: boolean; listaVersion: number | null; creadas: number; actualizadas: number; sinCambios: number; rechazadas: number;
@@ -28,15 +30,16 @@ export function SubirExcel({ csrf }: { csrf: string }) {
     const form = new FormData();
     form.set("archivo", archivo);
     try {
-      const r = await fetch("/api/v1/importaciones", {
-        method: "POST", body: form, headers: { "x-csrf-token": csrf, "idempotency-key": crypto.randomUUID() },
-      });
+      // Un reintento tras un corte reutiliza la misma clave: el mismo archivo no se importa dos veces (auditoría H-06).
+      const r = await enviarIdempotente(`POST /api/v1/importaciones ${huellaFormulario(form)}`, (clave) => fetch("/api/v1/importaciones", {
+        method: "POST", body: form, headers: { "x-csrf-token": csrf, "idempotency-key": clave },
+      }));
       const datos = await r.json();
       if (!r.ok) throw new Error(datos?.error?.mensaje ?? "No se pudo importar");
       setInforme(datos);
       router.refresh();
     } catch (e) {
-      setError(e instanceof TypeError ? "Sin conexión: no se importó nada." : (e as Error).message);
+      setError((e as Error).message);
     } finally {
       setEstado("listo");
     }
@@ -48,8 +51,7 @@ export function SubirExcel({ csrf }: { csrf: string }) {
         <FileSpreadsheet className="h-10 w-10 text-musgo" strokeWidth={1.3} />
         <label className="min-w-0 flex-1 text-sm">
           <span className="block font-medium">Excel del cotizador (.xlsx, hojas Precio y Categorias)</span>
-          <input ref={entrada} type="file" accept=".xlsx" aria-label="Archivo Excel" onChange={() => { setInforme(null); setError(null); }}
-            className="mt-2 block w-full text-sm file:mr-3 file:rounded-md file:border file:border-linea-fuerte file:bg-papel file:px-3 file:py-1.5 file:text-sm" />
+          <CampoArchivo entrada={entrada} accept=".xlsx" etiqueta="Archivo Excel" boton="Elegir Excel" onCambio={() => { setInforme(null); setError(null); }} />
         </label>
         <Boton variante="primario" disabled={estado === "subiendo"} onClick={subir}>
           <Upload className="h-4 w-4" /> {estado === "subiendo" ? "Importando…" : "Importar"}

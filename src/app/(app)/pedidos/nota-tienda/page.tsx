@@ -16,7 +16,7 @@ export default async function NotaTiendaPage() {
   const tiendas = await bd().select({ id: cliente.id, nombre: cliente.nombre }).from(cliente).where(eq(cliente.tipo, "tienda")).orderBy(cliente.nombre);
   return (
     <>
-      <Encabezado antetitulo="Ventas · pedidos" titulo="Pedido desde nota de la tienda"
+      <Encabezado titulo="Pedido desde nota de la tienda"
         descripcion="Sube el PDF de la nota de pedido que envía la tienda: se leen los códigos, cantidades y despacho; revisas y confirmas." />
       {tiendas.length === 0 ? (
         <Panel><p className="text-sm text-tinta-suave">No hay clientes de tipo «tienda». Crea la tienda en Clientes (tipo: Tienda) para cargar sus notas.</p>

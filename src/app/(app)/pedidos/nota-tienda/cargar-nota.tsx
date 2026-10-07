@@ -4,7 +4,9 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CircleAlert, FileUp, TriangleAlert } from "lucide-react";
 import { Boton, Placa } from "@/components/ui/base";
+import { CampoArchivo } from "@/components/ui/campo-archivo";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
+import { enviarIdempotente, huellaFormulario, SIN_CONFIRMAR } from "@/lib/api-cliente";
 import { clp, fecha } from "@/lib/formato";
 
 interface Linea { codigo: string; cantidad: number; medidaSolicitada: string | null; precioNota: number; articulo: { descripcion: string } | null; precioLista: number | null; aviso: string | null }
@@ -17,8 +19,10 @@ const campo = "mt-1 h-9 w-full rounded-md border border-linea-fuerte bg-lamina p
 
 async function enviar(url: string, form: FormData, csrf: string, idempotente = false) {
   const headers: Record<string, string> = { "x-csrf-token": csrf };
-  if (idempotente) headers["idempotency-key"] = crypto.randomUUID();
-  const r = await fetch(url, { method: "POST", body: form, headers });
+  // Crear el pedido es idempotente: un reintento tras un corte reutiliza la misma clave (auditoría H-06).
+  const r = idempotente
+    ? await enviarIdempotente(`POST ${url} ${huellaFormulario(form)}`, (clave) => fetch(url, { method: "POST", body: form, headers: { ...headers, "idempotency-key": clave } }))
+    : await fetch(url, { method: "POST", body: form, headers }).catch(() => { throw new Error(SIN_CONFIRMAR); });
   const cuerpo = await r.json().catch(() => null);
   if (!r.ok) throw new Error(cuerpo?.error?.mensaje ?? "No se pudo leer la nota.");
   return cuerpo;
@@ -65,8 +69,7 @@ export function CargarNota({ tiendas, csrf }: { tiendas: { id: string; nombre: s
           </select>
         </label>
         <label className="text-sm font-medium">PDF de la nota de pedido
-          <input ref={archivo} type="file" accept="application/pdf,.pdf" aria-label="PDF de la nota" onChange={() => setPrevia(null)}
-            className="mt-1 block text-sm file:mr-3 file:h-9 file:rounded-md file:border file:border-linea-fuerte file:bg-lamina file:px-3" />
+          <CampoArchivo entrada={archivo} accept="application/pdf,.pdf" etiqueta="PDF de la nota" boton="Elegir PDF" onCambio={() => setPrevia(null)} />
         </label>
         <Boton onClick={leer} disabled={ocupado}><FileUp className="h-4 w-4" /> Leer nota</Boton>
       </div>

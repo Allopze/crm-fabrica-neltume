@@ -92,6 +92,8 @@ export const auditLog = pgTable(
     check("audit_actor_tipo", sql`${t.actorTipo} in ('usuario', 'visitante', 'sistema', 'worker')`),
     index("audit_recurso_idx").on(t.recurso, t.recursoId),
     index("audit_fecha_idx").on(t.ocurridoEn),
+    // Denegaciones anónimas agregadas por IP (ADR-0016): la búsqueda de la ventana de 15 min usa este índice.
+    index("audit_visitante_ip_idx").on(t.ip, t.ocurridoEn).where(sql`${t.actorTipo} = 'visitante'`),
   ],
 );
 

@@ -20,7 +20,6 @@ export default async function ImportarPage() {
         <span className="text-tinta">Importar Excel</span>
       </nav>
       <Encabezado
-        antetitulo="Configuración · catálogo y precios"
         titulo="Importar el Excel"
         descripcion="Crea o actualiza artículos por código y, si cambió algún precio, una versión nueva de la lista. Las cotizaciones ya aprobadas no cambian. Importar dos veces el mismo archivo no duplica nada."
       />

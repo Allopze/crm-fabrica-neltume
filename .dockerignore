@@ -6,6 +6,19 @@ datos
 .env
 .env.*
 !.env.example
+!.env.worker.example
 test-results
 playwright-report
 coverage
+# Datos sensibles que nunca entran a una imagen (auditoría H-11): respaldos, proyecto de referencia y Excel de la fábrica.
+respaldos-externos
+referencia
+/*.xlsx
+/*.xls
+/*.xlsm
+docs/plantillas/*.xlsx
+# Carpetas locales de herramientas.
+.claude
+.codex
+.commandcode
+.impeccable

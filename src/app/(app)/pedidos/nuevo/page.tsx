@@ -40,7 +40,7 @@ export default async function NuevoPedidoPage({ searchParams }: PageProps<"/pedi
 
   return (
     <>
-      <Encabezado antetitulo={`Desde cotización #${c.numero}`} titulo="Convertir en nota de pedido"
+      <Encabezado titulo="Convertir en nota de pedido" meta={`Desde la cotización N.º ${c.numero}`}
         descripcion="Se reserva lo que hay en stock; lo que falta queda marcado para fabricar. Los precios son los congelados de la cotización." />
       {bloqueo ? (
         <Panel><p className="text-sm text-ambar">{bloqueo}</p><BotonLink href={`/cotizaciones/${c.id}`} className="mt-4">Volver a la cotización</BotonLink></Panel>

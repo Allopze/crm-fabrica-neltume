@@ -6,9 +6,12 @@ import type { ItemPropuesto, Propuesta } from "@/ai/esquema";
 import { ALIAS_MADERA, metros } from "./mapear";
 import { corregirItems } from "./correcciones";
 import { compacto } from "./modelos";
-import { aparece, cantidadesDichas, cifras, CONTINUA, maderasEn, plano } from "./texto-pedido";
+import { aparece, cantidadesDichas, cifras, CONTINUA, literal, maderasEn, plano } from "./texto-pedido";
 
 export { cantidadesDichas, cifras };
+
+/** Duda del sistema para un ítem cuya frase no está tal cual en el pedido (ADR-0016): bloquea la aprobación. */
+export const NO_VERIFICADO = "No pude verificar este ítem contra su línea del pedido (la IA no citó el texto tal cual).";
 
 const respaldaMedida = (valor: number, numeros: number[], max: number) => numeros.some((n) => { const m = metros(n, max); return m !== null && Math.abs(m - valor) <= 5e-4; });
 
@@ -33,11 +36,13 @@ const modelosEn = (texto: string, n: NombresModelo) => n.modelos.filter((m) => n
  */
 function contexto(items: ItemPropuesto[], k: number, mensaje: string, n: NombresModelo) {
   const frase = plano(items[k].texto_fuente);
-  const literal = !!frase.trim() && aparece(mensaje, frase);
-  const otras = items.map((o) => plano(o.texto_fuente)).filter((f, j) => j !== k && f.trim() && aparece(mensaje, f) && !f.includes(frase) && !frase.includes(f));
-  const resto = otras.reduce((t, f) => t.split(f.replace(/\s+/g, " ").trim()).join(" | "), plano(mensaje).replace(/\s+/g, " "));
+  const esLiteral = aparece(mensaje, frase);
+  // Lo demás se compara con la misma normalización que decide si una frase es literal (ADR-0016).
+  const propia = literal(frase);
+  const otras = items.map((o) => literal(o.texto_fuente)).filter((f, j) => j !== k && f && literal(mensaje).includes(f) && !f.includes(propia) && !propia.includes(f));
+  const resto = otras.reduce((t, f) => t.split(f).join(" | "), literal(mensaje));
   const continua = CONTINUA.test(frase) || (items[k].tipo === "puerta" && k > 0 && !modelosEn(frase, n).length);
-  return { frase, literal, otras, resto, continua };
+  return { frase, literal: esLiteral, otras, resto, continua };
 }
 
 /** El modelo de una puerta debe estar escrito en su línea (o dicho para todo el pedido, o heredado al continuar). */
@@ -83,6 +88,8 @@ export function anclarItems(items: ItemPropuesto[], mensaje: string, nombres: No
   return items.map((it, k) => {
     const dudas = [...it.dudas];
     const cx = contexto(items, k, mensaje, nombres);
+    // ADR-0016: sin la frase tal cual no se puede verificar cantidad, modelo ni madera de su línea: queda por confirmar.
+    if (!cx.literal) dudas.push(NO_VERIFICADO);
     if (it.cantidad !== null && cx.literal) {
       const dichas = cantidadesDichas(cx.frase);
       const heredada = CONTINUA.test(cx.frase) && items.some((o, j) => j !== k && o.cantidad === it.cantidad);
@@ -145,7 +152,7 @@ export function pedidosSinRegistrar(mensaje: string, frases: string[], modelos: 
 
 /** Ítems cuya frase no está tal cual en el mensaje: no se pudieron verificar contra su línea. */
 export function sinVerificar(items: ItemPropuesto[], mensaje: string): number[] {
-  return items.flatMap((it, k) => (it.texto_fuente.trim() && aparece(mensaje, it.texto_fuente) ? [] : [k + 1]));
+  return items.flatMap((it, k) => (aparece(mensaje, it.texto_fuente) ? [] : [k + 1]));
 }
 
 /**

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Plus } from "lucide-react";
 import { BotonLink, Encabezado, Panel } from "@/components/ui/base";
 import { EstadoCotizacionEtiqueta } from "@/components/ui/estado-cotizacion";
 import { SinPermiso } from "@/components/ui/sin-permiso";
@@ -16,7 +15,7 @@ const campo = "h-9 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm 
 
 const filtros = [
   { valor: "", texto: "Todas" }, { valor: "borrador", texto: "Borradores" }, { valor: "aprobada", texto: "Aprobadas" },
-  { valor: "aceptada", texto: "Aceptadas" }, { valor: "vencida", texto: "Vencidas" }, { valor: "ia_fallida", texto: "IA fallida" },
+  { valor: "aceptada", texto: "Aceptadas" }, { valor: "vencida", texto: "Vencidas" }, { valor: "ia_fallida", texto: "IA no disponible" },
 ] as const;
 
 export default async function CotizacionesPage({ searchParams }: PageProps<"/cotizaciones">) {
@@ -37,21 +36,15 @@ export default async function CotizacionesPage({ searchParams }: PageProps<"/cot
   return (
     <>
       <Encabezado
-        antetitulo="Ventas · cotizaciones"
         titulo="Cotizaciones"
         descripcion="Cada cotización guarda el texto original, lo que entendió la IA, la versión de lista usada y quién la aprobó."
-        acciones={
-          <>
-            <BotonLink href="/cotizaciones/manual">Cotizar a mano</BotonLink>
-            <BotonLink href="/cotizaciones/nueva" variante="primario"><Plus className="h-4 w-4" /> Desde texto</BotonLink>
-          </>
-        }
+        acciones={<BotonLink href="/cotizaciones/manual">Cotizar a mano</BotonLink>}
       />
 
       <nav className="mb-5 flex flex-wrap gap-1.5" aria-label="Filtrar por estado">
         {filtros.map((f) => (
           <Link key={f.valor} href={conFiltros({ estado: f.valor })} aria-current={estado === f.valor ? "page" : undefined}
-            className={cn("rounded-full px-3.5 py-1.5 text-sm", estado === f.valor ? "bg-tinta text-lamina" : "border border-linea text-tinta-suave hover:border-tinta hover:text-tinta")}>
+            className={cn("rounded-full px-3.5 py-1.5 text-sm pointer-coarse:py-2.5", estado === f.valor ? "bg-tinta text-lamina" : "border border-linea text-tinta-suave hover:border-tinta hover:text-tinta")}>
             {f.texto}
           </Link>
         ))}
@@ -73,20 +66,20 @@ export default async function CotizacionesPage({ searchParams }: PageProps<"/cot
         ) : (
           <Tabla>
             <thead>
-              <tr><Th>N.º</Th><Th>Cliente</Th><Th>Creada</Th><Th>Origen</Th><Th>Estado</Th><Th>Vigencia</Th><Th alinear="der">Total</Th></tr>
+              <tr><Th>N.º</Th><Th>Cliente</Th><Th className="hidden md:table-cell">Creada</Th><Th className="hidden lg:table-cell">Origen</Th><Th>Estado</Th><Th className="hidden md:table-cell">Vigencia</Th><Th alinear="der">Total</Th></tr>
             </thead>
             <tbody>
               {datos.map((c) => (
                 <Tr key={c.id}>
-                  <Td><Link href={`/cotizaciones/${c.id}`} className="font-mono font-medium text-rauli hover:underline">#{c.numero}</Link></Td>
+                  <Td><Link href={`/cotizaciones/${c.id}`} aria-label={`Cotización N.º ${c.numero}`} className="-my-2 inline-block py-2 font-medium tabular-nums text-rauli hover:underline">{c.numero}</Link></Td>
                   <Td className="font-medium">{c.cliente ?? <span className="text-tinta-tenue">sin cliente</span>}</Td>
-                  <Td className="text-tinta-suave">{fechaHora(new Date(c.creadoEn).toISOString())}</Td>
-                  <Td className="text-tinta-suave">{c.origen === "ia" ? "Texto + IA" : "Manual"}</Td>
+                  <Td className="hidden text-tinta-suave md:table-cell">{fechaHora(new Date(c.creadoEn).toISOString())}</Td>
+                  <Td className="hidden text-tinta-suave lg:table-cell">{c.origen === "ia" ? "Texto + IA" : "Manual"}</Td>
                   <Td>
-                    <EstadoCotizacionEtiqueta estado={(c.vencida ? "vencida" : c.estado) as never} />
-                    {c.estado === "borrador" && c.pendientes > 0 && <span className="ml-2 text-xs text-ambar">{c.pendientes} por resolver</span>}
+                    <EstadoCotizacionEtiqueta estado={(c.vencida ? "vencida" : c.estado) as never} pedidoEstado={c.pedidoEstado} />
+                    {c.estado === "borrador" && c.pendientes > 0 && <span className="ml-2 whitespace-nowrap text-xs text-ambar">{c.pendientes} por confirmar</span>}
                   </Td>
-                  <Td className="text-tinta-suave">{c.vigenciaHasta ? `hasta ${fecha(c.vigenciaHasta)}` : "—"}</Td>
+                  <Td className="hidden text-tinta-suave md:table-cell">{c.vigenciaHasta ? `hasta ${fecha(c.vigenciaHasta)}` : "—"}</Td>
                   <Td alinear="der" className="font-medium">{c.total !== null && Number(c.total) > 0 ? clp(Number(c.total)) : "—"}</Td>
                 </Tr>
               ))}

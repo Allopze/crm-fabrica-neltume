@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { bd } from "@/db/conexion";
 import { registro } from "@/lib/registro";
-import { registrarAuditoria } from "../auditoria";
+import { registrarAuditoria, registrarDenegacionAnonima } from "../auditoria";
 import { ESTADO_HTTP, ErrorDominio, type CodigoError } from "../errores";
 import { conIdempotencia, huellaCuerpo } from "./idempotencia";
 import type { Permiso } from "./permisos";
@@ -100,6 +100,15 @@ async function ejecutar<C extends ContextoBase<unknown>>(ctx: C, manejador: Mane
 }
 
 async function auditarDenegacion(ctx: ContextoBase<unknown>, motivo: CodigoError, actorId?: string): Promise<void> {
+  if (!actorId) {
+    // Sin usuario: agregada por IP cada 15 min en audit_log y cada una en el log JSON (ADR-0016, auditoría H-08).
+    registro.warn("petición denegada sin sesión", { motivo, metodo: ctx.req.method, ruta: ctx.req.nextUrl.pathname, ip: ctx.ip, correlacion_id: ctx.correlacionId });
+    await registrarDenegacionAnonima(bd(), {
+      actor: { tipo: "visitante", ip: ctx.ip, userAgent: ctx.userAgent }, accion: `${ctx.req.method} ${ctx.req.nextUrl.pathname}`,
+      recurso: "api", motivo, origen: "web", correlacionId: ctx.correlacionId,
+    });
+    return;
+  }
   await registrarAuditoria(bd(), {
     actor: { tipo: actorId ? "usuario" : "visitante", id: actorId, ip: ctx.ip, userAgent: ctx.userAgent },
     accion: `${ctx.req.method} ${ctx.req.nextUrl.pathname}`,
@@ -154,7 +163,7 @@ export function conPermiso<P = Record<string, never>>(
     const ctx = { ...base, sesion, actor };
     if (!opciones.idempotente) return ejecutar(ctx, manejador, sesion.usuario.id);
     return ejecutar(ctx, async (c) =>
-      conIdempotencia(req.headers.get("idempotency-key"), sesion.usuario.id, await huellaCuerpo(req), () => manejador(c)),
+      conIdempotencia(req.headers.get("idempotency-key"), sesion.usuario.id, `${req.method} ${req.nextUrl.pathname}`, await huellaCuerpo(req), () => manejador(c)),
     sesion.usuario.id);
   };
 }

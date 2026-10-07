@@ -29,9 +29,9 @@ function useAccion() {
 }
 
 /** Recepción de compras (REQ-MP-2). Idempotente: un doble clic no duplica. */
-export function FormularioRecepcion({ materias, csrf }: { materias: { id: string; nombre: string; unidad: string }[]; csrf: string }) {
+export function FormularioRecepcion({ materias, csrf, inicial }: { materias: { id: string; nombre: string; unidad: string }[]; csrf: string; inicial?: string }) {
   const { ejecutar, pendiente, aviso } = useAccion();
-  const [mpId, setMpId] = useState(materias[0]?.id ?? "");
+  const [mpId, setMpId] = useState(materias.some((m) => m.id === inicial) ? inicial! : materias[0]?.id ?? "");
   const unidad = materias.find((m) => m.id === mpId)?.unidad ?? "";
   return (
     <form aria-label="Registrar recepción" className="space-y-4" onSubmit={(e) => {
@@ -48,7 +48,7 @@ export function FormularioRecepcion({ materias, csrf }: { materias: { id: string
         </select>
       </label>
       <div className="grid grid-cols-[1fr_70px] gap-2">
-        <label className="text-sm font-medium">Cantidad<input name="cantidad" required inputMode="decimal" placeholder="0" className={`${campo} mt-1.5 tabular-nums`} /></label>
+        <label className="text-sm font-medium">Cantidad<input name="cantidad" required inputMode="decimal" placeholder="0" autoFocus={Boolean(inicial)} className={`${campo} mt-1.5 tabular-nums`} /></label>
         <p className="self-end pb-2.5 font-mono text-xs text-tinta-tenue">{unidad}</p>
       </div>
       <label className="block text-sm font-medium">Guía o factura del proveedor<input name="referencia" placeholder="Ej. guía 18.442" className={`${campo} mt-1.5`} /></label>

@@ -19,7 +19,6 @@ export default async function AdministracionPage() {
   return (
     <>
       <Encabezado
-        antetitulo="Configuración · acceso"
         titulo="Usuarios y permisos"
         descripcion="Hoy hay un solo rol con todos los permisos. Un perfil nuevo (por ejemplo, Bodega) se crea eligiendo permisos, sin tocar el sistema. Siempre debe quedar al menos un usuario activo que pueda gestionar usuarios."
       />

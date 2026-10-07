@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ItemPropuesto } from "@/ai/esquema";
-import { anclarItems, anclarPropuesta, cantidadPedidoEliptico, cantidadesDichas, cifras, pedidosSinRegistrar } from "./anclaje";
+import { anclarItems, anclarPropuesta, cantidadPedidoEliptico, cantidadesDichas, cifras, NO_VERIFICADO, pedidosSinRegistrar } from "./anclaje";
 
 const puerta = (p: Partial<ItemPropuesto>): ItemPropuesto => ({
   texto_fuente: "3 Neltume raulí 90x210", tipo: "puerta", modelo: "NELTUME", madera: "RAULI", ancho_m: 0.9, alto_m: 2.1, medida_accesorio: null, cantidad: 3, dudas: [], ...p,
@@ -71,13 +71,33 @@ describe("verificación de cifras (REQ-COT-2.14)", () => {
     const yelcho = puerta({ texto_fuente: "4 puertas Yelcho 90x210", modelo: "YELCHO", cantidad: 4, madera: "PINO OREGON" });
     expect(anclarItems([yelcho], "4 puertas Yelcho 90x210")[0].dudas).toEqual(["La madera «PINO OREGON» no aparece en el pedido."]);
     // Aunque la IA parafrasee la frase, la madera debe estar en algún lugar del pedido.
-    expect(anclarItems([{ ...yelcho, texto_fuente: "cuatro Yelcho" }], "4 puertas Yelcho 90x210")[0].dudas).toEqual(["La madera «PINO OREGON» no aparece en el pedido."]);
+    expect(anclarItems([{ ...yelcho, texto_fuente: "cuatro Yelcho" }], "4 puertas Yelcho 90x210")[0].dudas).toEqual([NO_VERIFICADO, "La madera «PINO OREGON» no aparece en el pedido."]);
     expect(anclarItems([{ ...yelcho, madera: "RAULI" }], "4 puertas Yelcho 90x210 en ráuli")[0].dudas).toEqual([]);
     expect(anclarItems([{ ...yelcho }], "4 puertas Yelcho 90x210 en pino")[0].dudas).toEqual([]);
   });
 
-  it("si la frase no está literal en el pedido (parafraseada), no se exige la cantidad en ella", () => {
-    expect(anclarItems([puerta({ texto_fuente: "tres puertas neltume" })], "Necesito 3 Neltume raulí 90x210")[0].dudas).toEqual([]);
+  it("si la frase no está tal cual en el pedido (parafraseada), el ítem queda por confirmar (ADR-0016)", () => {
+    expect(anclarItems([puerta({ texto_fuente: "tres puertas neltume" })], "Necesito 3 Neltume raulí 90x210")[0].dudas).toEqual([NO_VERIFICADO]);
+    // Casos de la auditoría H-04: modelo de otra línea y cantidad inventada con la frase parafraseada.
+    expect(anclarItems([puerta({ texto_fuente: "puerta de raulí", cantidad: 1 })], "1 Lican raulí 90x210", NOMBRES)[0].dudas).toContain(NO_VERIFICADO);
+    expect(anclarItems([puerta({ texto_fuente: "Neltume de raulí", cantidad: 7 })], "1 Neltume raulí 90x210", NOMBRES)[0].dudas).toContain(NO_VERIFICADO);
+    expect(anclarItems([puerta({ texto_fuente: "" })], "3 Neltume raulí 90x210")[0].dudas).toEqual([NO_VERIFICADO]);
+  });
+
+  it("una cita que solo difiere en mayúsculas, tildes, puntuación o espacios es literal", () => {
+    expect(anclarItems([puerta({ texto_fuente: "3 neltume, rauli 90x210." })], "Hola: 3 Neltume   raulí 90x210; gracias")[0].dudas).toEqual([]);
+    expect(anclarItems([puerta({ texto_fuente: "«3 Neltume raulí 90x210»" })], "3 Neltume raulí 90x210")[0].dudas).toEqual([]);
+  });
+
+  it("un monto no respalda una cantidad ni una medida (ADR-0016, auditoría H-05)", () => {
+    expect(cantidadesDichas("Quiero 1 puerta Neltume raulí 90x210 a $50.000")).toEqual([1]);
+    expect(cantidadesDichas("Neltume raulí 90x210, pago 50 lucas")).toEqual([]);
+    expect(cantidadesDichas("2 Neltume a 50 mil c/u y $ 120.000 el marco")).toEqual([2]);
+    expect(cantidadesDichas("son 10.000 por puerta")).toEqual([]);
+    expect(cifras("$50.000 y 50 lucas")).toEqual([]);
+    const pedido = "Quiero 1 puerta Neltume raulí 90x210 a $50.000";
+    expect(anclarItems([puerta({ texto_fuente: pedido, cantidad: 50 })], pedido)[0].dudas).toEqual(["La cantidad 50 no aparece en el pedido."]);
+    expect(anclarItems([puerta({ texto_fuente: pedido, cantidad: 1 })], pedido)[0].dudas).toEqual([]);
   });
 });
 
@@ -105,6 +125,7 @@ describe("cobertura del pedido (REQ-COT-2.14)", () => {
   it("un ítem cuya frase la IA no citó tal cual queda a la vista como no verificado (REQ-COT-2.15)", () => {
     const r = anclarPropuesta({ items: [puerta({ texto_fuente: "tres puertas neltume" })], alertas: [], sin_items: false }, "Necesito 3 Neltume raulí 90x210", NOMBRES);
     expect(r.propuesta.alertas).toContain("No pude verificar el ítem 1 contra el pedido (la IA no citó el texto tal cual): revísalo.");
+    expect(r.propuesta.items[0].dudas).toContain(NO_VERIFICADO);
   });
 });
 

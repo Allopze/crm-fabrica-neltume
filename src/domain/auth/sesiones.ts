@@ -2,9 +2,10 @@
 // en la BD se guarda su hash SHA-256, así una filtración de la tabla no da acceso.
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt, isNull, or, sql } from "drizzle-orm";
-import { bd } from "@/db/conexion";
+import { bd, type Tx } from "@/db/conexion";
+import { registro } from "@/lib/registro";
 import { intentoLogin, rol, rolPermiso, sesion, usuario } from "@/db/esquema/seguridad";
-import { registrarAuditoria } from "../auditoria";
+import { type Actor, registrarAuditoria, registrarDenegacionAnonima } from "../auditoria";
 import { ErrorDominio } from "../errores";
 import { hashFalso, verificarPassword } from "./password";
 import type { Permiso } from "./permisos";
@@ -24,10 +25,22 @@ const hashToken = (token: string) => createHash("sha256").update(token).digest("
 
 interface Contexto { ip?: string; userAgent?: string; correlacionId?: string }
 
+/**
+ * Login denegado: cada intento queda en `intento_login` y en el log JSON; en `audit_log`, agregado por IP cada 15 min
+ * (ADR-0016), porque el login está en internet y la auditoría no se puede purgar.
+ */
+async function denegarLogin(tx: Tx, actor: Actor, correo: string, motivo: "LIMITE_LOGIN" | "CREDENCIALES", correlacionId?: string) {
+  await registrarDenegacionAnonima(tx, { actor, accion: "login", recurso: "sesion", despues: { email: correo }, motivo, origen: "web", correlacionId });
+  registro.warn("login denegado", { motivo, ip: actor.ip, correlacion_id: correlacionId });
+}
+
 /** Valida credenciales y abre una sesión. Lanza CREDENCIALES o LIMITE_LOGIN (auditados). */
 export async function iniciarSesion(email: string, clave: string, ctx: Contexto) {
   const correo = email.trim().toLowerCase();
   const resultado = await bd().transaction(async (tx) => {
+    // Bloqueo por correo y luego por IP (siempre en ese orden): intentos simultáneos no evaden el límite (auditoría H-07).
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`login:${correo}`}))`);
+    if (ctx.ip) await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`login-ip:${ctx.ip}`}))`);
     const desde = sql`now() - make_interval(mins => ${VENTANA_MIN})`;
     const condicionIp = ctx.ip ? or(eq(intentoLogin.email, correo), eq(intentoLogin.ip, ctx.ip)) : eq(intentoLogin.email, correo);
     const [{ fallos }] = await tx
@@ -37,7 +50,7 @@ export async function iniciarSesion(email: string, clave: string, ctx: Contexto)
     const visitante = { tipo: "visitante" as const, ip: ctx.ip, userAgent: ctx.userAgent };
 
     if (fallos >= MAX_FALLOS) {
-      await registrarAuditoria(tx, { actor: visitante, accion: "login", recurso: "sesion", despues: { email: correo, motivo: "limite" }, resultado: "denegado", origen: "web", correlacionId: ctx.correlacionId });
+      await denegarLogin(tx, visitante, correo, "LIMITE_LOGIN", ctx.correlacionId);
       return { ok: false as const, error: "LIMITE_LOGIN" as const };
     }
 
@@ -46,7 +59,7 @@ export async function iniciarSesion(email: string, clave: string, ctx: Contexto)
     await tx.insert(intentoLogin).values({ email: correo, ip: ctx.ip ?? null, ok: Boolean(u && valida) });
 
     if (!u || !valida) {
-      await registrarAuditoria(tx, { actor: visitante, accion: "login", recurso: "sesion", despues: { email: correo }, resultado: "denegado", origen: "web", correlacionId: ctx.correlacionId });
+      await denegarLogin(tx, visitante, correo, "CREDENCIALES", ctx.correlacionId);
       return { ok: false as const, error: "CREDENCIALES" as const };
     }
 

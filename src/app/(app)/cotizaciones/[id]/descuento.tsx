@@ -15,8 +15,8 @@ export function Descuento({ pct, motivo, deshabilitado, onAplicar }: {
 
   if (!abierto) {
     return (
-      <button type="button" disabled={deshabilitado} onClick={() => setAbierto(true)} className="inline-flex items-center gap-1 text-xs text-rauli hover:underline disabled:opacity-40">
-        <Percent className="h-3 w-3" /> {pct > 0 ? "Cambiar o quitar descuento" : "Aplicar descuento"}
+      <button type="button" disabled={deshabilitado} onClick={() => setAbierto(true)} className="-my-1.5 inline-flex min-h-8 items-center gap-1.5 text-sm text-rauli hover:underline disabled:opacity-40 pointer-coarse:min-h-11">
+        <Percent className="h-3.5 w-3.5" /> {pct > 0 ? "Cambiar o quitar descuento" : "Aplicar descuento"}
       </button>
     );
   }
@@ -24,10 +24,10 @@ export function Descuento({ pct, motivo, deshabilitado, onAplicar }: {
     <form aria-label="Descuento" className="mt-2 flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); onAplicar(porcentaje, razon); setAbierto(false); }}>
       <label className="flex items-center gap-1 text-sm">
         <input value={valor} onChange={(e) => setValor(e.target.value.replace(/[^\d,]/g, ""))} inputMode="decimal" aria-label="Porcentaje de descuento" placeholder="0"
-          className="h-8 w-16 rounded-md border border-linea-fuerte bg-lamina px-2 text-right tabular-nums" /> %
+          className="h-9 w-16 rounded-md border border-linea-fuerte bg-lamina px-2 text-right tabular-nums" /> %
       </label>
       <input value={razon} onChange={(e) => setRazon(e.target.value)} required minLength={3} maxLength={300} aria-label="Motivo del descuento" placeholder="Motivo (obligatorio)"
-        className="h-8 min-w-48 flex-1 rounded-md border border-linea-fuerte bg-lamina px-2 text-sm" />
+        className="h-9 min-w-48 flex-1 rounded-md border border-linea-fuerte bg-lamina px-2 text-sm" />
       <Boton type="submit" disabled={deshabilitado || razon.trim().length < 3 || !(porcentaje >= 0 && porcentaje < 100)}>{porcentaje > 0 ? "Aplicar" : "Quitar"}</Boton>
       <Boton type="button" variante="fantasma" onClick={() => setAbierto(false)}>Cancelar</Boton>
     </form>

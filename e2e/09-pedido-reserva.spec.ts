@@ -19,7 +19,7 @@ test("convertir A en pedido reserva lo disponible y marca el faltante", async ({
 
   await expect(page).toHaveURL(/\/pedidos\/[0-9a-f-]{36}$/);
   await expect(page.getByRole("main")).toContainText("2 de 3 reservadas");
-  await expect(page.getByRole("main")).toContainText("Faltan 1 por fabricar");
+  await expect(page.getByRole("main")).toContainText("Falta 1 por fabricar");
   await expect(page.getByLabel("Medio de transporte")).toHaveValue("Camión propio");
   const stock = (await api(page, "GET", "/api/v1/stock/NEL-R-4-B")).cuerpo;
   expect(stock).toMatchObject({ existencia: 2, reservado: 2, disponible: 0 });

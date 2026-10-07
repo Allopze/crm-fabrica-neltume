@@ -1,4 +1,6 @@
 // Logs en JSON a stdout (DESIGN §5). Redacta credenciales y datos personales (SECURITY T5, §4).
+import { enmascararDatosPersonales } from "./datos-personales";
+
 type Nivel = "debug" | "info" | "warn" | "error";
 
 const CLAVES_REDACTADAS = new Set([
@@ -6,16 +8,13 @@ const CLAVES_REDACTADAS = new Set([
   "password", "clave", "hashpassword", "hash_password", "token", "tokenhash", "token_hash", "csrf", "csrftoken",
   "rut", "email", "correo", "telefono", "teléfono", "direccion", "dirección",
 ]);
-const PATRONES = [
-  /\b\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]\b/g, // RUT
-  /[\w.+-]+@[\w-]+\.[\w.]+/g, // correo
-  /\+?56\s?9\s?\d{4}\s?\d{4}/g, // teléfono móvil chileno
-  /Bearer\s+[\w.-]+/gi,
-];
+// RUT, correo, teléfono y cifras largas: los mismos patrones que antes del LLM (src/lib/datos-personales.ts).
+const BEARER = /Bearer\s+[\w.-]+/gi;
+const redactarTexto = (t: string) => enmascararDatosPersonales(t, "[REDACTADO]").texto.replace(BEARER, "[REDACTADO]");
 
 export function redactar(valor: unknown, profundidad = 0): unknown {
   if (profundidad > 6) return "[…]";
-  if (typeof valor === "string") return PATRONES.reduce((t, p) => t.replace(p, "[REDACTADO]"), valor);
+  if (typeof valor === "string") return redactarTexto(valor);
   if (Array.isArray(valor)) return valor.map((v) => redactar(v, profundidad + 1));
   if (valor instanceof Error) return { nombre: valor.name, mensaje: redactar(valor.message, profundidad + 1) };
   if (valor && typeof valor === "object") {

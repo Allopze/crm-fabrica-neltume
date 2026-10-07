@@ -11,7 +11,8 @@ const mapa: Record<EstadoCotizacion, { texto: string; tono: "neutro" | "musgo" |
   vencida: { texto: "Vencida", tono: "neutro" },
 };
 
-export function EstadoCotizacionEtiqueta({ estado }: { estado: EstadoCotizacion }) {
-  const e = mapa[estado];
+/** Una aceptada cuyo pedido se canceló no debe seguir diciendo «pedido». */
+export function EstadoCotizacionEtiqueta({ estado, pedidoEstado }: { estado: EstadoCotizacion; pedidoEstado?: string | null }) {
+  const e = estado === "aceptada" && pedidoEstado === "cancelada" ? { texto: "Aceptada · pedido cancelado", tono: "neutro" as const } : mapa[estado];
   return <Etiqueta tono={e.tono}>{e.texto}</Etiqueta>;
 }

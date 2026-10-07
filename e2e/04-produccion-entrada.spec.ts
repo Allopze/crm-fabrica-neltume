@@ -13,7 +13,7 @@ async function ordenesAbiertas(page: Page) {
 
 test("define el BOM de demostración de Neltume", async ({ page }) => {
   await ingresar(page, ADMIN.email, ADMIN.clave);
-  await ir(page, "/produccion");
+  await ir(page, "/produccion?vista=recetas");
   await page.getByRole("button", { name: "Definir BOM" }).click();
   const form = page.getByRole("form", { name: "Definir BOM" });
   await form.getByLabel("Modelo").selectOption("NEL");
@@ -47,10 +47,10 @@ test("crea y cierra una orden de 2 NEL-R-4-B: consume insumos y suma puertas", a
   // La vista previa del cierre nombra el insumo (en la tabla de recetas los insumos van plegados).
   const cierre = page.locator("section").filter({ has: page.getByRole("heading", { name: /Cerrar orden/ }) });
   await expect(cierre.getByText("Tabla raulí").first()).toBeVisible();
-  await page.getByRole("button", { name: /Cerrar orden \d+ y mover stock/ }).click();
+  await page.getByRole("button", { name: /Cerrar orden N\.º \d+ y mover stock/ }).click();
   // Mover stock es irreversible: primero se confirma, y el resultado queda a la vista sin saltar a otra orden.
   await page.getByRole("group", { name: /Confirmar cierre de la orden/ }).getByRole("button", { name: "Confirmar cierre" }).click();
-  await expect(page.getByText(/Orden \d+ cerrada/)).toBeVisible();
+  await expect(page.getByText(/Orden N\.º \d+ cerrada/)).toBeVisible();
   await expect(page.getByRole("cell", { name: "Cerrada" })).toBeVisible();
   await ir(page, "/stock/NEL-R-4-B");
   await expect(page.getByText("Existencia").locator("..")).toContainText("2");

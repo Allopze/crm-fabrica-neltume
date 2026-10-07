@@ -8,6 +8,14 @@ import { cn } from "@/lib/formato";
 
 interface Rol { id: string; nombre: string; permisos: string[] }
 
+// Los permisos se agrupan por área del trabajo, en vez de una lista plana de 18 casillas.
+const AREAS = [
+  { nombre: "Ventas", prefijos: ["cotizaciones.", "descuentos.", "pedidos.", "clientes."] },
+  { nombre: "Taller", prefijos: ["stock.", "mp.", "produccion."] },
+  { nombre: "Catálogo y precios", prefijos: ["catalogo.", "precios.", "costos."] },
+  { nombre: "Administración", prefijos: ["usuarios.", "auditoria.", "config."] },
+];
+
 export function RolesCliente({ roles, catalogo, csrf }: { roles: Rol[]; catalogo: [string, string][]; csrf: string }) {
   const router = useRouter();
   const [rolId, setRolId] = useState(roles[0]?.id);
@@ -44,21 +52,28 @@ export function RolesCliente({ roles, catalogo, csrf }: { roles: Rol[]; catalogo
           </button>
         ))}
       </div>
-      <ul className="grid gap-x-4 gap-y-2 sm:grid-cols-2">
-        {catalogo.map(([codigo, texto]) => (
-          <li key={codigo}>
-            <label className="flex cursor-pointer items-start gap-2 text-sm">
-              <input type="checkbox" className="mt-0.5 accent-[var(--musgo)]" checked={marcados.has(codigo)}
-                onChange={(e) => {
-                  const s = new Set(marcados);
-                  if (e.target.checked) s.add(codigo); else s.delete(codigo);
-                  setMarcados(s);
-                }} />
-              <span><span className="block">{texto}</span><span className="font-mono text-[10px] text-tinta-tenue">{codigo}</span></span>
-            </label>
-          </li>
+      <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+        {AREAS.map((area) => (
+          <fieldset key={area.nombre}>
+            <legend className="mb-2 text-sm font-semibold text-tinta-suave">{area.nombre}</legend>
+            <ul className="space-y-2">
+              {catalogo.filter(([codigo]) => area.prefijos.some((p) => codigo.startsWith(p))).map(([codigo, texto]) => (
+                <li key={codigo}>
+                  <label className="flex cursor-pointer items-start gap-2 text-sm" title={codigo}>
+                    <input type="checkbox" className="mt-0.5 accent-[var(--musgo)]" checked={marcados.has(codigo)}
+                      onChange={(e) => {
+                        const s = new Set(marcados);
+                        if (e.target.checked) s.add(codigo); else s.delete(codigo);
+                        setMarcados(s);
+                      }} />
+                    {texto}
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </fieldset>
         ))}
-      </ul>
+      </div>
       <div className="mt-5 flex items-center gap-3">
         <Boton variante="primario" onClick={guardar} disabled={pendiente}>{pendiente ? "Guardando…" : "Guardar permisos"}</Boton>
         {mensaje && <Etiqueta tono={mensaje.tono === "ok" ? "musgo" : "error"}>{mensaje.texto}</Etiqueta>}

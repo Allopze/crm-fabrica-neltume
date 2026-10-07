@@ -13,7 +13,9 @@ export async function crearInterpretacion(tx: Tx, d: { texto: string; clienteId?
   const texto = d.texto.trim();
   if (!texto) throw new ErrorDominio("VALIDACION", "Pega el texto del pedido.");
   if (texto.length > MAX_TEXTO) throw new ErrorDominio("TEXTO_DEMASIADO_LARGO", `El texto supera ${MAX_TEXTO.toLocaleString("es-CL")} caracteres.`);
-  // SECURITY T4: límite por usuario y hora.
+  // SECURITY T4: límite por usuario y hora, contado bajo un bloqueo por usuario para que envíos simultáneos no lo
+  // superen (auditoría H-06).
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`ia:${actor.id}`}))`);
   const [{ n }] = await tx.select({ n: sql<number>`count(*)::int` }).from(cotizacion)
     .where(and(eq(cotizacion.creadoPor, actor.id), eq(cotizacion.origen, "ia"), gt(cotizacion.creadoEn, sql`now() - interval '1 hour'`)));
   if (n >= LIMITE_POR_HORA) throw new ErrorDominio("LIMITE_IA", `Alcanzaste ${LIMITE_POR_HORA} interpretaciones en la última hora. Cotiza a mano o espera.`);

@@ -19,7 +19,6 @@ export default async function ManualPage() {
   return (
     <>
       <Encabezado
-        antetitulo="Cotizador · sin IA"
         titulo="Cotización manual"
         descripcion="Mismo cálculo que la cotización desde texto: lista vigente, recargo por tipo y redondeo al peso."
       />

@@ -29,8 +29,8 @@ export function FormularioLogin() {
 
   return (
     <form className="entrada w-full max-w-sm" onSubmit={ingresar} noValidate>
-      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-rauli">Acceso interno</p>
-      <h1 className="mt-2 font-display text-4xl font-medium tracking-tight">Ingresar</h1>
+      <h1 className="font-display text-4xl font-medium tracking-tight">Ingresar</h1>
+      <p className="mt-2 text-sm text-tinta-suave">Acceso interno de la fábrica.</p>
       <div className="regla mt-6 mb-8" aria-hidden />
 
       <label className="block text-sm font-medium" htmlFor="email">Correo</label>

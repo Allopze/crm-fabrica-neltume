@@ -2,7 +2,9 @@
 import { and, asc, eq, gt, ilike, isNotNull, or, sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
 import { articulo, bodega, madera, modelo, tipoPuerta } from "@/db/esquema/catalogo";
+import { notaPedido } from "@/db/esquema/comercial";
 import { movimiento, type TipoMovimiento } from "@/db/esquema/inventario";
+import { ordenProduccion } from "@/db/esquema/produccion";
 import { usuario } from "@/db/esquema/seguridad";
 import { type Actor, type Origen, registrarAuditoria } from "./auditoria";
 import { ErrorDominio } from "./errores";
@@ -108,10 +110,16 @@ export async function listarStock(tx: Tx, f: FiltroStock) {
   return { datos, siguiente: filas.length > limite ? datos.at(-1)!.codigo : null };
 }
 
+/** Movimientos de un artículo, con el número del documento de referencia (nota de pedido u orden) para mostrarlo en vez del id. */
 export async function movimientosDe(tx: Tx, articuloId: string, limite = 50) {
   return tx
     .select({ id: movimiento.id, ocurridoEn: movimiento.ocurridoEn, tipo: movimiento.tipo, cantidad: movimiento.cantidad, motivo: movimiento.motivo,
-      refTipo: movimiento.refTipo, refId: movimiento.refId, usuario: usuario.nombre })
+      refTipo: movimiento.refTipo, refId: movimiento.refId, usuario: usuario.nombre,
+      refNumero: sql<number | null>`CASE ${movimiento.refTipo}
+        WHEN 'pedido' THEN (SELECT ${notaPedido.numero} FROM ${notaPedido} WHERE ${notaPedido.id}::text = ${movimiento.refId})
+        WHEN 'orden' THEN CASE WHEN ${movimiento.refId} ~ '^[0-9]+$' THEN ${movimiento.refId}::int
+          ELSE (SELECT ${ordenProduccion.numero} FROM ${ordenProduccion} WHERE ${ordenProduccion.id}::text = ${movimiento.refId}) END
+      END` })
     .from(movimiento)
     .innerJoin(usuario, eq(usuario.id, movimiento.usuarioId))
     .where(eq(movimiento.articuloId, articuloId))

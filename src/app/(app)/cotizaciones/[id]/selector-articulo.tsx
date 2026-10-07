@@ -26,8 +26,8 @@ export function SelectorArticulo({ version, onElegir, etiqueta = "Buscar artícu
 
   return (
     <div className="relative min-w-60 flex-1">
-      <input id={id} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Código o modelo (p. ej. NEL-R-4-B)" aria-label={etiqueta}
-        className="h-9 w-full rounded-md border border-linea-fuerte bg-lamina px-3 font-mono text-sm uppercase placeholder:normal-case focus:border-tinta focus:outline-none" />
+      <input id={id} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Busca por código o modelo" aria-label={etiqueta}
+        className="h-9 w-full rounded-md border border-linea-fuerte bg-lamina px-3 font-mono text-sm uppercase placeholder:font-sans placeholder:normal-case focus:border-tinta focus:outline-none pointer-coarse:h-11" />
       {q.trim().length >= 2 && opciones.length > 0 && (
         <ul role="listbox" className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-linea-fuerte bg-lamina shadow-lg">
           {opciones.map((o) => (

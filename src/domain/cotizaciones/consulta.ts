@@ -1,8 +1,8 @@
 // Lectura de cotizaciones (REQ-COT-2.6, 3.1, 6.3, 10). Avisos de stock calculados al leer, nunca guardados.
 import { and, asc, desc, eq, ilike, lt, or, sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
-import { listaPrecio } from "@/db/esquema/catalogo";
-import { cliente, cotizacion, cotizacionItem } from "@/db/esquema/comercial";
+import { listaPrecio, parametro } from "@/db/esquema/catalogo";
+import { cliente, cotizacion, cotizacionItem, notaPedido } from "@/db/esquema/comercial";
 import { usuario } from "@/db/esquema/seguridad";
 import { ErrorDominio } from "../errores";
 import { hoySantiago } from "../precios/dias-habiles";
@@ -17,6 +17,9 @@ export async function obtenerCotizacion(tx: Tx, id: string, verCliente: boolean)
   const [vigente] = await tx.select({ id: listaPrecio.id, version: listaPrecio.version }).from(listaPrecio).where(eq(listaPrecio.vigente, true));
   const [usada] = c.listaId ? await tx.select({ version: listaPrecio.version }).from(listaPrecio).where(eq(listaPrecio.id, c.listaId)) : [];
   const [aprobador] = c.aprobadaPor ? await tx.select({ nombre: usuario.nombre }).from(usuario).where(eq(usuario.id, c.aprobadaPor)) : [];
+  // Nota de pedido creada desde esta cotización (una como máximo, REQ-COT-8.3) y vigencia configurada (REQ-COT-6.1).
+  const [pedido] = await tx.select({ id: notaPedido.id, numero: notaPedido.numero, estado: notaPedido.estado }).from(notaPedido).where(eq(notaPedido.cotizacionId, id));
+  const [vigencia] = await tx.select({ valor: parametro.valor }).from(parametro).where(eq(parametro.clave, "vigencia_dias_habiles"));
 
   const conAviso = await Promise.all(items.map(async (i) => {
     if (i.estadoItem !== "ok" || !i.articuloId) return { ...i, avisoStock: null };
@@ -31,6 +34,8 @@ export async function obtenerCotizacion(tx: Tx, id: string, verCliente: boolean)
     cliente: cli ? { id: cli.id, nombre: cli.nombre, rut: cli.rut, comuna: cli.comuna, contacto: cli.contacto } : c.clienteId ? { id: c.clienteId, nombre: "(oculto)" } : null,
     lista: { usada: usada?.version ?? null, vigente: vigente?.version ?? null, desactualizada: Boolean(usada && vigente && usada.version !== vigente.version && c.estado === "borrador") },
     aprobador: aprobador?.nombre ?? null,
+    pedido: pedido ?? null,
+    vigenciaDias: Number(vigencia?.valor ?? 10),
     pendientes: items.filter((i) => i.estadoItem !== "ok").length,
   };
 }
@@ -51,9 +56,9 @@ export async function listarCotizaciones(tx: Tx, f: { estado?: string; q?: strin
   if (f.antesDe) condiciones.push(lt(cotizacion.numero, f.antesDe));
   const filas = await tx
     .select({ id: cotizacion.id, numero: cotizacion.numero, estado: cotizacion.estado, origen: cotizacion.origen, creadoEn: cotizacion.creadoEn,
-      vigenciaHasta: cotizacion.vigenciaHasta, total: cotizacion.total, cliente: cliente.nombre,
+      vigenciaHasta: cotizacion.vigenciaHasta, total: cotizacion.total, cliente: cliente.nombre, pedidoEstado: notaPedido.estado,
       pendientes: sql<number>`(SELECT count(*)::int FROM ${cotizacionItem} WHERE ${cotizacionItem.cotizacionId} = ${cotizacion.id} AND ${cotizacionItem.estadoItem} <> 'ok')` })
-    .from(cotizacion).leftJoin(cliente, eq(cliente.id, cotizacion.clienteId))
+    .from(cotizacion).leftJoin(cliente, eq(cliente.id, cotizacion.clienteId)).leftJoin(notaPedido, eq(notaPedido.cotizacionId, cotizacion.id))
     .where(condiciones.length ? and(...condiciones) : undefined)
     .orderBy(desc(cotizacion.numero)).limit(limite + 1);
   const hoy = hoySantiago();

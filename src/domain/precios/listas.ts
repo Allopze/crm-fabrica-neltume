@@ -1,5 +1,5 @@
 // Versiones de la lista de precios (REQ-COT-1.1, 1.3–1.5). Nunca se edita una versión: se crea otra.
-import { and, asc, desc, eq, gt, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { bd } from "@/db/conexion";
 import { articulo, listaPrecio, madera, modelo, precio, recargoTipo, tipoPuerta } from "@/db/esquema/catalogo";
 import { usuario } from "@/db/esquema/seguridad";
@@ -35,7 +35,7 @@ export async function recargosDe(listaId: string): Promise<Record<TipoRecargo, n
   return r;
 }
 
-export interface FiltroPrecios { q?: string; madera?: string; tipo?: string; cursor?: string; limite?: number }
+export interface FiltroPrecios { q?: string; madera?: string; tipo?: string; alto?: number; cursor?: string; limite?: number }
 
 /** Precios de una versión con precio de venta e IVA calculados. Costos solo si `verCostos`. */
 export async function preciosDeLista(version: number, f: FiltroPrecios, verCostos: boolean) {
@@ -46,7 +46,9 @@ export async function preciosDeLista(version: number, f: FiltroPrecios, verCosto
   const condiciones = [eq(precio.listaId, lista.id)];
   if (f.q) condiciones.push(or(ilike(articulo.codigo, `%${f.q}%`), ilike(modelo.nombre, `%${f.q}%`))!);
   if (f.madera) condiciones.push(eq(madera.codigo, f.madera.toUpperCase()));
-  if (f.tipo) condiciones.push(eq(tipoPuerta.nombre, f.tipo.toUpperCase()));
+  if (f.tipo === "ACCESORIO") condiciones.push(isNull(articulo.tipoPuertaId));
+  else if (f.tipo) condiciones.push(eq(tipoPuerta.nombre, f.tipo.toUpperCase()));
+  if (f.alto) condiciones.push(eq(articulo.altoM, f.alto));
   if (f.cursor) condiciones.push(gt(articulo.codigo, f.cursor));
 
   const filas = await bd()
@@ -137,4 +139,14 @@ async function recargosDeTx(tx: TxLike, listaId: string, tipos: Map<string, stri
     r[(f.tipoPuertaId ? nombre.get(f.tipoPuertaId) : "ACCESORIOS") as TipoRecargo] = Number(f.porcentaje);
   }
   return r;
+}
+
+/** Valores para los filtros de la lista: maderas, tipos de puerta y altos o largos presentes en el catálogo. */
+export async function opcionesFiltroPrecios() {
+  const [maderas, tipos, altos] = await Promise.all([
+    bd().select({ codigo: madera.codigo, nombre: madera.nombre }).from(madera).orderBy(asc(madera.nombre)),
+    bd().select({ nombre: tipoPuerta.nombre }).from(tipoPuerta).orderBy(asc(tipoPuerta.nombre)),
+    bd().selectDistinct({ altoM: articulo.altoM }).from(articulo).orderBy(asc(articulo.altoM)),
+  ]);
+  return { maderas, tipos: tipos.map((t) => t.nombre), altos: altos.map((a) => Number(a.altoM)) };
 }

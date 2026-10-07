@@ -49,7 +49,7 @@ export function EditorBom({ modelos, materias, csrf, maderaLista, inicial }: {
     ...(maderaInicial && !conMadera ? ["Madera de la puerta"] : []),
     ...(insumosIniciales ?? []).filter((x) => !lineas.some((l) => l.materiaPrimaId === x.materiaPrimaId)).map((x) => nombreMp(x.materiaPrimaId)),
   ] : [];
-  const cerrar = () => { setAbierto(false); if (editando) router.replace("/produccion#bom", { scroll: false }); };
+  const cerrar = () => { setAbierto(false); if (editando) router.replace("/produccion?vista=recetas#bom", { scroll: false }); };
 
   function guardar() {
     const insumos = lineas.map((l) => ({ materiaPrimaId: l.materiaPrimaId, cantidad: leerCantidad(l.cantidad) }));

@@ -23,7 +23,6 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
   return (
     <>
       <Encabezado
-        antetitulo="Ventas · clientes"
         titulo="Clientes"
         descripcion="Solo los datos necesarios para cotizar y despachar. Son datos personales: nunca se envían a la IA."
         acciones={sesion.permisos.has("clientes.editar") && <NuevoCliente csrf={sesion.csrf} />}
@@ -51,7 +50,7 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
         )}
       </Panel>
       {siguiente && <p className="mt-4 text-sm"><Link className="text-rauli hover:underline" href={`/clientes?${new URLSearchParams({ ...(q ? { q } : {}), desde: siguiente })}`}>Ver más →</Link></p>}
-      <p className="mt-4 flex items-center gap-2 text-sm text-tinta-tenue"><ShieldCheck className="h-4 w-4 text-musgo" /> RUT validado con dígito verificador. Acceso con el permiso clientes.ver.</p>
+      <p className="mt-4 flex items-center gap-2 text-sm text-tinta-tenue"><ShieldCheck className="h-4 w-4 text-musgo" /> RUT validado con dígito verificador. Son datos personales: solo los ve quien tiene permiso para ver clientes.</p>
     </>
   );
 }

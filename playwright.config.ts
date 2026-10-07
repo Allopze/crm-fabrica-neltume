@@ -1,10 +1,12 @@
 import { defineConfig } from "@playwright/test";
-import { cargarEnvLocal, conBase, requerirEnv } from "./src/db/urls";
+import { cargarEnvLocal, conBase, requerirEnv, urlWorker } from "./src/db/urls";
 
 cargarEnvLocal();
 
 const PUERTO = Number(process.env.PLAYWRIGHT_PUERTO || 3200);
 const DATABASE_E2E = conBase(requerirEnv("DATABASE_URL"), "neltume_e2e");
+// El worker corre con su propio rol de BD, como en producción (ADR-0017).
+const DATABASE_E2E_WORKER = conBase(urlWorker(), "neltume_e2e");
 process.env.DATABASE_URL = DATABASE_E2E;
 
 // E2E secuenciales con estado compartido (TESTING.md §3): 1 worker, orden por nombre de archivo,
@@ -37,7 +39,7 @@ export default defineConfig({
       url: `http://localhost:${PUERTO + 1}`,
       reuseExistingServer: false,
       timeout: 60_000,
-      env: { DATABASE_URL: DATABASE_E2E, LLM_PROVEEDOR: "doble", CMD_API_KEY: "", GROQ_API_KEY: "groq-e2e-key-simulada-no-real", GROQ_API_BASE_URL: `http://127.0.0.1:${PUERTO + 2}/openai/v1`, WORKER_PUERTO_SALUD: String(PUERTO + 1), LLM_MAX_REINTENTOS: "1", IA_CATALOGO_DESHABILITADO: "1" },
+      env: { DATABASE_URL: DATABASE_E2E_WORKER, LLM_PROVEEDOR: "doble", CMD_API_KEY: "", GROQ_API_KEY: "groq-e2e-key-simulada-no-real", GROQ_API_BASE_URL: `http://127.0.0.1:${PUERTO + 2}/openai/v1`, WORKER_PUERTO_SALUD: String(PUERTO + 1), LLM_MAX_REINTENTOS: "1", IA_CATALOGO_DESHABILITADO: "1" },
     },
     {
       command: `npx tsx e2e/groq-mock.mts`,

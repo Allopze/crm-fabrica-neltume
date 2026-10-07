@@ -6,7 +6,7 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 
 - **Autenticación:** cookie de sesión `HttpOnly`. Las mutaciones exigen la cabecera `X-CSRF-Token`.
 - **Paginación:** `?limite=` (por defecto 50, máximo 200) y `?cursor=` (opaco). Respuesta: `{ "datos": [...], "siguiente": "<cursor>|null" }`.
-- **Idempotencia:** la cabecera `Idempotency-Key` (UUID) es **obligatoria** donde dice *Idem*. Una repetición con el mismo cuerpo devuelve la respuesta original; con otro cuerpo, 422 `IDEMPOTENCIA_CONFLICTO`.
+- **Idempotencia:** la cabecera `Idempotency-Key` (UUID) es **obligatoria** donde dice *Idem*. Una repetición con el mismo cuerpo devuelve la respuesta original; mientras la primera sigue en curso, 409 `IDEMPOTENCIA_EN_CURSO` (reintentar con la misma clave); con otro cuerpo u otra ruta, 422 `IDEMPOTENCIA_CONFLICTO` (DESIGN §5).
 - **Concurrencia:** las ediciones de cotización llevan `version`; si no coincide, 409 `VERSION_OBSOLETA`.
 - **Entrada:** Zod estricto. Cualquier campo no esperado da 400. Los campos de importe (`precio*`, `total`, `iva`, `subtotal`) **nunca** se aceptan, salvo `precio_unitario` al fijar un ítem `a_pedido` (SECURITY T2).
 
@@ -20,7 +20,7 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | 401 | `NO_AUTENTICADO` |
 | 403 | `SIN_PERMISO`, `CSRF` |
 | 404 | `NO_ENCONTRADO` (también cuando no hay permiso de lectura sobre el recurso, contra IDOR) |
-| 409 | `VERSION_OBSOLETA`, `ITEMS_POR_CONFIRMAR`, `NO_APROBADA`, `VENCIDA`, `YA_TIENE_PEDIDO`, `ORDEN_CERRADA`, `STOCK_INSUFICIENTE`, `INSUMOS_INSUFICIENTES`, `SIN_BOM`, `BOM_INCOMPLETO` |
+| 409 | `VERSION_OBSOLETA`, `IDEMPOTENCIA_EN_CURSO`, `ITEMS_POR_CONFIRMAR`, `NO_APROBADA`, `VENCIDA`, `YA_TIENE_PEDIDO`, `ORDEN_CERRADA`, `STOCK_INSUFICIENTE`, `INSUMOS_INSUFICIENTES`, `SIN_BOM`, `BOM_INCOMPLETO` |
 | 413 | `CUERPO_GRANDE`: más de 1 MB, o 6 MB en `/importaciones` y `/pedidos/nota-tienda*`; se rechaza sin leer el cuerpo, o al pasar el límite si llega por trozos (ADR-0011) |
 | 422 | `IDEMPOTENCIA_CONFLICTO`, `ULTIMO_ADMIN` |
 | 429 | `LIMITE_IA`, `LIMITE_LOGIN` |
@@ -33,8 +33,10 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 |---|---|---|---|
 | POST `/sesion` | público | | Login; 429 tras 5 intentos |
 | DELETE `/sesion` | sesión | | Logout |
+| PUT `/sesion/clave` (`claveActual, claveNueva`) | sesión | | Cambia la contraseña propia; una clave actual incorrecta cuenta como fallo de login (429 tras 5); cierra las otras sesiones; 204 (REQ-ADM-1.4) |
 | GET `/salud` | público | | `{ estado: ok\|degradado }` |
 | GET `/usuarios` · POST `/usuarios` · PATCH `/usuarios/:id` | `usuarios.gestionar` | | La desactivación respeta REQ-ADM-2.4 (422 `ULTIMO_ADMIN`) |
+| PUT `/usuarios/:id/clave` (`claveNueva`) | `usuarios.gestionar` | | Restablece la contraseña y cierra todas las sesiones de ese usuario; 204; auditado sin hash (REQ-ADM-2.5) |
 | GET `/roles` · POST `/roles` · PUT `/roles/:id/permisos` | `usuarios.gestionar` | | |
 | GET `/auditoria?actor&recurso&accion&resultado&desde&hasta&antesDe&limite` | `auditoria.ver` | | Paginado por id (más nuevo primero); fechas en días de Santiago |
 | GET `/metricas/ia` | `auditoria.ver` | | Latencia, costo y tasa de fallas |
@@ -47,8 +49,6 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 |---|---|---|---|
 | POST `/importaciones` (multipart .xlsx ≤ 5 MB) | `catalogo.editar` + `precios.editar` | ✔ | Informe de creadas, actualizadas y rechazadas |
 | GET `/importaciones/:id` | `catalogo.editar` | | |
-| GET `/articulos?modelo&madera&ancho&alto&tipo&q` | `stock.ver` | | Incluye el disponible |
-| GET `/articulos/:codigo` | `stock.ver` | | Costos solo si hay `costos.ver` |
 | PATCH `/articulos/:codigo` (`activo`, `stock_minimo`) | `catalogo.editar` / `config.editar` | | |
 | GET `/listas-precio` · GET `/listas-precio/:version` | `stock.ver` | | Costos y margen solo con `costos.ver` |
 | POST `/listas-precio` (`{ cambios:[{codigo, precio_neto}], recargos:[…] }`) | `precios.editar` | ✔ | Crea la versión N+1 |
@@ -60,7 +60,7 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | GET `/stock?…filtros` | `stock.ver` | | Existencia, reservado y disponible |
 | GET `/stock/alertas` | `stock.ver` | | Puertas con disponible bajo su mínimo, con `faltan`; las más urgentes primero (REQ-STK-6.1) |
 | GET `/movimientos?articulo&tipo&desde&hasta` | `stock.ver` | | Paginado |
-| POST `/movimientos/entradas` (`articulo, cantidad, orden_id`) | `stock.mover` | ✔ | |
+| POST `/movimientos/entradas` (`codigo, cantidad, referencia?`) | `stock.mover` | ✔ | |
 | POST `/movimientos/salidas` (`articulo, cantidad, pedido_id`) | `stock.mover` | ✔ | 409 `STOCK_INSUFICIENTE`; libera la reserva |
 | POST `/movimientos/ajustes` (`articulo\|materia_prima, cantidad±, motivo`) | `stock.ajustar` | ✔ | El motivo es obligatorio |
 | PUT/PATCH/DELETE `/movimientos/:id` | — | | **No existen** (405) |

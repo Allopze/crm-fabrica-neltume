@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCheck, Plus, TriangleAlert } from "lucide-react";
 import { Boton } from "@/components/ui/base";
@@ -49,12 +50,12 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos
   const [error, setError] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
   const [manual, setManual] = useState<{ materiaPrimaId: string; cantidad: string }>({ materiaPrimaId: materias[0]?.id ?? "", cantidad: "" });
-  const faltan = insumos.some((i) => i.faltante > 0);
   const cuerpo = sinBom.length && manual.cantidad ? { consumosManuales: [{ materiaPrimaId: manual.materiaPrimaId, cantidad: Number(manual.cantidad.replace(",", ".")) }] } : {};
   // El motivo de un botón deshabilitado se dice al lado, no se adivina.
-  const bloqueo = incompletos.length ? "falta asociar la madera (ver arriba)."
-    : faltan ? "faltan materias primas; registra la recepción en Materias primas."
-      : sinBom.length > 0 && !manual.cantidad ? "indica el consumo a mano de los artículos sin BOM." : null;
+  const primeraFaltante = insumos.find((i) => i.faltante > 0);
+  const bloqueo = incompletos.length ? <>falta asociar la madera. <Link href="/produccion?vista=madera" className="font-medium underline">Asociar madera</Link></>
+    : primeraFaltante ? <>faltan materias primas. <Link href={`/materias-primas?recibir=${primeraFaltante.materiaPrimaId}#recepcion`} className="font-medium underline">Registrar recepción de {primeraFaltante.nombre}</Link></>
+      : sinBom.length > 0 && !manual.cantidad ? <>indica el consumo a mano de los artículos sin BOM.</> : null;
   const cerrar = () => iniciar(async () => {
     try {
       setError(null);
@@ -69,9 +70,9 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos
     <div>
       {incompletos.length > 0 && (
         <div role="alert" className="mb-4 rounded-md border border-error/30 bg-error-velo p-3 text-sm text-error">
-          <p className="font-medium">No se puede calcular la madera de la puerta:</p>
+          <p className="font-medium">No se puede calcular el consumo de la receta:</p>
           <ul className="mt-1 list-disc pl-5">{incompletos.map((t) => <li key={t}>{t}</li>)}</ul>
-          <p className="mt-1">Asocia cada madera a su materia prima en «Madera de la puerta», más abajo.</p>
+          <p className="mt-1">Asocia cada madera a su materia prima en <Link href="/produccion?vista=madera" className="font-medium underline">Madera de la puerta</Link>.</p>
         </div>
       )}
       {sinBom.length > 0 && (
@@ -90,8 +91,8 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos
           {insumos.map((i) => (
             <li key={i.materiaPrimaId} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
               <span>{i.nombre}</span>
-              <span className="font-mono tabular-nums">
-                <span className="text-error">−{numero(i.usa)}</span> <span className="text-tinta-tenue">{i.unidad} · hay {numero(i.existencia)}</span>
+              <span className="shrink-0 whitespace-nowrap font-mono tabular-nums">
+                <span className={i.faltante > 0 ? "text-error" : "text-tinta"}>−{numero(i.usa)}</span> <span className="text-tinta-tenue">{i.unidad} · hay {numero(i.existencia)}</span>
                 {i.faltante > 0 && <span className="ml-2 inline-flex items-center gap-1 text-error"><TriangleAlert className="h-3.5 w-3.5" /> faltan {numero(i.faltante)}</span>}
               </span>
             </li>
@@ -100,13 +101,13 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos
       )}
       {/* Cerrar mueve stock y no se puede deshacer: primero se nombra lo que va a pasar, después se confirma (UX §4). */}
       {bloqueo ? (
-        <p className="mt-5 rounded-md border border-linea bg-papel px-3 py-2 text-sm text-tinta-suave">No se puede cerrar todavía: {bloqueo}</p>
+        <p role="status" className="mt-5 flex items-start gap-2 rounded-md border border-ambar/30 bg-ambar-velo px-3 py-2.5 text-sm text-ambar"><TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" /><span>No se puede cerrar todavía: {bloqueo}</span></p>
       ) : !confirmando ? (
         <Boton variante="primario" className="mt-5 h-10 w-full" onClick={() => setConfirmando(true)}>
-          <CheckCheck className="h-4 w-4" /> Cerrar orden {num} y mover stock
+          <CheckCheck className="h-4 w-4" /> Cerrar orden N.º {num} y mover stock
         </Boton>
       ) : (
-        <div role="group" aria-label={`Confirmar cierre de la orden ${num}`} className="mt-5 rounded-md border border-tinta/20 bg-papel p-3">
+        <div role="group" aria-label={`Confirmar cierre de la orden N.º ${num}`} className="mt-5 rounded-md border border-tinta/20 bg-papel p-3">
           <p className="text-sm">Se {insumos.length === 1 ? "descontará 1 insumo" : `descontarán ${insumos.length} insumos`} y entrarán las puertas al stock. Los movimientos no se pueden editar ni borrar; una corrección es un ajuste con motivo.</p>
           <div className="mt-3 flex gap-2">
             <Boton variante="primario" className="h-10 flex-1" disabled={pendiente} onClick={cerrar}>

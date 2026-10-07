@@ -77,7 +77,7 @@ Días hábiles: lunes a viernes, descontando los feriados legales de Chile (calc
 | `migrar` | build `.` (target `migrar`) | `datos` | ninguno | `DATABASE_ADMIN_URL`, `DATABASE_URL_OWNER`, `DATABASE_URL` | — |
 | `app` | build `.` (target `app`) | `backend`, `datos` | ninguno | `DATABASE_URL`, `APP_URL`, `APP_TZ`, topes de gasto | — |
 | `worker` | build `.` (target `worker`) | `datos`, `salida` | ninguno | `DATABASE_URL`, `CMD_API_KEY`, `GROQ_API_KEY`, URLs opcionales, timeout, reintentos y topes | — |
-| `db` | `postgres:18` (digest al desplegar) | `datos` (internal) | `127.0.0.1:5432` solo con `docker-compose.admin.yml` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `pg_data` |
+| `db` | `postgres:18` fijada por digest (como todas las imágenes y la base del Dockerfile) | `datos` (internal) | `127.0.0.1:5432` solo con `docker-compose.admin.yml` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `pg_data` |
 | `backup` | `postgres` + cron | `datos` | ninguno | `PGPASSWORD`, `BACKUP_RETENCION_DIAS`, `BACKUP_DESTINO_EXTERNO` | `backups` |
 
 - `datos` y `backend` son `internal: true`. Solo `borde` (tunnel) y `salida` (worker) tienen egreso.
@@ -93,10 +93,13 @@ Días hábiles: lunes a viernes, descontando los feriados legales de Chile (calc
   - La transacción de cierre de producción, conversión a pedido o reserva es todo o nada (REQ-MP-4.1).
 - **Idempotencia.**
   - `Idempotency-Key` es obligatoria en los POST de movimientos, recepciones, cierres, pedidos e interpretaciones.
-  - Se guarda en `idempotencia` con el hash del cuerpo durante 24 h. Una repetición devuelve la misma respuesta; la misma clave con otro cuerpo da 422.
+  - Antes de ejecutar se **reserva** la clave en `idempotencia` (estado «en curso», con el hash de método + ruta + cuerpo) y se guarda la respuesta al terminar, durante 24 h. Una repetición devuelve la misma respuesta; mientras la primera sigue en curso, 409 `IDEMPOTENCIA_EN_CURSO`; la misma clave con otro cuerpo u otra ruta da 422. Si la acción falla (excepción o 5xx) se libera la clave para reintentar. Una reserva en curso de más de 2 min se da por abandonada (riesgo residual: una caída entre el commit de la acción y el guardado de la respuesta permite repetirla).
+  - El navegador usa una clave por envío y reintenta con esa misma clave ante un corte de red o un 409 en curso (`src/lib/api-cliente.ts`); si no logra confirmar, avisa «No pudimos confirmar si se guardó», nunca «no se guardó».
 - **Cola** (`trabajo_ia`, ADR-0006).
   - El worker toma trabajos con `FOR UPDATE SKIP LOCKED`; los estados son `pendiente → en_curso → listo|fallido`.
-  - Hay un máximo de 3 intentos. Un trabajo con más de 60 s en `en_curso` se reintenta.
+  - Hay un máximo de 3 intentos. Un trabajo con más de `IA_TRABAJO_COLGADO_S` (180 s por defecto, más que el peor caso de reintentos y segunda pasada) en `en_curso` vuelve a la cola; si ya agotó sus intentos, queda `fallido` y la cotización `ia_fallida`.
+  - Solo escribe el resultado el intento dueño del trabajo (mismo número de intento, aún `en_curso`) y si la cotización sigue `interpretando`; un resultado tardío se descarta (auditoría H-09).
+  - El worker usa su propio rol de BD con permisos mínimos (ADR-0017).
 - **Concurrencia.** `cotizacion.version` es un bloqueo optimista; un PATCH con versión vieja da 409.
 - **Logs.** JSON a stdout con nivel, `correlacion_id`, ruta, duración y resultado. Se redactan `authorization`, `cookie`, `x-api-key` y los campos de cliente. Rotación con el driver de Docker (10 MB × 5).
 - **Métricas mínimas** (`/administracion/metricas` y `GET /api/v1/metricas/ia`, con `auditoria.ver`; últimos 30 días): latencia p50/p90 del cotizador (alta de la cotización → interpretación auditada), costo medio, costo de IA del día y del mes, tasa de `ia_fallida`, trabajos pendientes y llamadas por resultado. Alerta al 80 % del tope diario y del presupuesto mensual (`LLM_PRESUPUESTO_MENSUAL_USD`), visible también en el panel y en los logs del worker.

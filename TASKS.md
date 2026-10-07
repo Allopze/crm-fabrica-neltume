@@ -105,6 +105,7 @@ Solo interfaz con datos simulados (precios ficticios, nunca los del Excel); sin 
 - [x] T2.6 (45) Prueba de volumen: importar ~8.800 filas en ≤ 60 s y consulta en ≤ 1 s · REQ-NFR-8 · I `importacion.volumen` · T1.5 · [P]
 - [x] T2.8 (45) Quitar Caddy: encabezados en `next.config.ts`, límite de cuerpo por ruta en `conPermiso`/`publico`, túnel directo a la app · ADR-0011, SECURITY §2 · I `salud` · T0.15
 - [x] T2.7 (90) BOM reales: «madera de la puerta» (opción A, ADR-0012) y carga inicial de lo entregado por Producción (`scripts/cargar-bom-real.mts`) · REQ-MP-3.1, 3.4, 3.5 · I `produccion` · T1.17
+- [ ] T2.11 (60) Copia de respaldo fuera del servidor (hoy `BACKUP_DESTINO_EXTERNO` apunta al mismo host) y prueba de restauración con el respaldo real de producción · REQ-NFR-4 · `restaurar-prueba.sh` en el servidor · T2.5 · pendiente por decisión del usuario (auditoría 07-10-2026, H-02)
 - [ ] T2.9 (30) Completar el BOM con la fábrica: qué pulgadas valen (factor de la madera), uso por puerta de Titebond, tarugos, retape y adhesivo; stock inicial y mínimos de las materias primas · REQ-MP-2.1, 3.1, 6.2 · — · T2.7
 - [x] T2.10 (90) Producción y materias primas usables para cargar el BOM real: editar receta precargada, aplicar a varias recetas, confirmar cierre, conteo de existencias, cantidades fraccionarias y contraste AA de `tinta-tenue` y `ambar` · REQ-MP-3.6, UX §4 · I `produccion`, E 04 · T2.7
 
@@ -173,3 +174,48 @@ El informe de Qwen3.7-Flash (06-10-2026) dio 38 % en accesorios: la IA leía bie
 - [x] T7.6 Conservar grupos por destino omitidos, medir extras/cantidades pendientes y comparar solo modelos autorizados · ADR-0014, REQ-COT-2.14/2.15 · U `anclaje`, `revision`, `evaluacion`; `eval:ia` fijo y generado · T7.5
 
 **Checkpoint F7:** `npm test` verde, `eval:ia` (set fijo y generado) con el modelo activo comparado con el informe del 06-10-2026, con T7.5 incluido. Espero tu OK.
+
+## Fase 8 — Pulido de la interfaz (pedida el 07-10-2026; crítica de diseño en `.impeccable/critique/`)
+
+Refina la interfaz existente sin cambiar requisitos ni API: solo lecturas nuevas en el dominio (nota de pedido de una cotización, vigencia configurada, número del documento de un movimiento, filtros de precios). UX.md §1, §3 y §4 describen el resultado.
+
+- [x] T8.1 Cantidad escribible en la revisión, hora de aprobación, enlace cotización ↔ nota de pedido, vigencia configurada en la confirmación, solo lectura al aprobar, Aprobar fijo al pie, una columna sin texto del cliente y Ctrl + Enter para interpretar · REQ-COT-3.1, 6.1, 6.4, 8.3 · E 06 · —
+- [x] T8.2 Un solo formato de número («N.º») y estados coherentes: aceptada con pedido cancelado, «Falta/Faltan», despachada sin «reservadas», «por confirmar» e «IA no disponible» en todas partes · REQ-COT-10, REQ-STK-7 · E 04, 06, 09 · —
+- [x] T8.3 Color: aviso de stock neutro, ámbar solo para lo que bloquea, rojo solo para el faltante real, cierre bloqueado con enlace para resolverlo · REQ-COT-2.6, REQ-MP-4.1 · — · —
+- [x] T8.4 Textos: auditoría legible (etiquetas, pares campo–valor, formato chileno, agrupación por operación), referencias de movimientos con número y enlace, sin claves de permiso ni jerga de configuración · REQ-ADM-3.2, REQ-STK-2 · U `auditoria-texto`, E 14 · —
+- [x] T8.5 Estructura: Producción en pestañas, Materias primas con búsqueda, filtro «bajo el mínimo» y «Recibir» por fila, Precios con filtros y la tabla primero, cabeceras sin antetítulo · REQ-MP-2, 3, REQ-COT-1 · E 03, 04 · —
+- [x] T8.6 Accesibilidad: placeholders y etiquetas de la barra lateral en AA, objetivos táctiles, columnas clave visibles en celular, selector de archivo en español · REQ-NFR-6 · E 01, 15 · —
+
+**Checkpoint F8:** `npm test` verde y recorrido de las pantallas en PC y celular. Espero tu OK.
+
+## Fase 9 — Correcciones de la auditoría: bloqueantes (pedida el 07-10-2026)
+
+La auditoría integral del 07-10-2026 dejó el proyecto «apto solo con bloqueantes corregidos». Esta fase corrige los hallazgos que bloquean producción; decisiones en ADR-0016. H-02 (copia fuera del host) queda en T2.11.
+
+- [x] T9.0 Decisiones en documentos: ítem no verificable bloquea y denegaciones anónimas agregadas · ADR-0016, REQ-COT-2.9, 2.14, 2.15, REQ-ADM-3.5 · — · —
+- [x] T9.1 (H-01) Respaldo que falla de verdad: cada respaldo corre en su propio proceso con `set -e`, se verifica con `pg_restore --list`, no poda ni marca `ultimo-ok` si falla; healthcheck del servicio · REQ-NFR-4 · I `backup` · —
+- [x] T9.2 (H-03) Enmascarado de RUT, correo y teléfono en cualquier formato y de toda secuencia de ≥ 7 dígitos, compartido con los logs · REQ-COT-2.9, REQ-NFR-5 · U `datos-personales`, I `worker` · —
+- [x] T9.3 (H-04) Un ítem cuya frase no está tal cual en el pedido queda por confirmar · REQ-COT-2.14, 2.15, ADR-0016 · U `anclaje`, I `worker` · —
+- [x] T9.4 (H-05) Un monto no respalda cantidades ni medidas · REQ-COT-2.14, AGENTS regla 1 · U `anclaje` · —
+- [x] T9.5 (H-06) Idempotencia con reserva de clave (por método y ruta) y reintentos del navegador con la misma clave; límite de 20 interpretaciones por hora atómico · REQ-STK-3.3, REQ-MP-2.3, REQ-NFR-6, SECURITY T4 · I `idempotencia`, `interpretacion` · —
+- [x] T9.6 (H-07) Bloqueo de login atómico por correo e IP · REQ-ADM-1.2, SECURITY T7 · I `auth.login` · —
+- [x] T9.7 (H-08) Denegaciones anónimas agregadas por IP en `audit_log` · REQ-ADM-3.5, ADR-0016 · I `audit.denegaciones` · —
+- [x] T9.8 (H-11) `.dockerignore` sin respaldos, `referencia/` ni Excel · AGENTS regla 10 · I `compose` · —
+
+**Checkpoint F9:** `npm test` completo verde, lint y build; enmascarado antes/después; `eval:ia` informativo con el modelo activo; la reproducción de la falla de respaldo ahora termina en error. Espero tu OK. **OK del usuario: 07-10-2026.** Pendiente informativo: `npm run eval:ia` con el modelo activo (efecto de ADR-0016 en O2).
+
+## Fase 10 — Correcciones de la auditoría: fiabilidad y hardening (pedida el 07-10-2026)
+
+Resto de los hallazgos de la auditoría del 07-10-2026; decisiones en ADR-0017.
+
+- [x] T10.1 (H-09, H-10) Cola de IA: umbral de trabajo colgado configurable (180 s), trabajo que agotó sus intentos → `ia_fallida`, y solo escribe el intento dueño del trabajo · ADR-0006, REQ-COT-2.7 · I `worker` · —
+- [x] T10.2 (H-12) Tope diario de llamadas al LLM, también sin costo informado (Groq) · SECURITY T4 · I `worker` · —
+- [x] T10.3 (H-13) Insumo del BOM con hasta 3 decimales y consumo menor a 0,001 → `BOM_INCOMPLETO`, nunca 500 · REQ-MP-3.2, 4.1 · I `produccion` · —
+- [x] T10.4 (H-14) Cambio de contraseña propia y restablecimiento por un administrador · REQ-ADM-1.4, 2.5 · I `claves` · —
+- [x] T10.5 (H-15) `.env` de producción fuera del repo (`DEPLOY_ENV_FILE`) · SECURITY T5 · — · —
+- [x] T10.6 (H-16) Imágenes de Compose y base del Dockerfile fijadas por digest · DESIGN §4 · I `compose` · —
+- [x] T10.7 (M-01) Content-Security-Policy con nonce (`src/proxy.ts`) · SECURITY §2 · U `csp`, E (vigilancia de violaciones) · —
+- [x] T10.8 (M-02) Rol de BD propio del worker y triggers de stock no negativo, notas cerradas y `llamada_ia` de solo inserción (migración 0018) · ADR-0017 · I `defensa-bd` · —
+- [x] T10.9 (M-03) Criterio de revisión de `npm audit` y API.md al día con el código · RUNBOOK §5 · — · —
+
+**Checkpoint F10:** `npm test` completo verde, lint y build; recorrido en el navegador sin violaciones de CSP; cambio de contraseña desde el menú. Antes de desplegar: mover el `.env` de producción fuera del repo y agregarle `DATABASE_URL_WORKER`. Espero tu OK.

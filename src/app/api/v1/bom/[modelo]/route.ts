@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { bd } from "@/db/conexion";
 import { conPermiso } from "@/domain/auth/politica";
+import { CantidadInsumo } from "../esquema";
 import { definirBom } from "@/domain/bom";
 
 const Definicion = z.strictObject({
@@ -10,7 +11,7 @@ const Definicion = z.strictObject({
   origen: z.enum(["real", "demo"]),
   // Un insumo con su cantidad por puerta, o la madera de la puerta con un factor sobre las pulgadas del artículo (ADR-0012).
   lineas: z.array(z.union([
-    z.strictObject({ materiaPrimaId: z.uuid(), cantidad: z.number().positive().max(1e6) }),
+    z.strictObject({ materiaPrimaId: z.uuid(), cantidad: CantidadInsumo }),
     z.strictObject({ maderaPuerta: z.literal(true), cantidad: z.number().positive().max(10) }),
   ])).min(1).max(50),
 });

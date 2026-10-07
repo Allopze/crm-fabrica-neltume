@@ -50,13 +50,13 @@ function Contenido({ pie, ruta }: { pie: ReactNode; ruta: string }) {
     <>
       <Link href="/" className="flex items-end gap-3 px-6 pt-7 pb-8 text-bosque-tinta">
         <Logo className="h-16 w-auto" titulo={`${MARCA.nombre} · inicio`} />
-        <span className="pb-1 font-mono text-[10px] uppercase leading-tight tracking-[0.22em] text-bosque-tinta/55">{MARCA.area}</span>
+        <span className="pb-1 text-[11px] font-medium uppercase leading-tight tracking-[0.16em] text-bosque-tinta/70">{MARCA.area}</span>
       </Link>
 
       <nav className="flex-1 space-y-7 overflow-y-auto px-3" aria-label="Principal">
         {grupos.map((g) => (
           <div key={g.nombre}>
-            <p className="mb-2 px-3 font-mono text-[10px] uppercase tracking-[0.2em] text-bosque-tinta/40">{g.nombre}</p>
+            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-bosque-tinta/65">{g.nombre}</p>
             <ul className="space-y-0.5">
               {g.items.map(({ href, texto, icono: Icono }) => {
                 const on = activo(href);

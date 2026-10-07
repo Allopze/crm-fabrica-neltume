@@ -1,4 +1,5 @@
 // Lectura de URLs de BD desde el entorno. Nunca se registran con credenciales.
+import { createHash } from "node:crypto";
 
 export function requerirEnv(nombre: string): string {
   const v = process.env[nombre];
@@ -31,4 +32,21 @@ export function cargarEnvLocal(): void {
 export function ident(nombre: string): string {
   if (!/^[a-z_][a-z0-9_]*$/i.test(nombre)) throw new Error(`Identificador SQL inválido: ${nombre}`);
   return `"${nombre}"`;
+}
+
+/** Usuario de BD del worker de IA (ADR-0017). */
+export const USUARIO_WORKER = "neltume_worker";
+
+/**
+ * URL del rol de BD propio del worker de IA, con solo los permisos que necesita (ADR-0017). Si DATABASE_URL_WORKER no
+ * está definida, se deriva de la URL de la app: mismo servidor y base, usuario `neltume_worker` y una clave que es un
+ * hash de la clave de la app (quien tenga la del worker no obtiene la de la app). En Compose se define explícita.
+ */
+export function urlWorker(urlApp = requerirEnv("DATABASE_URL")): string {
+  const explicita = process.env.DATABASE_URL_WORKER;
+  if (explicita) return explicita;
+  const u = new URL(urlApp);
+  u.username = USUARIO_WORKER;
+  u.password = createHash("sha256").update(`neltume-worker:${decodeURIComponent(u.password)}`).digest("hex").slice(0, 32);
+  return u.toString();
 }

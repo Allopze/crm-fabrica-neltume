@@ -18,7 +18,7 @@ export default async function AliasPage() {
   const [alias, modelos] = await Promise.all([listarAlias(bd()), bd().select({ n: modelo.nombre }).from(modelo).where(eq(modelo.activo, true)).orderBy(modelo.nombre)]);
   return (
     <>
-      <Encabezado antetitulo="Configuración · cotizador" titulo="Alias de modelos"
+      <Encabezado titulo="Alias de modelos"
         descripcion="Cómo se dicen o dictan los modelos («coscos» por Coz Coz). Un alias seguro se aplica; uno dudoso deja el ítem por confirmar con la sugerencia. Un modelo real siempre gana."
         acciones={edita && <NuevoAlias modelos={modelos.map((m) => m.n)} csrf={sesion.csrf} />} />
       <Panel sinRelleno>

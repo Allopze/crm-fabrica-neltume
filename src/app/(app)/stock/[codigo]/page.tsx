@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Lock } from "lucide-react";
-import { Cifra, Encabezado, Etiqueta, Panel, Placa, Vacio } from "@/components/ui/base";
+import { Cifra, Encabezado, Panel, Placa, Vacio } from "@/components/ui/base";
+import { maderas, type MaderaId } from "@/components/ui/maderas";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -17,9 +18,27 @@ import { EditarMinimo } from "./editar-minimo";
 export const metadata: Metadata = { title: "Artículo" };
 
 const NOMBRE_TIPO: Record<string, string> = {
-  entrada_produccion: "Entrada producción", recepcion: "Recepción", salida_despacho: "Salida despacho", consumo_produccion: "Consumo producción",
-  ajuste: "Ajuste", reserva: "Reserva", liberacion: "Liberación",
+  entrada_produccion: "Entrada de producción", recepcion: "Recepción", salida_despacho: "Salida por despacho", consumo_produccion: "Consumo de producción",
+  ajuste: "Ajuste", reserva: "Reserva", liberacion: "Liberación de reserva",
 };
+
+/** Referencia legible: el documento con su número y enlace; nunca un id interno. */
+function Referencia({ refTipo, refId, refNumero }: { refTipo: string | null; refId: string | null; refNumero: number | null }) {
+  if (refTipo === "pedido" && refId && refNumero !== null) return <Link href={`/pedidos/${refId}`} className="text-rauli hover:underline">Nota de pedido N.º {refNumero}</Link>;
+  if (refTipo === "orden" && refNumero !== null) return <Link href="/produccion" className="text-rauli hover:underline">Orden N.º {refNumero}</Link>;
+  if (refTipo === "manual" && refId) return <>{refId}</>;
+  return <>—</>;
+}
+
+/** Reserva y liberación no cambian la existencia: se leen aparte, en pizarra, sin signo de entrada o salida. */
+function CantidadMovimiento({ tipo, cantidad }: { tipo: string; cantidad: number }) {
+  const n = Math.abs(cantidad);
+  if (tipo === "reserva" || tipo === "liberacion") {
+    const verbo = tipo === "reserva" ? (n === 1 ? "reservada" : "reservadas") : (n === 1 ? "liberada" : "liberadas");
+    return <span className="font-mono text-pizarra">{n} <span className="font-sans text-xs">{verbo}</span></span>;
+  }
+  return <span className={cn("font-mono font-semibold", cantidad < 0 ? "text-error" : "text-musgo")}>{cantidad > 0 ? "+" : "−"}{n}</span>;
+}
 
 export default async function ArticuloPage({ params }: PageProps<"/stock/[codigo]">) {
   const sesion = await requerirSesion();
@@ -41,8 +60,8 @@ export default async function ArticuloPage({ params }: PageProps<"/stock/[codigo
         <span className="font-mono text-tinta">{a.codigo}</span>
       </nav>
       <Encabezado
-        antetitulo={p ? `${p.tipo ? `Puerta ${p.tipo.toLowerCase()}` : "Accesorio"} · ${p.madera.toLowerCase()}` : "Artículo"}
         titulo={<span className="capitalize">{p?.modelo.toLowerCase() ?? a.codigo} <span className="text-tinta-tenue normal-case">{a.anchoEtiqueta} × {metros(Number(a.altoM))} m</span></span>}
+        meta={p ? `${p.tipo ? `Puerta ${p.tipo.toLowerCase()}` : "Accesorio"} · ${maderas[p.maderaCodigo as MaderaId]?.nombre ?? p.madera.toLowerCase()}` : undefined}
         acciones={<div className="flex flex-col items-end gap-3"><Placa codigo={a.codigo} className="px-3 py-1 text-base" />{tipos.length > 0 && <AccionesMovimiento tipos={[...tipos]} csrf={sesion.csrf} codigo={a.codigo} />}</div>}
       />
 
@@ -64,11 +83,9 @@ export default async function ArticuloPage({ params }: PageProps<"/stock/[codigo
                   <Tr key={m.id}>
                     <Td className="whitespace-nowrap text-tinta-suave">{fechaHora(new Date(m.ocurridoEn).toISOString())}</Td>
                     <Td>{NOMBRE_TIPO[m.tipo] ?? m.tipo}{m.motivo && <span className="block text-xs text-tinta-tenue">Motivo: {m.motivo}</span>}</Td>
-                    <Td className="text-tinta-suave">{m.refId ?? (m.refTipo === "ajuste" ? "—" : m.refTipo) ?? "—"}</Td>
+                    <Td className="text-tinta-suave"><Referencia refTipo={m.refTipo} refId={m.refId} refNumero={m.refNumero} /></Td>
                     <Td className="text-tinta-suave">{m.usuario}</Td>
-                    <Td alinear="der" className={cn("font-mono font-semibold", Number(m.cantidad) < 0 ? "text-error" : "text-musgo")}>
-                      {Number(m.cantidad) > 0 ? "+" : "−"}{Math.abs(Number(m.cantidad))}
-                    </Td>
+                    <Td alinear="der" className="whitespace-nowrap"><CantidadMovimiento tipo={m.tipo} cantidad={Number(m.cantidad)} /></Td>
                   </Tr>
                 ))}
               </tbody>
@@ -85,7 +102,7 @@ export default async function ArticuloPage({ params }: PageProps<"/stock/[codigo
             </dl>
           </Panel>
           {p && "costoTotal" in p && (
-            <Panel titulo="Costos y margen" accion={<Etiqueta tono="rauli">costos.ver</Etiqueta>}>
+            <Panel titulo="Costos y margen" accion={<span className="text-xs text-tinta-tenue">solo con permiso de costos</span>}>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between"><dt className="text-tinta-suave">Costo total</dt><dd>{p.costoTotal ? clp(Number(p.costoTotal)) : "—"}</dd></div>
                 <div className="flex justify-between"><dt className="text-tinta-suave">Margen de lista</dt><dd>{p.margen !== null && p.margen !== undefined ? `${Math.round(Number(p.margen) * 100)} %` : "—"}</dd></div>

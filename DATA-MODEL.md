@@ -99,7 +99,7 @@ Una edición en pantalla copia la versión vigente, aplica el cambio y crea `ver
 | `reserva` | | + | + |
 | `liberacion` | | − | − (cancelación o despacho) |
 
-Disponible = existencia − reservado. Se calcula con la vista `v_stock` (suma por artículo o materia prima y bodega). Una restricción en la transacción impide que el disponible quede negativo (REQ-STK-4.2, 7.3).
+Disponible = existencia − reservado. Se calcula con la vista `v_stock` (suma por artículo o materia prima y bodega). El código lo verifica en la transacción y, además, un *constraint trigger* diferido rechaza al confirmar cualquier transacción que deje existencia o disponible negativos (REQ-STK-4.2, 7.3; ADR-0017).
 
 ### Comercial (REQ-COT)
 | Tabla | Columnas clave | Reglas |
@@ -116,7 +116,7 @@ Disponible = existencia − reservado. Se calcula con la vista `v_stock` (suma p
 | Tabla | Columnas clave |
 |---|---|
 | `trabajo_ia` | `cotizacion_id`, `estado` (`pendiente`/`en_curso`/`listo`/`fallido`), `intentos`, `tomado_en`, `error` |
-| `llamada_ia` | `trabajo_id`, `modelo`, `entrada_redactada`, `salida` jsonb, `tokens_in`, `tokens_out`, `costo_usd` numeric(10,6), `latencia_ms`, `resultado`, `correlacion_id` |
+| `llamada_ia` | `trabajo_id`, `modelo`, `entrada_redactada`, `salida` jsonb, `tokens_in`, `tokens_out`, `costo_usd` numeric(10,6), `latencia_ms`, `resultado`, `correlacion_id` · **solo inserción** (trigger, ADR-0017) |
 
 ## 3. Cálculo de una línea (REQ-COT-1.2)
 

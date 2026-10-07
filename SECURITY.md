@@ -13,7 +13,7 @@ Refs: REQ-ADM-1.x, 2.x, 3.x, 4.x · REQ-COT-2.8, 2.9, 9.x · REQ-NFR-5, 7. Detal
 
 | Permiso | Recurso | Acciones |
 |---|---|---|
-| `usuarios.gestionar` | usuarios, roles | crear, desactivar, asignar rol |
+| `usuarios.gestionar` | usuarios, roles | crear, desactivar, asignar rol, restablecer contraseña |
 | `auditoria.ver` | audit_log | listar, filtrar |
 | `catalogo.editar` | modelos, artículos, importación | importar Excel, crear, editar, desactivar |
 | `stock.ver` | existencias, movimientos | consultar |
@@ -53,10 +53,10 @@ Refs: REQ-ADM-1.x, 2.x, 3.x, 4.x · REQ-COT-2.8, 2.9, 9.x · REQ-NFR-5, 7. Detal
 | Capa | Mecanismo | Qué garantiza |
 |---|---|---|
 | Borde | Cloudflare Tunnel (TLS de Cloudflare; regla de limitación del login, opcional) | El origen no abre puertos; Cloudflare filtra tráfico abusivo |
-| App: entrada | Encabezados de seguridad (`next.config.ts`); cuerpo máximo de 1 MB, o 6 MB en las cargas de Excel y PDF, rechazado con 413 por `Content-Length` sin leerlo, o al pasar el límite si llega por trozos, en `conPermiso`/`publico` (ADR-0011) | Rechazos tempranos sin proxy intermedio |
+| App: entrada | Encabezados de seguridad (`next.config.ts`) y Content-Security-Policy con nonce por petición en las páginas (`src/proxy.ts`); cuerpo máximo de 1 MB, o 6 MB en las cargas de Excel y PDF, rechazado con 413 por `Content-Length` sin leerlo, o al pasar el límite si llega por trozos, en `conPermiso`/`publico` (ADR-0011) | Rechazos tempranos sin proxy intermedio |
 | Ruta API | Cada `src/app/api/**/route.ts` exporta handlers envueltos en `conPermiso('<permiso>', handler)` (`src/domain/auth/politica.ts`) | Sesión válida, permiso explícito, auditoría de la denegación |
 | Dominio | Las funciones de `src/domain` reciben un `Actor` y vuelven a verificar el permiso en las operaciones sensibles (aprobar, ajustar, precios) | Ningún llamador interno salta el control |
-| Base de datos | El rol de BD de la app no tiene UPDATE ni DELETE sobre `movimiento` ni `audit_log`; los triggers los rechazan | La inmutabilidad no depende del código |
+| Base de datos | El rol de BD de la app no tiene UPDATE ni DELETE sobre `movimiento`, `audit_log`, `precio` ni `llamada_ia`; los triggers los rechazan. Triggers también impiden stock negativo y cambiar notas de pedido despachadas o canceladas. El worker de IA usa su propio rol, sin acceso a usuarios, clientes, stock ni costos (ADR-0017) | La inmutabilidad y los invariantes no dependen del código |
 | UI | Oculta lo que no se puede hacer | Comodidad, no protección |
 
 Reglas verificables:
@@ -68,7 +68,7 @@ Reglas verificables:
 ## 3. Auditoría
 
 - **Tabla `audit_log`.** Campos: `id`, `ocurrido_en` (UTC), `actor_id` (o `null` + `actor_tipo` = `visitante`/`sistema`/`worker`), `accion`, `recurso`, `recurso_id`, `antes` (jsonb), `despues` (jsonb), `resultado` (`ok`/`denegado`/`error`), `origen` (`web`/`api`/`worker`/`importacion`/`consola`), `ip`, `user_agent`, `correlacion_id`.
-- **Qué se audita.** Toda mutación y toda denegación (REQ-ADM-3.5): login, fallo de login, logout, usuarios, roles, importaciones, artículos, precios, recargos, movimientos, órdenes, BOM, clientes, cotizaciones (crear, interpretar con IA, editar ítem, resolver, recalcular, descuento, aprobar, PDF), pedidos (crear, cancelar con liberación de reservas, despachar, PDF de nota de pedido) y configuración.
+- **Qué se audita.** Toda mutación y toda denegación (REQ-ADM-3.5; las denegaciones sin usuario se agregan: una fila por IP, acción y motivo cada 15 min, con `agregado: true`, y todas van al log JSON; ADR-0016): login, fallo de login, logout, usuarios, roles, importaciones, artículos, precios, recargos, movimientos, órdenes, BOM, clientes, cotizaciones (crear, interpretar con IA, editar ítem, resolver, recalcular, descuento, aprobar, PDF), pedidos (crear, cancelar con liberación de reservas, despachar, PDF de nota de pedido) y configuración.
 - **Qué no se guarda en `antes`/`despues`.** Hashes de contraseña ni tokens. Los datos de cliente se guardan como cambio de campo; el texto del pedido se guarda en la cotización, no se duplica en la auditoría.
 - **Inmutable.** Solo INSERT; un trigger rechaza UPDATE y DELETE (REQ-ADM-3.3).
 - **Retención.** Mínimo 6 años (plazo de documentos comerciales en Chile); no se purga en v1.
@@ -84,7 +84,7 @@ Reglas verificables:
 | Precios, costos, márgenes y stock | BD | **Nunca** |
 | Identidad del usuario interno | `usuario` | Nunca |
 
-- El enmascarado usa patrones de RUT chileno (`12.345.678-9`, `12345678-9`), correo, teléfono (`+56`, 9 dígitos) y URL, reemplazados por `[RUT]`, `[CORREO]`, `[TELEFONO]` y `[URL]`. Un test usa un corpus fijo y verifica que la petición y su registro no contienen nada de eso.
+- El enmascarado (`src/lib/datos-personales.ts`, compartido con los logs) normaliza guiones Unicode y reconoce RUT (con o sin puntos, espacios o guion), correo (también con tildes), teléfono (`+56`/`56` opcional, cualquier agrupación y paréntesis) y URL, reemplazados por `[RUT]`, `[CORREO]`, `[TELEFONO]` y `[URL]`. Como red, toda secuencia de 7 o más dígitos pasa a `[NUMERO]` (medidas y cantidades tienen hasta 4). Un test usa un corpus adversarial y verifica que la petición al proveedor y `llamada_ia` no contienen nada de eso.
 - El registro de llamadas al LLM (`llamada_ia`) guarda el texto ya enmascarado, la respuesta, los tokens, el costo, la latencia y el resultado. No guarda datos del cliente.
 - Command Code usa `x-cmd-zdr: 1`. En Groq un administrador confirma en Ajustes que ZDR está habilitado en Console; la app no puede verificarlo por API. Si el proveedor no responde con la herramienta requerida, falla la interpretación y se ofrece la cotización manual (ADR-0009).
 - Ley chilena de datos personales: mínimo necesario, finalidad (cotizar y despachar) y acceso restringido a `clientes.ver`.
@@ -99,7 +99,7 @@ Reglas verificables:
 | T4 | Abuso de costo del LLM (muchos envíos o textos enormes) | Texto máximo de 4.000 caracteres; límite de 20 interpretaciones por usuario por hora y tope diario global configurable; `max_tokens` en la salida; costo por llamada registrado y alerta a 80 % del tope mensual | Integración: la llamada 21 en la misma hora da 429 sin llamar al doble del LLM |
 | T5 | Exposición de API keys y secretos | Las claves se guardan en `.env.worker.local` durante el desarrollo y en el entorno privado del servicio `worker` en producción. `scripts/dev.mts` entrega variables vacías a Next.js; Compose no las inyecta en `app`. Ajustes, GET, logs y auditoría no aceptan ni exponen claves. `.env.worker.local` está excluido de git | Integración: API/UI/auditoría sin secretos. Compose: claves solo en `worker`. CI: escaneo del repo |
 | T6 | Suplantación de remitente (correo o WhatsApp) | **No aplica en v1**: no hay entrada externa (ADR-0003). Si se habilita, exigirá firma del webhook y lista de remitentes, con la cotización siempre en borrador | Pendiente hasta habilitar el canal; hoy, un test verifica que no existen rutas de webhook |
-| T7 | Robo de sesión o fuerza bruta en login (el login está en internet, sin Access: ADR-0010) | Contraseña de mínimo 8 caracteres con hash argon2id; 5 fallos cada 15 min por correo **o** por IP (un ataque repartido entre IPs contra una cuenta también se frena; riesgo aceptado: un atacante puede bloquear 15 min una cuenta); mensaje único «Correo o contraseña incorrectos» y verificación con hash falso (no revela si el correo existe); regla de limitación en Cloudflare para `POST /api/v1/sesion` (recomendada, RUNBOOK §3); cookie `HttpOnly`, `Secure`, `SameSite=Lax`; expiración de 8 h; token CSRF en mutaciones | Integración: el 6.º intento da 429 y se audita; una mutación sin CSRF da 403 |
+| T7 | Robo de sesión o fuerza bruta en login (el login está en internet, sin Access: ADR-0010) | Contraseña de mínimo 8 caracteres con hash argon2id; 5 fallos cada 15 min por correo **o** por IP, contados bajo un bloqueo por correo y por IP para que intentos simultáneos no lo evadan (un ataque repartido entre IPs contra una cuenta también se frena; riesgo aceptado: un atacante puede bloquear 15 min una cuenta); mensaje único «Correo o contraseña incorrectos» y verificación con hash falso (no revela si el correo existe); regla de limitación en Cloudflare para `POST /api/v1/sesion` (obligatoria al desplegar, RUNBOOK §3); cookie `HttpOnly`, `Secure`, `SameSite=Lax`; expiración de 8 h; token CSRF en mutaciones | Integración: el 6.º intento da 429 y se audita; 20 intentos simultáneos evalúan ≤ 5; una mutación sin CSRF da 403 |
 | T8 | Exposición de BD o paneles de administración | Ningún `ports:` público en Compose; BD solo en la red interna; acceso de administración por túnel SSH o `127.0.0.1`; el túnel solo apunta a la app (`app:3000`) | Test de configuración: `docker compose config` no tiene puertos en `0.0.0.0` |
 | T9 | PDF malicioso o engañoso subido como nota de la tienda | Máximo 5 MB y firma `%PDF-`; `pdfjs-dist` 6 solo extrae texto (sin XFA, sin fuentes del sistema, se detiene ante errores); el archivo no se guarda (solo su hash); vista previa y confirmación humana; el servidor vuelve a leer el PDF al confirmar; códigos validados contra el catálogo y precio siempre de la lista (ADR-0008) | Unit: lector con nota anulada, sin tabla y sin códigos; integración: no PDF → 400, código inexistente → bloquea, duplicado → 409, sin datos del cliente final en BD ni auditoría |
 

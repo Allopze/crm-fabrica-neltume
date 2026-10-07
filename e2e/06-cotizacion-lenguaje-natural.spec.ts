@@ -30,7 +30,7 @@ test("pega el pedido y obtiene un borrador con aviso de stock y un ítem por con
   await expect(page.getByRole("heading", { name: "Ítems · 2" })).toBeVisible({ timeout: 20_000 });
   const neltume = page.getByRole("article", { name: "Ítem 1" });
   await expect(neltume).toContainText("Neltume · Raulí");
-  await expect(neltume.getByLabel("Cantidad")).toHaveText("3");
+  await expect(neltume.getByLabel("Cantidad")).toHaveValue("3");
   await expect(neltume).toContainText("Disponible 2 · faltan 1");
   const roble = page.getByRole("article", { name: "Ítem 2" });
   await expect(roble).toContainText("Por confirmar");
@@ -45,5 +45,5 @@ test("el borrador A aparece en el listado y en el panel", async ({ page }) => {
   await expect(page.getByRole("main")).toContainText("1 cotización");
   await expect(page.getByRole("link", { name: new RegExp(CLIENTE_A.nombre) })).toContainText("1 por confirmar");
   await ir(page, "/cotizaciones?estado=borrador");
-  await expect(page.getByRole("row").filter({ hasText: CLIENTE_A.nombre })).toContainText("1 por resolver");
+  await expect(page.getByRole("row").filter({ hasText: CLIENTE_A.nombre })).toContainText("1 por confirmar");
 });

@@ -1,5 +1,5 @@
 # Producción (ADR-0005). Dev y test usan PostgreSQL local con `npm run dev` / `npm test`.
-FROM node:24-bookworm-slim AS deps
+FROM node:24-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -9,7 +9,7 @@ COPY . .
 RUN npm run build
 
 # App: servidor standalone de Next.js, sin dependencias de desarrollo ni clave del LLM.
-FROM node:24-bookworm-slim AS app
+FROM node:24-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS app
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
 WORKDIR /app
 COPY --from=build --chown=node:node /app/.next/standalone ./

@@ -70,20 +70,21 @@ export function Madera({ id, compacto }: { id: MaderaId; compacto?: boolean }) {
   );
 }
 
+/** Cabecera de página: título, una línea de contexto opcional (fecha, origen) y las acciones. Sin antetítulo: el título se sostiene solo. */
 export function Encabezado({
-  antetitulo, titulo, descripcion, acciones,
-}: { antetitulo: string; titulo: ReactNode; descripcion?: ReactNode; acciones?: ReactNode }) {
+  titulo, meta, descripcion, acciones,
+}: { titulo: ReactNode; meta?: ReactNode; descripcion?: ReactNode; acciones?: ReactNode }) {
   return (
-    <header className="mb-6 sm:mb-8">
-      <div className="flex flex-wrap items-end justify-between gap-4 pb-4">
-        <div className="entrada max-w-3xl">
-          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-rauli">{antetitulo}</p>
-          <h1 className="font-display text-[2rem] leading-[1.05] sm:text-[2.6rem] sm:leading-[1.02] font-medium tracking-[-0.02em] text-tinta [font-variation-settings:'SOFT'_60,'opsz'_96]">
+    <header className="mb-6">
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 pb-4">
+        <div className="max-w-3xl">
+          <h1 className="font-display text-[1.85rem] leading-[1.05] sm:text-[2.25rem] font-medium tracking-[-0.02em] text-balance text-tinta [font-variation-settings:'SOFT'_60,'opsz'_96]">
             {titulo}
           </h1>
-          {descripcion && <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-tinta-suave">{descripcion}</p>}
+          {meta && <p className="mt-1.5 text-sm text-tinta-tenue">{meta}</p>}
+          {descripcion && <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-tinta-suave">{descripcion}</p>}
         </div>
-        {acciones && <div className="entrada entrada-2 flex flex-wrap items-center gap-2">{acciones}</div>}
+        {acciones && <div className="flex flex-wrap items-center gap-2">{acciones}</div>}
       </div>
       <div className="regla" aria-hidden />
     </header>
@@ -108,7 +109,7 @@ export function Panel({ titulo, accion, children, className, sinRelleno }: {
 
 export function Cifra({ etiqueta, valor, nota, tono }: { etiqueta: string; valor: ReactNode; nota?: ReactNode; tono?: "rauli" | "ambar" }) {
   return (
-    <div className="min-w-0 border-l-2 border-linea-fuerte pl-3 sm:pl-4">
+    <div className="min-w-0 border-l border-linea-fuerte pl-3 sm:pl-4">
       <p className="text-xs uppercase tracking-[0.12em] break-words text-tinta-tenue">{etiqueta}</p>
       <p className={cn("mt-1 font-display text-3xl sm:text-4xl font-medium tabular-nums tracking-tight", tono === "rauli" && "text-rauli", tono === "ambar" && "text-ambar")}>
         {valor}

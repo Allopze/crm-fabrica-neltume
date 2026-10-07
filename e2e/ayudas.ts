@@ -1,6 +1,18 @@
 import { expect, type Page } from "@playwright/test";
 
+const vigiladas = new WeakSet<Page>();
+
+/** Una violación de la Content-Security-Policy (src/proxy.ts) en la consola falla el test (auditoría M-01). */
+export function vigilarCsp(page: Page) {
+  if (vigiladas.has(page)) return;
+  vigiladas.add(page);
+  page.on("console", (m) => {
+    if (/Content Security Policy|Content-Security-Policy/i.test(m.text())) expect.soft(m.text(), "violación de CSP").toBe("");
+  });
+}
+
 export async function ingresar(page: Page, email: string, clave: string, exito = true) {
+  vigilarCsp(page);
   await page.goto("/login");
   await page.getByLabel("Correo").fill(email);
   await page.getByLabel("Contraseña").fill(clave);

@@ -10,8 +10,8 @@ export default async function AjustesIAPage() {
   const sesion = await requerirSesion();
   if (!sesion.permisos.has("config.editar")) return <SinPermiso permiso="config.editar" />;
   return <>
-    <Encabezado antetitulo="Configuración · cotizador" titulo="Ajustes de IA"
-      descripcion="Elige el proveedor y el modelo que interpretarán los pedidos. Las API keys se configuran en el entorno privado del worker." />
+    <Encabezado titulo="Ajustes de IA"
+      descripcion="Elige el proveedor y el modelo que interpretan los pedidos. El cambio rige desde el siguiente pedido; los precios siempre los calcula el sistema." />
     <AjustesIA csrf={sesion.csrf} />
   </>;
 }

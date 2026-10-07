@@ -17,6 +17,7 @@ import * as rutaStockArt from "@/app/api/v1/stock/[codigo]/route";
 import { bd, cerrarBd } from "@/db/conexion";
 import { importarExcel } from "@/domain/importacion/importar";
 import { cargarBomReal } from "@/domain/bom-real";
+import { definirBom } from "@/domain/bom";
 import { crearRol } from "@/domain/roles";
 import { crearUsuario } from "@/domain/usuarios";
 
@@ -92,6 +93,20 @@ describe("cierre de órdenes de producción (REQ-MP-4)", () => {
     const con = await llamar(rutaCerrar.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { consumosManuales: [{ materiaPrimaId: mp["Tabla raulí"], cantidad: 5 }] } }, { id });
     expect(con.estado).toBe(200);
     expect(await existenciaMp(mp["Tabla raulí"])).toBe(3);
+  });
+
+  // Auditoría H-13: el BOM admitía 4 decimales y los movimientos guardan 3; un consumo de 0,000 daba 500 al cerrar.
+  it("un insumo admite hasta 3 decimales y un consumo menor a 0,001 da BOM_INCOMPLETO, nunca 500", async () => {
+    const bom = (cantidad: number) => llamar(rutaBomModelo.PUT, "PUT", "/x", { ...s, cuerpo: { origen: "demo", lineas: [{ materiaPrimaId: mp.Cola, cantidad }] } }, { modelo: "RAN" });
+    expect((await bom(0.0001)).estado).toBe(400);
+    expect((await bom(0.001)).estado).toBe(201);
+    const { rows: [u] } = await app.query("SELECT id FROM usuario WHERE email = 'prod@neltume.cl'");
+    // Una receta ya guardada con más precisión (anterior a la validación) tampoco rompe el cierre.
+    await bd().transaction((tx) => definirBom(tx, { modeloCodigo: "RAN", origen: "demo", lineas: [{ materiaPrimaId: mp.Cola, cantidad: 0.0004 }] }, { tipo: "usuario", id: u.id }, "consola"));
+    const id = await crearOrden("RAN-O-3-B", 1);
+    const r = await llamar(rutaCerrar.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: {} }, { id });
+    expect(r.estado).toBe(409);
+    expect(r.cuerpo.error).toMatchObject({ codigo: "BOM_INCOMPLETO", detalles: { incompletos: [expect.stringContaining("Cola: la orden consume menos de 0,001")] } });
   });
 });
 

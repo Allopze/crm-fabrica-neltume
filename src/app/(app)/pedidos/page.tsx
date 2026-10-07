@@ -21,7 +21,6 @@ export default async function PedidosPage({ searchParams }: PageProps<"/pedidos"
   return (
     <>
       <Encabezado
-        antetitulo="Ventas · pedidos"
         titulo="Notas de pedido"
         descripcion="Una cotización aceptada o una nota de la tienda se convierte en nota de pedido: reserva lo disponible y marca lo que falta fabricar."
         acciones={<BotonLink href="/pedidos/nota-tienda" variante="primario"><FileUp className="h-4 w-4" /> Desde nota de la tienda</BotonLink>}
@@ -31,19 +30,19 @@ export default async function PedidosPage({ searchParams }: PageProps<"/pedidos"
           <p className="px-6 py-10 text-center text-sm text-tinta-tenue">Aún no hay notas de pedido. Se crean desde una cotización aprobada con «Convertir en pedido».</p>
         ) : (
           <Tabla>
-            <thead><tr><Th>N.º</Th><Th>Cliente</Th><Th>Cotización</Th><Th>Creado</Th><Th>Reservado / pedido</Th><Th>Estado</Th><Th alinear="der">Total</Th></tr></thead>
+            <thead><tr><Th>N.º</Th><Th>Cliente</Th><Th className="hidden lg:table-cell">Origen</Th><Th className="hidden md:table-cell">Creada</Th><Th className="hidden md:table-cell">Reservado / pedido</Th><Th>Estado</Th><Th alinear="der">Total</Th></tr></thead>
             <tbody>
               {datos.map((p) => {
                 const e = estadoPedido(p.estado);
                 return (
                   <Tr key={p.id}>
-                    <Td><Link href={`/pedidos/${p.id}`} className="font-mono font-medium text-rauli hover:underline">{p.numero}</Link></Td>
+                    <Td><Link href={`/pedidos/${p.id}`} aria-label={`Nota de pedido N.º ${p.numero}`} className="-my-2 inline-block py-2 font-medium tabular-nums text-rauli hover:underline">{p.numero}</Link></Td>
                     <Td className="font-medium">{p.cliente}</Td>
-                    <Td className="font-mono text-tinta-suave">{p.cotizacion ? `#${p.cotizacion}` : <span className="font-sans">Nota tienda N.º {p.refExterna}</span>}</Td>
-                    <Td className="text-tinta-suave">{fecha(new Date(p.creadoEn).toISOString())}</Td>
-                    <Td>
+                    <Td className="hidden text-tinta-suave lg:table-cell">{p.cotizacion ? `Cotización N.º ${p.cotizacion}` : `Nota de la tienda N.º ${p.refExterna}`}</Td>
+                    <Td className="hidden text-tinta-suave md:table-cell">{fecha(new Date(p.creadoEn).toISOString())}</Td>
+                    <Td className="hidden md:table-cell">
                       <span className="tabular-nums">{p.reservado} / {p.cantidad}</span>
-                      {p.estado !== "cancelada" && p.reservado < p.cantidad && <span className="ml-2 text-xs text-pizarra">faltan {p.cantidad - p.reservado}</span>}
+                      {(p.estado === "pendiente" || p.estado === "en_produccion") && p.reservado < p.cantidad && <span className="ml-2 text-xs text-pizarra">{p.cantidad - p.reservado === 1 ? "falta 1" : `faltan ${p.cantidad - p.reservado}`}</span>}
                     </Td>
                     <Td><Etiqueta tono={e.tono}>{e.texto}</Etiqueta></Td>
                     <Td alinear="der" className="font-medium">{clp(Number(p.total))}</Td>

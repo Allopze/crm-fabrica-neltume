@@ -21,14 +21,14 @@ export default async function MetricasPage() {
 
   return (
     <>
-      <Encabezado antetitulo="Configuración · observabilidad" titulo="Métricas de IA"
+      <Encabezado titulo="Métricas de IA"
         descripcion="Cuánto tarda y cuánto cuesta interpretar pedidos, y cuántas veces falla. Últimos 30 días; el gasto, del día y del mes." />
       {m.alertas.map((a) => (
         <p key={a} role="alert" className="mb-4 flex items-center gap-2 rounded-lg border border-ambar/30 bg-ambar-velo px-5 py-3 text-sm text-ambar"><TriangleAlert className="h-4 w-4" /> {a}</p>
       ))}
       <div className="mb-10 grid grid-cols-2 gap-8 lg:grid-cols-4">
-        <Cifra etiqueta="Pedido → borrador, p90" valor={seg(m.latencia.p90Ms)} nota={`mediana ${seg(m.latencia.p50Ms)} · meta ≤ 15 s · ${m.latencia.muestras} pedidos`}
-          tono={m.latencia.p90Ms !== null && m.latencia.p90Ms > 15_000 ? "ambar" : "rauli"} />
+        <Cifra etiqueta="Pedido → borrador, p90" valor={seg(m.latencia.p90Ms)} nota={`mediana ${seg(m.latencia.p50Ms)} · meta ≤ 15 s · ${m.latencia.muestras === 1 ? "1 interpretación completa" : `${m.latencia.muestras} interpretaciones completas`}`}
+          tono={m.latencia.p90Ms !== null && m.latencia.p90Ms > 15_000 ? "ambar" : undefined} />
         <Cifra etiqueta="Costo medio por pedido" valor={usd(m.costoMedioUsd, 4)} nota="meta ≤ US$ 0,10" tono={m.costoMedioUsd !== null && m.costoMedioUsd > 0.1 ? "ambar" : undefined} />
         <Cifra etiqueta="Gasto de hoy" valor={usd(m.gasto.diaUsd)} nota={m.topes.diarioUsd ? `tope diario ${usd(m.topes.diarioUsd)}` : "sin tope diario configurado"} />
         <Cifra etiqueta="Gasto del mes" valor={usd(m.gasto.mesUsd)} nota={m.topes.mensualUsd ? `presupuesto ${usd(m.topes.mensualUsd)}` : "sin presupuesto configurado"} />
@@ -36,7 +36,7 @@ export default async function MetricasPage() {
       <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 lg:grid-cols-2">
         <Panel titulo="Interpretaciones">
           <dl className="space-y-3 text-sm">
-            <div className="flex justify-between"><dt className="text-tinta-suave">Pedidos interpretados</dt><dd className="tabular-nums">{m.trabajos.total}</dd></div>
+            <div className="flex justify-between"><dt className="text-tinta-suave">Pedidos enviados a la IA</dt><dd className="tabular-nums">{m.trabajos.total}</dd></div>
             <div className="flex justify-between"><dt className="text-tinta-suave">Quedaron «IA no disponible»</dt><dd className="tabular-nums">{m.trabajos.fallidos} ({Math.round(m.trabajos.tasaFalla * 100)} %)</dd></div>
             <div className="flex justify-between"><dt className="text-tinta-suave">En cola ahora</dt><dd className="tabular-nums">{m.trabajos.pendientes}</dd></div>
           </dl>
