@@ -24,7 +24,7 @@ Sin marcas [NEEDS CLARIFICATION] abiertas: las decisiones de la Fase 3 están en
 **Restricciones.** Español; moneda CLP en importes enteros; precios con y sin IVA (19 %); fechas y números en formato chileno. Bases de datos y paneles de administración nunca expuestos públicamente. Ningún secreto en documentos. Uso principal en PC con internet estable.
 
 **Supuestos.**
-- S1: una sola bodega lógica "Fábrica", con zonas de materias primas y de producto terminado; el modelo admite más bodegas después.
+- S1: una sola bodega lógica "Fábrica", con zonas de materias primas y de producto terminado; el modelo admite más bodegas después. Cada puerta lleva su ubicación (Galpón arriba, Galpón atrás, Fábrica, Tienda…) como dato propio, no como bodega (ADR-0018).
 - S2: la lista de precios inicial es la hoja "Precio" del cotizador real `Cotizador Puertas Neltume.Co-rev-4F.xlsx` (fuente de verdad; reemplaza a COTIZADOR_2026.xlsx, con precios y categorías idénticos), que también es la referencia de formato de la cotización (8.772 filas: 33 modelos × 4 maderas × 9 rangos de ancho × 7 alturas, más accesorios).
 - S3: vigencia por defecto de la cotización = 10 días hábiles (tomada del Excel), configurable.
 - S4: sin stock suficiente se cotiza igual, con aviso visible.
@@ -36,6 +36,7 @@ Sin marcas [NEEDS CLARIFICATION] abiertas: las decisiones de la Fase 3 están en
 |---|---|---|---|
 | ADM | 1 Acceso y sesión · 2 Usuarios y permisos · 3 Auditoría consultable | P1 | Sí |
 | STK | 1 Catálogo e importación · 2 Consulta de stock · 3 Entrada por producción · 4 Salida por despacho · 5 Ajuste con motivo · 7 Reserva | P1 | Sí |
+| STK | 8 Puertas con código · 9 Inventario inicial · 10 Historial de despachos (Fase 11, ADR-0018) | P1 | No |
 | STK | 6 Alertas de stock mínimo | P2 | No |
 | MP | 1 Catálogo de materias primas · 2 Recepción · 3 BOM por modelo · 4 Cierre de producción | P1 | Sí |
 | MP | 5 Ajuste de materias primas · 6 Alertas de reposición | P2 | No |
@@ -124,6 +125,28 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-STK-7.3: IF al confirmar el pedido el disponible no alcanza THEN THE SYSTEM SHALL reservar solo lo disponible, marcar el faltante en el pedido de forma visible y nunca dejar el disponible en negativo.
 - REQ-STK-7.4: IF un usuario sin permiso de pedidos intenta reservar o liberar THEN THE SYSTEM SHALL denegarlo y registrar el intento.
 - REQ-STK-7.5: WHEN entra stock de un artículo con faltante en un pedido abierto (al cerrar su orden de producción o a pedido del usuario) THE SYSTEM SHALL reservarle lo disponible y actualizar el faltante.
+
+**H8 Puertas con código (P1, ADR-0018).** Como usuario, quiero saber qué puerta es cada una, dónde está y a quién se despachó.
+- REQ-STK-8.1: THE SYSTEM SHALL registrar cada puerta física con un código único (el de su etiqueta), su artículo, medida exacta, ubicación, calidad (primera o segunda) y observación; la existencia de un artículo es la cantidad de sus puertas en stock.
+- REQ-STK-8.2: WHEN entra una puerta sin código (cierre de producción, entrada o ajuste positivo) THE SYSTEM SHALL asignarle el siguiente código de la serie de la fábrica y mostrarlo.
+- REQ-STK-8.3: WHEN salen puertas (despacho de un pedido, salida o ajuste negativo) THE SYSTEM SHALL registrar cuáles: las que indique el usuario o, si no indica, las más antiguas no apartadas; IF un código no existe, no está en stock o es de otro artículo THEN THE SYSTEM SHALL rechazar la operación sin crear movimientos.
+- REQ-STK-8.4: WHEN un usuario con permiso de movimientos cambia la ubicación, la calidad o la observación de una puerta THE SYSTEM SHALL guardarlo y auditarlo con antes y después.
+- REQ-STK-8.5: WHEN un usuario aparta una puerta para un cliente sin nota de pedido THE SYSTEM SHALL reservarla con un movimiento y no elegirla en salidas automáticas; liberarla o despacharla crea los movimientos correspondientes.
+- REQ-STK-8.6: WHEN un usuario busca puertas por código, modelo, ubicación, calidad o estado THE SYSTEM SHALL listarlas y mostrar la historia de cada una (movimientos y despacho histórico).
+- REQ-STK-8.7: THE SYSTEM SHALL guardar las puertas que no calzan con la lista de precios en artículos «fuera de catálogo», sin precio, que no entran al catálogo de la IA ni al cotizador; se venden con una salida que lleva el documento.
+- REQ-STK-8.8: IF un usuario sin permiso de stock intenta consultar, editar, apartar o mover puertas THEN THE SYSTEM SHALL denegarlo y registrar el intento.
+
+**H9 Inventario inicial (P1, ADR-0018).** Como usuario, quiero pasar la planilla de inventario de la fábrica a la app de una vez.
+- REQ-STK-9.1: WHEN un operador carga la planilla THE SYSTEM SHALL crear cada puerta con su código, su artículo (del catálogo si modelo, madera, ancho dentro del rango y alto coinciden; si no, fuera de catálogo), ubicación normalizada, calidad, observación y fecha de producción, con un ajuste «inventario inicial» por puerta; las que tienen cliente quedan apartadas.
+- REQ-STK-9.2: IF una fila no tiene código o su fecha es imposible THEN THE SYSTEM SHALL asignarle un código nuevo o dejar la fecha vacía, informarlo y seguir con las demás.
+- REQ-STK-9.3: WHEN se vuelve a cargar la planilla THE SYSTEM SHALL no duplicar puertas ni filas del historial; IF ya hay puertas en stock que no vienen de la planilla THEN THE SYSTEM SHALL detenerse salvo confirmación explícita.
+- REQ-STK-9.4: THE SYSTEM SHALL informar cuántas puertas cargó por destino (catálogo, fuera de catálogo, apartadas) y qué filas son dudosas, sin precios ni nombres de clientes en el informe ni en la auditoría.
+
+**H10 Historial de despachos (P1, ADR-0018).** Como usuario, quiero saber a quién y con qué documento salió una puerta antes de usar la app.
+- REQ-STK-10.1: WHEN se carga la hoja de despachos THE SYSTEM SHALL guardar cada fila (código, modelo, medida, madera, fecha de producción, estado, cliente, documento y nota) sin rechazar ninguna, marcando las dudosas (sin código numérico, código repetido o fecha imposible).
+- REQ-STK-10.2: WHEN un usuario busca por código, documento o cliente THE SYSTEM SHALL listar las filas paginadas; el cliente solo se muestra y se busca con permiso de clientes.
+- REQ-STK-10.3: THE SYSTEM SHALL impedir editar o borrar el historial.
+- REQ-STK-10.4: IF un usuario sin permiso de stock lo consulta THEN THE SYSTEM SHALL denegarlo y registrar el intento.
 
 ### 4.3 Materias primas y producción (REQ-MP)
 
@@ -256,7 +279,7 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 
 ## 6. Datos de referencia
 
-Códigos de artículo `MODELO-MADERA-ANCHO-ALTO` (por ejemplo ANC-O-4-B); tipos de puerta: bloque, panel y especial; maderas: Pino Oregón, Lenga, Mara y Raulí. La nota de pedido incluye cliente, RUT, giro, dirección, dirección de despacho, comuna, medio de transporte y contacto.
+Códigos de artículo `MODELO-MADERA-ANCHO-ALTO` (por ejemplo ANC-O-4-B; fuera de catálogo, con la medida en mm: MOL-O-780X2066); código de puerta: el número de su etiqueta (202308000000210); tipos de puerta: bloque, panel y especial; maderas: Pino Oregón, Lenga, Mara y Raulí. La nota de pedido incluye cliente, RUT, giro, dirección, dirección de despacho, comuna, medio de transporte y contacto.
 
 ## 7. Trazabilidad de decisiones (entrevista Fase 0)
 

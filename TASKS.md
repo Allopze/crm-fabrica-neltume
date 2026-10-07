@@ -219,3 +219,18 @@ Resto de los hallazgos de la auditoría del 07-10-2026; decisiones en ADR-0017.
 - [x] T10.9 (M-03) Criterio de revisión de `npm audit` y API.md al día con el código · RUNBOOK §5 · — · —
 
 **Checkpoint F10:** `npm test` completo verde, lint y build; recorrido en el navegador sin violaciones de CSP; cambio de contraseña desde el menú. Antes de desplegar: mover el `.env` de producción fuera del repo y agregarle `DATABASE_URL_WORKER`. Espero tu OK.
+
+## Fase 11 — Puertas con código e inventario de la fábrica (aprobada el 07-10-2026; ADR-0018)
+
+Toda la planilla `datos/INVENTARIO.xlsx` entra a la app y deja de usarse: cada puerta con su código, ubicación y calidad; las que no calzan con la lista, como artículos fuera de catálogo; el historial de despachos para consulta.
+
+- [ ] T11.0 Decisiones en documentos: SPEC (REQ-STK-8, 9, 10), DATA-MODEL, ADR-0018, API, UX, TESTING y RUNBOOK · ADR-0018 · — · —
+- [ ] T11.1 (75) Migración 0019: `puerta`, `movimiento.puerta_id` (FK compuesta y CHECK ±1), `fuera_catalogo`, `despacho_historico` de solo inserción, `v_puerta`, secuencia de códigos, trigger de existencia/apartado por puerta y conversión del stock existente · REQ-STK-8.1, 10.3 · I `puertas.trigger` · —
+- [ ] T11.2 (90) Dominio: `registrarMovimientos` expande a una puerta por movimiento (códigos nuevos, elección indicada o las más antiguas no apartadas), apartar y liberar, edición auditada · REQ-STK-8.1–8.5 · U `puertas.eleccion`, I `puertas` · T11.1
+- [ ] T11.3 (45) Fuera de catálogo invisible para la IA, el mapeo y la cotización manual; la importación de la lista lo devuelve al catálogo · REQ-STK-8.7, REQ-COT-2.4 · I `puertas` · T11.1 · [P]
+- [ ] T11.4 (75) API: entradas/salidas/ajustes con `puertas` y `ubicacion`, `/puertas` (lista, ficha, edición, apartar, liberar), `/despachos-historicos`, despacho de pedido y cierre de orden con códigos · REQ-STK-8.x, 10.2, 10.4, REQ-STK-4.4, REQ-MP-4.1 · I `puertas`, `pedidos-ciclo`, `produccion` · T11.2
+- [ ] T11.5 (90) Carga del inventario: mapeo puro de filas (U) y carga idempotente con informe (I), `npm run cargar-inventario` · REQ-STK-9.x, 10.1 · U `inventario.mapeo`, I `inventario.carga` · T11.2
+- [ ] T11.6 (90) UI: pestañas Artículos · Puertas · Historial en Stock, ficha de puerta con historia y acciones, puertas en la ficha del artículo, códigos en entrada/salida/ajuste, elección de puertas al despachar y códigos al cerrar una orden · REQ-STK-8.x, 10.2, UX §1, §4 · E `05-stock-movimientos`, `09-pedido-reserva` · T11.4
+- [ ] T11.7 (30) Carga real en desarrollo con `--simular` y revisión del informe con el usuario · REQ-STK-9.4 · el propio informe · T11.5
+
+**Checkpoint F11:** `npm test` completo verde, lint y build; informe de la carga real simulada (conteos por destino y filas dudosas) revisado contigo; recorrido: buscar una puerta por código, moverla de ubicación, apartarla, despachar un pedido eligiendo puertas y ver la historia de una puerta despachada antes de la app. Espero tu OK.

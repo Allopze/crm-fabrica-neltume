@@ -92,7 +92,7 @@ scripts/            dev.mts, db-setup.mts, migrar.mts, crear-admin.mts, preparar
 tests/integracion/  ~40 tests con PostgreSQL real (una BD por archivo; plantilla migrada)
 e2e/                17 suites Playwright secuenciales con estado compartido
 eval/               casos.json (62 casos) e informes de `eval:ia` con el modelo real
-docs/adr/           ADR-0001…0017 (decisiones; se leen antes de cambiar diseño)
+docs/adr/           ADR-0001…0018 (decisiones; se leen antes de cambiar diseño)
 datos/              Excel real del cotizador: solo lectura, fuera de git (no copiar sus
                     costos ni márgenes a docs, fixtures ni logs)
 referencia/         Cotizador de la tienda (proyecto aparte, solo lectura, fuera de git)
@@ -164,7 +164,7 @@ Regla: un test que falla no se marca `skip`/`only`; se arregla o se propone camb
 | `TASKS.md` | Plan por fases con checkpoints de revisión humana |
 | `RUNBOOK.md` | Operación: dev, producción, túnel, respaldos, incidentes y guion de demo |
 | `PRODUCT.md` | Ficha de producto (contexto, usuarios, principios) para trabajo de interfaz |
-| `docs/adr/` | Decisiones de arquitectura ADR-0001…0017 |
+| `docs/adr/` | Decisiones de arquitectura ADR-0001…0018 |
 
 Nota: `docs/PLAN.md` es un borrador obsoleto que contradice la guía vigente; si difiere, manda `AGENTS.md`.
 

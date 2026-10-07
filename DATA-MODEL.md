@@ -21,6 +21,8 @@ erDiagram
   UNIDAD ||--o{ MATERIA_PRIMA : mide
   BODEGA ||--o{ MOVIMIENTO : ocurre_en
   ARTICULO ||--o{ MOVIMIENTO : mueve
+  ARTICULO ||--o{ PUERTA : agrupa
+  PUERTA ||--o{ MOVIMIENTO : se_mueve_en
   MATERIA_PRIMA ||--o{ MOVIMIENTO : mueve
   MODELO ||--o{ BOM : tiene
   BOM ||--o{ BOM_LINEA : contiene
@@ -56,13 +58,13 @@ erDiagram
 ### Catálogo (REQ-STK-1)
 | Tabla | Columnas clave | Reglas |
 |---|---|---|
-| `modelo` | `nombre` (NELTUME), `codigo` (NEL), `familia` (`puerta`/`accesorio`), `activo` | 33 puertas + 5 accesorios |
+| `modelo` | `nombre` (NELTUME), `codigo` (NEL), `familia` (`puerta`/`accesorio`), `fuera_catalogo`, `activo` | 33 puertas + 5 accesorios; los modelos creados por la carga de inventario (MAMPARA LICAN…) van `fuera_catalogo` (ADR-0018) |
 | `alias_modelo` | `alias` PK (normalizado), `modelo` (nombre), `tipo` (`seguro`/`posible`) | Semilla con los alias reales de la tienda; editable con `catalogo.editar` (REQ-COT-2.11) |
-| `madera` | `nombre` normalizado (PINO OREGON, LENGA, MARA, RAULI), `codigo` (O/L/M/R) | La comparación ignora tildes |
+| `madera` | `nombre` normalizado (PINO OREGON, LENGA, MARA, RAULI), `codigo` (O/L/M/R), `fuera_catalogo` | La comparación ignora tildes; las de inventario que no están en la lista (PINO BLANCO, ALAMO, MDF…) van `fuera_catalogo` |
 | `rango_ancho` | `codigo` (1–9), `etiqueta` ("0,80 A 0,85"), `min_m`, `max_m` | Para accesorios: `2x4`…, `6X1`… como texto |
 | `alto` | `codigo` (A–G para 2,0–2,6; H… en accesorios), `alto_m` | |
 | `tipo_puerta` | `nombre` (BLOQUE, PANEL, ESPECIAL) | |
-| `articulo` | `codigo` único (`NEL-R-4-B`), `modelo_id`, `madera_id`, `ancho_codigo` (1–9 en puertas; `2X4`, `6X1`… en accesorios), `ancho_etiqueta`, `alto_codigo`, `alto_m` (alto o largo), `espesor`, `pulgadas`, `tipo_puerta_id` null, `stock_minimo` null, `activo` | Único por (modelo, madera, ancho_codigo, alto_codigo). `rango_ancho` y `alto` quedan como referencia de puertas para el mapeo exacto |
+| `articulo` | `codigo` único (`NEL-R-4-B`), `modelo_id`, `madera_id`, `ancho_codigo` (1–9 en puertas; `2X4`, `6X1`… en accesorios), `ancho_etiqueta`, `alto_codigo`, `alto_m` (alto o largo), `espesor`, `pulgadas`, `tipo_puerta_id` null, `stock_minimo` null, `fuera_catalogo`, `activo` | Único por (modelo, madera, ancho_codigo, alto_codigo). `rango_ancho` y `alto` quedan como referencia de puertas para el mapeo exacto. Fuera de catálogo: ancho y alto en mm (`MOL-O-780X2066`), sin precio; el cotizador y la IA no los ven (REQ-STK-8.7) |
 | `bodega` | `nombre` ("Fábrica"), `zona` | Una sola en v1 (supuesto S1) |
 | `feriado` | `fecha` PK, `nombre` | Solo feriados **adicionales** (elecciones, leyes puntuales); los legales se calculan en `src/domain/precios/feriados.ts` (REQ-COT-6.6) |
 | `parametro` | `clave`, `valor` jsonb | `vigencia_dias_habiles`=10, `iva`=0.19, topes de IA |
@@ -82,7 +84,9 @@ Una edición en pantalla copia la versión vigente, aplica el cambio y crea `ver
 |---|---|---|
 | `unidad` | `codigo` (un, m, m2, m3, pulg, kg, lt), `nombre` | |
 | `materia_prima` | `nombre` único, `unidad_codigo`, `stock_minimo` null, `activo` | |
-| `movimiento` | `ocurrido_en`, `bodega_id`, `articulo_id` XOR `materia_prima_id`, `tipo`, `cantidad` numeric (con signo), `motivo`, `ref_tipo` + `ref_id` (orden, pedido, recepción), `idempotencia_clave`, `usuario_id` | **Inmutable**: un trigger rechaza UPDATE y DELETE; el rol de la app no tiene esos grants |
+| `movimiento` | `ocurrido_en`, `bodega_id`, `articulo_id` XOR `materia_prima_id`, `puerta_id` null, `tipo`, `cantidad` numeric (con signo), `motivo`, `ref_tipo` + `ref_id` (orden, pedido, recepción, manual, puerta), `idempotencia_clave`, `usuario_id` | **Inmutable**: un trigger rechaza UPDATE y DELETE; el rol de la app no tiene esos grants. Toda entrada, salida o ajuste de un artículo lleva `puerta_id` y vale ±1 (ADR-0018) |
+| `puerta` | `codigo` único (etiqueta), `articulo_id`, `ancho_mm`, `alto_mm`, `ubicacion`, `calidad` (`primera`/`segunda`), `observacion`, `fecha_produccion` null, `origen` (`inventario_inicial`/`produccion`/`manual`/`conversion`) | Existencia y apartado salen de sus movimientos (vista `v_puerta`): 0 o 1 cada uno, nunca apartada sin existencia (*constraint trigger*). Ubicación, calidad y observación se editan con auditoría; `articulo_id` no cambia. Códigos nuevos: secuencia `puerta_codigo_seq` desde 202308000010001 (REQ-STK-8.1, 8.2) |
+| `despacho_historico` | `fila`, `codigo` null, `modelo`, `medida`, `madera`, `fecha_produccion` null, `fecha_texto` (tal cual si no es fecha), `estado`, `cliente`, `documento`, `nota`, `dudas` text[], `huella` única | Hoja `Despachos` de la planilla, **solo inserción** (trigger). Sin importes. El cliente solo se muestra con `clientes.ver` (REQ-STK-10) |
 | `bom` | `modelo_id`, `rango_ancho_id` null, `alto_id` null, `vigente_desde`, `origen` (`real`/`demo`) | Por modelo, opcionalmente por medida (REQ-MP-3.1) |
 | `bom_linea` | `id`, `bom_id`, `materia_prima_id` null, `madera_puerta` (bool), `cantidad` > 0 | Un insumo con su cantidad por puerta, o la «madera de la puerta»: sin insumo y `cantidad` = factor sobre `articulo.pulgadas` (ADR-0012). CHECK: una cosa o la otra; únicos por BOM (insumo y madera) |
 | `madera_insumo` | `madera_id` (PK), `materia_prima_id`, `actualizado_en` | De qué materia prima se descuenta cada madera al cerrar una orden (REQ-MP-3.5) |
@@ -98,6 +102,8 @@ Una edición en pantalla copia la versión vigente, aplica el cambio y crea `ver
 | `ajuste` | ± | | ± (motivo obligatorio) |
 | `reserva` | | + | + |
 | `liberacion` | | − | − (cancelación o despacho) |
+
+La reserva y la liberación de una nota de pedido son por artículo (sin `puerta_id`). Con `puerta_id` son un **apartado**: una puerta guardada para un cliente sin nota de pedido; el nombre va en `motivo`. Si una salida no indica las puertas, se eligen las más antiguas (`fecha_produccion`, luego `codigo`) que no estén apartadas (REQ-STK-8.3, 8.5).
 
 Disponible = existencia − reservado. Se calcula con la vista `v_stock` (suma por artículo o materia prima y bodega). El código lo verifica en la transacción y, además, un *constraint trigger* diferido rechaza al confirmar cualquier transacción que deje existencia o disponible negativos (REQ-STK-4.2, 7.3; ADR-0017).
 
@@ -128,6 +134,7 @@ Disponible = existencia − reservado. Se calcula con la vista `v_stock` (suma p
 - `movimiento(articulo_id, bodega_id)`, `movimiento(materia_prima_id, bodega_id)`, y `movimiento(idempotencia_clave)` único cuando no es nulo.
 - `cotizacion(estado, creado_en)` y `cotizacion(cliente_id)`. `audit_log(recurso, recurso_id)` y `audit_log(ocurrido_en)`.
 - CHECK `articulo_id` XOR `materia_prima_id` en `movimiento`. CHECK de `cantidad` ≠ 0 y signo coherente con `tipo`.
+- `movimiento(puerta_id, articulo_id)` → `puerta(id, articulo_id)` (FK compuesta). CHECK: con `puerta_id`, la cantidad es ±1; sin `puerta_id`, un artículo solo tiene `reserva` o `liberacion`. `puerta(codigo)` único y `movimiento(puerta_id)` indexado.
 
 ## 5. Importación del Excel (REQ-STK-1.x, REQ-COT-1.1)
 
@@ -145,6 +152,15 @@ Fuente: `datos/Cotizador Puertas Neltume.Co-rev-4F.xlsx` (fuente de verdad desde
 - Corre en una transacción. Un fallo de fila no detiene las demás (REQ-STK-1.2), pero un fallo de estructura (falta una hoja o columna) aborta todo.
 - Informe: creadas, actualizadas, corregidas y rechazadas, con fila y detalle, devuelto al usuario. En `audit_log` (`origen=importacion`) se guardan solo conteos, hash del archivo y números de fila rechazados y corregidos, nunca valores de costo o precio.
 - Los fixtures de test usan un Excel reducido y anónimo (`e2e/fixtures/cotizador-mini.xlsx`, unas 50 filas con costos ficticios) con la misma estructura.
+
+## 5b. Carga del inventario de la fábrica (REQ-STK-9, 10; ADR-0018)
+
+Fuente: `datos/INVENTARIO.xlsx` (fuera de git), por consola: `npm run cargar-inventario -- <archivo> [--simular] [--agregar]`.
+
+| Hoja / columnas | Destino | Reglas |
+|---|---|---|
+| `Inventario`: MODELO, MEDIDA, CODIGO, MADERA, PRODUCCION, ESTADO, UBICACIÓN, CLIENTE, OBSERVACIONES | `puerta` + `ajuste` +1 «inventario inicial» | Sufijo SEGUNDA → calidad segunda. Artículo de catálogo si modelo y madera existen, el ancho cae en un rango y el alto es de la grilla; si no, artículo fuera de catálogo con la medida exacta. Ubicación normalizada («FABIRCA» → Fábrica). ESTADO distinto de DISPONIBLE y OBSERVACIONES distintas de «OK» van a `observacion`. Con CLIENTE → `reserva` +1 de la puerta (apartada). Sin código → código nuevo. Fecha fuera de 2015…hoy → vacía. Se ignoran DETALLE (importes) y MAYORISTA |
+| `Despachos`: MODELO, MEDIDA, CODIGO, MADERA, FECHA PRODUCCION, ESTADO, CLIENTE, DOCUMENTO y la nota de la columna I | `despacho_historico` | Todas las filas; dudas: sin código numérico, código repetido, fecha imposible. Se ignoran las columnas de importes |
 
 ## 6. Datos semilla
 
