@@ -70,7 +70,9 @@ export async function cargarBomReal(tx: Tx, actor: Actor & { id: string }, orige
   }
 
   const usos = USO_POR_PUERTA.map((u) => ({ materiaPrimaId: id(u.nombre), cantidad: Number(u.cantidad.toFixed(4)) }));
-  for (const mo of await tx.select().from(modelo)) {
+  // Lo que está fuera de catálogo (mamparas, de segunda… de la carga de inventario, ADR-0018) no tiene pulgadas ni
+  // receta: sin BOM, su orden se cierra registrando el consumo a mano (REQ-MP-4.2).
+  for (const mo of await tx.select().from(modelo).where(eq(modelo.fueraCatalogo, false))) {
     const [ultimo] = await tx.select({ origen: bom.origen }).from(bom)
       .where(and(eq(bom.modeloId, mo.id), isNull(bom.anchoCodigo), isNull(bom.altoCodigo))).orderBy(desc(bom.vigenteDesde)).limit(1);
     if (ultimo?.origen === "real") { informe.bomsConservados++; continue; }

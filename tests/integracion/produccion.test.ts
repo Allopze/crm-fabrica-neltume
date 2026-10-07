@@ -160,8 +160,11 @@ describe("carga de los BOM reales (T2.7, ADR-0012)", () => {
   it("crea insumos, asocia maderas y un BOM real por modelo; es idempotente y no pisa un BOM real existente", async () => {
     const { rows: [u] } = await app.query("SELECT id FROM usuario WHERE email = 'prod@neltume.cl'");
     const actor = { tipo: "usuario" as const, id: u.id as string };
-    const { rows: [{ n: modelos }] } = await app.query("SELECT count(*)::int AS n FROM modelo");
+    // Un modelo fuera de catálogo (de la carga de inventario) no recibe receta (ADR-0018).
+    await app.query("INSERT INTO modelo (nombre, codigo, familia, fuera_catalogo) VALUES ('MAMPARA LICAN', 'MAMPARA-LICAN', 'puerta', true)");
+    const { rows: [{ n: modelos }] } = await app.query("SELECT count(*)::int AS n FROM modelo WHERE NOT fuera_catalogo");
     const primera = await bd().transaction((tx) => cargarBomReal(tx, actor, "consola"));
+    expect((await app.query("SELECT count(*)::int AS n FROM bom b JOIN modelo m ON m.id = b.modelo_id WHERE m.fuera_catalogo")).rows[0].n).toBe(0);
     // NEL ya tenía un BOM real (de la prueba anterior): se conserva; «Pulgadas de raulí» ya existía y R ya estaba asociada.
     expect(primera).toMatchObject({ insumosCreados: 19, maderasAsociadas: 3, bomsCreados: modelos - 1, bomsConservados: 1 });
     expect(await bd().transaction((tx) => cargarBomReal(tx, actor, "consola"))).toEqual({ insumosCreados: 0, maderasAsociadas: 0, bomsCreados: 0, bomsConservados: modelos });
