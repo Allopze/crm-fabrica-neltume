@@ -16,6 +16,7 @@
     "db:migrar": "tsx --env-file-if-exists=.env.local scripts/migrar.mts",
     "db:generar": "drizzle-kit generate",
     "crear-admin": "tsx --env-file-if-exists=.env.local scripts/crear-admin.mts",
+    "cargar-inventario": "tsx --env-file-if-exists=.env.local scripts/cargar-inventario.mts",
     "eval:ia": "tsx --env-file-if-exists=.env.local scripts/eval-ia.mts",
     "demo:preparar": "npm run db:migrar && tsx --env-file-if-exists=.env.local scripts/preparar-demo.mts",
     "typecheck": "next typegen && tsc --noEmit",

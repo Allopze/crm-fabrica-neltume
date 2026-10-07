@@ -84,7 +84,7 @@ Una edición en pantalla copia la versión vigente, aplica el cambio y crea `ver
 |---|---|---|
 | `unidad` | `codigo` (un, m, m2, m3, pulg, kg, lt), `nombre` | |
 | `materia_prima` | `nombre` único, `unidad_codigo`, `stock_minimo` null, `activo` | |
-| `movimiento` | `ocurrido_en`, `bodega_id`, `articulo_id` XOR `materia_prima_id`, `puerta_id` null, `tipo`, `cantidad` numeric (con signo), `motivo`, `ref_tipo` + `ref_id` (orden, pedido, recepción, manual, puerta), `idempotencia_clave`, `usuario_id` | **Inmutable**: un trigger rechaza UPDATE y DELETE; el rol de la app no tiene esos grants. Toda entrada, salida o ajuste de un artículo lleva `puerta_id` y vale ±1 (ADR-0018) |
+| `movimiento` | `ocurrido_en`, `bodega_id`, `articulo_id` XOR `materia_prima_id`, `puerta_id` null, `tipo`, `cantidad` numeric (con signo), `motivo`, `ref_tipo` + `ref_id` (orden, pedido, recepción, manual, puerta), `idempotencia_clave`, `usuario_id` | **Inmutable**: un trigger rechaza UPDATE y DELETE; el rol de la app no tiene esos grants. Toda entrada, salida o ajuste de un artículo de puertas lleva `puerta_id` y vale ±1; los accesorios siguen por cantidad (ADR-0018) |
 | `puerta` | `codigo` único (etiqueta), `articulo_id`, `ancho_mm`, `alto_mm`, `ubicacion`, `calidad` (`primera`/`segunda`), `observacion`, `fecha_produccion` null, `origen` (`inventario_inicial`/`produccion`/`manual`/`conversion`) | Existencia y apartado salen de sus movimientos (vista `v_puerta`): 0 o 1 cada uno, nunca apartada sin existencia (*constraint trigger*). Ubicación, calidad y observación se editan con auditoría; `articulo_id` no cambia. Códigos nuevos: secuencia `puerta_codigo_seq` desde 202308000010001 (REQ-STK-8.1, 8.2) |
 | `despacho_historico` | `fila`, `codigo` null, `modelo`, `medida`, `madera`, `fecha_produccion` null, `fecha_texto` (tal cual si no es fecha), `estado`, `cliente`, `documento`, `nota`, `dudas` text[], `huella` única | Hoja `Despachos` de la planilla, **solo inserción** (trigger). Sin importes. El cliente solo se muestra con `clientes.ver` (REQ-STK-10) |
 | `bom` | `modelo_id`, `rango_ancho_id` null, `alto_id` null, `vigente_desde`, `origen` (`real`/`demo`) | Por modelo, opcionalmente por medida (REQ-MP-3.1) |
@@ -103,7 +103,7 @@ Una edición en pantalla copia la versión vigente, aplica el cambio y crea `ver
 | `reserva` | | + | + |
 | `liberacion` | | − | − (cancelación o despacho) |
 
-La reserva y la liberación de una nota de pedido son por artículo (sin `puerta_id`). Con `puerta_id` son un **apartado**: una puerta guardada para un cliente sin nota de pedido; el nombre va en `motivo`. Si una salida no indica las puertas, se eligen las más antiguas (`fecha_produccion`, luego `codigo`) que no estén apartadas (REQ-STK-8.3, 8.5).
+La reserva y la liberación de una nota de pedido son por artículo (sin `puerta_id`). Con `puerta_id` son un **apartado**: una puerta guardada para un cliente sin nota de pedido; el nombre va en `motivo`. Si una salida no indica las puertas, se eligen las más antiguas (`fecha_produccion`, luego `codigo`) que no estén apartadas, primero las de primera calidad (REQ-STK-8.3, 8.5).
 
 Disponible = existencia − reservado. Se calcula con la vista `v_stock` (suma por artículo o materia prima y bodega). El código lo verifica en la transacción y, además, un *constraint trigger* diferido rechaza al confirmar cualquier transacción que deje existencia o disponible negativos (REQ-STK-4.2, 7.3; ADR-0017).
 
@@ -134,7 +134,7 @@ Disponible = existencia − reservado. Se calcula con la vista `v_stock` (suma p
 - `movimiento(articulo_id, bodega_id)`, `movimiento(materia_prima_id, bodega_id)`, y `movimiento(idempotencia_clave)` único cuando no es nulo.
 - `cotizacion(estado, creado_en)` y `cotizacion(cliente_id)`. `audit_log(recurso, recurso_id)` y `audit_log(ocurrido_en)`.
 - CHECK `articulo_id` XOR `materia_prima_id` en `movimiento`. CHECK de `cantidad` ≠ 0 y signo coherente con `tipo`.
-- `movimiento(puerta_id, articulo_id)` → `puerta(id, articulo_id)` (FK compuesta). CHECK: con `puerta_id`, la cantidad es ±1; sin `puerta_id`, un artículo solo tiene `reserva` o `liberacion`. `puerta(codigo)` único y `movimiento(puerta_id)` indexado.
+- `movimiento(puerta_id, articulo_id)` → `puerta(id, articulo_id)` (FK compuesta). CHECK: con `puerta_id`, la cantidad es ±1. Trigger: sin `puerta_id`, un artículo de familia «puerta» solo tiene `reserva` o `liberacion` (las filas anteriores a la 0019 no se revisan). `puerta(codigo)` único y `movimiento(puerta_id)` indexado.
 
 ## 5. Importación del Excel (REQ-STK-1.x, REQ-COT-1.1)
 

@@ -13,6 +13,7 @@ export const modelo = pgTable("modelo", {
   nombre: text().notNull().unique(),
   codigo: text().notNull().unique(),
   familia: text().notNull(), // puerta | accesorio
+  fueraCatalogo: boolean().notNull().default(false), // creado por la carga de inventario; la IA y el cotizador no lo ven (ADR-0018)
   activo: boolean().notNull().default(true),
 }, (t) => [check("modelo_familia", sql`${t.familia} in ('puerta', 'accesorio')`)]);
 
@@ -28,6 +29,7 @@ export const madera = pgTable("madera", {
   id: uuid().primaryKey().defaultRandom(),
   nombre: text().notNull().unique(), // normalizado sin tildes: PINO OREGON, LENGA, MARA, RAULI
   codigo: text().notNull().unique(), // O, L, M, R
+  fueraCatalogo: boolean().notNull().default(false),
 });
 
 /** Rangos de ancho de puertas (1–9). La IA y el mapeo exacto usan min/max. */
@@ -62,6 +64,7 @@ export const articulo = pgTable("articulo", {
   pulgadas: numeric({ precision: 10, scale: 4, mode: "number" }),
   tipoPuertaId: uuid().references(() => tipoPuerta.id),
   stockMinimo: integer(),
+  fueraCatalogo: boolean().notNull().default(false), // sin precio; medida exacta en mm en el código (REQ-STK-8.7)
   activo: boolean().notNull().default(true),
   actualizadoEn: ahora(),
 }, (t) => [

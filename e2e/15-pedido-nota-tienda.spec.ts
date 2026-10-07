@@ -66,6 +66,10 @@ test("con stock nuevo se completa la reserva, se marca lista y se despacha", asy
   await page.getByRole("button", { name: "Marcar lista" }).click();
   await expect(page.getByRole("button", { name: "Registrar despacho" })).toBeVisible();
   await page.getByRole("button", { name: "Registrar despacho" }).click();
+  // Se eligen las puertas que salen (vienen marcadas las más antiguas); el marco sale por cantidad (REQ-STK-8.3).
+  const fuy = page.getByRole("group", { name: "Puertas de FUY-O-2-A" });
+  await expect(fuy).toContainText("3 de 3 elegidas");
+  await expect(page.getByRole("group", { name: /MAR-O-2X4-B/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Confirmar despacho" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Despachada el" })).toBeVisible();
   const stock = (await api(page, "GET", "/api/v1/stock/FUY-O-2-A")).cuerpo;

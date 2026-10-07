@@ -8,10 +8,15 @@ let art: string;
 let bod: string;
 let usr: string;
 
-const insertar = (tipo: string, cantidad: number, extra: { motivo?: string; mp?: boolean } = {}) =>
+let n = 0;
+// Una puerta nueva del artículo de prueba (ADR-0018): toda entrada, salida o ajuste de un artículo mueve una puerta.
+const puertaNueva = async (articulo = art) =>
+  (await app.query("INSERT INTO puerta (codigo, articulo_id, ubicacion, origen) VALUES ($1, $2, 'Fábrica', 'manual') RETURNING id", [`PRU${++n}`, articulo])).rows[0].id as string;
+
+const insertar = (tipo: string, cantidad: number, extra: { motivo?: string; mp?: boolean; puerta?: string | null } = {}) =>
   app.query(
-    `INSERT INTO movimiento (bodega_id, articulo_id, materia_prima_id, tipo, cantidad, motivo, usuario_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-    [bod, extra.mp ? null : art, extra.mp ? "00000000-0000-0000-0000-000000000001" : null, tipo, cantidad, extra.motivo ?? null, usr],
+    `INSERT INTO movimiento (bodega_id, articulo_id, materia_prima_id, puerta_id, tipo, cantidad, motivo, usuario_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+    [bod, extra.mp ? null : art, extra.mp ? "00000000-0000-0000-0000-000000000001" : null, extra.puerta ?? null, tipo, cantidad, extra.motivo ?? null, usr],
   );
 
 beforeAll(async () => {
@@ -29,10 +34,14 @@ afterAll(async () => { await app.end(); await owner.end(); });
 
 describe("movimientos de inventario (ADR-0002)", () => {
   it("el saldo es la suma de movimientos: existencia, reservado y disponible", async () => {
-    await insertar("entrada_produccion", 5);
+    const puertas = [];
+    for (let i = 0; i < 5; i++) {
+      puertas.push(await puertaNueva());
+      await insertar("entrada_produccion", 1, { puerta: puertas[i] });
+    }
     await insertar("reserva", 2);
-    await insertar("salida_despacho", -1);
-    await insertar("ajuste", -1, { motivo: "Puerta dañada" });
+    await insertar("salida_despacho", -1, { puerta: puertas[0] });
+    await insertar("ajuste", -1, { motivo: "Puerta dañada", puerta: puertas[1] });
     const { rows } = await app.query("SELECT existencia::int, reservado::int, disponible::int FROM v_stock WHERE articulo_id = $1", [art]);
     expect(rows[0]).toEqual({ existencia: 3, reservado: 2, disponible: 1 });
   });
@@ -45,13 +54,42 @@ describe("movimientos de inventario (ADR-0002)", () => {
   });
 
   it("valida signo por tipo, motivo en ajustes, reservas solo de puertas y puertas enteras", async () => {
-    await expect(insertar("entrada_produccion", -1)).rejects.toThrow(/mov_signo/);
-    await expect(insertar("salida_despacho", 1)).rejects.toThrow(/mov_signo/);
-    await expect(insertar("ajuste", 1)).rejects.toThrow(/mov_ajuste_motivo/);
-    await expect(insertar("ajuste", 1, { motivo: "  " })).rejects.toThrow(/mov_ajuste_motivo/);
+    const puerta = await puertaNueva();
+    await expect(insertar("entrada_produccion", -1, { puerta })).rejects.toThrow(/mov_signo/);
+    await expect(insertar("salida_despacho", 1, { puerta })).rejects.toThrow(/mov_signo/);
+    await expect(insertar("ajuste", 1, { puerta })).rejects.toThrow(/mov_ajuste_motivo/);
+    await expect(insertar("ajuste", 1, { motivo: "  ", puerta })).rejects.toThrow(/mov_ajuste_motivo/);
     await expect(insertar("reserva", 1, { mp: true })).rejects.toThrow(/mov_reserva_solo_puertas/);
-    await expect(insertar("entrada_produccion", 1.5)).rejects.toThrow(/mov_puertas_enteras/);
-    await expect(insertar("entrada_produccion", 0)).rejects.toThrow(/mov_cantidad_no_cero|mov_signo/);
+    await expect(insertar("entrada_produccion", 1.5, { puerta })).rejects.toThrow(/mov_puertas_enteras|mov_puerta_unidad/);
+    await expect(insertar("entrada_produccion", 0, { puerta })).rejects.toThrow(/mov_cantidad_no_cero|mov_signo|mov_puerta_unidad/);
+  });
+
+  it("toda entrada, salida o ajuste de un artículo mueve una sola puerta suya (ADR-0018, REQ-STK-8.1)", async () => {
+    await expect(insertar("entrada_produccion", 1)).rejects.toThrow(/mov_articulo_por_puerta/);
+    await expect(insertar("ajuste", -1, { motivo: "sin puerta" })).rejects.toThrow(/mov_articulo_por_puerta/);
+    await expect(insertar("entrada_produccion", 2, { puerta: await puertaNueva() })).rejects.toThrow(/mov_puerta_unidad/);
+    const otro = (await owner.query(
+      "INSERT INTO articulo (codigo, modelo_id, madera_id, ancho_codigo, ancho_etiqueta, alto_codigo, alto_m) SELECT 'PRU-L-4-B', modelo_id, madera_id, '4', '0,90 a 0,95', 'B', 2.1 FROM articulo WHERE id = $1 RETURNING id", [art],
+    )).rows[0].id;
+    await expect(insertar("entrada_produccion", 1, { puerta: await puertaNueva(otro) })).rejects.toThrow(/mov_puerta_fk/);
+  });
+
+  it("una puerta está 0 o 1 vez en stock y solo se aparta si está (trigger diferido)", async () => {
+    const p = await puertaNueva();
+    await insertar("entrada_produccion", 1, { puerta: p });
+    await expect(insertar("entrada_produccion", 1, { puerta: p })).rejects.toThrow(/solo se admiten 0 o 1/);
+    await insertar("reserva", 1, { puerta: p });
+    await expect(insertar("reserva", 1, { puerta: p })).rejects.toThrow(/solo se admiten 0 o 1/);
+    const q = await puertaNueva();
+    await expect(insertar("reserva", 1, { puerta: q })).rejects.toThrow(/solo se admiten 0 o 1|stock en negativo/);
+  });
+
+  it("el historial de despachos es de solo inserción (REQ-STK-10.3)", async () => {
+    await app.query("INSERT INTO despacho_historico (fila, codigo, huella) VALUES (2, '202308000000001', 'h-prueba')");
+    await expect(app.query("UPDATE despacho_historico SET cliente = 'x'")).rejects.toThrow(/permission denied/);
+    await expect(app.query("DELETE FROM despacho_historico")).rejects.toThrow(/permission denied/);
+    await expect(owner.query("UPDATE despacho_historico SET cliente = 'x'")).rejects.toThrow(/solo inserción/);
+    await expect(owner.query("DELETE FROM despacho_historico")).rejects.toThrow(/solo inserción/);
   });
 
   it("cada movimiento es de un artículo o de una materia prima, no ambos ni ninguno", async () => {

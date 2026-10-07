@@ -50,7 +50,11 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos
   const [error, setError] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
   const [manual, setManual] = useState<{ materiaPrimaId: string; cantidad: string }>({ materiaPrimaId: materias[0]?.id ?? "", cantidad: "" });
-  const cuerpo = sinBom.length && manual.cantidad ? { consumosManuales: [{ materiaPrimaId: manual.materiaPrimaId, cantidad: Number(manual.cantidad.replace(",", ".")) }] } : {};
+  const [ubicacion, setUbicacion] = useState("Fábrica");
+  const cuerpo = {
+    ...(sinBom.length && manual.cantidad ? { consumosManuales: [{ materiaPrimaId: manual.materiaPrimaId, cantidad: Number(manual.cantidad.replace(",", ".")) }] } : {}),
+    ...(ubicacion.trim() ? { ubicacion: ubicacion.trim() } : {}),
+  };
   // El motivo de un botón deshabilitado se dice al lado, no se adivina.
   const primeraFaltante = insumos.find((i) => i.faltante > 0);
   const bloqueo = incompletos.length ? <>falta asociar la madera. <Link href="/produccion?vista=madera" className="font-medium underline">Asociar madera</Link></>
@@ -108,7 +112,10 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos
         </Boton>
       ) : (
         <div role="group" aria-label={`Confirmar cierre de la orden N.º ${num}`} className="mt-5 rounded-md border border-tinta/20 bg-papel p-3">
-          <p className="text-sm">Se {insumos.length === 1 ? "descontará 1 insumo" : `descontarán ${insumos.length} insumos`} y entrarán las puertas al stock. Los movimientos no se pueden editar ni borrar; una corrección es un ajuste con motivo.</p>
+          <p className="text-sm">Se {insumos.length === 1 ? "descontará 1 insumo" : `descontarán ${insumos.length} insumos`} y entrarán las puertas al stock, cada una con su código. Los movimientos no se pueden editar ni borrar; una corrección es un ajuste con motivo.</p>
+          <label className="mt-3 block text-sm">Las puertas quedan en
+            <input value={ubicacion} onChange={(e) => setUbicacion(e.target.value)} maxLength={60} className={`${campo} mt-1 block w-full`} />
+          </label>
           <div className="mt-3 flex gap-2">
             <Boton variante="primario" className="h-10 flex-1" disabled={pendiente} onClick={cerrar}>
               <CheckCheck className="h-4 w-4" /> {pendiente ? "Cerrando orden…" : "Confirmar cierre"}

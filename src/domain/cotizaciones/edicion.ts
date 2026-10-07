@@ -26,7 +26,7 @@ export async function tomarBorrador(tx: Tx, id: string, version: number) {
 export async function articuloConDescripcion(tx: Tx, codigo: string) {
   const [a] = await tx.select({ id: articulo.id, codigo: articulo.codigo, modelo: modelo.nombre, madera: madera.nombre, ancho: articulo.anchoEtiqueta, altoM: articulo.altoM })
     .from(articulo).innerJoin(modelo, eq(modelo.id, articulo.modeloId)).innerJoin(madera, eq(madera.id, articulo.maderaId))
-    .where(and(eq(articulo.codigo, codigo.trim().toUpperCase()), eq(articulo.activo, true)));
+    .where(and(eq(articulo.codigo, codigo.trim().toUpperCase()), eq(articulo.activo, true), eq(articulo.fueraCatalogo, false)));
   if (!a) throw new ErrorDominio("VALIDACION", `El artículo ${codigo} no existe en el catálogo`);
   return { ...a, descripcion: `${titulo(a.modelo)} · ${MADERA[a.madera] ?? a.madera} · ${a.ancho} × ${Number(a.altoM).toFixed(2).replace(".", ",")} m` };
 }

@@ -9,6 +9,7 @@ import { bd } from "@/db/conexion";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { ErrorDominio } from "@/domain/errores";
 import { obtenerPedido } from "@/domain/pedidos/consulta";
+import { opcionesDeDespacho } from "@/domain/puertas/consulta";
 import { clp, fecha } from "@/lib/formato";
 import { AccionesCiclo } from "./acciones-ciclo";
 import { CancelarPedido } from "./cancelar-pedido";
@@ -26,6 +27,13 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
   const abierta = !cancelada && p.estado !== "despachada";
   const faltanteCatalogo = p.items.filter((i) => i.codigo).reduce((t, i) => t + i.faltante, 0);
   const itemsAPedido = p.items.filter((i) => !i.codigo).length;
+  // Al despachar se eligen las puertas de cada artículo (REQ-STK-8.3).
+  const deCatalogo = p.items.filter((i) => i.articuloId);
+  const opciones = p.estado === "lista" ? await opcionesDeDespacho(bd(), [...new Set(deCatalogo.map((i) => i.articuloId!))]) : new Map();
+  const grupos = [...opciones.keys()].map((a) => {
+    const suyos = deCatalogo.filter((i) => i.articuloId === a);
+    return { articulo: suyos[0].codigo!, descripcion: suyos[0].descripcion, cantidad: suyos.reduce((t, i) => t + i.cantidad, 0), opciones: opciones.get(a) ?? [] };
+  });
 
   return (
     <>
@@ -58,7 +66,7 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
       {abierta && (
         <Panel titulo="Avance" className="mb-8">
           <AccionesCiclo id={p.id} estado={p.estado} faltanteCatalogo={faltanteCatalogo} itemsAPedido={itemsAPedido}
-            puedeProducir={sesion.permisos.has("produccion.gestionar")} csrf={sesion.csrf} />
+            puedeProducir={sesion.permisos.has("produccion.gestionar")} grupos={p.estado === "lista" ? grupos : []} csrf={sesion.csrf} />
           <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-linea pt-4">
             <p className="text-sm text-tinta-tenue">¿El cliente desistió? Cancelar libera las reservas.</p>
             <CancelarPedido id={p.id} csrf={sesion.csrf} />

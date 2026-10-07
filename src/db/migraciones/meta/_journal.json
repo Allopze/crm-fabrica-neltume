@@ -134,6 +134,13 @@
       "when": 1791394617796,
       "tag": "0018_defensa_bd",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791396033929,
+      "tag": "0019_puertas_con_codigo",
+      "breakpoints": true
     }
   ]
 }

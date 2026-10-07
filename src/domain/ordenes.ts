@@ -9,6 +9,7 @@ import { type Actor, type Origen, registrarAuditoria } from "./auditoria";
 import { bomVigentePara } from "./bom";
 import { NOMBRE_MADERA } from "./cotizaciones/mapear";
 import { ErrorDominio } from "./errores";
+import { hoySantiago } from "./puertas/normalizar";
 import { completarReserva, ESTADOS_ABIERTOS } from "./pedidos/completar";
 import { type NuevoMovimiento, registrarMovimientos, saldo } from "./stock";
 
@@ -70,7 +71,10 @@ export async function planDeCierre(tx: Tx, ordenId: string, manuales: { materiaP
 }
 
 /** Cierra la orden: consume insumos y da entrada a las puertas en una sola transacción (REQ-MP-4.1–4.4). */
-export async function cerrarOrden(tx: Tx, ordenId: string, manuales: { materiaPrimaId: string; cantidad: number }[], actor: Actor & { id: string }, origen: Origen, clave?: string) {
+export async function cerrarOrden(
+  tx: Tx, ordenId: string, manuales: { materiaPrimaId: string; cantidad: number }[], actor: Actor & { id: string }, origen: Origen, clave?: string,
+  opciones: { ubicacion?: string } = {},
+) {
   const [o] = await tx.select().from(ordenProduccion).where(eq(ordenProduccion.id, ordenId)).for("update");
   if (!o) throw new ErrorDominio("NO_ENCONTRADO", "Orden no encontrada");
   if (o.estado !== "abierta") throw new ErrorDominio("ORDEN_CERRADA", `La orden ${o.numero} ya está ${o.estado}; no se repiten movimientos.`);
@@ -87,9 +91,11 @@ export async function cerrarOrden(tx: Tx, ordenId: string, manuales: { materiaPr
 
   const movs: NuevoMovimiento[] = [
     ...plan.insumos.map((i) => ({ materiaPrimaId: i.materiaPrimaId, tipo: "consumo_produccion" as const, cantidad: -i.usa, refTipo: "orden", refId: String(o.numero) })),
-    ...plan.lineas.map((l) => ({ articuloId: l.articuloId, tipo: "entrada_produccion" as const, cantidad: l.cantidad, refTipo: "orden", refId: String(o.numero) })),
+    // Cada puerta terminada recibe su código de la serie (REQ-STK-8.2).
+    ...plan.lineas.map((l) => ({ articuloId: l.articuloId, tipo: "entrada_produccion" as const, cantidad: l.cantidad, refTipo: "orden", refId: String(o.numero),
+      datosPuerta: { ubicacion: opciones.ubicacion, fechaProduccion: hoySantiago(), origen: "produccion" as const } })),
   ];
-  await registrarMovimientos(tx, movs, actor, origen, clave);
+  const insertados = await registrarMovimientos(tx, movs, actor, origen, clave);
   await tx.update(ordenProduccion).set({ estado: "cerrada", cerradaEn: sql`now()`, cerradoPor: actor.id }).where(eq(ordenProduccion.id, ordenId));
   await registrarAuditoria(tx, { actor, accion: "cerrar", recurso: "orden_produccion", recursoId: ordenId, antes: { estado: "abierta" }, despues: { estado: "cerrada", insumos: plan.insumos.map((i) => ({ mp: i.nombre, usa: i.usa })), bom: plan.origenBom }, resultado: "ok", origen });
   // Lo producido para un pedido se le reserva de inmediato (REQ-STK-7.5), si el pedido sigue abierto.
@@ -97,7 +103,8 @@ export async function cerrarOrden(tx: Tx, ordenId: string, manuales: { materiaPr
     const [p] = await tx.select({ estado: notaPedido.estado }).from(notaPedido).where(eq(notaPedido.id, o.notaPedidoId));
     if (p && (ESTADOS_ABIERTOS as readonly string[]).includes(p.estado)) await completarReserva(tx, o.notaPedidoId, actor, origen);
   }
-  return { numero: o.numero, insumos: plan.insumos, puertas: plan.lineas.map((l) => ({ codigo: l.codigo, cantidad: l.cantidad })) };
+  const codigosDe = (articuloId: string) => insertados.filter((m) => m.articuloId === articuloId && m.tipo === "entrada_produccion").map((m) => m.puertaCodigo!);
+  return { numero: o.numero, insumos: plan.insumos, puertas: plan.lineas.map((l) => ({ codigo: l.codigo, cantidad: l.cantidad, puertas: codigosDe(l.articuloId) })) };
 }
 
 export async function anularOrden(tx: Tx, ordenId: string, actor: Actor & { id: string }, origen: Origen) {

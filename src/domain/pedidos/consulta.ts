@@ -12,7 +12,7 @@ export async function obtenerPedido(tx: Tx, id: string, verCliente: boolean) {
   const [p] = await tx.select({ pedido: notaPedido, cotizacion: { id: cotizacion.id, numero: cotizacion.numero, subtotal: cotizacion.subtotal, descuento: cotizacion.descuento, iva: cotizacion.iva, total: cotizacion.total } })
     .from(notaPedido).leftJoin(cotizacion, eq(cotizacion.id, notaPedido.cotizacionId)).where(eq(notaPedido.id, id));
   if (!p) throw new ErrorDominio("NO_ENCONTRADO", "Nota de pedido no encontrada");
-  const items = await tx.select({ id: pedidoItem.id, codigo: articulo.codigo, descripcion: pedidoItem.descripcion, medidaSolicitada: pedidoItem.medidaSolicitada, cantidad: pedidoItem.cantidad,
+  const items = await tx.select({ id: pedidoItem.id, articuloId: pedidoItem.articuloId, codigo: articulo.codigo, descripcion: pedidoItem.descripcion, medidaSolicitada: pedidoItem.medidaSolicitada, cantidad: pedidoItem.cantidad,
     reservado: pedidoItem.reservado, faltante: pedidoItem.faltante, precioUnitario: pedidoItem.precioUnitario, totalLinea: pedidoItem.totalLinea })
     .from(pedidoItem).leftJoin(articulo, eq(articulo.id, pedidoItem.articuloId)).where(eq(pedidoItem.notaPedidoId, id)).orderBy(asc(pedidoItem.orden));
   const [cli] = verCliente ? await tx.select().from(cliente).where(eq(cliente.id, p.pedido.clienteId)) : [];

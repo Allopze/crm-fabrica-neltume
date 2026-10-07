@@ -1,4 +1,5 @@
 // Carga del catálogo para el mapeo y del resumen que se entrega a la IA (sin precios, costos ni stock).
+// Lo que está fuera de catálogo (creado por la carga de inventario) no entra: no tiene precio (REQ-STK-8.7).
 import { and, eq } from "drizzle-orm";
 import type { CatalogoResumido } from "@/ai/interfaz";
 import type { Tx } from "@/db/conexion";
@@ -8,12 +9,12 @@ import type { AliasModelo } from "./modelos";
 
 export async function cargarCatalogoMapeo(tx: Tx): Promise<CatalogoMapeo> {
   const [modelos, maderas, rangos, altos, arts, alias, accesorios, piezas] = await Promise.all([
-    tx.select({ id: modelo.id, nombre: modelo.nombre, codigo: modelo.codigo }).from(modelo).where(eq(modelo.familia, "puerta")),
-    tx.select({ id: madera.id, nombre: madera.nombre, codigo: madera.codigo }).from(madera),
+    tx.select({ id: modelo.id, nombre: modelo.nombre, codigo: modelo.codigo }).from(modelo).where(and(eq(modelo.familia, "puerta"), eq(modelo.fueraCatalogo, false))),
+    tx.select({ id: madera.id, nombre: madera.nombre, codigo: madera.codigo }).from(madera).where(eq(madera.fueraCatalogo, false)),
     tx.select().from(rangoAncho),
     tx.select().from(alto),
     tx.select({ id: articulo.id, codigo: articulo.codigo, m: articulo.modeloId, d: articulo.maderaId, a: articulo.anchoCodigo, h: articulo.altoCodigo })
-      .from(articulo).where(eq(articulo.activo, true)),
+      .from(articulo).where(and(eq(articulo.activo, true), eq(articulo.fueraCatalogo, false))),
     tx.select({ alias: aliasModelo.alias, modelo: aliasModelo.modelo, tipo: aliasModelo.tipo }).from(aliasModelo),
     tx.select({ id: modelo.id, nombre: modelo.nombre, codigo: modelo.codigo }).from(modelo).where(eq(modelo.familia, "accesorio")),
     tx.select({ id: articulo.id, codigo: articulo.codigo, modeloId: articulo.modeloId, maderaId: articulo.maderaId, seccion: articulo.anchoCodigo, largoM: articulo.altoM })
@@ -30,8 +31,8 @@ export async function cargarCatalogoMapeo(tx: Tx): Promise<CatalogoMapeo> {
 
 export async function catalogoResumido(tx: Tx): Promise<CatalogoResumido> {
   const [modelos, maderas, rangos, altos, accesorios, alias, piezas] = await Promise.all([
-    tx.select({ n: modelo.nombre }).from(modelo).where(eq(modelo.familia, "puerta")),
-    tx.select({ n: madera.nombre }).from(madera),
+    tx.select({ n: modelo.nombre }).from(modelo).where(and(eq(modelo.familia, "puerta"), eq(modelo.fueraCatalogo, false))),
+    tx.select({ n: madera.nombre }).from(madera).where(eq(madera.fueraCatalogo, false)),
     tx.select().from(rangoAncho),
     tx.select().from(alto),
     tx.select({ n: modelo.nombre }).from(modelo).where(eq(modelo.familia, "accesorio")),

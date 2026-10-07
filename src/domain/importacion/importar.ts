@@ -1,7 +1,7 @@
 // Aplica una importación del Excel en una transacción (REQ-STK-1.1–1.3, REQ-COT-1.1).
 // Idempotente por hash de archivo y por contenido: sin cambios de precio no crea versión nueva.
 import { createHash } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { bd } from "@/db/conexion";
 import { articulo, importacion, listaPrecio, madera, modelo, precio, recargoTipo, tipoPuerta } from "@/db/esquema/catalogo";
 import { type Actor, registrarAuditoria } from "../auditoria";
@@ -42,10 +42,15 @@ export async function importarExcel(datos: ArrayBuffer, nombreArchivo: string, a
 
   return bd().transaction(async (tx) => {
     // Referencias: modelos de Categorias, 4 maderas y tipos de puerta.
+    // Un modelo o madera creado por la carga de inventario que ahora trae la lista vuelve al catálogo (ADR-0018).
     for (const [nombre, codigo] of categorias.modelos) {
+      await tx.update(modelo).set({ fueraCatalogo: false }).where(and(eq(modelo.nombre, nombre), eq(modelo.fueraCatalogo, true)));
       await tx.insert(modelo).values({ nombre, codigo, familia: MOLDURA_O_MARCO.has(nombre) ? "accesorio" : "puerta" }).onConflictDoNothing();
     }
-    for (const [nombre, codigo] of Object.entries(MADERAS)) await tx.insert(madera).values({ nombre, codigo }).onConflictDoNothing();
+    for (const [nombre, codigo] of Object.entries(MADERAS)) {
+      await tx.update(madera).set({ fueraCatalogo: false }).where(and(eq(madera.nombre, nombre), eq(madera.fueraCatalogo, true)));
+      await tx.insert(madera).values({ nombre, codigo }).onConflictDoNothing();
+    }
     const idModelo = new Map((await tx.select({ id: modelo.id, nombre: modelo.nombre }).from(modelo)).map((m) => [m.nombre, m.id]));
     const idMadera = new Map((await tx.select({ id: madera.id, nombre: madera.nombre }).from(madera)).map((m) => [m.nombre, m.id]));
     const idTipo = new Map((await tx.select({ id: tipoPuerta.id, nombre: tipoPuerta.nombre }).from(tipoPuerta)).map((t) => [t.nombre, t.id]));

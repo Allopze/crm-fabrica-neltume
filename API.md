@@ -60,10 +60,14 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | GET `/stock?…filtros` | `stock.ver` | | Existencia, reservado y disponible |
 | GET `/stock/alertas` | `stock.ver` | | Puertas con disponible bajo su mínimo, con `faltan`; las más urgentes primero (REQ-STK-6.1) |
 | GET `/movimientos?articulo&tipo&desde&hasta` | `stock.ver` | | Paginado |
-| POST `/movimientos/entradas` (`codigo, cantidad, referencia?`) | `stock.mover` | ✔ | |
-| POST `/movimientos/salidas` (`articulo, cantidad, pedido_id`) | `stock.mover` | ✔ | 409 `STOCK_INSUFICIENTE`; libera la reserva |
-| POST `/movimientos/ajustes` (`articulo\|materia_prima, cantidad±, motivo`) | `stock.ajustar` | ✔ | El motivo es obligatorio |
+| POST `/movimientos/entradas` (`codigo, cantidad? , puertas?, ubicacion?, referencia?`) | `stock.mover` | ✔ | Una puerta por unidad: con `puertas` (etiquetas), esos códigos; si no, los siguientes de la serie. Responde `{ id, puertas }` (REQ-STK-8.2). Los accesorios entran por cantidad |
+| POST `/movimientos/salidas` (`codigo? , cantidad? , puertas?, referencia?`) | `stock.mover` | ✔ | Con `puertas`, esas (una apartada se libera); si no, las más antiguas no apartadas, primero las de primera. `referencia` = documento. 409 `STOCK_INSUFICIENTE`; 400 si una puerta es de otro artículo (REQ-STK-8.3) |
+| POST `/movimientos/ajustes` (`codigo? \| materiaPrimaId, cantidad±, motivo, puertas?, ubicacion?`) | `stock.ajustar` | ✔ | El motivo es obligatorio. Positivo con `puertas`: crea o devuelve esas puertas al stock |
 | PUT/PATCH/DELETE `/movimientos/:id` | — | | **No existen** (405) |
+| GET `/puertas?q&estado&ubicacion&calidad&articulo&fueraCatalogo&cursor&limite` | `stock.ver` | | `estado`: `stock` (por defecto), `disponibles`, `apartadas`, `fuera`, `todas`; el nombre de un apartado solo con `clientes.ver` (REQ-STK-8.6) |
+| GET `/puertas/:codigo` · PATCH (`ubicacion?, calidad?, observacion?`) | `stock.ver` / `stock.mover` | | Ficha con movimientos y despacho histórico; la edición se audita con antes y después (REQ-STK-8.4) |
+| POST `/puertas/:codigo/apartar` (`para`) · POST `/puertas/:codigo/liberar` (`motivo`) | `stock.mover` | ✔ | Reserva o libera esa puerta (REQ-STK-8.5) |
+| GET `/despachos-historicos?q&codigo&cursor&limite` | `stock.ver` | | Planilla anterior a la app, de solo lectura; `cliente` y su búsqueda solo con `clientes.ver` (REQ-STK-10.2) |
 
 ### Materias primas y producción (REQ-MP)
 | Método y ruta | Permiso | Idem | Notas |
@@ -76,7 +80,7 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | PUT `/maderas/:codigo/insumo` (`materiaPrimaId` o null) | `mp.editar` | | Materia prima de la que se descuenta esa madera (REQ-MP-3.5); 204; auditado |
 | POST `/bom/aplicar` (`modelos[]`, `operacion`: `{tipo: factor, factor}` · `{tipo: insumo, materiaPrimaId, cantidad}` · `{tipo: quitar, materiaPrimaId}`) | `mp.editar` | ✔ | Mismo cambio en la receta general de varios modelos, como versiones nuevas; responde `actualizados`, `sinCambio`, `sinReceta` (REQ-MP-3.6) |
 | GET/POST `/ordenes` · GET `/ordenes/:id` | `produccion.gestionar` | ✔ (POST) | |
-| POST `/ordenes/:id/cerrar` | `produccion.gestionar` | ✔ | Consumo + entrada, todo o nada; 409 `SIN_BOM`, `BOM_INCOMPLETO` (madera sin materia prima asociada o artículo sin pulgadas), `INSUMOS_INSUFICIENTES`, `ORDEN_CERRADA` |
+| POST `/ordenes/:id/cerrar` (`consumosManuales?, ubicacion?`) | `produccion.gestionar` | ✔ | Consumo + entrada, todo o nada; responde los códigos de las puertas nuevas (REQ-STK-8.2); 409 `SIN_BOM`, `BOM_INCOMPLETO` (madera sin materia prima asociada o artículo sin pulgadas), `INSUMOS_INSUFICIENTES`, `ORDEN_CERRADA` |
 
 ### Cotizaciones, clientes y pedidos (REQ-COT)
 | Método y ruta | Permiso | Idem | Notas |
@@ -100,7 +104,7 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | POST `/pedidos/:id/produccion` | `pedidos.gestionar` + `produccion.gestionar` | ✔ | Pendiente → en producción; crea la orden por el faltante de catálogo (REQ-COT-8.5) |
 | POST `/pedidos/:id/completar-reserva` | `pedidos.gestionar` | ✔ | Reserva el faltante con el stock disponible (REQ-STK-7.5) |
 | POST `/pedidos/:id/lista` (`confirmarAPedido`) | `pedidos.gestionar` | ✔ | 409 `STOCK_INSUFICIENTE` si falta reservar; los ítems a pedido se confirman |
-| POST `/pedidos/:id/despachar` | `pedidos.gestionar` | ✔ | Libera la reserva y descuenta el stock (REQ-STK-4.4) |
+| POST `/pedidos/:id/despachar` (`puertas?`) | `pedidos.gestionar` | ✔ | Libera la reserva y descuenta el stock puerta por puerta; las `puertas` elegidas de un artículo deben ser exactamente las de sus ítems, y sin ellas salen las más antiguas. Responde `puertasDespachadas` (REQ-STK-4.4, 8.3) |
 | POST `/pedidos/nota-tienda/vista-previa` (multipart: `archivo` PDF ≤ 5 MB, `clienteId?`) | `pedidos.gestionar` | | Lee y valida la nota de la tienda sin escribir; 422 `NOTA_ILEGIBLE` (ADR-0008) |
 | POST `/pedidos/nota-tienda` (multipart: `archivo`, `clienteId` de tipo tienda, `direccionDespacho?`, `medioTransporte?`, `entregaComprometida?`, `observaciones?`) | `pedidos.gestionar` | ✔ | El servidor vuelve a leer el PDF; 409 `YA_IMPORTADA`; precio de lista sin recargo (REQ-COT-8.6–8.9) |
 

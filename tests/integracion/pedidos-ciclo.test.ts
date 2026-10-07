@@ -104,8 +104,11 @@ describe("ciclo de la nota de pedido (REQ-COT-8.5, REQ-STK-4.4, 7.5)", () => {
     const r = await accion(rutaDespachar);
     expect(r.cuerpo).toMatchObject({ estado: "despachada", despachadaEn: expect.any(String) });
     expect(await stockFuy()).toMatchObject({ existencia: 0, reservado: 0, disponible: 0 });
-    const { rows } = await app.query("SELECT tipo, cantidad::int AS cantidad FROM movimiento WHERE ref_tipo = 'pedido' AND ref_id = $1 AND tipo IN ('liberacion', 'salida_despacho') ORDER BY tipo", [pedido]);
-    expect(rows).toEqual([{ tipo: "liberacion", cantidad: -3 }, { tipo: "salida_despacho", cantidad: -3 }]);
+    // La reserva se libera por artículo; la salida es puerta por puerta, con su código (ADR-0018).
+    const { rows } = await app.query(`SELECT tipo, sum(cantidad)::int AS cantidad, count(DISTINCT puerta_id)::int AS puertas FROM movimiento
+      WHERE ref_tipo = 'pedido' AND ref_id = $1 AND tipo IN ('liberacion', 'salida_despacho') GROUP BY tipo ORDER BY tipo`, [pedido]);
+    expect(rows).toEqual([{ tipo: "liberacion", cantidad: -3, puertas: 0 }, { tipo: "salida_despacho", cantidad: -3, puertas: 3 }]);
+    expect(r.cuerpo.puertasDespachadas).toHaveLength(3);
     expect((await accion(rutaDespachar)).cuerpo.error.codigo).toBe("NO_EDITABLE");
     expect((await llamar(rutaPedido.PATCH, "PATCH", "/x", { ...s, cuerpo: { observaciones: "tarde" } }, { id: pedido })).cuerpo.error.codigo).toBe("NO_EDITABLE");
     const audit = await app.query("SELECT accion FROM audit_log WHERE recurso = 'nota_pedido' AND recurso_id = $1 ORDER BY id", [pedido]);
@@ -118,6 +121,20 @@ describe("ciclo de la nota de pedido (REQ-COT-8.5, REQ-STK-4.4, 7.5)", () => {
     await llamar(rutaEntradas.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { codigo: "FUY-O-2-A", cantidad: 2 } });
     expect((await accion(rutaCompletar)).cuerpo).toMatchObject({ reservado: 2 });
     expect((await ver()).items[1]).toMatchObject({ reservado: 2, faltante: 1 });
+  });
+
+  it("al despachar se eligen las puertas: solo de los artículos del pedido y en la cantidad justa (REQ-STK-8.3)", async () => {
+    await llamar(rutaEntradas.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { codigo: "FUY-O-2-A", puertas: ["FUY-ELEGIDA"] } });
+    await accion(rutaCompletar);
+    await accion(rutaLista, { confirmarAPedido: true });
+    const { rows } = await app.query(`SELECT p.codigo FROM puerta p JOIN v_puerta v ON v.puerta_id = p.id JOIN articulo a ON a.id = p.articulo_id
+      WHERE a.codigo = 'FUY-O-2-A' AND v.existencia = 1 ORDER BY p.codigo`);
+    const codigos = rows.map((x) => x.codigo as string);
+    expect(codigos).toContain("FUY-ELEGIDA");
+    expect((await accion(rutaDespachar, { puertas: codigos.slice(0, 2) })).cuerpo.error.codigo).toBe("VALIDACION");
+    const r = await accion(rutaDespachar, { puertas: codigos.slice(0, 3) });
+    expect(r.cuerpo).toMatchObject({ estado: "despachada" });
+    expect([...r.cuerpo.puertasDespachadas].sort()).toEqual(codigos.slice(0, 3).sort());
   });
 
   it("sin pedidos.gestionar (o sin producción para crear la orden) se deniega y se audita", async () => {

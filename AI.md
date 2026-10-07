@@ -84,7 +84,7 @@ Validación (`src/ai/esquema.ts` + `mapear.ts`):
 | `buscar_modelo(texto)` | Solo lectura: nombres de modelo parecidos | Opcional; se agrega si el set de evaluación lo justifica |
 | Cualquier escritura (guardar, aprobar, precio, descuento, stock) | — | **Prohibido** |
 
-En v1 el catálogo resumido va completo en el contexto (es pequeño), así que no hace falta llamar herramientas de lectura. El stock no se le entrega al LLM: lo resuelve el backend.
+En v1 el catálogo resumido va completo en el contexto (es pequeño), así que no hace falta llamar herramientas de lectura. El stock no se le entrega al LLM: lo resuelve el backend. Los modelos, maderas y artículos «fuera de catálogo» que crea la carga de inventario (mamparas, de segunda, medidas fuera de grilla; ADR-0018) no entran al catálogo resumido ni al mapeo: no tienen precio, y un pedido que los nombre queda por confirmar (REQ-STK-8.7).
 
 ## 4. Contexto, límites y costo
 

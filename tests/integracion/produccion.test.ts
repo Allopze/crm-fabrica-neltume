@@ -59,8 +59,12 @@ describe("cierre de órdenes de producción (REQ-MP-4)", () => {
     const id = await crearOrden("NEL-R-4-B", 2);
     const previa = await llamar(rutaOrden.GET, "GET", "/x", s, { id });
     expect(previa.cuerpo.plan.insumos).toEqual(expect.arrayContaining([expect.objectContaining({ nombre: "Tabla raulí", usa: 12, faltante: 0 })]));
-    const r = await llamar(rutaCerrar.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: {} }, { id });
+    const r = await llamar(rutaCerrar.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { ubicacion: "galpon atras" } }, { id });
     expect(r.estado).toBe(200);
+    // Cada puerta terminada recibe su código de la serie y queda donde se indicó (REQ-STK-8.2).
+    expect(r.cuerpo.puertas).toEqual([{ codigo: "NEL-R-4-B", cantidad: 2, puertas: ["202308000010001", "202308000010002"] }]);
+    const { rows } = await app.query("SELECT ubicacion, origen, fecha_produccion IS NOT NULL AS fecha FROM puerta WHERE codigo = '202308000010001'");
+    expect(rows[0]).toEqual({ ubicacion: "Galpón atrás", origen: "produccion", fecha: true });
     expect(await existenciaMp(mp["Tabla raulí"])).toBe(8);
     expect(await existenciaMp(mp.Cola)).toBe(0.2);
     expect((await llamar(rutaStockArt.GET, "GET", "/x", s, { codigo: "NEL-R-4-B" })).cuerpo.existencia).toBe(2);

@@ -13,12 +13,12 @@ Además, de las 405 puertas en stock solo 147 calzan exactamente con un artícul
 ## Decisión
 
 1. **Tabla `puerta`**: una fila por puerta física. Guarda `codigo` (único, el de la etiqueta), `articulo_id`, medida exacta (`ancho_mm`, `alto_mm`), `ubicacion`, `calidad` (`primera`/`segunda`), `observacion`, `fecha_produccion` y `origen`. Ubicación, calidad y observación se editan con auditoría. **La existencia de la puerta no se guarda**: sale de sus movimientos.
-2. **Movimientos por puerta.** `movimiento.puerta_id` referencia la puerta y su artículo (FK compuesta). Toda entrada, salida o ajuste de un artículo mueve una puerta y vale ±1 (CHECK).
+2. **Movimientos por puerta.** `movimiento.puerta_id` referencia la puerta y su artículo (FK compuesta). Toda entrada, salida o ajuste de un artículo de puertas mueve una puerta y vale ±1. Lo exigen un CHECK y un trigger, porque un CHECK no ve la familia del modelo. Los accesorios (marcos, piezas T, molduras) siguen por cantidad: la planilla de la fábrica solo controla puertas.
    - `registrarMovimientos` expande una cantidad N en N movimientos, uno por puerta. Así producción, despacho, la API y la demo siguen igual.
    - La reserva de una nota de pedido sigue siendo por artículo. La reserva de una puerta es un **apartado**: una puerta guardada para un cliente sin nota de pedido.
    - Un *constraint trigger* diferido exige que cada puerta tenga existencia 0 o 1 y apartado 0 o 1, y nunca apartado sin existencia. La regla de ADR-0002 se mantiene: stock = suma de movimientos inmutables.
 3. **Códigos nuevos.** Una secuencia continúa la serie de la fábrica desde `202308000010001`, por encima de toda etiqueta existente. La carga inicial la sube si encuentra códigos mayores. Se usan cuando entra una puerta sin código: cierre de producción, entrada o ajuste positivo.
-4. **Qué puertas salen.** Al despachar o dar de baja, el usuario elige los códigos. Si no los indica, salen las más antiguas (por fecha de producción) que no estén apartadas. Elegir una puerta apartada la libera en la misma operación.
+4. **Qué puertas salen.** Al despachar o dar de baja, el usuario elige los códigos. Si no los indica, salen las más antiguas (por fecha de producción) que no estén apartadas, primero las de primera. Elegir una puerta apartada la libera en la misma operación.
 5. **Artículos fuera de catálogo.** Las puertas que no calzan con la lista quedan en artículos marcados `fuera_catalogo` (también en `modelo` y `madera` si no existían), con la medida exacta en el código (`MOL-O-780X2066`) y **sin precio**.
    - No entran al catálogo de la IA, al mapeo del cotizador ni a la cotización manual (regla 2: nada se completa en silencio).
    - Se venden con una salida que lleva el documento como referencia.
@@ -29,7 +29,7 @@ Además, de las 405 puertas en stock solo 147 calzan exactamente con un artícul
    - Las puertas con cliente entran apartadas.
    - Se detiene si ya hay puertas en stock que no vienen de la planilla, salvo `--agregar`.
    - El informe y `audit_log` llevan solo conteos y números de fila, sin precios ni nombres de clientes.
-8. **Migración 0019.** Convierte el stock que ya existía (por cantidad) en puertas con código de la serie: un ajuste negativo por artículo y uno positivo por puerta, con el motivo de la conversión. Recién después activa los CHECK.
+8. **Migración 0019.** Convierte el stock de puertas que ya existía (por cantidad) en puertas con código de la serie: un ajuste negativo por artículo y uno positivo por puerta, con el motivo de la conversión. Recién después activa el trigger que exige la puerta.
 
 ## Consecuencias
 

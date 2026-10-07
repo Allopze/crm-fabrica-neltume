@@ -11,6 +11,7 @@ import { listarBoms, maderasConInsumo } from "@/domain/bom";
 import { listarMateriasPrimas } from "@/domain/materias-primas";
 import { NOMBRE_MADERA } from "@/domain/cotizaciones/mapear";
 import { listarOrdenes, planDeCierre } from "@/domain/ordenes";
+import { puertasDeOrden } from "@/domain/puertas/consulta";
 import { cn, fecha } from "@/lib/formato";
 import { CierreOrden, NuevaOrden } from "./acciones-orden";
 import { AplicarRecetas } from "./aplicar-recetas";
@@ -62,6 +63,7 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
   const cerrada = typeof sp.cerrada === "string" ? sp.cerrada : null;
   const elegida = abiertas.find((o) => o.id === sp.orden) ?? (cerrada ? undefined : abiertas[0]);
   const plan = elegida ? await planDeCierre(bd(), elegida.id) : null;
+  const nuevas = cerrada && /^\d+$/.test(cerrada) ? await puertasDeOrden(bd(), Number(cerrada)) : [];
   const filtroBom = typeof sp.modelo === "string" ? sp.modelo.trim() : "";
   const visibles = filtroBom
     ? boms.filter((b) => `${b.modelo} ${b.modeloCodigo}`.toLowerCase().includes(filtroBom.toLowerCase()))
@@ -83,6 +85,12 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
         <div className="mb-6">
           <Aviso tono="musgo" titulo={`Orden N.º ${cerrada} cerrada`}>
             Se descontaron los insumos y las puertas entraron al stock.{abiertas.length > 0 && " Elige la siguiente orden en la lista para cerrarla."}
+            {nuevas.length > 0 && (
+              <span className="mt-2 block">
+                {nuevas.length === 1 ? "Código de la puerta nueva" : `Códigos de las ${nuevas.length} puertas nuevas`} (anótalos en sus etiquetas):{" "}
+                {nuevas.map((c, i) => <span key={c}>{i > 0 && ", "}<Link href={`/stock/puertas/${c}`} className="font-mono underline">{c}</Link></span>)}
+              </span>
+            )}
           </Aviso>
         </div>
       )}

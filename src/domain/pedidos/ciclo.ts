@@ -7,7 +7,7 @@ import { notaPedido, pedidoItem } from "@/db/esquema/comercial";
 import { type Actor, type Origen, registrarAuditoria } from "../auditoria";
 import { ErrorDominio } from "../errores";
 import { crearOrden } from "../ordenes";
-import { registrarMovimientos } from "../stock";
+import { porArticulo, registrarMovimientos } from "../stock";
 import { ESTADOS_ABIERTOS } from "./completar";
 
 type Usuario = Actor & { id: string };
@@ -50,17 +50,38 @@ export async function marcarLista(tx: Tx, id: string, confirmarAPedido: boolean,
   await cambiarEstado(tx, p, "lista", { listaEn: sql`now()` }, actor, origen, { aPedidoConfirmados: aPedido.length });
 }
 
-/** Despacho: libera lo reservado y descuenta la existencia (salida_despacho) de cada artículo, todo o nada. */
-export async function despachar(tx: Tx, id: string, actor: Usuario, origen: Origen) {
+/**
+ * Reparte los códigos elegidos entre los ítems de su artículo. Un artículo sin códigos indicados sale con las puertas
+ * más antiguas; si se indican, deben ser exactamente las de sus ítems (REQ-STK-8.3).
+ */
+async function repartirPuertas(tx: Tx, items: { id: string; articuloId: string | null; cantidad: number }[], codigos: string[]) {
+  const grupos = await porArticulo(tx, codigos);
+  const reparto = new Map<string, string[]>();
+  for (const [articuloId, cods] of grupos) {
+    const suyos = items.filter((i) => i.articuloId === articuloId);
+    const total = suyos.reduce((t, i) => t + i.cantidad, 0);
+    if (!suyos.length) throw new ErrorDominio("VALIDACION", `La puerta ${cods[0]} no corresponde a ningún ítem del pedido.`, { codigos: cods });
+    if (cods.length !== total) throw new ErrorDominio("VALIDACION", `Elige ${total} puertas de ese artículo: se eligieron ${cods.length}.`, { codigos: cods });
+    let k = 0;
+    for (const i of suyos) { reparto.set(i.id, cods.slice(k, k + i.cantidad)); k += i.cantidad; }
+  }
+  return reparto;
+}
+
+/** Despacho: libera lo reservado y descuenta la existencia (salida_despacho) puerta por puerta, todo o nada. */
+export async function despachar(tx: Tx, id: string, actor: Usuario, origen: Origen, puertas: string[] = []) {
   const p = await tomar(tx, id, ["lista"]);
   const items = await tx.select().from(pedidoItem).where(and(eq(pedidoItem.notaPedidoId, id), isNotNull(pedidoItem.articuloId)));
+  const reparto = await repartirPuertas(tx, items, puertas);
   const movs = items.flatMap((i) => [
     ...(i.reservado > 0 ? [{ articuloId: i.articuloId!, tipo: "liberacion" as const, cantidad: -i.reservado, motivo: "despacho del pedido", refTipo: "pedido", refId: id }] : []),
-    { articuloId: i.articuloId!, tipo: "salida_despacho" as const, cantidad: -i.cantidad, refTipo: "pedido", refId: id },
+    { articuloId: i.articuloId!, tipo: "salida_despacho" as const, cantidad: -i.cantidad, refTipo: "pedido", refId: id, puertas: reparto.get(i.id) },
   ]);
-  if (movs.length) await registrarMovimientos(tx, movs, actor, origen);
+  const insertados = movs.length ? await registrarMovimientos(tx, movs, actor, origen) : [];
+  const despachadas = insertados.filter((m) => m.tipo === "salida_despacho").map((m) => m.puertaCodigo!);
   await cambiarEstado(tx, p, "despachada", { despachadaEn: sql`now()`, despachadaPor: actor.id }, actor, origen,
-    { unidades: items.reduce((t, i) => t + i.cantidad, 0) });
+    { unidades: items.reduce((t, i) => t + i.cantidad, 0), puertas: despachadas });
+  return { puertas: despachadas };
 }
 
 export interface DatosDespacho { direccionDespacho?: string | null; medioTransporte?: string | null; entregaComprometida?: string | null; observaciones?: string | null }

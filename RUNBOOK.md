@@ -30,6 +30,7 @@ Pruebas: `npm test` (lint → typecheck → unit → integración → E2E). Siem
 2. `docker compose up -d --build`. El servicio `migrar` crea los roles y la base, aplica las migraciones y termina; luego arranca `app`.
 3. Primer usuario: `docker compose run --rm -it migrar npx tsx scripts/crear-admin.mts`.
    - BOM reales (una vez; idempotente, no pisa lo editado después): `docker compose run --rm migrar npx tsx scripts/cargar-bom-real.mts`. En desarrollo: `npx tsx --env-file-if-exists=.env.local scripts/cargar-bom-real.mts` (ADR-0012).
+   - Inventario de la fábrica (una vez, al pasar de la planilla a la app; ADR-0018): primero `--simular` y revisar el informe con la fábrica, después sin él. El Excel no va en la imagen: se monta solo para esa corrida, `docker compose run --rm -v /ruta/INVENTARIO.xlsx:/tmp/inventario.xlsx:ro migrar npx tsx scripts/cargar-inventario.mts /tmp/inventario.xlsx --simular`. En desarrollo: `npm run cargar-inventario -- datos/INVENTARIO.xlsx --simular`. Es idempotente (no repite puertas ni historial); se detiene si ya hay puertas en stock que no vienen de la planilla, salvo `--agregar`. Las filas sin código propio solo entran en la primera carga. Desde ese día la planilla deja de usarse.
 4. Cotizador con IA: `docker compose --profile ia up -d worker` (o `COMPOSE_PROFILES=ia` en `.env`, que usa `npm run deploy`). Los cambios de proveedor/modelo en Ajustes rigen desde el siguiente trabajo; al rotar API keys, reinicia el worker.
 6. Verifica la exposición:
    - `docker compose ps` no debe mostrar puertos publicados.

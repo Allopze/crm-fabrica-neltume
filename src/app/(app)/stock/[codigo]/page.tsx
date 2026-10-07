@@ -12,7 +12,9 @@ import { ErrorDominio } from "@/domain/errores";
 import { listaVigente, preciosDeLista } from "@/domain/precios/listas";
 import { articuloPorCodigo, movimientosDe, saldo } from "@/domain/stock";
 import { clp, cn, fechaHora, metros } from "@/lib/formato";
+import { listarPuertas, ubicaciones } from "@/domain/puertas/consulta";
 import { AccionesMovimiento } from "../formulario-movimiento";
+import { Calidad, EstadoPuerta, medidaPuerta } from "../puertas/presentacion";
 import { EditarMinimo } from "./editar-minimo";
 
 export const metadata: Metadata = { title: "Artículo" };
@@ -46,8 +48,9 @@ export default async function ArticuloPage({ params }: PageProps<"/stock/[codigo
   const codigo = decodeURIComponent((await params).codigo);
   const a = await articuloPorCodigo(bd(), codigo).catch((e) => { if (e instanceof ErrorDominio) notFound(); throw e; });
   const vigente = await listaVigente();
-  const [s, movimientos, precio] = await Promise.all([
+  const [s, movimientos, puertas, lugares, precio] = await Promise.all([
     saldo(bd(), { articuloId: a.id }), movimientosDe(bd(), a.id),
+    listarPuertas(bd(), { articulo: a.codigo, limite: 100 }, sesion.permisos.has("clientes.ver")), ubicaciones(bd()),
     vigente ? preciosDeLista(vigente.version, { q: a.codigo, limite: 5 }, sesion.permisos.has("costos.ver")) : null,
   ]);
   const p = precio?.datos.find((x) => x.codigo === a.codigo);
@@ -62,7 +65,7 @@ export default async function ArticuloPage({ params }: PageProps<"/stock/[codigo
       <Encabezado
         titulo={<span className="capitalize">{p?.modelo.toLowerCase() ?? a.codigo} <span className="text-tinta-tenue normal-case">{a.anchoEtiqueta} × {metros(Number(a.altoM))} m</span></span>}
         meta={p ? `${p.tipo ? `Puerta ${p.tipo.toLowerCase()}` : "Accesorio"} · ${maderas[p.maderaCodigo as MaderaId]?.nombre ?? p.madera.toLowerCase()}` : undefined}
-        acciones={<div className="flex flex-col items-end gap-3"><Placa codigo={a.codigo} className="px-3 py-1 text-base" />{tipos.length > 0 && <AccionesMovimiento tipos={[...tipos]} csrf={sesion.csrf} codigo={a.codigo} />}</div>}
+        acciones={<div className="flex flex-col items-end gap-3"><Placa codigo={a.codigo} className="px-3 py-1 text-base" />{tipos.length > 0 && <AccionesMovimiento tipos={[...tipos]} csrf={sesion.csrf} codigo={a.codigo} ubicaciones={lugares} />}</div>}
       />
 
       <div className="mb-10 grid grid-cols-2 gap-8 lg:grid-cols-4">
@@ -70,19 +73,41 @@ export default async function ArticuloPage({ params }: PageProps<"/stock/[codigo
         <Cifra etiqueta="Reservado" valor={s.reservado} nota="en notas de pedido" />
         <Cifra etiqueta="Disponible" valor={s.disponible} tono={a.stockMinimo !== null && s.disponible < a.stockMinimo ? "ambar" : undefined}
           nota={a.stockMinimo !== null ? `mínimo ${a.stockMinimo}` : "sin mínimo"} />
-        <Cifra etiqueta="Precio de venta" valor={p ? clp(p.precioVenta) : "—"} nota={p ? `neto · recargo ${Math.round(p.recargo * 100)} % · lista v${precio!.lista.version}` : "sin lista vigente"} />
+        <Cifra etiqueta="Precio de venta" valor={p ? clp(p.precioVenta) : "—"}
+          nota={p ? `neto · recargo ${Math.round(p.recargo * 100)} % · lista v${precio!.lista.version}` : a.fueraCatalogo ? "fuera de catálogo: no se cotiza" : "sin lista vigente"} />
       </div>
+
+      <Panel titulo={`Puertas en stock (${puertas.datos.length}${puertas.siguiente ? "+" : ""})`} className="mb-8" sinRelleno
+        accion={<Link href={`/stock/puertas?articulo=${encodeURIComponent(a.codigo)}&estado=todas`} className="text-xs text-rauli hover:underline">Ver todas, también las despachadas →</Link>}>
+        {puertas.datos.length === 0 ? <Vacio titulo="No hay puertas de este artículo en stock" /> : (
+          <Tabla etiqueta="Puertas en stock">
+            <thead><tr><Th>Código</Th><Th className="hidden sm:table-cell">Medida</Th><Th>Ubicación</Th><Th>Estado</Th><Th className="hidden md:table-cell">Observación</Th></tr></thead>
+            <tbody>
+              {puertas.datos.map((x) => (
+                <Tr key={x.codigo}>
+                  <Td><Link href={`/stock/puertas/${encodeURIComponent(x.codigo)}`} className="font-mono text-[13px] text-rauli hover:underline">{x.codigo}</Link> <Calidad calidad={x.calidad} /></Td>
+                  <Td className="hidden whitespace-nowrap text-tinta-suave sm:table-cell">{medidaPuerta(x)}</Td>
+                  <Td className="text-tinta-suave">{x.ubicacion}</Td>
+                  <Td><EstadoPuerta p={x} /></Td>
+                  <Td className="hidden max-w-xs truncate text-tinta-suave md:table-cell">{x.observacion ?? "—"}</Td>
+                </Tr>
+              ))}
+            </tbody>
+          </Tabla>
+        )}
+      </Panel>
 
       <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 lg:grid-cols-[1.6fr_1fr]">
         <Panel titulo="Movimientos" accion={<span className="inline-flex items-center gap-1 text-xs text-tinta-tenue"><Lock className="h-3 w-3" /> inmutables</span>} sinRelleno>
           {movimientos.length === 0 ? <Vacio titulo="Sin movimientos aún" /> : (
             <Tabla>
-              <thead><tr><Th>Fecha</Th><Th>Tipo</Th><Th>Referencia</Th><Th>Usuario</Th><Th alinear="der">Cantidad</Th></tr></thead>
+              <thead><tr><Th>Fecha</Th><Th>Tipo</Th><Th className="hidden sm:table-cell">Puerta</Th><Th>Referencia</Th><Th>Usuario</Th><Th alinear="der">Cantidad</Th></tr></thead>
               <tbody>
                 {movimientos.map((m) => (
                   <Tr key={m.id}>
                     <Td className="whitespace-nowrap text-tinta-suave">{fechaHora(new Date(m.ocurridoEn).toISOString())}</Td>
                     <Td>{NOMBRE_TIPO[m.tipo] ?? m.tipo}{m.motivo && <span className="block text-xs text-tinta-tenue">Motivo: {m.motivo}</span>}</Td>
+                    <Td className="hidden sm:table-cell">{m.puerta ? <Link href={`/stock/puertas/${encodeURIComponent(m.puerta)}`} className="font-mono text-[13px] text-rauli hover:underline">{m.puerta}</Link> : <span className="text-tinta-tenue">—</span>}</Td>
                     <Td className="text-tinta-suave"><Referencia refTipo={m.refTipo} refId={m.refId} refNumero={m.refNumero} /></Td>
                     <Td className="text-tinta-suave">{m.usuario}</Td>
                     <Td alinear="der" className="whitespace-nowrap"><CantidadMovimiento tipo={m.tipo} cantidad={Number(m.cantidad)} /></Td>

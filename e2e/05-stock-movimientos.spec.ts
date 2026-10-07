@@ -71,3 +71,40 @@ test("un ajuste de materia prima exige motivo y queda registrado (REQ-MP-5)", as
   await form.getByRole("button", { name: "Registrar ajuste" }).click();
   await expect(form.getByRole("status")).toContainText("Ajuste registrado.");
 });
+
+test("cada puerta tiene su código: se mueve de ubicación, se aparta y se libera desde su ficha (REQ-STK-8)", async ({ page }) => {
+  await ingresar(page, ADMIN.email, ADMIN.clave);
+  await ir(page, "/stock/ANC-O-3-A");
+  const puertas = page.getByRole("region", { name: "Puertas en stock" });
+  await expect(puertas.getByRole("row")).toHaveCount(5); // encabezado + 4 puertas
+  const codigo = (await puertas.getByRole("link").first().innerText()).trim();
+  await puertas.getByRole("link", { name: codigo }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(codigo);
+  await expect(page.getByText("Entrada de producción")).toBeVisible();
+
+  const datos = page.getByRole("form", { name: "Datos de la puerta" });
+  await datos.getByLabel("Ubicación").fill("galpon arriba");
+  await datos.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(datos.getByRole("status")).toContainText("Datos guardados.");
+  await expect(page.getByRole("main")).toContainText("Galpón arriba");
+
+  await page.getByRole("button", { name: "Apartar" }).click();
+  await page.getByLabel("Para quién").fill("Cliente E2E");
+  await page.getByRole("button", { name: "Confirmar: apartar" }).click();
+  await expect(page.getByText("Apartada para Cliente E2E").first()).toBeVisible();
+  await page.getByRole("button", { name: "Liberar" }).click();
+  await page.getByLabel("Motivo").fill("El cliente desistió");
+  await page.getByRole("button", { name: "Confirmar: liberar" }).click();
+  await expect(page.getByText("Puerta liberada")).toBeVisible();
+});
+
+test("las puertas y los despachos anteriores tienen su pestaña en Stock", async ({ page }) => {
+  await ingresar(page, ADMIN.email, ADMIN.clave);
+  await ir(page, "/stock");
+  await page.getByRole("navigation", { name: "Secciones de stock" }).getByRole("link", { name: "Puertas" }).click();
+  await page.getByLabel("Ubicación").selectOption("Galpón arriba");
+  await page.getByRole("button", { name: "Filtrar" }).click();
+  await expect(page.getByRole("region", { name: "Puertas" }).getByRole("row")).toHaveCount(2);
+  await page.getByRole("navigation", { name: "Secciones de stock" }).getByRole("link", { name: "Despachos anteriores" }).click();
+  await expect(page.getByText("Sin despachos anteriores")).toBeVisible();
+});

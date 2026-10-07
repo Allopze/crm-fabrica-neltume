@@ -10,7 +10,9 @@ import { puertasBajoMinimo } from "@/domain/alertas";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { listarStock } from "@/domain/stock";
 import { cn, metros } from "@/lib/formato";
+import { ubicaciones } from "@/domain/puertas/consulta";
 import { AccionesMovimiento } from "./formulario-movimiento";
+import { PestanasStock } from "./pestanas";
 
 export const metadata: Metadata = { title: "Stock de puertas" };
 
@@ -24,16 +26,17 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
   const sp = await searchParams;
   const texto = (k: string) => (typeof sp[k] === "string" && sp[k] ? (sp[k] as string) : undefined);
   const filtro = { q: texto("q"), madera: texto("madera"), tipo: texto("tipo"), bajoMinimo: texto("bajoMinimo") === "1", cursor: texto("desde") };
-  const [{ datos, siguiente }, alertas] = await Promise.all([listarStock(bd(), filtro), puertasBajoMinimo(bd())]);
+  const [{ datos, siguiente }, alertas, lugares] = await Promise.all([listarStock(bd(), filtro), puertasBajoMinimo(bd()), ubicaciones(bd())]);
   const tipos = [...(sesion.permisos.has("stock.mover") ? (["entrada", "salida"] as const) : []), ...(sesion.permisos.has("stock.ajustar") ? (["ajuste"] as const) : [])];
 
   return (
     <>
       <Encabezado
         titulo="Stock de puertas"
-        descripcion="El saldo es la suma de los movimientos: nadie lo edita a mano. Para corregir, registra un ajuste con motivo."
-        acciones={tipos.length > 0 && <AccionesMovimiento tipos={[...tipos]} csrf={sesion.csrf} />}
+        descripcion="Cada puerta tiene su código y el saldo es la suma de sus movimientos: nadie lo edita a mano. Para corregir, registra un ajuste con motivo."
+        acciones={tipos.length > 0 && <AccionesMovimiento tipos={[...tipos]} csrf={sesion.csrf} ubicaciones={lugares} />}
       />
+      <PestanasStock actual="articulos" />
 
       {alertas.length > 0 && !filtro.bajoMinimo && (
         <Link href="/stock?bajoMinimo=1" className="mb-5 flex items-center gap-2 rounded-lg border border-ambar/30 bg-ambar-velo px-5 py-3 text-sm text-ambar hover:underline">
@@ -76,7 +79,7 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
                 return (
                   <Tr key={a.codigo}>
                     <Td><Link href={`/stock/${encodeURIComponent(a.codigo)}`}><Placa codigo={a.codigo} className="hover:border-tinta" /></Link></Td>
-                    <Td className="hidden font-medium capitalize sm:table-cell">{a.modelo.toLowerCase()}</Td>
+                    <Td className="hidden font-medium capitalize sm:table-cell">{a.modelo.toLowerCase()}{a.fueraCatalogo && <span className="ml-2 rounded-full bg-pizarra-velo px-1.5 text-xs font-normal normal-case text-pizarra">fuera de catálogo</span>}</Td>
                     <Td className="hidden md:table-cell"><span className="inline-flex items-center gap-1.5 text-sm capitalize text-tinta-suave">
                       <span aria-hidden className="swatch h-3.5 w-5 rounded-[2px] ring-1 ring-black/10" style={{ backgroundColor: COLOR[a.maderaCodigo] }} />
                       {MADERAS.find(([c]) => c === a.maderaCodigo)?.[1] ?? a.madera.toLowerCase()}</span></Td>

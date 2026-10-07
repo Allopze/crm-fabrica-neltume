@@ -9,7 +9,7 @@ import { ident, partesUrl, urlWorker } from "./urls";
 const CARPETA = path.join(process.cwd(), "src/db/migraciones");
 
 /** Tablas donde el rol de la app solo puede insertar y leer (SECURITY §2, ADR-0002). */
-export const TABLAS_SOLO_INSERCION = ["audit_log", "movimiento", "precio", "llamada_ia"];
+export const TABLAS_SOLO_INSERCION = ["audit_log", "movimiento", "precio", "llamada_ia", "despacho_historico"];
 
 /**
  * Aplica las migraciones con el dueño del esquema, ajusta los permisos del rol de la app y siembra

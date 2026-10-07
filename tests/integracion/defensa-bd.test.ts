@@ -78,14 +78,19 @@ describe("invariantes en la BD (ADR-0017)", () => {
   });
 
   it("un movimiento que deja el stock en negativo se rechaza al confirmar, aunque salte el código", async () => {
-    const insertar = (tipo: string, cantidad: number, motivo: string | null) => app.query(
-      `INSERT INTO movimiento (bodega_id, articulo_id, tipo, cantidad, motivo, usuario_id)
-       SELECT b.id, a.id, $1, $2, $3, $4 FROM bodega b, articulo a WHERE a.codigo = 'LIC-L-4-B' LIMIT 1`, [tipo, cantidad, motivo, usuarioId]);
-    await expect(insertar("ajuste", -5, "saldo negativo directo")).rejects.toThrow(/stock en negativo/);
+    // Las existencias de un artículo se mueven puerta por puerta (ADR-0018); la reserva de un pedido es del artículo.
+    const puerta = async (codigo: string) => (await app.query(
+      "INSERT INTO puerta (codigo, articulo_id, ubicacion, origen) SELECT $1, id, 'Fábrica', 'manual' FROM articulo WHERE codigo = 'LIC-L-4-B' RETURNING id", [codigo])).rows[0].id;
+    const insertar = (tipo: string, cantidad: number, motivo: string | null, puertaId: string | null = null) => app.query(
+      `INSERT INTO movimiento (bodega_id, articulo_id, puerta_id, tipo, cantidad, motivo, usuario_id)
+       SELECT b.id, a.id, $5, $1, $2, $3, $4 FROM bodega b, articulo a WHERE a.codigo = 'LIC-L-4-B' LIMIT 1`, [tipo, cantidad, motivo, usuarioId, puertaId]);
+    const [p1, p2] = [await puerta("DEF-1"), await puerta("DEF-2")];
+    await expect(insertar("ajuste", -1, "saldo negativo directo", p1)).rejects.toThrow(/stock en negativo|solo se admiten 0 o 1/);
     await expect(insertar("reserva", 3, null)).rejects.toThrow(/stock en negativo/);
-    await insertar("ajuste", 2, "stock inicial");
+    await insertar("ajuste", 1, "stock inicial", p1);
+    await insertar("ajuste", 1, "stock inicial", p2);
     await expect(insertar("reserva", 2, null)).resolves.toBeDefined();
-    await expect(insertar("salida_despacho", -1, null)).rejects.toThrow(/stock en negativo/);
+    await expect(insertar("salida_despacho", -1, null, p1)).rejects.toThrow(/stock en negativo/);
   });
 
   it("una nota de pedido despachada o cancelada y sus ítems no cambian", async () => {
