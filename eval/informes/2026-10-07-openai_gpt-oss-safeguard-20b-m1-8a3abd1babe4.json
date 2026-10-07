@@ -1,0 +1,53 @@
+{
+ "modelo": "openai/gpt-oss-safeguard-20b",
+ "proveedor": "groq",
+ "fecha": "2026-10-07",
+ "promptHash": "acb16bf9dfa7",
+ "casosHash": "8a3abd1babe4",
+ "criterios": [
+  {
+   "nombre": "Ítems exactos en casos claros (1)",
+   "valor": 0,
+   "meta": "≥ 90 %",
+   "cumple": false
+  },
+  {
+   "nombre": "Latencia p90",
+   "valor": 125,
+   "meta": "≤ 15 s",
+   "cumple": true
+  },
+  {
+   "nombre": "Costo medio por pedido",
+   "valor": 0,
+   "meta": "≤ US$ 0,10",
+   "cumple": null
+  }
+ ],
+ "aprobado": false,
+ "tokensMedios": {
+  "entrada": 0,
+  "salida": 0
+ },
+ "resultados": [
+  {
+   "id": 1,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 125,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "Groq respondió 403",
+   "ok": false,
+   "motivos": [
+    "error: Groq respondió 403"
+   ],
+   "aciertos": 0
+  }
+ ],
+ "propuestas": {
+  "1": {
+   "error": "Groq respondió 403"
+  }
+ }
+}

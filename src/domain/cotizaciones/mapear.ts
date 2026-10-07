@@ -99,3 +99,17 @@ export function mapearItem(p: ItemPropuesto, cat: CatalogoMapeo): ItemMapeado {
     duda: "La medida queda fuera de la grilla: se fabrica a pedido. Una persona debe fijar el precio.",
   };
 }
+
+/**
+ * ADR-0013 B: una duda de la IA no bloquea un ítem que el sistema verificó (completo, anclado al pedido y existente en
+ * el catálogo): queda como nota. Si el ítem no se puede verificar, se mapea como siempre, con las dudas de la IA.
+ */
+export function mapearConDudasIa(p: ItemPropuesto, dudasIa: string[], cat: CatalogoMapeo): { item: ItemMapeado; nota: string | null } {
+  const item = mapearItem(p, cat);
+  if (!dudasIa.length) return { item, nota: null };
+  if (item.estado === "por_confirmar") return { item: mapearItem({ ...p, dudas: [...dudasIa, ...p.dudas] }, cat), nota: null };
+  return { item, nota: dudasIa.join(" ") };
+}
+
+/** Texto de la alerta por una nota de la IA que no bloquea (ADR-0013 B). */
+export const alertaNotaIa = (n: number, nota: string) => `Ítem ${n}: la IA comentó «${nota}». No bloquea: el ítem coincide con el pedido y con el catálogo.`;

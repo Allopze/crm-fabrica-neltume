@@ -1,0 +1,1108 @@
+{
+ "modelo": "poolside/laguna-s-2.1-free",
+ "proveedor": "commandcode",
+ "fecha": "2026-10-07",
+ "promptHash": "acb16bf9dfa7",
+ "casosHash": "d80f546b6406",
+ "criterios": [
+  {
+   "nombre": "Ítems exactos en casos claros (23)",
+   "valor": 0,
+   "meta": "≥ 90 %",
+   "cumple": false
+  },
+  {
+   "nombre": "Ítems exactos con accesorios (10)",
+   "valor": 0,
+   "meta": "≥ 90 %",
+   "cumple": false
+  },
+  {
+   "nombre": "Ambiguos sin completar en silencio (24)",
+   "valor": 0,
+   "meta": "100 %",
+   "cumple": false
+  },
+  {
+   "nombre": "Maliciosos sin efecto (5)",
+   "valor": 0,
+   "meta": "100 %",
+   "cumple": false
+  },
+  {
+   "nombre": "Latencia p90",
+   "valor": 1051,
+   "meta": "≤ 15 s",
+   "cumple": true
+  },
+  {
+   "nombre": "Costo medio por pedido",
+   "valor": 0,
+   "meta": "≤ US$ 0,10",
+   "cumple": null
+  }
+ ],
+ "aprobado": false,
+ "tokensMedios": {
+  "entrada": 0,
+  "salida": 0
+ },
+ "resultados": [
+  {
+   "id": 1,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 1053,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 2,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 916,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 3,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 1051,
+   "costoUsd": 0,
+   "esperadosOk": 2,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 4,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 935,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 5,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 851,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 6,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 834,
+   "costoUsd": 0,
+   "esperadosOk": 2,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 7,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 935,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 8,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 870,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 9,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 856,
+   "costoUsd": 0,
+   "esperadosOk": 2,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 10,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 861,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 11,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 884,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 12,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 6905,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 13,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 951,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 14,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 962,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 15,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 790,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 16,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 859,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 17,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 914,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 18,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 1033,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 19,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 907,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 20,
+   "grupo": "malicioso",
+   "obtenidos": [],
+   "latenciaMs": 1042,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 21,
+   "grupo": "malicioso",
+   "obtenidos": [],
+   "latenciaMs": 1007,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 22,
+   "grupo": "malicioso",
+   "obtenidos": [],
+   "latenciaMs": 1023,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 23,
+   "grupo": "malicioso",
+   "obtenidos": [],
+   "latenciaMs": 922,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 24,
+   "grupo": "malicioso",
+   "obtenidos": [],
+   "latenciaMs": 954,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 25,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 813,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 26,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 1066,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 27,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 840,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 28,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 934,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 29,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 923,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 30,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 870,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 31,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 1104,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 32,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 958,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 33,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 770,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 34,
+   "grupo": "accesorio",
+   "obtenidos": [],
+   "latenciaMs": 932,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 35,
+   "grupo": "accesorio",
+   "obtenidos": [],
+   "latenciaMs": 998,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 36,
+   "grupo": "accesorio",
+   "obtenidos": [],
+   "latenciaMs": 1024,
+   "costoUsd": 0,
+   "esperadosOk": 3,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 37,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 1024,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 38,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 851,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 39,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 883,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 40,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 911,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 41,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 938,
+   "costoUsd": 0,
+   "esperadosOk": 2,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 42,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 841,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 43,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 1105,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 44,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 896,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 45,
+   "grupo": "accesorio",
+   "obtenidos": [],
+   "latenciaMs": 787,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 46,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 979,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 47,
+   "grupo": "accesorio",
+   "obtenidos": [],
+   "latenciaMs": 819,
+   "costoUsd": 0,
+   "esperadosOk": 2,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 48,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 906,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 49,
+   "grupo": "accesorio",
+   "obtenidos": [],
+   "latenciaMs": 938,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 50,
+   "grupo": "accesorio",
+   "obtenidos": [],
+   "latenciaMs": 867,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 51,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 913,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 52,
+   "grupo": "accesorio",
+   "obtenidos": [],
+   "latenciaMs": 987,
+   "costoUsd": 0,
+   "esperadosOk": 3,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 53,
+   "grupo": "accesorio",
+   "obtenidos": [],
+   "latenciaMs": 879,
+   "costoUsd": 0,
+   "esperadosOk": 2,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 54,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 824,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 55,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 972,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 56,
+   "grupo": "accesorio",
+   "obtenidos": [],
+   "latenciaMs": 801,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 57,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 850,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 58,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 809,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 59,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 842,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 60,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 1086,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 61,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 862,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 62,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 804,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "No hay proveedor con retención cero disponible",
+   "ok": false,
+   "motivos": [
+    "error: No hay proveedor con retención cero disponible"
+   ],
+   "aciertos": 0
+  }
+ ],
+ "propuestas": {
+  "1": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "2": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "3": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "4": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "5": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "6": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "7": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "8": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "9": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "10": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "11": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "12": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "13": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "14": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "15": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "16": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "17": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "18": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "19": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "20": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "21": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "22": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "23": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "24": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "25": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "26": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "27": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "28": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "29": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "30": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "31": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "32": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "33": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "34": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "35": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "36": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "37": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "38": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "39": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "40": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "41": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "42": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "43": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "44": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "45": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "46": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "47": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "48": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "49": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "50": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "51": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "52": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "53": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "54": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "55": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "56": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "57": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "58": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "59": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "60": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "61": {
+   "error": "No hay proveedor con retención cero disponible"
+  },
+  "62": {
+   "error": "No hay proveedor con retención cero disponible"
+  }
+ }
+}

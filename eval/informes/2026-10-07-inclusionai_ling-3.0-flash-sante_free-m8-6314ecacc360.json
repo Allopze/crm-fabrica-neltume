@@ -1,0 +1,437 @@
+{
+ "modelo": "inclusionai/ling-3.0-flash-sante:free",
+ "proveedor": "commandcode",
+ "fecha": "2026-10-07",
+ "promptHash": "acb16bf9dfa7",
+ "casosHash": "6314ecacc360",
+ "pipelineHash": "d259d49c64eb",
+ "criterios": [
+  {
+   "nombre": "Ítems exactos en casos claros (1)",
+   "valor": 1,
+   "meta": "≥ 90 %",
+   "cumple": true
+  },
+  {
+   "nombre": "Ítems exactos con accesorios (2)",
+   "valor": 1,
+   "meta": "≥ 90 %",
+   "cumple": true
+  },
+  {
+   "nombre": "Ambiguos sin completar en silencio (5)",
+   "valor": 1,
+   "meta": "100 %",
+   "cumple": true
+  },
+  {
+   "nombre": "Latencia p90",
+   "valor": 16510,
+   "meta": "≤ 15 s",
+   "cumple": false
+  },
+  {
+   "nombre": "Costo medio por pedido",
+   "valor": 0,
+   "meta": "≤ US$ 0,10",
+   "cumple": true
+  }
+ ],
+ "aprobado": false,
+ "tokensMedios": {
+  "entrada": 3687,
+  "salida": 590
+ },
+ "resultados": [
+  {
+   "id": 1,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "NEL-R-4-B",
+     "cantidad": 3,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3230,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "tokensEntrada": 3688,
+   "tokensSalida": 278,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 11,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 4,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 5540,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "tokensEntrada": 3683,
+   "tokensSalida": 481,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 14,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "a_pedido",
+     "codigo": null,
+     "cantidad": 2,
+     "referencia": "TOLT-R-4-C"
+    }
+   ],
+   "latenciaMs": 4195,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "tokensEntrada": 3684,
+   "tokensSalida": 473,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 17,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 2,
+     "referencia": null
+    },
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 1,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3053,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "tokensEntrada": 3683,
+   "tokensSalida": 296,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 34,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X4-B",
+     "cantidad": 3,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3140,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "tokensEntrada": 3688,
+   "tokensSalida": 323,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 47,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "HUER-L-3-A",
+     "cantidad": 1,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "MAR-L-2X4-A",
+     "cantidad": 1,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 6815,
+   "costoUsd": 0,
+   "esperadosOk": 2,
+   "tokensEntrada": 3699,
+   "tokensSalida": 978,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 58,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 4,
+     "referencia": null
+    },
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 16510,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "tokensEntrada": 3686,
+   "tokensSalida": 379,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 60,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "LIC-L-4-B",
+     "cantidad": 1,
+     "referencia": null
+    },
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 3,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 9070,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "tokensEntrada": 3688,
+   "tokensSalida": 1514,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  }
+ ],
+ "propuestas": {
+  "1": {
+   "items": [
+    {
+     "texto_fuente": "3 puertas Neltume en raulí de 90x210",
+     "tipo": "puerta",
+     "modelo": "NELTUME",
+     "madera": "RAULI",
+     "ancho_m": 0.9,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 3,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "11": {
+   "items": [
+    {
+     "texto_fuente": "4 puertas Yelcho 90x210",
+     "tipo": "puerta",
+     "modelo": "YELCHO",
+     "madera": null,
+     "ancho_m": 0.9,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 4,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la madera."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "14": {
+   "items": [
+    {
+     "texto_fuente": "2 Tolten raulí 87x215",
+     "tipo": "puerta",
+     "modelo": "TOLTEN",
+     "madera": "RAULI",
+     "ancho_m": 0.87,
+     "alto_m": 2.15,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "17": {
+   "items": [
+    {
+     "texto_fuente": "2 para baño",
+     "tipo": "desconocido",
+     "modelo": null,
+     "madera": null,
+     "ancho_m": null,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta definir el producto, modelo, madera y medida."
+     ]
+    },
+    {
+     "texto_fuente": "1 para dormitorio",
+     "tipo": "desconocido",
+     "modelo": null,
+     "madera": null,
+     "ancho_m": null,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 1,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta definir el producto, modelo, madera y medida."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "34": {
+   "items": [
+    {
+     "texto_fuente": "3 marcos 2x4 de 2,10 en oregón",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "PINO OREGON",
+     "ancho_m": null,
+     "alto_m": 2.1,
+     "medida_accesorio": "2x4",
+     "cantidad": 3,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "47": {
+   "items": [
+    {
+     "texto_fuente": "una Huerquehue lenga de 80x200",
+     "tipo": "puerta",
+     "modelo": "HUERQUEHUE",
+     "madera": "LENGA",
+     "ancho_m": 0.8,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 1,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "un marco 2x4 lenga de 2",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "LENGA",
+     "ancho_m": null,
+     "alto_m": 2,
+     "medida_accesorio": "2x4",
+     "cantidad": 1,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "58": {
+   "items": [
+    {
+     "texto_fuente": "4 para el baño",
+     "tipo": "desconocido",
+     "modelo": null,
+     "madera": null,
+     "ancho_m": null,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 4,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta definir el producto, modelo, madera y medida."
+     ]
+    },
+    {
+     "texto_fuente": "2 para los dormitorios",
+     "tipo": "desconocido",
+     "modelo": null,
+     "madera": null,
+     "ancho_m": null,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta definir el producto, modelo, madera y medida."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "60": {
+   "items": [
+    {
+     "texto_fuente": "1 Lican lenga 90x210",
+     "tipo": "puerta",
+     "modelo": "LICAN",
+     "madera": "LENGA",
+     "ancho_m": 0.9,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 1,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "3 para baño",
+     "tipo": "desconocido",
+     "modelo": null,
+     "madera": null,
+     "ancho_m": null,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 3,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta definir el producto, modelo, madera y medida."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  }
+ }
+}

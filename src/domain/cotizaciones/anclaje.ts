@@ -1,52 +1,16 @@
 // Verificación determinista de la propuesta de la IA contra el texto del pedido (REQ-COT-2.14). Portado (parte de un
 // solo mensaje) del cotizador de la tienda: ninguna cantidad ni medida puede venir de la nada, y lo que la IA dejó
-// fuera queda como alerta. Puro: corre antes del mapeo; lo que no se respalda pasa a «dudas» → por confirmar.
+// fuera queda como alerta. Puro: corre antes del mapeo; lo que no se respalda pasa a «dudas» → por confirmar. Antes,
+// lo que la línea dice sin ambigüedad corrige a la IA (ADR-0013 A, correcciones.ts).
 import type { ItemPropuesto, Propuesta } from "@/ai/esquema";
 import { ALIAS_MADERA, metros } from "./mapear";
+import { corregirItems } from "./correcciones";
 import { compacto } from "./modelos";
+import { aparece, cantidadesDichas, cifras, CONTINUA, maderasEn, plano } from "./texto-pedido";
 
-const plano = (t: string) => t.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+export { cantidadesDichas, cifras };
 
-const UNIDADES: Record<string, number> = {
-  un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12,
-  trece: 13, catorce: 14, quince: 15, dieciseis: 16, diecisiete: 17, dieciocho: 18, diecinueve: 19, veinte: 20, treinta: 30, cuarenta: 40, cincuenta: 50, cien: 100,
-};
-
-/** Números escritos con dígitos («2,10» → 2.1; «10.000» → 10000 y 10). */
-export function cifras(texto: string): number[] {
-  const r: number[] = [];
-  for (const m of texto.matchAll(/\d+(?:[.,]\d+)*/g)) {
-    const t = m[0];
-    if (/^\d{1,3}(\.\d{3})+$/.test(t)) r.push(Number(t.replace(/\./g, "")));
-    r.push(Number(t.replace(/\.(?=\d{3}\b)/g, "").replace(",", ".")), Number(t.replace(",", ".")));
-  }
-  return r.filter(Number.isFinite);
-}
-
-/** Cantidades dichas en una frase, sin contar medidas: dígitos y palabras («tres», «un par», «media docena»). */
-export function cantidadesDichas(frase: string): number[] {
-  let t = plano(frase)
-    .replace(/\d+(?:[.,]\d+)?\s*[x×*]\s*\d+(?:[.,]\d+)?/g, " ") // 90x210, 2x4
-    .replace(/\d+(?:[.,]\d+)?\s*(?:cm|mm|mts?|metros?|m\b|pulgadas?|pulg|")/g, " ") // 2,10 m · 6 pulgadas
-    .replace(/\b(?:de|alto|ancho|largo|medida|por)\s+\d+(?:[.,]\d+)?/g, " "); // «de 2,10», «por 210»
-  const r: number[] = [];
-  if (/\bmedia docena\b/.test(t)) { r.push(6); t = t.replace(/\bmedia docena\b/g, " "); }
-  if (/\b(?:una|1) docena\b/.test(t)) { r.push(12); t = t.replace(/\b(?:una|1) docena\b/g, " "); }
-  if (/\bun par\b/.test(t)) { r.push(2); t = t.replace(/\bun par\b/g, " "); }
-  for (const m of t.matchAll(/\b\d{1,4}\b/g)) r.push(Number(m[0]));
-  for (const p of t.split(/[^a-zñ]+/)) if (p in UNIDADES) r.push(UNIDADES[p]);
-  return r;
-}
-
-const CONTINUA = /\b(?:otr[oa]s?|igual(?:es)?|mism[oa]s?|con su|con sus)\b/;
-const aparece = (mensaje: string, frase: string) => plano(mensaje).replace(/\s+/g, " ").includes(plano(frase).replace(/\s+/g, " ").trim());
 const respaldaMedida = (valor: number, numeros: number[], max: number) => numeros.some((n) => { const m = metros(n, max); return m !== null && Math.abs(m - valor) <= 5e-4; });
-
-/** Maderas nombradas en un texto («oregón», «pino», «raulí»), con su nombre del catálogo. */
-function maderasEn(texto: string): Set<string> {
-  const t = plano(texto);
-  return new Set(Object.entries(ALIAS_MADERA).filter(([a]) => new RegExp(`\\b${plano(a)}\\b`).test(t)).map(([, m]) => m));
-}
 
 /** Nombres de modelo para verificar el texto: los del catálogo y sus alias SEGUROS (un alias dudoso nunca respalda). */
 export interface NombresModelo { modelos: string[]; alias: { alias: string; modelo: string; tipo?: string }[] }
@@ -91,11 +55,17 @@ function modeloAjeno(items: ItemPropuesto[], k: number, cx: ReturnType<typeof co
  * La madera de un ítem sale de su frase o de lo que el mensaje dice para todo el pedido, nunca de la frase de otro
  * ítem: «2 Malalhue oregón 90x210 y 2 marcos de 4» no da marcos de oregón. Una frase que continúa la anterior sí la hereda.
  */
-function maderaAjena(it: ItemPropuesto, cx: ReturnType<typeof contexto>): string | null {
+function maderaAjena(items: ItemPropuesto[], k: number, cx: ReturnType<typeof contexto>, mensaje: string): string | null {
+  const it = items[k];
   const madera = it.madera && ALIAS_MADERA[plano(it.madera).toUpperCase()];
-  if (!madera || !cx.literal || cx.continua) return null;
-  const propias = maderasEn(cx.frase);
+  if (!madera) return null;
+  const propias = cx.literal && !cx.continua ? maderasEn(cx.frase) : new Set<string>();
   if (propias.size) return propias.has(madera) ? null : `La línea dice otra madera que «${it.madera}».`;
+  // Una madera que el pedido no nombra en ninguna parte la completó la IA («4 puertas Yelcho 90x210» → oregón),
+  // salvo que la línea continúe un ítem anterior de esa madera.
+  const deMadera = (o: ItemPropuesto) => !!o.madera && ALIAS_MADERA[plano(o.madera).toUpperCase()] === madera;
+  if (!maderasEn(mensaje).has(madera) && !(cx.continua && items.some((o, j) => j < k && deMadera(o)))) return `La madera «${it.madera}» no aparece en el pedido.`;
+  if (!cx.literal || cx.continua) return null;
   if (maderasEn(cx.resto).has(madera) || !cx.otras.some((f) => maderasEn(f).has(madera))) return null;
   return `La madera «${it.madera}» es de otra línea del pedido.`;
 }
@@ -107,6 +77,9 @@ function maderaAjena(it: ItemPropuesto, cx: ReturnType<typeof contexto>): string
  */
 export function anclarItems(items: ItemPropuesto[], mensaje: string, nombres: NombresModelo = { modelos: [], alias: [] }): ItemPropuesto[] {
   const numeros = cifras(mensaje);
+  // «ambas de 80x200» respalda dos ítems; «todas de 80x200» respalda el pedido completo (REQ-COT-2.15).
+  const globales = [...plano(mensaje).matchAll(/\b(ambas|ambos|todas|todos)\s+(?:de\s+|con\s+)?(\d+(?:[.,]\d+)?\s*(?:x|×|por)\s*\d+(?:[.,]\d+)?)/g)]
+    .flatMap((m) => (items.length === 2 || m[1] === "todas" || m[1] === "todos") ? cifras(m[2]) : []);
   return items.map((it, k) => {
     const dudas = [...it.dudas];
     const cx = contexto(items, k, mensaje, nombres);
@@ -119,7 +92,7 @@ export function anclarItems(items: ItemPropuesto[], mensaje: string, nombres: No
     const puerta = it.tipo === "puerta";
     const max = puerta ? 3 : 6;
     // Medidas: de su línea o de lo dicho para todo el pedido; al continuar la anterior se heredan.
-    const propias = cx.literal && !cx.continua ? [...cifras(cx.frase), ...cifras(cx.resto)] : numeros;
+    const propias = cx.literal && !cx.continua ? [...cifras(cx.frase), ...cifras(cx.resto), ...globales] : numeros;
     for (const [campo, valor] of [["ancho", it.ancho_m], [puerta ? "alto" : "largo", it.alto_m]] as const) {
       if (valor === null) continue;
       const v = metros(valor, max);
@@ -133,13 +106,22 @@ export function anclarItems(items: ItemPropuesto[], mensaje: string, nombres: No
       const faltan = cifras(medida).filter((x) => !numeros.includes(x));
       if (faltan.length) dudas.push(`La medida «${it.medida_accesorio}» no aparece en el pedido.`);
     }
-    for (const ajena of [modeloAjeno(items, k, cx, nombres), maderaAjena(it, cx)]) if (ajena) dudas.push(ajena);
+    for (const ajena of [modeloAjeno(items, k, cx, nombres), maderaAjena(items, k, cx, mensaje)]) if (ajena) dudas.push(ajena);
     return dudas.length === it.dudas.length ? it : { ...it, dudas };
   });
 }
 
 const PARECE_PRODUCTO = /\b(?:puertas?|marcos?|piezas?|endolados?|guardapolvos?|pilastras?)\b/;
 const NO_ES_PEDIDO = /\b(?:gracias|saludos|hola|buen[oa]s|cotizaci[oó]n|direcci[oó]n|despacho|rut|correo|tel[eé]fono|fono)\b/;
+const DESTINO = /\bpara\s+(?:(?:el|la|los|las)\s+)?(?:banos?|dormitorios?|piezas?|habitacion(?:es)?|cocinas?|living|oficinas?)\b/;
+
+/** Grupo pedido por destino, sin producto explícito: conserva solo la cantidad escrita (REQ-COT-2.14). */
+export function cantidadPedidoEliptico(frase: string): number | null {
+  const texto = plano(frase);
+  if (!DESTINO.test(texto)) return null;
+  const cantidades = [...new Set(cantidadesDichas(frase))];
+  return cantidades.length === 1 && cantidades[0] >= 1 && cantidades[0] <= 500 ? cantidades[0] : null;
+}
 
 /**
  * Lo que el mensaje pide y la IA no registró (REQ-COT-2.14): se marca el texto que cubren las frases de los ítems y,
@@ -155,8 +137,9 @@ export function pedidosSinRegistrar(mensaje: string, frases: string[], modelos: 
   return resto.split(/\n|;|\||,\s|\.\s|\s+y\s+|\s+e\s+/).map((x) => x.trim().replace(/^[\s,.;:-]+|[\s,.;:-]+$/g, ""))
     .filter((x) => {
       const p = plano(x);
-      if (x.length < 4 || !/\d/.test(p) || NO_ES_PEDIDO.test(p)) return false;
-      return PARECE_PRODUCTO.test(p) || nombres.some((n) => n.length >= 3 && p.includes(n));
+      const eliptico = cantidadPedidoEliptico(x) !== null;
+      if (x.length < 4 || NO_ES_PEDIDO.test(p) || (!/\d/.test(p) && !eliptico)) return false;
+      return PARECE_PRODUCTO.test(p) || nombres.some((n) => n.length >= 3 && p.includes(n)) || eliptico;
     });
 }
 
@@ -169,16 +152,27 @@ export function sinVerificar(items: ItemPropuesto[], mensaje: string): number[] 
  * Aplica el anclaje a la propuesta completa: ítems con dudas nuevas y alertas por lo no registrado y por lo que no se
  * pudo verificar. Devuelve también lo omitido, para pedir una corrección a la IA (src/ai/revision.ts).
  */
-export function anclarPropuesta(propuesta: Propuesta, mensaje: string, nombres: NombresModelo): { propuesta: Propuesta; omitidos: string[] } {
+export interface PropuestaAnclada {
+  /** Ítems corregidos (ADR-0013 A) cuyas `dudas` son solo las del sistema (anclaje). */
+  propuesta: Propuesta;
+  omitidos: string[];
+  /** Dudas que escribió la IA, por ítem: bloquean solo si el ítem no se puede verificar (ADR-0013 B, `mapearConDudasIa`). */
+  dudasIa: string[][];
+}
+
+export function anclarPropuesta(propuesta: Propuesta, mensaje: string, nombres: NombresModelo): PropuestaAnclada {
   const omitidos = pedidosSinRegistrar(mensaje, propuesta.items.map((i) => i.texto_fuente), [...nombres.modelos, ...nombres.alias.map((a) => a.alias)]);
   const noVerificados = sinVerificar(propuesta.items, mensaje);
+  const correccion = corregirItems(propuesta.items, mensaje);
   return {
     omitidos,
+    dudasIa: propuesta.items.map((i) => i.dudas),
     propuesta: {
       ...propuesta,
-      items: anclarItems(propuesta.items, mensaje, nombres),
+      items: anclarItems(correccion.items.map((i) => ({ ...i, dudas: [] })), mensaje, nombres),
       alertas: [
         ...propuesta.alertas,
+        ...correccion.avisos,
         ...omitidos.map((o) => `No registré: «${o}». Agrégalo a mano si corresponde.`),
         ...noVerificados.map((n) => `No pude verificar el ítem ${n} contra el pedido (la IA no citó el texto tal cual): revísalo.`),
       ],

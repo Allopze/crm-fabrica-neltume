@@ -43,6 +43,7 @@ test("una cotización manual pasa a pedido, se cancela con motivo y libera la re
   await page.getByRole("button", { name: "Crear borrador" }).click();
   await expect(page).toHaveURL(/\/cotizaciones\/[0-9a-f-]{36}$/);
   await page.getByRole("button", { name: "Aprobar cotización" }).click();
+  await page.getByRole("button", { name: "Confirmar aprobación" }).click();
   await page.getByRole("link", { name: "Convertir en pedido" }).click();
   await page.getByRole("button", { name: "Confirmar pedido y reservar" }).click();
   await expect(page.getByRole("main")).toContainText("1 de 1 reservadas");

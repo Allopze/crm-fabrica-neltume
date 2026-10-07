@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { asc, desc } from "drizzle-orm";
-import { Aviso, Encabezado, Etiqueta, Panel, Placa, Vacio } from "@/components/ui/base";
+import { Aviso, Boton, Encabezado, Etiqueta, Panel, Placa, Vacio } from "@/components/ui/base";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -11,10 +11,11 @@ import { listarBoms, maderasConInsumo } from "@/domain/bom";
 import { listarMateriasPrimas } from "@/domain/materias-primas";
 import { NOMBRE_MADERA } from "@/domain/cotizaciones/mapear";
 import { listarOrdenes, planDeCierre } from "@/domain/ordenes";
-import { cantidad, cn, fecha, usoPorPuerta } from "@/lib/formato";
+import { cn, fecha } from "@/lib/formato";
 import { CierreOrden, NuevaOrden } from "./acciones-orden";
 import { AplicarRecetas } from "./aplicar-recetas";
 import { EditorBom } from "./editor-bom";
+import { LineasBom } from "./lineas-bom";
 import { MaderaInsumo } from "./madera-insumo";
 
 export const metadata: Metadata = { title: "Producción y BOM" };
@@ -40,6 +41,10 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
   const cerrada = typeof sp.cerrada === "string" ? sp.cerrada : null;
   const elegida = abiertas.find((o) => o.id === sp.orden) ?? (cerrada ? undefined : abiertas[0]);
   const plan = elegida ? await planDeCierre(bd(), elegida.id) : null;
+  const filtroBom = typeof sp.modelo === "string" ? sp.modelo.trim() : "";
+  const visibles = filtroBom
+    ? boms.filter((b) => `${b.modelo} ${b.modeloCodigo}`.toLowerCase().includes(filtroBom.toLowerCase()))
+    : boms;
   const activas = materias.filter((m) => m.activo).map((m) => ({ id: m.id, nombre: m.nombre, unidad: m.unidad }));
 
   return (
@@ -59,7 +64,7 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
         </div>
       )}
       {gestiona && (
-        <div className="grid gap-8 xl:grid-cols-[1.25fr_1fr]">
+        <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 xl:grid-cols-[1.25fr_1fr]">
           <Panel titulo="Órdenes de producción" sinRelleno>
             {ordenes.length === 0 ? <Vacio titulo="Aún no hay órdenes">Crea una con «Nueva orden».</Vacio> : (
               <Tabla>
@@ -117,10 +122,17 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
         <Panel><Vacio titulo="Aún no hay listas de materiales">Define la primera con «Definir BOM»: qué madera e insumos lleva una puerta del modelo.</Vacio></Panel>
       ) : (
         <Panel sinRelleno>
-          <Tabla>
+          <form action="/produccion#bom" className="flex flex-wrap items-center gap-2 border-b border-linea px-5 py-3" role="search" aria-label="Filtrar listas de materiales">
+            <input type="search" name="modelo" defaultValue={filtroBom} placeholder="Modelo o código" aria-label="Filtrar por modelo"
+              className="h-9 w-full max-w-64 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none pointer-coarse:h-11" />
+            <Boton type="submit">Filtrar</Boton>
+            <span className="text-sm text-tinta-tenue">{filtroBom ? `${visibles.length} de ${boms.length} modelos` : `${boms.length} modelos`}</span>
+          </form>
+          {visibles.length === 0 ? <Vacio titulo="Sin resultados">Ningún modelo coincide con «{filtroBom}».</Vacio> : (
+          <Tabla etiqueta="Listas de materiales">
             <thead><tr><Th>Modelo</Th><Th>Por puerta</Th><Th>Vigente desde</Th><Th>Origen</Th>{editaBom && <Th><span className="sr-only">Acciones</span></Th>}</tr></thead>
             <tbody>
-              {boms.map((b) => (
+              {visibles.map((b) => (
                 <Tr key={b.id} className={cn(editar?.id === b.id && "bg-rauli-velo/40")}>
                   <Td className="align-top">
                     <span className="font-medium">{titulo(b.modelo)}</span>
@@ -128,18 +140,7 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
                     {(b.ancho || b.alto) && <span className="block text-xs text-tinta-tenue">solo medida {b.ancho ?? "*"}-{b.alto ?? "*"}</span>}
                   </Td>
                   <Td>
-                    <ul className="space-y-0.5 text-sm">
-                      {b.lineas.map((l) => {
-                        const lectura = l.maderaPuerta ? null : usoPorPuerta(l.cantidad);
-                        return (
-                          <li key={l.id} className="flex flex-wrap gap-x-2">
-                            <span className={cn(l.maderaPuerta && "font-medium")}>{l.mp}</span>
-                            <span className="tabular-nums text-tinta-suave">{l.maderaPuerta ? `× ${cantidad(l.cantidad)} pulgadas del artículo` : `${cantidad(l.cantidad)} ${l.unidad}`}</span>
-                            {lectura && <span className="text-tinta-tenue">({lectura})</span>}
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    <LineasBom lineas={b.lineas} />
                   </Td>
                   <Td className="align-top whitespace-nowrap text-tinta-suave">{fecha(new Date(b.vigenteDesde).toISOString())}</Td>
                   <Td className="align-top"><Etiqueta tono={b.origen === "demo" ? "ambar" : "musgo"}>{b.origen === "demo" ? "DEMO" : "real"}</Etiqueta></Td>
@@ -152,6 +153,7 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
               ))}
             </tbody>
           </Tabla>
+          )}
         </Panel>
       )}
     </>

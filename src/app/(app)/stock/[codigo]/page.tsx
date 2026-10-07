@@ -54,7 +54,7 @@ export default async function ArticuloPage({ params }: PageProps<"/stock/[codigo
         <Cifra etiqueta="Precio de venta" valor={p ? clp(p.precioVenta) : "—"} nota={p ? `neto · recargo ${Math.round(p.recargo * 100)} % · lista v${precio!.lista.version}` : "sin lista vigente"} />
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
+      <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 lg:grid-cols-[1.6fr_1fr]">
         <Panel titulo="Movimientos" accion={<span className="inline-flex items-center gap-1 text-xs text-tinta-tenue"><Lock className="h-3 w-3" /> inmutables</span>} sinRelleno>
           {movimientos.length === 0 ? <Vacio titulo="Sin movimientos aún" /> : (
             <Tabla>

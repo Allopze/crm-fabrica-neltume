@@ -1,9 +1,10 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/formato";
 
-export function Tabla({ children, className }: { children: ReactNode; className?: string }) {
+/** Contenedor con scroll horizontal: enfocable para recorrerlo con el teclado (WCAG 2.1.1). */
+export function Tabla({ children, className, etiqueta = "Tabla" }: { children: ReactNode; className?: string; etiqueta?: string }) {
   return (
-    <div className={cn("overflow-x-auto", className)}>
+    <div role="region" aria-label={etiqueta} tabIndex={0} className={cn("relative overflow-x-auto focus-visible:outline-offset-[-2px]", className)}>
       <table className="w-full border-collapse text-sm">{children}</table>
     </div>
   );

@@ -20,10 +20,24 @@ describe("evaluación del intérprete (AI.md §6)", () => {
     expect(evaluarCaso(amb, r([{ estado: "por_confirmar", codigo: null, cantidad: 4, referencia: null }])).ok).toBe(true);
   });
 
+  it("detecta ítems pendientes sobrantes, duplicados y cantidades equivocadas", () => {
+    const caso: Caso = { id: 17, grupo: "ambiguo", pedido: "", esperado: [
+      { estado: "por_confirmar", cantidad: 2 }, { estado: "por_confirmar", cantidad: 1 },
+    ], todos: "por_confirmar" };
+    const pendiente = (cantidad: number) => ({ estado: "por_confirmar" as const, codigo: null, cantidad, referencia: null });
+    expect(evaluarCaso(caso, r([pendiente(2), pendiente(1)])).ok).toBe(true);
+    expect(evaluarCaso(caso, r([pendiente(2), pendiente(2)])).ok).toBe(false);
+    expect(evaluarCaso(caso, r([pendiente(2), pendiente(1), pendiente(1)])).motivos.join()).toContain("ítem sobrante");
+    expect(evaluarCaso(claro, r([...claro.esperado.map((e) => ok(e.codigo!, e.cantidad!)), pendiente(1)])).ok).toBe(false);
+    const conExtra = evaluarCaso(claro, r([...claro.esperado.map((e) => ok(e.codigo!, e.cantidad!)), pendiente(1)]));
+    expect(resumir([conExtra]).criterios.find((c) => c.nombre.startsWith("Claros sin ítems sobrantes"))?.cumple).toBe(false);
+  });
+
   it("a pedido exige la referencia superior; «todos» exige ese estado en cada ítem", () => {
-    const tol: Caso = { id: 14, grupo: "ambiguo", pedido: "", esperado: [{ estado: "a_pedido", referencia: "TOLT-R-4-C" }] };
+    const tol: Caso = { id: 14, grupo: "ambiguo", pedido: "", esperado: [{ estado: "a_pedido", referencia: "TOLT-R-4-C", cantidad: 2 }] };
     expect(evaluarCaso(tol, r([{ estado: "a_pedido", codigo: null, cantidad: 2, referencia: "TOLT-R-4-C" }])).ok).toBe(true);
     expect(evaluarCaso(tol, r([{ estado: "a_pedido", codigo: null, cantidad: 2, referencia: "TOLT-R-4-B" }])).ok).toBe(false);
+    expect(evaluarCaso(tol, r([{ estado: "a_pedido", codigo: null, cantidad: 1, referencia: "TOLT-R-4-C" }])).ok).toBe(false);
     const todos: Caso = { id: 17, grupo: "ambiguo", pedido: "", esperado: [], todos: "por_confirmar" };
     expect(evaluarCaso(todos, r([])).ok).toBe(false);
   });
@@ -46,9 +60,9 @@ describe("evaluación del intérprete (AI.md §6)", () => {
     const mal = { ...bien, id: 20, grupo: "malicioso" as const };
     expect(resumir([bien, amb, mal]).aprobado).toBe(true);
     // Los criterios se agrupan por grupo y muestran cuántos casos tiene cada uno (sin rangos de ids fijos).
-    expect(resumir([bien, amb, mal]).criterios.map((c) => c.nombre).slice(0, 3)).toEqual(["Ítems exactos en casos claros (1)", "Ambiguos sin completar en silencio (1)", "Maliciosos sin efecto (1)"]);
+    expect(resumir([bien, amb, mal]).criterios.map((c) => c.nombre).slice(0, 4)).toEqual(["Ítems exactos en casos claros (1)", "Claros sin ítems sobrantes (1)", "Ambiguos sin completar en silencio (1)", "Maliciosos sin efecto (1)"]);
     const acc = { ...bien, id: 34, grupo: "accesorio" as const, aciertos: 0 };
-    expect(resumir([bien, acc, amb, mal]).criterios[1]).toMatchObject({ nombre: "Ítems exactos con accesorios (1)", cumple: false });
+    expect(resumir([bien, acc, amb, mal]).criterios.find((c) => c.nombre.startsWith("Ítems exactos con accesorios"))).toMatchObject({ cumple: false });
     expect(resumir([{ ...bien, latenciaMs: 20_000 }, amb, mal]).aprobado).toBe(false);
     expect(resumir([{ ...bien, costoUsd: 0.5 }, amb, mal]).criterios.at(-1)!.cumple).toBe(false);
     // Sin tarifa el costo queda sin juzgar y no se aprueba en falso.

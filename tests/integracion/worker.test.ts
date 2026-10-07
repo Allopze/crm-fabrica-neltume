@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { poolApp, poolOwner } from "./bd";
 import { DobleIA } from "@/ai/doble";
+import type { InterpreteIA } from "@/ai/interfaz";
 import { procesarSiguiente } from "@/ai/procesar";
 import { bd, cerrarBd } from "@/db/conexion";
 import { crearInterpretacion } from "@/domain/cotizaciones/interpretacion";
@@ -100,6 +101,26 @@ describe("worker de IA (REQ-COT-2.1–2.9, ADR-0006)", () => {
     expect(items.map((i: { text_fuente: string }) => i.text_fuente)).toEqual(["2 Neltume raulí 90x210", "3 Neltume lenga 80x210"]);
     const { rows: llamadas } = await app.query("SELECT l.resultado FROM llamada_ia l JOIN trabajo_ia t ON t.id = l.trabajo_id WHERE t.cotizacion_id = $1", [c.id]);
     expect(llamadas).toHaveLength(2); // ambas pasadas quedan registradas
+  });
+
+  it("conserva grupos por destino omitidos como ítems sin precio y registra ambas pasadas (REQ-COT-2.14, ADR-0014)", async () => {
+    const ia: InterpreteIA = {
+      nombre: "doble",
+      interpretar: async () => ({ propuesta: { items: [], alertas: [], sin_items: true }, proveedor: "doble", latenciaMs: 1 }),
+    };
+    const c = await nueva("2 para baño y 1 para dormitorio, algo económico");
+    expect(await procesarSiguiente(ia, { esperasMs: [1, 1] })).toBe("listo");
+    const { rows: [cot] } = await app.query("SELECT estado, alertas, interpretacion_ia FROM cotizacion WHERE id = $1", [c.id]);
+    expect(cot.estado).toBe("borrador");
+    expect(cot.interpretacion_ia.items).toEqual([]);
+    expect(cot.alertas).toHaveLength(2);
+    const { rows: items } = await app.query("SELECT estado_item, cantidad, precio_unitario, texto_fuente FROM cotizacion_item WHERE cotizacion_id = $1 ORDER BY orden", [c.id]);
+    expect(items).toEqual([
+      { estado_item: "por_confirmar", cantidad: 2, precio_unitario: null, texto_fuente: "2 para baño" },
+      { estado_item: "por_confirmar", cantidad: 1, precio_unitario: null, texto_fuente: "1 para dormitorio" },
+    ]);
+    const { rows: [registro] } = await app.query("SELECT count(*)::int AS llamadas FROM llamada_ia l JOIN trabajo_ia t ON t.id = l.trabajo_id WHERE t.cotizacion_id = $1", [c.id]);
+    expect(registro.llamadas).toBe(2);
   });
 
   it("limita a 20 interpretaciones por usuario y hora, y textos de más de 4.000 caracteres", async () => {

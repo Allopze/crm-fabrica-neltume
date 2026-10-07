@@ -1,22 +1,28 @@
 // `npm run eval:ia` permite elegir proveedor y modelo; los flags permiten automatizar la selección.
 // Evalúa el intérprete con AI.md §6 contra el catálogo importado. Usa APIs reales, por lo que puede tener costo.
 // Escribe eval/informes/<fecha>-<modelo>.{md,json}; no imprime ni guarda claves de proveedor.
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
+import { generarCasos } from "../src/ai/casos-generados";
 import { CommandCodeIA, baseDeApi } from "../src/ai/proveedores/commandcode";
 import { GroqIA } from "../src/ai/proveedores/groq";
+import { ordenarPorCostoEstimado } from "../src/ai/costo-estimado";
+import { renderizarTablaCLI } from "../src/ai/tabla-cli";
 import { type Caso, evaluarCaso, type Obtenido, type ResultadoCaso, resumir } from "../src/ai/evaluacion";
 import type { InterpreteIA } from "../src/ai/interfaz";
 import { apiKeyDesdeEntorno, leerCatalogo, leerConfiguracionPrivada, type CatalogoIA, type ConfiguracionPrivadaIA, type ModeloIA, type ProveedorConfigurado } from "../src/ai/ajustes";
 import { normalizarPedido, redactar } from "../src/ai/redaccion";
+import { promptSistema } from "../src/ai/prompt";
 import { interpretarRevisado } from "../src/ai/revision";
 import { bd, cerrarBd } from "../src/db/conexion";
 import { cargarCatalogoMapeo, catalogoResumido } from "../src/domain/cotizaciones/catalogo";
-import { mapearItem } from "../src/domain/cotizaciones/mapear";
+import { alertaNotaIa, mapearConDudasIa } from "../src/domain/cotizaciones/mapear";
 
-const { values } = parseArgs({ options: { modelo: { type: "string" }, proveedor: { type: "string" } } });
+// --generados N [--semilla S]: en vez de eval/casos.json, N pedidos generados desde el catálogo (src/ai/casos-generados.ts).
+const { values } = parseArgs({ options: { modelo: { type: "string" }, proveedor: { type: "string" }, generados: { type: "string" }, semilla: { type: "string" }, ids: { type: "string" } } });
 const terminal = stdin.isTTY && stdout.isTTY ? createInterface({ input: stdin, output: stdout }) : null;
 const OPCIONES_PROVEEDOR: { id: ProveedorConfigurado; nombre: string }[] = [
   { id: "commandcode", nombre: "Command Code" }, { id: "groq", nombre: "Groq" },
@@ -24,8 +30,6 @@ const OPCIONES_PROVEEDOR: { id: ProveedorConfigurado; nombre: string }[] = [
 
 const pct = (n: number) => `${Math.round(n * 100)} %`;
 const valor = (nombre: string, v: number) => (nombre.startsWith("Latencia") ? `${(v / 1000).toFixed(1).replace(".", ",")} s` : nombre.startsWith("Costo") ? `US$ ${v.toFixed(4).replace(".", ",")}` : pct(v));
-const precioUsd = (n: number) => `US$ ${n.toLocaleString("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`;
-
 async function preguntar(texto: string) {
   if (!terminal) throw new Error("Usa una terminal interactiva o indica --proveedor y --modelo en la línea de comandos.");
   return (await terminal.question(texto)).trim();
@@ -52,37 +56,60 @@ function modelosEvaluables(proveedor: ProveedorConfigurado, catalogo: CatalogoIA
   return modelos;
 }
 
-function detalleModelo(proveedor: ProveedorConfigurado, modelo: ModeloIA) {
-  if (proveedor === "commandcode") {
-    if (modelo.precioEntradaUsdMTok === undefined || modelo.precioSalidaUsdMTok === undefined) return "tarifa no disponible";
-    return `${precioUsd(modelo.precioEntradaUsdMTok)} entrada / ${precioUsd(modelo.precioSalidaUsdMTok)} salida por millón de tokens`;
-  }
-  const l = modelo.limites;
-  if (!l) return "límites Free no disponibles en caché";
-  return `Free: ${l.rpm ?? "—"} RPM · ${l.rpd ?? "—"} RPD · ${l.tpm ?? "—"} TPM · ${l.tpd ?? "—"} TPD (referencia pública)`;
-}
+const numeroTabla = (n: number | undefined) => n === undefined ? "—" : n.toLocaleString("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 6 });
 
 async function seleccionarModelo(proveedor: ProveedorConfigurado, catalogo: CatalogoIA, config: ConfiguracionPrivadaIA, argumento?: string) {
   const todos = modelosEvaluables(proveedor, catalogo, config);
-  const habilitados = todos.filter((m) => m.compatible && !m.preview);
+  const elegibles = todos.filter((m) => m.compatible && !m.preview);
+  const habilitados = proveedor === "commandcode"
+    ? ordenarPorCostoEstimado(elegibles)
+    : [...elegibles].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
   if (catalogo.actualizadoEn) {
     const fecha = new Intl.DateTimeFormat("es-CL", { timeZone: "America/Santiago", dateStyle: "short" }).format(new Date(catalogo.actualizadoEn));
     console.log(`\nModelos ${proveedor} · catálogo consultado ${fecha}`);
   } else {
     console.log(`\nModelos ${proveedor} · catálogo sin fecha de actualización`);
   }
+  if (proveedor === "commandcode") {
+    console.log("Ordenados por costo estimado, de menor a mayor. Tarifas en US$/millón de tokens; costo estimado con 4.000 tokens de entrada + 400 de salida.\n");
+  } else {
+    console.log("Límites Free publicados como referencia; las cuotas exactas se consultan en Groq Console.\n");
+  }
   if (!habilitados.length) {
     const bloqueados = todos.map((m) => `  · ${m.nombre}: ${m.motivo ?? "no compatible"}`).join("\n");
     throw new Error(`No hay modelos compatibles en el catálogo. Inicia el worker para actualizarlo.${bloqueados ? `\n${bloqueados}` : ""}`);
   }
-  habilitados.forEach((m, i) => {
-    const activo = config.proveedor === proveedor && config.modelo === m.id ? " · activo en Ajustes" : "";
-    console.log(`  ${i + 1}. ${m.nombre} (${m.id}) · ${detalleModelo(proveedor, m)}${activo}`);
+  const columnas = proveedor === "commandcode"
+    ? [
+      { titulo: "#", alineacion: "derecha" as const }, { titulo: "Modelo (ID)" },
+      { titulo: "Entrada US$/M", alineacion: "derecha" as const }, { titulo: "Salida US$/M", alineacion: "derecha" as const },
+      { titulo: "Est. US$/llamada", alineacion: "derecha" as const },
+    ]
+    : [
+      { titulo: "#", alineacion: "derecha" as const }, { titulo: "Modelo (ID)" },
+      { titulo: "RPM", alineacion: "derecha" as const }, { titulo: "RPD", alineacion: "derecha" as const },
+      { titulo: "TPM", alineacion: "derecha" as const }, { titulo: "TPD", alineacion: "derecha" as const },
+    ];
+  const filas = habilitados.map((m, i) => {
+    const activo = config.proveedor === proveedor && config.modelo === m.id ? "✓ " : "";
+    const modelo = `${activo}${m.nombre} (${m.id})`;
+    if (proveedor === "commandcode") {
+      const estimado = m.precioEntradaUsdMTok === undefined || m.precioSalidaUsdMTok === undefined
+        ? "—"
+        : numeroTabla((m.precioEntradaUsdMTok * 4_000 + m.precioSalidaUsdMTok * 400) / 1_000_000);
+      return [String(i + 1), modelo, numeroTabla(m.precioEntradaUsdMTok), numeroTabla(m.precioSalidaUsdMTok), estimado];
+    }
+    return [String(i + 1), modelo, m.limites?.rpm ?? "—", m.limites?.rpd ?? "—", m.limites?.tpm ?? "—", m.limites?.tpd ?? "—"];
   });
+  console.log(renderizarTablaCLI(columnas, filas));
+  if (habilitados.some((m) => config.proveedor === proveedor && config.modelo === m.id)) console.log("\n✓ Modelo activo en Ajustes.");
   const bloqueados = todos.filter((m) => !m.compatible || m.preview);
   if (bloqueados.length) {
-    console.log("Modelos no seleccionables:");
-    for (const m of bloqueados) console.log(`  · ${m.nombre} (${m.id}): ${m.motivo ?? "no compatible"}`);
+    console.log("\nModelos no seleccionables:");
+    console.log(renderizarTablaCLI(
+      [{ titulo: "Modelo (ID)" }, { titulo: "Motivo" }],
+      bloqueados.map((m) => [`${m.nombre} (${m.id})`, m.motivo ?? "no compatible"]),
+    ));
   }
 
   const respuesta = argumento?.trim() || await preguntar(`Elige el número del modelo [1-${habilitados.length}]: `);
@@ -118,7 +145,9 @@ function crearInterpreteEvaluacion(proveedor: ProveedorConfigurado, modelo: Mode
 
 async function main() {
   cargarEntornoWorkerLocal();
-  const { casos } = JSON.parse(readFileSync("eval/casos.json", "utf8")) as { casos: Caso[] };
+  const generados = values.generados ? Number(values.generados) : 0;
+  const semilla = Number(values.semilla ?? 1);
+  if (values.generados && !(Number.isInteger(generados) && generados > 0 && Number.isInteger(semilla))) throw new Error("--generados y --semilla deben ser enteros positivos.");
   const config = await leerConfiguracionPrivada();
   const proveedor = await seleccionarProveedor(values.proveedor);
   if (!apiKeyDesdeEntorno(proveedor)) throw new Error(`Falta ${proveedor === "groq" ? "GROQ_API_KEY" : "CMD_API_KEY"} en .env.worker.local.`);
@@ -131,6 +160,18 @@ async function main() {
   const ia: InterpreteIA = { nombre: base.nombre, interpretar: (t, c, o) => { peticion = t; return base.interpretar(t, c, o); } };
   const [resumido, catalogo] = await Promise.all([catalogoResumido(bd()), cargarCatalogoMapeo(bd())]);
   if (!catalogo.articulos.size) throw new Error("No hay catálogo: importa el Excel (npm run demo:preparar).");
+  const todosLosCasos: Caso[] = generados ? generarCasos(catalogo, generados, semilla) : (JSON.parse(readFileSync("eval/casos.json", "utf8")) as { casos: Caso[] }).casos;
+  const ids = values.ids?.split(",").map(Number);
+  if (ids && (!ids.length || ids.some((id) => !Number.isInteger(id) || !todosLosCasos.some((c) => c.id === id)))) throw new Error("--ids requiere identificadores existentes, separados por coma.");
+  const casos = ids ? todosLosCasos.filter((c) => ids.includes(c.id)) : todosLosCasos;
+  const hash = (valor: string) => createHash("sha256").update(valor).digest("hex").slice(0, 12);
+  const promptHash = hash(promptSistema(resumido));
+  const casosHash = hash(JSON.stringify(casos));
+  const pipelineHash = hash([
+    "src/domain/cotizaciones/anclaje.ts", "src/domain/cotizaciones/texto-pedido.ts", "src/domain/cotizaciones/correcciones.ts",
+    "src/domain/cotizaciones/mapear.ts", "src/ai/revision.ts", "src/ai/evaluacion.ts",
+  ].map((ruta) => readFileSync(ruta, "utf8")).join("\n"));
+  const origen = ids ? `muestra de ${casos.length} casos (${ids.join(",")})` : generados ? `${generados} casos generados (semilla ${semilla})` : `${casos.length} casos de AI.md §6`;
   console.log(`\nEvaluando ${casos.length} casos con ${base.nombre} · ${modelo.id}\n`);
 
   const resultados: ResultadoCaso[] = [];
@@ -140,14 +181,16 @@ async function main() {
     peticion = "";
     try {
       const texto = redactar(normalizarPedido(c.pedido)).texto;
-      const { resultado: r, anclada } = await interpretarRevisado(ia, texto, resumido, { modelos: resumido.modelos, alias: resumido.alias ?? [] }, {
+      const { resultado: r, anclada, dudasIa } = await interpretarRevisado(ia, texto, resumido, { modelos: resumido.modelos, alias: resumido.alias ?? [] }, {
         alIntentar: (i) => { propuestas[c.id] = i.resultado?.propuesta ?? { error: i.error?.message }; },
       });
-      const obtenidos: Obtenido[] = anclada.items.map((p) => {
-        const m = mapearItem(p, catalogo);
+      const notas: string[] = [];
+      const obtenidos: Obtenido[] = anclada.items.map((p, k) => {
+        const { item: m, nota } = mapearConDudasIa(p, dudasIa[k] ?? [], catalogo);
+        if (nota) notas.push(alertaNotaIa(k + 1, nota));
         return { estado: m.estado, codigo: m.codigo, cantidad: m.cantidad, referencia: m.referencia?.codigo ?? null };
       });
-      resultados.push(evaluarCaso(c, { obtenidos, alertas: anclada.alertas, peticion, latenciaMs: Date.now() - inicio, costoUsd: r.costoUsd ?? 0, tokensEntrada: r.tokensEntrada, tokensSalida: r.tokensSalida }));
+      resultados.push(evaluarCaso(c, { obtenidos, alertas: [...anclada.alertas, ...notas], peticion, latenciaMs: Date.now() - inicio, costoUsd: r.costoUsd ?? 0, tokensEntrada: r.tokensEntrada, tokensSalida: r.tokensSalida }));
     } catch (e) {
       resultados.push(evaluarCaso(c, { obtenidos: [], alertas: [], peticion, latenciaMs: Date.now() - inicio, costoUsd: 0, error: (e as Error).message.slice(0, 120) }));
     }
@@ -156,17 +199,18 @@ async function main() {
   }
 
   const modeloCommandCode = proveedor === "commandcode" ? modelo : undefined;
-  const precioEntrada = modeloCommandCode?.precioEntradaUsdMTok ?? 0;
-  const precioSalida = modeloCommandCode?.precioSalidaUsdMTok ?? 0;
-  const conTarifa = proveedor === "commandcode" && precioEntrada > 0 && precioSalida > 0;
+  const conTarifa = proveedor === "commandcode" && modeloCommandCode?.precioEntradaUsdMTok !== undefined && modeloCommandCode?.precioSalidaUsdMTok !== undefined;
   const { criterios, aprobado, tokensMedios } = resumir(resultados, conTarifa);
   const marca = (c: boolean | null) => (c === null ? "sin tarifa" : c ? "✓" : "✗");
   const fecha = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santiago" }).format(new Date());
-  const nombre = `eval/informes/${fecha}-${modelo.id.replace(/[^\w.-]+/g, "_")}`;
+  const baseNombre = `eval/informes/${fecha}-${modelo.id.replace(/[^\w.-]+/g, "_")}${generados ? `-gen${generados}-s${semilla}` : ""}${ids ? `-m${casos.length}-${casosHash}` : ""}`;
+  let nombre = baseNombre;
+  for (let n = 2; existsSync(`${nombre}.json`) || existsSync(`${nombre}.md`); n++) nombre = `${baseNombre}-r${n}`;
   const md = [
     `# Evaluación del intérprete · ${modelo.id}`, "",
-    `Fecha ${fecha.split("-").reverse().join("-")} · proveedor ${base.nombre} · ${casos.length} casos de AI.md §6 · **${aprobado ? "APROBADO" : "NO APROBADO"}**`, "",
+    `Fecha ${fecha.split("-").reverse().join("-")} · proveedor ${base.nombre} · ${origen} · **${aprobado ? "APROBADO" : "NO APROBADO"}**`, "",
     `Tokens medios por pedido: ${tokensMedios.entrada} de entrada y ${tokensMedios.salida} de salida.${conTarifa ? "" : proveedor === "groq" ? " Groq no informó costos por llamada; el costo no se evalúa." : " Sin tarifas del modelo: el costo no se evalúa."}`, "",
+    `Identificadores de comparación: prompt ${promptHash} · casos ${casosHash} · pipeline ${pipelineHash}.`, "",
     "| Criterio | Resultado | Meta | |", "|---|---|---|---|",
     ...criterios.map((k) => `| ${k.nombre} | ${valor(k.nombre, k.valor)} | ${k.meta} | ${marca(k.cumple)} |`), "",
     "| # | Grupo | Resultado | Obtenido | Latencia | Costo US$ | Motivo |", "|---|---|---|---|---|---|---|",
@@ -174,7 +218,7 @@ async function main() {
     "",
   ].join("\n");
   writeFileSync(`${nombre}.md`, md);
-  writeFileSync(`${nombre}.json`, JSON.stringify({ modelo: modelo.id, proveedor: base.nombre, fecha, criterios, aprobado, tokensMedios, resultados, propuestas }, null, 1));
+  writeFileSync(`${nombre}.json`, JSON.stringify({ modelo: modelo.id, proveedor: base.nombre, fecha, promptHash, casosHash, pipelineHash, criterios, aprobado, tokensMedios, resultados, propuestas }, null, 1));
   console.log(`Tokens medios: ${tokensMedios.entrada} entrada / ${tokensMedios.salida} salida`);
   console.log(`\n${criterios.map((k) => `${marca(k.cumple)} ${k.nombre}: ${valor(k.nombre, k.valor)} (meta ${k.meta})`).join("\n")}`);
   console.log(`\n${aprobado ? "APROBADO" : "NO APROBADO"} · informe en ${nombre}.md`);

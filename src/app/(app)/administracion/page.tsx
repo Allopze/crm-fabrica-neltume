@@ -23,7 +23,7 @@ export default async function AdministracionPage() {
         titulo="Usuarios y permisos"
         descripcion="Hoy hay un solo rol con todos los permisos. Un perfil nuevo (por ejemplo, Bodega) se crea eligiendo permisos, sin tocar el sistema. Siempre debe quedar al menos un usuario activo que pueda gestionar usuarios."
       />
-      <div className="grid gap-8 xl:grid-cols-[1.3fr_1fr]">
+      <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 2xl:grid-cols-[1.3fr_1fr]">
         <Panel titulo="Usuarios" sinRelleno>
           <UsuariosCliente
             usuarios={usuarios.map((u) => ({ ...u, ultimoIngreso: u.ultimoIngreso ? String(u.ultimoIngreso) : null }))}

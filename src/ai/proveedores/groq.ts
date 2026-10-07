@@ -1,7 +1,7 @@
 // Adaptador Groq Chat Completions (REQ-ADM-4.2). No entrega herramientas de escritura al proveedor.
 import { HERRAMIENTA_PROPONER_ITEMS, Propuesta } from "../esquema";
 import { type CatalogoResumido, ErrorIA, type InterpreteIA, type OpcionesInterpretacion, type ResultadoInterpretacion } from "../interfaz";
-import { mensajeUsuario, promptSistema } from "../prompt";
+import { mensajeUsuario, motivoEsquema, promptSistema } from "../prompt";
 import { leerRetryAfterMs } from "../retry-after";
 
 export interface ConfigGroq { apiKey: string; modelo: string; timeoutMs: number; maxTokensSalida?: number; baseUrl?: string }
@@ -20,7 +20,7 @@ export class GroqIA implements InterpreteIA {
         headers: { authorization: `Bearer ${this.cfg.apiKey}`, "content-type": "application/json" },
         body: JSON.stringify({
           model: this.cfg.modelo, temperature: 0, max_tokens: this.cfg.maxTokensSalida || 2000,
-          messages: [{ role: "system", content: promptSistema(catalogo) }, { role: "user", content: mensajeUsuario(texto, opciones.omitidos) }],
+          messages: [{ role: "system", content: promptSistema(catalogo) }, { role: "user", content: mensajeUsuario(texto, opciones.omitidos, opciones.correccion) }],
           tools: [HERRAMIENTA_PROPONER_ITEMS],
           tool_choice: { type: "function", function: { name: "proponer_items" } },
           parallel_tool_calls: false,
@@ -49,7 +49,7 @@ export class GroqIA implements InterpreteIA {
     try { argumentos = JSON.parse(llamada.function.arguments); }
     catch { throw new ErrorIA("invalida", "Los argumentos de la herramienta no son JSON"); }
     const propuesta = Propuesta.safeParse(argumentos);
-    if (!propuesta.success) throw new ErrorIA("invalida", `Salida fuera del esquema: ${propuesta.error.issues[0]?.path.join(".")}`);
+    if (!propuesta.success) throw new ErrorIA("invalida", `Salida fuera del esquema: ${motivoEsquema(propuesta.error)}`);
     return {
       propuesta: propuesta.data, proveedor: this.nombre, modelo: cuerpo.model ?? this.cfg.modelo,
       tokensEntrada: Number(cuerpo.usage?.prompt_tokens ?? 0), tokensSalida: Number(cuerpo.usage?.completion_tokens ?? 0),

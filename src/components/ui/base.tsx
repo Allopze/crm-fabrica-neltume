@@ -13,7 +13,7 @@ const variantes: Record<Variante, string> = {
 };
 
 const baseBoton =
-  "inline-flex items-center justify-center gap-2 rounded-md px-3.5 h-9 text-sm font-medium transition-colors disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap";
+  "inline-flex items-center justify-center gap-2 rounded-md px-3.5 h-9 pointer-coarse:h-11 text-sm font-medium transition-colors disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap";
 
 export function Boton({ variante = "secundario", className, ...p }: ComponentProps<"button"> & { variante?: Variante }) {
   return <button className={cn(baseBoton, variantes[variante], className)} {...p} />;
@@ -51,7 +51,7 @@ export function Placa({ codigo, className }: { codigo: string; className?: strin
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-[3px] border border-linea-fuerte bg-lamina px-1.5 py-px font-mono text-[12px] font-medium tracking-wide text-tinta shadow-[0_1px_0_var(--linea)]",
+        "inline-flex items-center whitespace-nowrap rounded-[3px] border border-linea-fuerte bg-lamina px-1.5 py-px font-mono text-[12px] font-medium tracking-wide text-tinta shadow-[0_1px_0_var(--linea)]",
         className,
       )}
     >
@@ -74,11 +74,11 @@ export function Encabezado({
   antetitulo, titulo, descripcion, acciones,
 }: { antetitulo: string; titulo: ReactNode; descripcion?: ReactNode; acciones?: ReactNode }) {
   return (
-    <header className="mb-8">
+    <header className="mb-6 sm:mb-8">
       <div className="flex flex-wrap items-end justify-between gap-4 pb-4">
         <div className="entrada max-w-3xl">
           <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-rauli">{antetitulo}</p>
-          <h1 className="font-display text-[2.6rem] leading-[1.02] font-medium tracking-[-0.02em] text-tinta [font-variation-settings:'SOFT'_60,'opsz'_96]">
+          <h1 className="font-display text-[2rem] leading-[1.05] sm:text-[2.6rem] sm:leading-[1.02] font-medium tracking-[-0.02em] text-tinta [font-variation-settings:'SOFT'_60,'opsz'_96]">
             {titulo}
           </h1>
           {descripcion && <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-tinta-suave">{descripcion}</p>}
@@ -108,9 +108,9 @@ export function Panel({ titulo, accion, children, className, sinRelleno }: {
 
 export function Cifra({ etiqueta, valor, nota, tono }: { etiqueta: string; valor: ReactNode; nota?: ReactNode; tono?: "rauli" | "ambar" }) {
   return (
-    <div className="border-l-2 border-linea-fuerte pl-4">
-      <p className="text-xs uppercase tracking-[0.12em] text-tinta-tenue">{etiqueta}</p>
-      <p className={cn("mt-1 font-display text-4xl font-medium tabular-nums tracking-tight", tono === "rauli" && "text-rauli", tono === "ambar" && "text-ambar")}>
+    <div className="min-w-0 border-l-2 border-linea-fuerte pl-3 sm:pl-4">
+      <p className="text-xs uppercase tracking-[0.12em] break-words text-tinta-tenue">{etiqueta}</p>
+      <p className={cn("mt-1 font-display text-3xl sm:text-4xl font-medium tabular-nums tracking-tight", tono === "rauli" && "text-rauli", tono === "ambar" && "text-ambar")}>
         {valor}
       </p>
       {nota && <p className="mt-1 text-sm text-tinta-suave">{nota}</p>}

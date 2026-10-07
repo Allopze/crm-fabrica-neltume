@@ -15,10 +15,13 @@ export async function interpretarConReintentos(
 ): Promise<ResultadoInterpretacion> {
   const max = opciones.maxReintentos ?? reintentosDesdeEntorno();
   const esperas = opciones.esperasMs ?? [1_000, 3_000];
+  // Tras una salida inválida, el reintento le dice al modelo qué no cumplió (como `problemaSalida` de la tienda).
+  let correccion: string | undefined;
   for (let n = 0; ; n++) {
     const inicio = Date.now();
     try {
-      const resultado = await ia.interpretar(texto, catalogo, opciones.omitidos?.length ? { omitidos: opciones.omitidos } : undefined);
+      const extra = { ...(opciones.omitidos?.length ? { omitidos: opciones.omitidos } : {}), ...(correccion ? { correccion } : {}) };
+      const resultado = await ia.interpretar(texto, catalogo, Object.keys(extra).length ? extra : undefined);
       await opciones.alIntentar?.({ numero: n + 1, resultado, latenciaMs: Date.now() - inicio });
       return resultado;
     } catch (e) {
@@ -27,6 +30,7 @@ export async function interpretarConReintentos(
       // Una salida inválida se reintenta una sola vez (DESIGN §3, paso 6).
       const limite = error.tipo === "invalida" ? Math.min(1, max) : max;
       if (!error.reintentable || n >= limite) throw error;
+      correccion = error.tipo === "invalida" ? error.message : undefined;
       const espera = Math.max(esperas[Math.min(n, esperas.length - 1)], error.retryAfterMs ?? 0);
       await new Promise((r) => setTimeout(r, espera));
     }

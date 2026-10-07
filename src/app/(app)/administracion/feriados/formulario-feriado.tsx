@@ -30,7 +30,7 @@ export function NuevoFeriado({ csrf }: { csrf: string }) {
     }}>
       <input type="date" name="fecha" required aria-label="Fecha" className={campo} />
       <input name="nombre" required minLength={3} maxLength={120} placeholder="Motivo (p. ej. Elecciones presidenciales)" aria-label="Motivo" className={`${campo} w-72`} />
-      <Boton type="submit" disabled={pendiente}><Plus className="h-4 w-4" /> Agregar</Boton>
+      <Boton type="submit" disabled={pendiente}><Plus className="h-4 w-4" /> {pendiente ? "Agregando…" : "Agregar"}</Boton>
       {error && <p role="alert" className="w-full text-sm text-error">{error}</p>}
     </form>
   );

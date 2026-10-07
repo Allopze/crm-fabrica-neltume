@@ -19,7 +19,7 @@ Uso principal en PC (≥ 1280 px); las pantallas deben poder leerse en celular, 
 | Clientes | Lista · Ficha | `clientes.*` | REQ-COT-9 |
 | Administración | Usuarios · Roles y permisos · Auditoría · Métricas IA · Feriados · Ajustes de IA (proveedor, modelo y ZDR; claves en entorno privado del worker) | `usuarios.gestionar`, `auditoria.ver`, `config.editar` | REQ-ADM |
 
-Navegación lateral fija; la opción de cotizar está siempre visible arriba.
+Navegación lateral fija desde 1024 px; en pantallas más angostas se abre como cajón con el botón de menú (Esc lo cierra). La opción de cotizar está siempre visible arriba. Sin buscador global: cada lista tiene su propio filtro. Las tablas anchas se desplazan dentro de su marco (también con teclado) y la página nunca se desplaza hacia el costado; en pantallas táctiles los controles miden al menos 44 px.
 
 ## 2. Estados comunes (toda pantalla)
 
@@ -50,22 +50,24 @@ Navegación lateral fija; la opción de cotizar está siempre visible arriba.
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- Al pasar sobre un ítem se resalta su `texto_fuente` en el texto original.
+- Al pasar sobre un ítem o al enfocar uno de sus controles se resalta su `texto_fuente` en el texto original.
 - Si la cantidad del ítem no coincide con la cifra del fragmento original, se resalta para que el revisor la confirme.
 - Todo texto que venga de la IA (dudas, alertas, fragmentos) se muestra como texto escapado, nunca como HTML.
 - `❓ por confirmar` y `✏ a pedido` usan color y texto (no solo color) y no se pueden aprobar hasta resolverlos (REQ-COT-3.3). El botón Aprobar indica cuántos quedan.
 - El aviso de stock es informativo y nunca bloquea (REQ-COT-2.6).
 - Si la lista de la cotización no es la vigente, aparece un banner con "Recalcular" (REQ-COT-6.3).
 - Si la IA falló, el panel derecho muestra "No pudimos interpretar el pedido" y [Cotizar a mano], con el texto conservado (REQ-COT-2.7).
-- Al aprobar se muestra un resumen de confirmación; luego la vista queda en solo lectura con [Descargar PDF] y [Convertir en pedido].
-- Mientras interpreta, el panel derecho dice "Interpretando… (hasta 15 s)". Si pasa de 30 s se ofrece la cotización manual.
+- Al aprobar se muestra un resumen de confirmación en línea (ítems, cliente, total, lista congelada y vigencia) con [Confirmar aprobación] y [Volver a revisar]; luego la vista queda en solo lectura con [Descargar PDF] y [Convertir en pedido].
+- Mientras interpreta, el panel derecho dice "Interpretando… (hasta 15 s)". Si pasa de 30 s deja de consultar y ofrece [Volver a consultar], [Copiar texto] y [Cotizar a mano]. Si el envío falla antes de crear la cotización, el texto queda en el cuadro y se ofrece copiarlo.
 
 ## 4. Otros detalles
 
-- **Consulta de stock:** una tabla con existencia, reservado y disponible; mínimo en rojo con texto "bajo mínimo".
+- **Consulta de stock:** una tabla con existencia, reservado y disponible; bajo el mínimo en ámbar con texto "bajo mín."; sin mínimo definido, la columna de nivel dice "sin mínimo" en vez de dibujar la barra.
 - **Ajuste:** el motivo es obligatorio; se confirma con "Este movimiento no se puede editar ni borrar".
 - **Importar Excel:** se elige el archivo y se ve un informe (creadas, actualizadas y rechazadas, con fila y motivo) que se puede descargar.
 - **Cierre de producción:** vista previa de los consumos por BOM y de los faltantes antes de confirmar; si un BOM es de ejemplo, aparece la etiqueta "DEMO". Si el BOM usa la madera de la puerta y una madera no tiene materia prima asociada, el cierre muestra qué falta y queda bloqueado; el panel «Madera de la puerta» permite asociarla (ADR-0012).
+- **Despacho:** «Registrar despacho» abre una confirmación en línea que avisa que se descontará todo lo reservado y que el movimiento no se puede editar ni borrar; se registra con «Confirmar despacho».
+- **Recetas plegadas:** en la tabla de recetas se ve la madera de la puerta y los demás insumos quedan plegados («5 insumos»); un filtro por modelo o código acota la tabla.
 - **Confirmar el cierre:** «Cerrar orden N y mover stock» abre una confirmación en línea que nombra lo que se descontará y que no se puede deshacer; tras cerrar queda el aviso «Orden N cerrada» y no se elige otra orden sola. Si el cierre no es posible, el motivo se dice junto al botón.
 - **Recetas (BOM):** tabla con modelo, insumos por puerta (con la lectura «1 cada N puertas»), vigencia y origen. «Editar» abre la receta vigente precargada y avisa qué líneas quedarían fuera; «Aplicar a varias recetas» fija el factor de la madera o un insumo en las recetas elegidas (todas las puertas por defecto). Las cantidades aceptan fracciones («1/70»).
 - **Conteo de existencias** (Materias primas): una tabla con lo contado y el mínimo de cada materia prima; cada diferencia queda como ajuste con motivo «Conteo de existencias dd-mm-aaaa» y los mínimos se guardan juntos. El mínimo también se edita en la fila (Enter guarda, Esc cancela).

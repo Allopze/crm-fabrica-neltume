@@ -31,7 +31,7 @@ export function NuevaOrden({ csrf }: { csrf: string }) {
     }}>
       <label className="text-sm">Artículo<input name="codigo" required placeholder="NEL-R-4-B" className={`${campo} mt-1 block w-40 font-mono uppercase`} /></label>
       <label className="text-sm">Cantidad<input name="cantidad" required inputMode="numeric" className={`${campo} mt-1 block w-24`} /></label>
-      <Boton type="submit" variante="primario" disabled={pendiente} className="h-10">Crear orden</Boton>
+      <Boton type="submit" variante="primario" disabled={pendiente} className="h-10">{pendiente ? "Creando…" : "Crear orden"}</Boton>
       <Boton type="button" variante="fantasma" onClick={() => setAbierto(false)} className="h-10">Cancelar</Boton>
       {error && <p role="alert" className="w-full text-sm text-error">{error}</p>}
     </form>

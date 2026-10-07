@@ -23,7 +23,7 @@ export default async function AliasPage() {
         acciones={edita && <NuevoAlias modelos={modelos.map((m) => m.n)} csrf={sesion.csrf} />} />
       <Panel sinRelleno>
         <Tabla>
-          <thead><tr><Th>Alias</Th><Th>Modelo</Th><Th>Tipo</Th><Th /></tr></thead>
+          <thead><tr><Th>Alias</Th><Th>Modelo</Th><Th>Tipo</Th><Th><span className="sr-only">Acciones</span></Th></tr></thead>
           <tbody>
             {alias.map((a) => (
               <Tr key={a.alias}>

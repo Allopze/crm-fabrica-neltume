@@ -1,0 +1,184 @@
+{
+ "modelo": "openai/gpt-oss-20b",
+ "proveedor": "groq",
+ "fecha": "2026-10-07",
+ "promptHash": "acb16bf9dfa7",
+ "casosHash": "1827f0ffea9d",
+ "criterios": [
+  {
+   "nombre": "Ítems exactos en casos claros (1)",
+   "valor": 0,
+   "meta": "≥ 90 %",
+   "cumple": false
+  },
+  {
+   "nombre": "Ítems exactos con accesorios (2)",
+   "valor": 0,
+   "meta": "≥ 90 %",
+   "cumple": false
+  },
+  {
+   "nombre": "Ambiguos sin completar en silencio (5)",
+   "valor": 0,
+   "meta": "100 %",
+   "cumple": false
+  },
+  {
+   "nombre": "Latencia p90",
+   "valor": 129,
+   "meta": "≤ 15 s",
+   "cumple": true
+  },
+  {
+   "nombre": "Costo medio por pedido",
+   "valor": 0,
+   "meta": "≤ US$ 0,10",
+   "cumple": null
+  }
+ ],
+ "aprobado": false,
+ "tokensMedios": {
+  "entrada": 0,
+  "salida": 0
+ },
+ "resultados": [
+  {
+   "id": 1,
+   "grupo": "claro",
+   "obtenidos": [],
+   "latenciaMs": 129,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "Groq respondió 429",
+   "ok": false,
+   "motivos": [
+    "error: Groq respondió 429"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 11,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 119,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "Groq respondió 429",
+   "ok": false,
+   "motivos": [
+    "error: Groq respondió 429"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 14,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 88,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "Groq respondió 429",
+   "ok": false,
+   "motivos": [
+    "error: Groq respondió 429"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 17,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 82,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "Groq respondió 429",
+   "ok": false,
+   "motivos": [
+    "error: Groq respondió 429"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 34,
+   "grupo": "accesorio",
+   "obtenidos": [],
+   "latenciaMs": 88,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "Groq respondió 429",
+   "ok": false,
+   "motivos": [
+    "error: Groq respondió 429"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 47,
+   "grupo": "accesorio",
+   "obtenidos": [],
+   "latenciaMs": 83,
+   "costoUsd": 0,
+   "esperadosOk": 2,
+   "error": "Groq respondió 429",
+   "ok": false,
+   "motivos": [
+    "error: Groq respondió 429"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 58,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 84,
+   "costoUsd": 0,
+   "esperadosOk": 0,
+   "error": "Groq respondió 429",
+   "ok": false,
+   "motivos": [
+    "error: Groq respondió 429"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 60,
+   "grupo": "ambiguo",
+   "obtenidos": [],
+   "latenciaMs": 85,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "error": "Groq respondió 429",
+   "ok": false,
+   "motivos": [
+    "error: Groq respondió 429"
+   ],
+   "aciertos": 0
+  }
+ ],
+ "propuestas": {
+  "1": {
+   "error": "Groq respondió 429"
+  },
+  "11": {
+   "error": "Groq respondió 429"
+  },
+  "14": {
+   "error": "Groq respondió 429"
+  },
+  "17": {
+   "error": "Groq respondió 429"
+  },
+  "34": {
+   "error": "Groq respondió 429"
+  },
+  "47": {
+   "error": "Groq respondió 429"
+  },
+  "58": {
+   "error": "Groq respondió 429"
+  },
+  "60": {
+   "error": "Groq respondió 429"
+  }
+ }
+}

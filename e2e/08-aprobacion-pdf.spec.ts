@@ -12,6 +12,7 @@ test("aprobar A congela precios, fija la vigencia y muestra al aprobador", async
   const id = await cotizacionId(page, "estado=borrador&q=Alerces");
   await ir(page, `/cotizaciones/${id}`);
   await page.getByRole("button", { name: "Aprobar cotización" }).click();
+  await page.getByRole("button", { name: "Confirmar aprobación" }).click();
   const banner = page.getByRole("status").filter({ hasText: "Aprobada por" });
   await expect(banner).toContainText(`Aprobada por ${ADMIN.nombre}`);
   await expect(banner).toContainText(/vigente hasta el \d{2}-\d{2}-\d{4}/);

@@ -70,7 +70,7 @@ export function AccionesMovimiento({ tipos, csrf, codigo }: { tipos: Tipo[]; csr
             {abierto === "ajuste" ? "Motivo (obligatorio)" : "Referencia (orden, guía…)"}
             <input name="detalle" required={abierto === "ajuste"} minLength={abierto === "ajuste" ? 3 : undefined} className={`${campo} mt-1`} />
           </label>
-          <Boton type="submit" variante="primario" disabled={pendiente} className="mt-4 w-full">Registrar</Boton>
+          <Boton type="submit" variante="primario" disabled={pendiente} className="mt-4 w-full">{pendiente ? "Registrando…" : "Registrar"}</Boton>
         </form>
       )}
     </div>

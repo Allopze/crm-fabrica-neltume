@@ -33,7 +33,7 @@ export default async function MateriasPrimasPage() {
         <ConteoExistencias csrf={sesion.csrf} puedeAjustar={sesion.permisos.has("stock.ajustar")} puedeMinimo={editaMinimo}
           filas={activas.map((m) => ({ id: m.id, nombre: m.nombre, unidad: m.unidad, existencia: m.existencia, minimo: m.stockMinimo }))} />
       )}
-      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 lg:grid-cols-[1fr_340px]">
         <Panel titulo="Existencias" accion={reponer.length > 0 && <Etiqueta tono="ambar">{reponer.length} bajo el mínimo</Etiqueta>} sinRelleno>
           {materias.length === 0 ? (
             <Vacio titulo="Aún no hay materias primas">Crea la primera con «Nueva materia prima».</Vacio>

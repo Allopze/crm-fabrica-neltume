@@ -14,7 +14,7 @@ export default async function LoginPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       {/* Lado del taller: las cuatro maderas como tablones verticales */}
-      <section className="veta relative hidden overflow-hidden lg:block">
+      <section aria-hidden className="veta relative hidden overflow-hidden lg:block">
         <div className="absolute inset-0 grid grid-cols-4 gap-[2px] bg-[#1a120c]">
           {MADERAS_LOGIN.map((m, i) => (
             <div key={m.id} className="entrada relative overflow-hidden shadow-[inset_0_0_0_1px_rgb(0_0_0/0.25)]" style={{ animationDelay: `${i * 0.08}s` }}>
@@ -34,9 +34,9 @@ export default async function LoginPage() {
         </div>
       </section>
 
-      <section className="flex items-center justify-center px-6 py-16">
+      <main className="flex items-center justify-center px-6 py-16">
         <FormularioLogin />
-      </section>
+      </main>
     </div>
   );
 }

@@ -60,7 +60,7 @@ export function RolesCliente({ roles, catalogo, csrf }: { roles: Rol[]; catalogo
         ))}
       </ul>
       <div className="mt-5 flex items-center gap-3">
-        <Boton variante="primario" onClick={guardar} disabled={pendiente}>Guardar permisos</Boton>
+        <Boton variante="primario" onClick={guardar} disabled={pendiente}>{pendiente ? "Guardando…" : "Guardar permisos"}</Boton>
         {mensaje && <Etiqueta tono={mensaje.tono === "ok" ? "musgo" : "error"}>{mensaje.texto}</Etiqueta>}
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PencilLine, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
+import { Copy, PencilLine, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
 import { Boton, BotonLink } from "@/components/ui/base";
 import { pedir } from "@/lib/api-cliente";
 
@@ -14,6 +14,7 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
   const [clienteId, setClienteId] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copiado, setCopiado] = useState(false);
 
   // Crea la cotización en estado "interpretando" (202) y abre la revisión, que espera al worker (REQ-COT-2.1).
   async function interpretar() {
@@ -31,7 +32,7 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
+    <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 lg:grid-cols-[1fr_300px]">
       <div className="entrada entrada-2">
         <div className="relative overflow-hidden rounded-lg border border-linea-fuerte bg-lamina shadow-[0_18px_40px_-30px_rgb(30_40_30/0.5)] focus-within:border-tinta">
           <div className="flex items-center justify-between border-b border-linea px-5 py-2.5">
@@ -46,7 +47,7 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
             disabled={enviando}
             rows={11}
             placeholder="Pega aquí el correo o mensaje del cliente, tal cual llegó…"
-            className="block w-full resize-none bg-transparent px-5 py-4 font-display text-[1.15rem] leading-relaxed text-tinta placeholder:text-tinta-tenue focus:outline-none disabled:opacity-60"
+            className="block w-full resize-none bg-transparent px-5 py-4 focus-visible:shadow-none font-display text-[1.15rem] leading-relaxed text-tinta placeholder:text-tinta-tenue focus:outline-none disabled:opacity-60"
           />
           {enviando && (
             <div aria-hidden className="pointer-events-none absolute inset-x-0 top-10 bottom-0 overflow-hidden">
@@ -56,9 +57,14 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
         </div>
 
         {error && (
-          <div role="alert" className="mt-4 flex items-start justify-between gap-4 rounded-md border border-error/25 bg-error-velo px-4 py-3 text-sm text-error">
+          <div role="alert" className="mt-4 flex flex-wrap items-start justify-between gap-4 rounded-md border border-error/25 bg-error-velo px-4 py-3 text-sm text-error">
             <span className="flex gap-2"><TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" /><span>{error}</span></span>
-            <BotonLink href="/cotizaciones/manual" variante="peligro">Cotizar a mano</BotonLink>
+            <span className="flex shrink-0 flex-wrap gap-2">
+              <Boton variante="fantasma" onClick={() => navigator.clipboard.writeText(texto).then(() => setCopiado(true), () => setCopiado(false))}>
+                <Copy className="h-4 w-4" /> {copiado ? "Texto copiado" : "Copiar texto"}
+              </Boton>
+              <BotonLink href="/cotizaciones/manual" variante="peligro">Cotizar a mano</BotonLink>
+            </span>
           </div>
         )}
 
@@ -71,7 +77,7 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
         </div>
       </div>
 
-      <aside className="entrada entrada-3 space-y-6">
+      <div className="entrada entrada-3 space-y-6">
         {clientes && (
           <div>
             <label htmlFor="cliente" className="text-sm font-medium">Cliente</label>
@@ -94,7 +100,7 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
           <div className="regla my-4 opacity-60" aria-hidden />
           <p className="text-tinta-suave">Lo que no entienda con certeza queda <strong className="text-ambar">por confirmar</strong>. Tú apruebas antes de que salga.</p>
         </div>
-      </aside>
+      </div>
     </div>
   );
 }

@@ -10,6 +10,8 @@ export interface CatalogoResumido {
   accesorios: string[];
   /** Nombres alternativos seguros de modelos (alias → modelo); sin precios ni datos de stock. */
   alias?: { alias: string; modelo: string }[];
+  /** Escuadrías o secciones y largos de cada accesorio (REQ-COT-2.13); solo medidas, sin precios. */
+  medidasAccesorio?: { tipo: string; secciones: string[]; largosM: number[] }[];
 }
 
 export interface ResultadoInterpretacion {
@@ -38,7 +40,11 @@ export class ErrorIA extends Error {
 }
 
 /** Segunda pasada (REQ-COT-2.15): partes del pedido que la primera respuesta dejó sin registrar, ya redactadas. */
-export interface OpcionesInterpretacion { omitidos?: string[] }
+export interface OpcionesInterpretacion {
+  omitidos?: string[];
+  /** Reintento tras una salida inválida: el motivo que escribe el sistema (rutas y reglas del esquema, sin valores). */
+  correccion?: string;
+}
 
 export interface InterpreteIA {
   readonly nombre: string;

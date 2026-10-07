@@ -34,7 +34,7 @@ export default async function FeriadosPage({ searchParams }: PageProps<"/adminis
       </nav>
       <Panel sinRelleno>
         <Tabla>
-          <thead><tr><Th>Fecha</Th><Th>Día</Th><Th>Feriado</Th><Th>Origen</Th><Th /></tr></thead>
+          <thead><tr><Th>Fecha</Th><Th>Día</Th><Th>Feriado</Th><Th>Origen</Th><Th><span className="sr-only">Acciones</span></Th></tr></thead>
           <tbody>
             {datos.map((f) => (
               <Tr key={f.fecha}>

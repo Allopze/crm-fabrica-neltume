@@ -54,7 +54,7 @@ export function AjustesIA({ csrf }: { csrf: string }) {
   return <div className="space-y-6">
     {error && <Aviso tono="error" titulo="No se guardaron los cambios">{error}</Aviso>}
     {aviso && <Aviso tono="musgo" titulo="Listo">{aviso}</Aviso>}
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
+    <div className="grid grid-cols-1 gap-6 [&>*]:min-w-0 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
       <Panel titulo="Proveedor y modelo">
         <div className="space-y-5">
           <label className="block space-y-1.5 text-sm font-medium">Proveedor
@@ -82,7 +82,7 @@ export function AjustesIA({ csrf }: { csrf: string }) {
             <span>Confirmo que activé Zero Data Retention (ZDR) para el proyecto en Groq Console. La app no puede comprobarlo.</span>
           </label>}
           <Boton variante="primario" disabled={pendiente || !modelo || !modeloElegido?.compatible || modeloElegido.preview} onClick={() => iniciar(() => void activar())}>
-            <Check className="h-4 w-4" /> Activar proveedor y modelo
+            <Check className="h-4 w-4" /> {pendiente ? "Activando…" : "Activar proveedor y modelo"}
           </Boton>
           {estado.proveedor && <p className="text-xs text-tinta-tenue">Activo ahora: {estado.proveedor} · {estado.modelo}</p>}
         </div>
@@ -102,7 +102,7 @@ export function AjustesIA({ csrf }: { csrf: string }) {
         Los límites exactos se revisan en Groq Console. Los headers de la API reflejan RPD y TPM; no se usan para deducir RPM. Fuente: <a className="underline" href={estado.catalogos.groq.fuente} target="_blank" rel="noreferrer">documentación de límites de Groq</a>.
       </Aviso>}
       {proveedor === "commandcode" && <p className="mb-4 text-sm text-tinta-suave">Tarifas de referencia por millón de tokens, consultadas desde <a className="underline" href={estado.catalogos.commandcode.fuente} target="_blank" rel="noreferrer">precios oficiales de Command Code</a>.</p>}
-      <div className="mt-4 max-h-[420px] overflow-auto rounded-md border border-linea">
+      <div role="region" aria-label="Tarifas publicadas" tabIndex={0} className="mt-4 max-h-[420px] overflow-auto rounded-md border border-linea">
         {modelos.length === 0 ? <p className="p-5 text-sm text-tinta-tenue">El worker aún no ha cargado el catálogo de este proveedor.</p> : <table className="w-full text-left text-sm">
           <thead className="sticky top-0 bg-papel text-xs uppercase tracking-wide text-tinta-tenue"><tr><th className="px-4 py-2">Modelo</th><th className="px-4 py-2">{proveedor === "commandcode" ? "Tarifa / 1M" : "RPM · RPD · TPM · TPD"}</th><th className="px-4 py-2">Estado</th></tr></thead>
           <tbody>{modelos.map((m) => <tr key={m.id} className="border-t border-linea align-top"><td className="px-4 py-2"><span className="font-medium">{m.nombre}</span><span className="mt-0.5 block font-mono text-xs text-tinta-tenue">{m.id}</span></td><td className="px-4 py-2 text-xs tabular-nums">{proveedor === "commandcode" ? precios(m) : limites(m)}</td><td className="px-4 py-2">{m.compatible && !m.preview ? <Etiqueta tono="musgo">Disponible</Etiqueta> : <span className="text-xs text-tinta-suave">{m.motivo ?? "No disponible"}</span>}</td></tr>)}</tbody>

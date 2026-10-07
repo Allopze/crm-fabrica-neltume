@@ -1,0 +1,74 @@
+{
+ "modelo": "openai/gpt-oss-120b",
+ "proveedor": "groq",
+ "fecha": "2026-10-07",
+ "promptHash": "acb16bf9dfa7",
+ "casosHash": "8a3abd1babe4",
+ "criterios": [
+  {
+   "nombre": "Ítems exactos en casos claros (1)",
+   "valor": 1,
+   "meta": "≥ 90 %",
+   "cumple": true
+  },
+  {
+   "nombre": "Latencia p90",
+   "valor": 1151,
+   "meta": "≤ 15 s",
+   "cumple": true
+  },
+  {
+   "nombre": "Costo medio por pedido",
+   "valor": 0,
+   "meta": "≤ US$ 0,10",
+   "cumple": null
+  }
+ ],
+ "aprobado": false,
+ "tokensMedios": {
+  "entrada": 2881,
+  "salida": 268
+ },
+ "resultados": [
+  {
+   "id": 1,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "NEL-R-4-B",
+     "cantidad": 3,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 1151,
+   "costoUsd": 0,
+   "esperadosOk": 1,
+   "tokensEntrada": 2881,
+   "tokensSalida": 268,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  }
+ ],
+ "propuestas": {
+  "1": {
+   "items": [
+    {
+     "texto_fuente": "3 puertas Neltume en raulí de 90x210",
+     "tipo": "puerta",
+     "modelo": "NELTUME",
+     "madera": "RAULI",
+     "ancho_m": 0.9,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 3,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  }
+ }
+}

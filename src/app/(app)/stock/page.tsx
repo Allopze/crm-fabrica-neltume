@@ -37,7 +37,7 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
       />
 
       {alertas.length > 0 && !filtro.bajoMinimo && (
-        <Link href="/stock?bajoMinimo=1" role="status" className="mb-5 flex items-center gap-2 rounded-lg border border-ambar/30 bg-ambar-velo px-5 py-3 text-sm text-ambar hover:underline">
+        <Link href="/stock?bajoMinimo=1" className="mb-5 flex items-center gap-2 rounded-lg border border-ambar/30 bg-ambar-velo px-5 py-3 text-sm text-ambar hover:underline">
           <TriangleAlert className="h-4 w-4" />
           {alertas.length === 1 ? "1 puerta está" : `${alertas.length} puertas están`} bajo su mínimo disponible
           (faltan {alertas.reduce((t, a) => t + a.faltan, 0)} en total). Ver solo esas →
@@ -45,7 +45,7 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
       )}
 
       <form className="mb-5 flex flex-wrap items-center gap-2" aria-label="Filtros">
-        <input type="search" name="q" defaultValue={filtro.q} placeholder="Código o modelo" aria-label="Buscar" className={`${campo} w-56`} />
+        <input type="search" name="q" defaultValue={filtro.q} placeholder="Código o modelo" aria-label="Buscar" className={`${campo} w-full sm:w-56`} />
         <select name="madera" defaultValue={filtro.madera ?? ""} className={campo} aria-label="Madera">
           <option value="">Todas las maderas</option>{MADERAS.map(([c, n]) => <option key={c} value={c}>{n}</option>)}
         </select>
@@ -55,7 +55,7 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
         <label className="inline-flex items-center gap-2 px-2 text-sm text-tinta-suave">
           <input type="checkbox" name="bajoMinimo" value="1" defaultChecked={filtro.bajoMinimo} className="accent-[var(--rauli)]" /> Solo bajo mínimo
         </label>
-        <button className="h-9 rounded-md border border-linea-fuerte px-3 text-sm hover:border-tinta">Filtrar</button>
+        <button className="h-9 rounded-md border border-linea-fuerte px-3 text-sm hover:border-tinta pointer-coarse:h-11">Filtrar</button>
       </form>
 
       <Panel sinRelleno>
@@ -64,7 +64,7 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
             {filtro.q || filtro.bajoMinimo ? "Prueba con otros filtros." : "Registra una entrada por producción o busca un código del catálogo."}
           </Vacio>
         ) : (
-          <Tabla>
+          <Tabla etiqueta="Stock de puertas">
             <thead>
               <tr>
                 <Th>Código</Th><Th>Modelo</Th><Th>Madera</Th><Th>Medida</Th><Th>Tipo</Th>
@@ -80,8 +80,8 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
                     <Td className="font-medium capitalize">{a.modelo.toLowerCase()}</Td>
                     <Td><span className="inline-flex items-center gap-1.5 text-sm capitalize text-tinta-suave">
                       <span aria-hidden className="swatch h-3.5 w-5 rounded-[2px] ring-1 ring-black/10" style={{ backgroundColor: COLOR[a.maderaCodigo] }} />
-                      {a.madera.toLowerCase()}</span></Td>
-                    <Td className="text-tinta-suave">{a.ancho} × {metros(Number(a.altoM))}</Td>
+                      {MADERAS.find(([c]) => c === a.maderaCodigo)?.[1] ?? a.madera.toLowerCase()}</span></Td>
+                    <Td className="whitespace-nowrap text-tinta-suave">{a.ancho} × {metros(Number(a.altoM))}</Td>
                     <Td className="capitalize text-tinta-suave">{a.tipo?.toLowerCase() ?? "accesorio"}</Td>
                     <Td alinear="der">{a.existencia}</Td>
                     <Td alinear="der" className="text-tinta-suave">{a.reservado || "—"}</Td>

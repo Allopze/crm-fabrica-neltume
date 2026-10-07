@@ -30,6 +30,7 @@ test("la cotización con IA caída se completa a mano y se aprueba (cotización 
   await page.getByLabel("Cliente", { exact: true }).selectOption({ label: CLIENTE_A.nombre });
   await expect(page.getByRole("button", { name: "Aprobar cotización" })).toBeEnabled();
   await page.getByRole("button", { name: "Aprobar cotización" }).click();
+  await page.getByRole("button", { name: "Confirmar aprobación" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Aprobada por" })).toBeVisible();
   const c = (await api(page, "GET", `/api/v1/cotizaciones/${id}`)).cuerpo;
   expect(c).toMatchObject({ estado: "aprobada", origen: "ia" });

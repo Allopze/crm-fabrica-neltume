@@ -40,7 +40,7 @@ export function FormularioManual({ csrf, version, clientes }: { csrf: string; ve
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+    <div className="grid grid-cols-1 gap-6 [&>*]:min-w-0 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
         <Panel titulo="Agregar artículo">
           {version ? (
@@ -64,9 +64,10 @@ export function FormularioManual({ csrf, version, clientes }: { csrf: string; ve
                     <span className="min-w-0 flex-1 text-ambar"><CircleHelp className="mr-1 inline h-3.5 w-3.5" />{l.detalle}</span>
                   )}
                   <input type="number" min={1} max={999} value={l.cantidad} onChange={(e) => cantidad(l.clave, Number(e.target.value))} aria-label="Cantidad"
-                    className="h-9 w-20 rounded-md border border-linea-fuerte bg-lamina px-2 text-right tabular-nums" />
+                    className="h-9 w-20 rounded-md border border-linea-fuerte bg-lamina px-2 text-right tabular-nums focus:border-tinta focus:outline-none pointer-coarse:h-11" />
                   <span className="w-28 text-right tabular-nums">{"opcion" in l ? clp(l.opcion.precioVenta * l.cantidad) : "sin precio"}</span>
-                  <button onClick={() => setLineas((ls) => ls.filter((x) => x.clave !== l.clave))} aria-label="Quitar" className="text-tinta-tenue hover:text-error"><Trash2 className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => setLineas((ls) => ls.filter((x) => x.clave !== l.clave))} aria-label={`Quitar ${"opcion" in l ? l.codigo : l.detalle}`}
+                    className="-mr-2 grid h-9 w-9 place-items-center rounded-md text-tinta-tenue hover:bg-error-velo hover:text-error pointer-coarse:h-11 pointer-coarse:w-11"><Trash2 className="h-4 w-4" /></button>
                 </li>
               ))}
             </ul>

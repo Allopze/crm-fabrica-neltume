@@ -160,3 +160,16 @@ Aprobada el 06-10-2026. La tienda le envía a la fábrica notas de pedido en PDF
 - [x] T6.7 Selector interactivo de proveedor y modelo en `eval:ia`, con precio Command Code o límites Free Groq · AI §6 · revisión manual · T6.1–T6.6
 
 **Checkpoint F6:** definir claves en el entorno del worker, comprobar que la app y auditoría no las reciben, cambiar proveedor/modelo desde Ajustes, verificar que el siguiente trabajo usa la nueva configuración y elegir proveedor/modelo en `eval:ia`. Suite completa según el contrato del proyecto. La evaluación real queda informativa, no como bloqueo de activación. Tras este checkpoint me detengo para revisión. **OK del usuario: 06-10-2026.**
+
+## Fase 7 — Precisión de la IA (pedida el 07-10-2026; comparación con `referencia/`)
+
+El informe de Qwen3.7-Flash (06-10-2026) dio 38 % en accesorios: la IA leía bien los marcos, pero los llenaba de dudas que el prompt no descartaba. T7.1–T7.4 alinean el código con AI.md §2, §4 y §6, sin cambiar decisiones; T7.5 cambia una (ADR-0013, aprobado el 07-10-2026).
+
+- [x] T7.1 (60) Prompt con secciones y largos de cada accesorio, la lista de lo que NO es duda y 4 ejemplos (claro, accesorio, ambiguo, malicioso) que no repiten el set de evaluación · REQ-COT-2.13, AI §4 · U `prompt` · —
+- [x] T7.2 (30) Anclaje: una madera que el pedido no nombra en ninguna parte queda en duda · REQ-COT-2.14 · U `anclaje` · —
+- [x] T7.3 (30) Reintento tras una salida inválida con el motivo para el modelo (ruta y regla, sin valores) · AI §2, §5 · U `reintentos`, `prompt` · —
+- [x] T7.4 (60) `eval:ia --generados N --semilla S`: pedidos generados desde el catálogo, con lo esperado del mapeo determinista · AI §6 · U `casos-generados` · T7.1
+- [x] T7.5 (90) Correcciones deterministas y dudas que no bloquean (aprobado el 07-10-2026) · ADR-0013, REQ-COT-2.15, 2.16 · U `correcciones`, `anclaje` · T7.1–T7.4
+- [x] T7.6 Conservar grupos por destino omitidos, medir extras/cantidades pendientes y comparar solo modelos autorizados · ADR-0014, REQ-COT-2.14/2.15 · U `anclaje`, `revision`, `evaluacion`; `eval:ia` fijo y generado · T7.5
+
+**Checkpoint F7:** `npm test` verde, `eval:ia` (set fijo y generado) con el modelo activo comparado con el informe del 06-10-2026, con T7.5 incluido. Espero tu OK.

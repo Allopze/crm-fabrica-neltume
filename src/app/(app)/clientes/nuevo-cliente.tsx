@@ -45,7 +45,7 @@ export function NuevoCliente({ csrf }: { csrf: string }) {
         <select name="tipo" defaultValue="directo" className={`${campo} mt-1`}><option value="directo">Directo</option><option value="tienda">Tienda</option></select>
       </label>
       <div className="flex gap-2 sm:col-span-3">
-        <Boton type="submit" variante="primario" disabled={pendiente}>Guardar cliente</Boton>
+        <Boton type="submit" variante="primario" disabled={pendiente}>{pendiente ? "Guardando…" : "Guardar cliente"}</Boton>
         <Boton type="button" variante="fantasma" onClick={() => setAbierto(false)}>Cancelar</Boton>
         {error && <p role="alert" className="self-center text-sm text-error">{error}</p>}
       </div>

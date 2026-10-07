@@ -32,16 +32,22 @@ export function parsearPreciosCommandCode(html: string) {
     const comienzo = (match.index ?? 0) + match[0].length;
     const finSiguiente = inicios[i + 1]?.index ?? comienzo + 4_000;
     const bloque = contenido.slice(comienzo, Math.min(finSiguiente, comienzo + 4_000));
-    const entrada = bloque.match(/"inputCost":([0-9]+(?:\.[0-9]+)?)/)?.[1];
-    const salida = bloque.match(/"outputCost":([0-9]+(?:\.[0-9]+)?)/)?.[1];
-    if (entrada !== undefined && salida !== undefined) precios.set(match[1], { entrada: Number(entrada), salida: Number(salida) });
+    const input = bloque.match(/"inputCost":([0-9]+(?:\.[0-9]+)?)/)?.[1] ?? bloque.match(/"rates":\{"input":([0-9]+(?:\.[0-9]+)?)/)?.[1];
+    const output = bloque.match(/"outputCost":([0-9]+(?:\.[0-9]+)?)/)?.[1] ?? bloque.match(/"rates":\{"input":[0-9]+(?:\.[0-9]+)?,"output":([0-9]+(?:\.[0-9]+)?)/)?.[1];
+    if (input !== undefined && output !== undefined) precios.set(match[1], { entrada: Number(input), salida: Number(output) });
   }
   return precios;
 }
 
-function precioParaModelo(id: string, precios: Map<string, { entrada: number; salida: number }>) {
+export function precioParaModelo(id: string, precios: Map<string, { entrada: number; salida: number }>) {
   const simple = id.split("/").at(-1) ?? id;
-  const fila = precios.get(id) ?? precios.get(simple) ?? [...precios.entries()].find(([k]) => simple.endsWith(k))?.[1];
+  const normalizar = (valor: string) => valor.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const claveSimple = normalizar(simple);
+  const equivalentes = [...precios.entries()].filter(([clave]) => normalizar(clave) === claveSimple);
+  const versionFechada = [...precios.entries()].filter(([clave]) => claveSimple.startsWith(normalizar(clave)));
+  const alias = equivalentes.length === 1 ? equivalentes[0]?.[1]
+    : versionFechada.length === 1 ? versionFechada[0]?.[1] : undefined;
+  const fila = precios.get(id) ?? precios.get(simple) ?? alias;
   return fila ? { entrada: fila.entrada, salida: fila.salida } : undefined;
 }
 

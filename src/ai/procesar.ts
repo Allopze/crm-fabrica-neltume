@@ -5,7 +5,7 @@ import { cotizacion, cotizacionItem, llamadaIa, trabajoIa } from "@/db/esquema/c
 import { registrarAuditoria } from "@/domain/auditoria";
 import { listaVigenteId, precioDeArticulo, recalcularTotales } from "@/domain/cotizaciones/calculo";
 import { cargarCatalogoMapeo, catalogoResumido } from "@/domain/cotizaciones/catalogo";
-import { mapearItem } from "@/domain/cotizaciones/mapear";
+import { alertaNotaIa, mapearConDudasIa } from "@/domain/cotizaciones/mapear";
 import { alertasGasto, gastoIa } from "@/domain/metricas-ia";
 import { calcularLinea } from "@/domain/precios/calcular";
 import { registro } from "@/lib/registro";
@@ -69,7 +69,7 @@ export async function procesarSiguiente(iaFija?: InterpreteIA, opciones: { esper
     const texto = redactar(normalizarPedido(c.textoOriginal ?? "")).texto;
     const cat = await catalogoResumido(bd());
     // REQ-COT-2.14/2.15: propuesta anclada al texto y, si omitió partes del pedido, una corrección pedida a la IA.
-    const { resultado, anclada, corregida } = await interpretarRevisado(ia, texto, cat, { modelos: cat.modelos, alias: cat.alias ?? [] }, {
+    const { resultado, anclada, dudasIa, corregida } = await interpretarRevisado(ia, texto, cat, { modelos: cat.modelos, alias: cat.alias ?? [] }, {
       esperasMs: opciones.esperasMs,
       alIntentar: async (i) => {
         await bd().insert(llamadaIa).values({
@@ -83,8 +83,11 @@ export async function procesarSiguiente(iaFija?: InterpreteIA, opciones: { esper
     await bd().transaction(async (tx) => {
       const catalogo = await cargarCatalogoMapeo(tx);
       const listaId = await listaVigenteId(tx);
+      const notas: string[] = [];
       for (const [orden, propuesto] of anclada.items.entries()) {
-        const m = mapearItem(propuesto, catalogo);
+        // ADR-0013 B: las dudas de la IA bloquean solo si el ítem no se puede verificar; si no, quedan como nota.
+        const { item: m, nota } = mapearConDudasIa(propuesto, dudasIa[orden] ?? [], catalogo);
+        if (nota) notas.push(alertaNotaIa(orden + 1, nota));
         const p = m.articuloId ? await precioDeArticulo(tx, m.articuloId, listaId) : null;
         const ref = m.referencia ? await precioDeArticulo(tx, m.referencia.articuloId, listaId) : null;
         await tx.insert(cotizacionItem).values({
@@ -94,7 +97,7 @@ export async function procesarSiguiente(iaFija?: InterpreteIA, opciones: { esper
           precioReferencia: ref?.precioUnitario, referenciaCodigo: m.referencia?.codigo,
         });
       }
-      await tx.update(cotizacion).set({ estado: "borrador", interpretacionIa: resultado.propuesta, alertas: anclada.alertas, listaId }).where(eq(cotizacion.id, c.id));
+      await tx.update(cotizacion).set({ estado: "borrador", interpretacionIa: resultado.propuesta, alertas: [...anclada.alertas, ...notas], listaId }).where(eq(cotizacion.id, c.id));
       await recalcularTotales(tx, c.id);
       await tx.update(trabajoIa).set({ estado: "listo" }).where(eq(trabajoIa.id, t.id));
       await registrarAuditoria(tx, {

@@ -9,7 +9,7 @@ Refs: AGENTS.md (pruebas y calidad), SPEC.md (REQ), AI.md §5–6, ADR-0005. `np
 | Unit | Vitest | `src/domain` puro (precios, redondeo, IVA, días hábiles, mapeo a catálogo, validación de RUT, estados), `src/ai/esquema` y `src/ai/redaccion` | `src/**/*.test.ts` | ~150 |
 | Integración | Vitest + PostgreSQL local (BD `neltume_test`, recreada) | Route handlers con su permiso, transacciones, triggers de inmutabilidad, idempotencia, `audit_log`, importación del Excel mini, worker con el doble | `tests/integracion/**` | ~120 |
 | E2E | Playwright (`workers: 1`, `fullyParallel: false`, orden por nombre de archivo) | Recorrido de punta a punta en navegador, con estado compartido entre suites | `e2e/NN-*.spec.ts` | 17 suites |
-| Evaluación IA | `npm run eval:ia` (modelo real) | Set de AI.md §6 | `eval/` | 24+ casos; **no** forma parte de `npm test` |
+| Evaluación IA | `npm run eval:ia` (modelo real) | Set de AI.md §6, o N casos generados con semilla (`--generados`) | `eval/` | 62 casos fijos + generados; **no** forma parte de `npm test` |
 
 `npm test` ejecuta `lint → typecheck → unit → integración → e2e` en ese orden y se detiene al primer fallo. Si alguna capa falla, la suite no está verde.
 
@@ -95,7 +95,7 @@ U = unit, I = integración, E = E2E (número de suite). Todo REQ P1 tiene al men
 | COT-2.8, 2.9 | P1 | U `esquema`, `redaccion`; I `interpretacion.privacidad`; E 12 |
 | COT-2.10 | P1 | I chequeo `conPermiso`; E 11 |
 | COT-2.11, 2.12, 2.13 | P1 | U `mapear`, `modelos`, `accesorios`; I `alias`; E 16 |
-| COT-2.14, 2.15 | P1 | U `anclaje`; I `worker` (anclaje y corrección de omisiones); evaluación AI §6 |
+| COT-2.14, 2.15, 2.16 | P1 | U `anclaje`, `correcciones` (ADR-0013), `revision` (ADR-0014), `evaluacion` (emparejamiento y extras), `prompt`, `reintentos`, `casos-generados` (la lectura ideal pasa el anclaje); I `worker` (anclaje y corrección de omisiones); evaluación AI §6 |
 | COT-3.1, 3.2, 3.3, 3.4 | P1 | I `cotizacion.items`; E 07, 11 |
 | COT-4.1, 4.2, 4.3, 4.4, 4.5 | P1 | U `pdf.contenido`; I `aprobar`, `pdf`; E 08, 11 |
 | COT-5.1, 5.2, 5.3 | P1 | U igualdad de cálculo IA/manual; E 13 |

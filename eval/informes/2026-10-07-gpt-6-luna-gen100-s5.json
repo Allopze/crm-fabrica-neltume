@@ -1,0 +1,4323 @@
+{
+ "modelo": "gpt-6-luna",
+ "proveedor": "commandcode",
+ "fecha": "2026-10-07",
+ "promptHash": "acb16bf9dfa7",
+ "casosHash": "c1ae9c9cce8a",
+ "pipelineHash": "d259d49c64eb",
+ "criterios": [
+  {
+   "nombre": "Ítems exactos en casos claros (48)",
+   "valor": 1,
+   "meta": "≥ 90 %",
+   "cumple": true
+  },
+  {
+   "nombre": "Ítems exactos con accesorios (33)",
+   "valor": 0.9545454545454546,
+   "meta": "≥ 90 %",
+   "cumple": true
+  },
+  {
+   "nombre": "Ambiguos sin completar en silencio (19)",
+   "valor": 1,
+   "meta": "100 %",
+   "cumple": true
+  },
+  {
+   "nombre": "Latencia p90",
+   "valor": 4912,
+   "meta": "≤ 15 s",
+   "cumple": true
+  },
+  {
+   "nombre": "Costo medio por pedido",
+   "valor": 0.0003445590000000002,
+   "meta": "≤ US$ 0,10",
+   "cumple": true
+  }
+ ],
+ "aprobado": true,
+ "tokensMedios": {
+  "entrada": 2835,
+  "salida": 122
+ },
+ "resultados": [
+  {
+   "id": 1,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PILAST-M-6X4,5-P",
+     "cantidad": 10,
+     "referencia": null
+    },
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3177,
+   "costoUsd": 0.00043690000000000005,
+   "esperadosOk": 1,
+   "tokensEntrada": 2849,
+   "tokensSalida": 304,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 2,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "GUARD-L-12X4,5-N",
+     "cantidad": 12,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 8373,
+   "costoUsd": 0.0003392,
+   "esperadosOk": 1,
+   "tokensEntrada": 2837,
+   "tokensSalida": 111,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 3,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "TOLE-R-6-F",
+     "cantidad": 4,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2762,
+   "costoUsd": 0.0003355,
+   "esperadosOk": 1,
+   "tokensEntrada": 2835,
+   "tokensSalida": 104,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 4,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PUN-O-1-B",
+     "cantidad": 13,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3584,
+   "costoUsd": 0.0003325,
+   "esperadosOk": 1,
+   "tokensEntrada": 2825,
+   "tokensSalida": 100,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 5,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-L-2X6-H",
+     "cantidad": 7,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 15769,
+   "costoUsd": 0.0003304,
+   "esperadosOk": 1,
+   "tokensEntrada": 2829,
+   "tokensSalida": 95,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 6,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 6,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2362,
+   "costoUsd": 0.000336,
+   "esperadosOk": 1,
+   "tokensEntrada": 2840,
+   "tokensSalida": 104,
+   "ok": false,
+   "motivos": [
+    "falta ok PILAST-R-12X4,5-O×6",
+    "ítem sobrante: por_confirmar null×6"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 7,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "ANC-R-2-A",
+     "cantidad": 6,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "FUTA-M-6-E",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3375,
+   "costoUsd": 0.0003733,
+   "esperadosOk": 2,
+   "tokensEntrada": 2848,
+   "tokensSalida": 177,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 8,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "ENDO-M-6X2-K",
+     "cantidad": 7,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2477,
+   "costoUsd": 0.00033240000000000006,
+   "esperadosOk": 1,
+   "tokensEntrada": 2834,
+   "tokensSalida": 98,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 9,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PILAST-M-12X4,5-P",
+     "cantidad": 12,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3182,
+   "costoUsd": 0.0003373,
+   "esperadosOk": 1,
+   "tokensEntrada": 2838,
+   "tokensSalida": 107,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 10,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "FUTA-M-6-E",
+     "cantidad": 15,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2495,
+   "costoUsd": 0.0003335,
+   "esperadosOk": 1,
+   "tokensEntrada": 2830,
+   "tokensSalida": 101,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 11,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "TOLE-M-6-G",
+     "cantidad": 1,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "MAR-R-2X5-D",
+     "cantidad": 6,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2801,
+   "costoUsd": 0.000371,
+   "esperadosOk": 2,
+   "tokensEntrada": 2845,
+   "tokensSalida": 173,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 12,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "CHAN-O-5-A",
+     "cantidad": 11,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2795,
+   "costoUsd": 0.0003356,
+   "esperadosOk": 1,
+   "tokensEntrada": 2836,
+   "tokensSalida": 104,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 13,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X6-C",
+     "cantidad": 10,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2529,
+   "costoUsd": 0.000336,
+   "esperadosOk": 1,
+   "tokensEntrada": 2835,
+   "tokensSalida": 105,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 14,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "ENDO-M-6X4,5-N",
+     "cantidad": 14,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2623,
+   "costoUsd": 0.0003346,
+   "esperadosOk": 1,
+   "tokensEntrada": 2836,
+   "tokensSalida": 102,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 15,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X4-G",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3316,
+   "costoUsd": 0.0003357,
+   "esperadosOk": 1,
+   "tokensEntrada": 2832,
+   "tokensSalida": 105,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 16,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "TOLE-M-8-B",
+     "cantidad": 5,
+     "referencia": null
+    },
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 11,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3389,
+   "costoUsd": 0.0003727,
+   "esperadosOk": 1,
+   "tokensEntrada": 2847,
+   "tokensSalida": 176,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 17,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "COZ-O-3-A",
+     "cantidad": 19,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2752,
+   "costoUsd": 0.00033840000000000004,
+   "esperadosOk": 1,
+   "tokensEntrada": 2839,
+   "tokensSalida": 109,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 18,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 11,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2365,
+   "costoUsd": 0.000336,
+   "esperadosOk": 0,
+   "tokensEntrada": 2830,
+   "tokensSalida": 106,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 19,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PILAST-M-12X1-H",
+     "cantidad": 3,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "PAN-R-7-F",
+     "cantidad": 10,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2860,
+   "costoUsd": 0.0003727,
+   "esperadosOk": 2,
+   "tokensEntrada": 2847,
+   "tokensSalida": 176,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 20,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-R-2X4-A",
+     "cantidad": 16,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "RUP-L-1-G",
+     "cantidad": 4,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "FUY-O-1-E",
+     "cantidad": 7,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2773,
+   "costoUsd": 0.0004081,
+   "esperadosOk": 3,
+   "tokensEntrada": 2856,
+   "tokensSalida": 245,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 3
+  },
+  {
+   "id": 21,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "NEL-L-8-A",
+     "cantidad": 1,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "PAN-R-5-B",
+     "cantidad": 11,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2968,
+   "costoUsd": 0.0003723,
+   "esperadosOk": 2,
+   "tokensEntrada": 2848,
+   "tokensSalida": 175,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 22,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "ENC-M-7-G",
+     "cantidad": 6,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "CHAU-L-6-C",
+     "cantidad": 18,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3010,
+   "costoUsd": 0.0003707,
+   "esperadosOk": 2,
+   "tokensEntrada": 2842,
+   "tokensSalida": 173,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 23,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PAL-L-4-D",
+     "cantidad": 7,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "PT-O-2X5-D",
+     "cantidad": 14,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3159,
+   "costoUsd": 0.00037210000000000005,
+   "esperadosOk": 2,
+   "tokensEntrada": 2846,
+   "tokensSalida": 175,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 24,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 1,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2860,
+   "costoUsd": 0.00033580000000000003,
+   "esperadosOk": 0,
+   "tokensEntrada": 2833,
+   "tokensSalida": 105,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 25,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 9,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 4886,
+   "costoUsd": 0.0003323,
+   "esperadosOk": 0,
+   "tokensEntrada": 2823,
+   "tokensSalida": 100,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 26,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "COCH-L-6-G",
+     "cantidad": 5,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "ENDO-M-6X1-J",
+     "cantidad": 19,
+     "referencia": null
+    },
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 12,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2870,
+   "costoUsd": 0.0004081,
+   "esperadosOk": 2,
+   "tokensEntrada": 2856,
+   "tokensSalida": 245,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 27,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PAL-M-9-G",
+     "cantidad": 6,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2281,
+   "costoUsd": 0.0003347,
+   "esperadosOk": 1,
+   "tokensEntrada": 2832,
+   "tokensSalida": 103,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 28,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PUN-R-5-E",
+     "cantidad": 7,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 4063,
+   "costoUsd": 0.000337,
+   "esperadosOk": 1,
+   "tokensEntrada": 2835,
+   "tokensSalida": 107,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 29,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "TOLE-M-6-B",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2310,
+   "costoUsd": 0.0003325,
+   "esperadosOk": 1,
+   "tokensEntrada": 2830,
+   "tokensSalida": 99,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 30,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "ANC-R-7-B",
+     "cantidad": 10,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2505,
+   "costoUsd": 0.000335,
+   "esperadosOk": 1,
+   "tokensEntrada": 2835,
+   "tokensSalida": 103,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 31,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "LIP-R-4-E",
+     "cantidad": 2,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X4-B",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2766,
+   "costoUsd": 0.0003753,
+   "esperadosOk": 2,
+   "tokensEntrada": 2848,
+   "tokensSalida": 181,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 32,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-L-2X8-H",
+     "cantidad": 4,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2715,
+   "costoUsd": 0.0003328,
+   "esperadosOk": 1,
+   "tokensEntrada": 2833,
+   "tokensSalida": 99,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 33,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "HUIL-R-7-A",
+     "cantidad": 3,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2917,
+   "costoUsd": 0.0003368,
+   "esperadosOk": 1,
+   "tokensEntrada": 2838,
+   "tokensSalida": 106,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 34,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "BAK-R-5-F",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 15391,
+   "costoUsd": 0.00033130000000000003,
+   "esperadosOk": 1,
+   "tokensEntrada": 2828,
+   "tokensSalida": 97,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 35,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 19,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2862,
+   "costoUsd": 0.0003334,
+   "esperadosOk": 0,
+   "tokensEntrada": 2824,
+   "tokensSalida": 102,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 36,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 1,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2715,
+   "costoUsd": 0.00033640000000000005,
+   "esperadosOk": 0,
+   "tokensEntrada": 2834,
+   "tokensSalida": 106,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 37,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "HUIL-R-2-F",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2850,
+   "costoUsd": 0.0003374,
+   "esperadosOk": 1,
+   "tokensEntrada": 2834,
+   "tokensSalida": 108,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 38,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X6-G",
+     "cantidad": 4,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3214,
+   "costoUsd": 0.00033640000000000005,
+   "esperadosOk": 1,
+   "tokensEntrada": 2834,
+   "tokensSalida": 106,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 39,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "CHAN-O-1-D",
+     "cantidad": 8,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 4912,
+   "costoUsd": 0.0003356,
+   "esperadosOk": 1,
+   "tokensEntrada": 2831,
+   "tokensSalida": 105,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 40,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "BAK-R-8-D",
+     "cantidad": 3,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 5225,
+   "costoUsd": 0.0003307,
+   "esperadosOk": 1,
+   "tokensEntrada": 2827,
+   "tokensSalida": 96,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 41,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PT-R-2X5-C",
+     "cantidad": 6,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3863,
+   "costoUsd": 0.0003345,
+   "esperadosOk": 1,
+   "tokensEntrada": 2830,
+   "tokensSalida": 103,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 42,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PUN-R-1-C",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2486,
+   "costoUsd": 0.0003323,
+   "esperadosOk": 1,
+   "tokensEntrada": 2828,
+   "tokensSalida": 99,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 43,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "LLAG-M-1-A",
+     "cantidad": 9,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2543,
+   "costoUsd": 0.00033380000000000004,
+   "esperadosOk": 1,
+   "tokensEntrada": 2833,
+   "tokensSalida": 101,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 44,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 10,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2784,
+   "costoUsd": 0.0003356,
+   "esperadosOk": 0,
+   "tokensEntrada": 2831,
+   "tokensSalida": 105,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 45,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "COCH-O-5-F",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2411,
+   "costoUsd": 0.0003366,
+   "esperadosOk": 1,
+   "tokensEntrada": 2831,
+   "tokensSalida": 107,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 46,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "HUIL-L-8-F",
+     "cantidad": 5,
+     "referencia": null
+    },
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 19,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2605,
+   "costoUsd": 0.0003767,
+   "esperadosOk": 1,
+   "tokensEntrada": 2852,
+   "tokensSalida": 183,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 47,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PT-R-2X5-C",
+     "cantidad": 10,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2265,
+   "costoUsd": 0.00033580000000000003,
+   "esperadosOk": 1,
+   "tokensEntrada": 2833,
+   "tokensSalida": 105,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 48,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "ENSE-M-4-B",
+     "cantidad": 4,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "MAR-L-2X4-F",
+     "cantidad": 8,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3122,
+   "costoUsd": 0.0003733,
+   "esperadosOk": 2,
+   "tokensEntrada": 2848,
+   "tokensSalida": 177,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 49,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "GUARD-L-12X1-I",
+     "cantidad": 7,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3225,
+   "costoUsd": 0.00033590000000000003,
+   "esperadosOk": 1,
+   "tokensEntrada": 2834,
+   "tokensSalida": 105,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 50,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "HUEL-M-1-B",
+     "cantidad": 6,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2449,
+   "costoUsd": 0.0003323,
+   "esperadosOk": 1,
+   "tokensEntrada": 2828,
+   "tokensSalida": 99,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 51,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "RUP-L-9-A",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2403,
+   "costoUsd": 0.00033519999999999996,
+   "esperadosOk": 1,
+   "tokensEntrada": 2832,
+   "tokensSalida": 104,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 52,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "TOLT-L-9-G",
+     "cantidad": 6,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "ANC-O-9-D",
+     "cantidad": 9,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2715,
+   "costoUsd": 0.0003747,
+   "esperadosOk": 2,
+   "tokensEntrada": 2847,
+   "tokensSalida": 180,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 53,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PT-L-2X5-B",
+     "cantidad": 8,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2634,
+   "costoUsd": 0.0003342,
+   "esperadosOk": 1,
+   "tokensEntrada": 2832,
+   "tokensSalida": 102,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 54,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 5,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2485,
+   "costoUsd": 0.00033440000000000005,
+   "esperadosOk": 0,
+   "tokensEntrada": 2829,
+   "tokensSalida": 103,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 55,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "GUARD-O-12X4,5-O",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2397,
+   "costoUsd": 0.00033860000000000004,
+   "esperadosOk": 1,
+   "tokensEntrada": 2836,
+   "tokensSalida": 110,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 56,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 6,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2519,
+   "costoUsd": 0.000332,
+   "esperadosOk": 0,
+   "tokensEntrada": 2825,
+   "tokensSalida": 99,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 57,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "FUY-O-6-G",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2357,
+   "costoUsd": 0.000335,
+   "esperadosOk": 1,
+   "tokensEntrada": 2830,
+   "tokensSalida": 104,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 58,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 7,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2762,
+   "costoUsd": 0.00033380000000000004,
+   "esperadosOk": 0,
+   "tokensEntrada": 2828,
+   "tokensSalida": 102,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 59,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 8,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 5397,
+   "costoUsd": 0.0003335,
+   "esperadosOk": 1,
+   "tokensEntrada": 2835,
+   "tokensSalida": 100,
+   "ok": false,
+   "motivos": [
+    "falta ok PILAST-O-6X1-H×8",
+    "ítem sobrante: por_confirmar null×8"
+   ],
+   "aciertos": 0
+  },
+  {
+   "id": 60,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "ENDO-M-12X4,5-N",
+     "cantidad": 12,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2898,
+   "costoUsd": 0.00033580000000000003,
+   "esperadosOk": 1,
+   "tokensEntrada": 2833,
+   "tokensSalida": 105,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 61,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 3,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 5051,
+   "costoUsd": 0.0003318,
+   "esperadosOk": 0,
+   "tokensEntrada": 2823,
+   "tokensSalida": 99,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 62,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 6,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2837,
+   "costoUsd": 0.000332,
+   "esperadosOk": 0,
+   "tokensEntrada": 2825,
+   "tokensSalida": 99,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 63,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "ENC-O-8-D",
+     "cantidad": 19,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2766,
+   "costoUsd": 0.00033769999999999997,
+   "esperadosOk": 1,
+   "tokensEntrada": 2837,
+   "tokensSalida": 108,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 64,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 16,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2712,
+   "costoUsd": 0.0003328,
+   "esperadosOk": 0,
+   "tokensEntrada": 2828,
+   "tokensSalida": 100,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 65,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "COCH-M-9-C",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2184,
+   "costoUsd": 0.0003356,
+   "esperadosOk": 1,
+   "tokensEntrada": 2836,
+   "tokensSalida": 104,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 66,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "HUER-R-6-E",
+     "cantidad": 5,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3550,
+   "costoUsd": 0.00033640000000000005,
+   "esperadosOk": 1,
+   "tokensEntrada": 2834,
+   "tokensSalida": 106,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 67,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "LLAG-M-9-A",
+     "cantidad": 17,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2302,
+   "costoUsd": 0.00033240000000000006,
+   "esperadosOk": 1,
+   "tokensEntrada": 2829,
+   "tokensSalida": 99,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 68,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "MOL-O-2-C",
+     "cantidad": 16,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3190,
+   "costoUsd": 0.00033519999999999996,
+   "esperadosOk": 1,
+   "tokensEntrada": 2832,
+   "tokensSalida": 104,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 69,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "ANC-L-4-D",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3391,
+   "costoUsd": 0.0003323,
+   "esperadosOk": 1,
+   "tokensEntrada": 2828,
+   "tokensSalida": 99,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 70,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "ENDO-L-12X1-H",
+     "cantidad": 6,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2950,
+   "costoUsd": 0.0003351,
+   "esperadosOk": 1,
+   "tokensEntrada": 2836,
+   "tokensSalida": 103,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 71,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "HUIL-M-8-E",
+     "cantidad": 19,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 6108,
+   "costoUsd": 0.00033580000000000003,
+   "esperadosOk": 1,
+   "tokensEntrada": 2833,
+   "tokensSalida": 105,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 72,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PET-M-4-D",
+     "cantidad": 7,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "PAL-L-7-A",
+     "cantidad": 9,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2589,
+   "costoUsd": 0.0003711,
+   "esperadosOk": 2,
+   "tokensEntrada": 2846,
+   "tokensSalida": 173,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 73,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "GUARD-R-12X2-K",
+     "cantidad": 19,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2345,
+   "costoUsd": 0.00033440000000000005,
+   "esperadosOk": 1,
+   "tokensEntrada": 2834,
+   "tokensSalida": 102,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 74,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "LAN-L-2-B",
+     "cantidad": 5,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2875,
+   "costoUsd": 0.000331,
+   "esperadosOk": 1,
+   "tokensEntrada": 2825,
+   "tokensSalida": 97,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 75,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "FUTR-R-8-A",
+     "cantidad": 14,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2285,
+   "costoUsd": 0.000334,
+   "esperadosOk": 1,
+   "tokensEntrada": 2830,
+   "tokensSalida": 102,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 76,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X5-D",
+     "cantidad": 8,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2186,
+   "costoUsd": 0.000337,
+   "esperadosOk": 1,
+   "tokensEntrada": 2835,
+   "tokensSalida": 107,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 77,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "RUP-M-1-G",
+     "cantidad": 3,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2700,
+   "costoUsd": 0.00033580000000000003,
+   "esperadosOk": 1,
+   "tokensEntrada": 2833,
+   "tokensSalida": 105,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 78,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "HUEL-O-4-F",
+     "cantidad": 14,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "MAL-R-9-E",
+     "cantidad": 10,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2487,
+   "costoUsd": 0.000378,
+   "esperadosOk": 2,
+   "tokensEntrada": 2850,
+   "tokensSalida": 186,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 79,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "HUEL-L-2-F",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2700,
+   "costoUsd": 0.00033840000000000004,
+   "esperadosOk": 1,
+   "tokensEntrada": 2839,
+   "tokensSalida": 109,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 80,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "GUARD-L-12X4,5-O",
+     "cantidad": 11,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2594,
+   "costoUsd": 0.0003362,
+   "esperadosOk": 1,
+   "tokensEntrada": 2837,
+   "tokensSalida": 105,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 81,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "LLAG-O-6-B",
+     "cantidad": 6,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2250,
+   "costoUsd": 0.0003378,
+   "esperadosOk": 1,
+   "tokensEntrada": 2833,
+   "tokensSalida": 109,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 82,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "LLAG-M-5-C",
+     "cantidad": 5,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2509,
+   "costoUsd": 0.0003366,
+   "esperadosOk": 1,
+   "tokensEntrada": 2836,
+   "tokensSalida": 106,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 83,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PILAST-M-6X1-I",
+     "cantidad": 6,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2909,
+   "costoUsd": 0.0003318,
+   "esperadosOk": 1,
+   "tokensEntrada": 2833,
+   "tokensSalida": 97,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 84,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "FUTR-M-9-B",
+     "cantidad": 16,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2498,
+   "costoUsd": 0.0003333,
+   "esperadosOk": 1,
+   "tokensEntrada": 2828,
+   "tokensSalida": 101,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 85,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "ENSE-M-3-G",
+     "cantidad": 7,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 5506,
+   "costoUsd": 0.0003346,
+   "esperadosOk": 1,
+   "tokensEntrada": 2831,
+   "tokensSalida": 103,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 86,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "RIN-M-5-D",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3935,
+   "costoUsd": 0.0003323,
+   "esperadosOk": 1,
+   "tokensEntrada": 2828,
+   "tokensSalida": 99,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 87,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "HUER-L-4-G",
+     "cantidad": 1,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3444,
+   "costoUsd": 0.0003333,
+   "esperadosOk": 1,
+   "tokensEntrada": 2828,
+   "tokensSalida": 101,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 88,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 6,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2651,
+   "costoUsd": 0.00033160000000000004,
+   "esperadosOk": 0,
+   "tokensEntrada": 2826,
+   "tokensSalida": 98,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 89,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "CAL-M-5-G",
+     "cantidad": 10,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3029,
+   "costoUsd": 0.0003346,
+   "esperadosOk": 1,
+   "tokensEntrada": 2831,
+   "tokensSalida": 103,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 90,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "ENDO-R-6X4,5-N",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2203,
+   "costoUsd": 0.00033830000000000004,
+   "esperadosOk": 1,
+   "tokensEntrada": 2838,
+   "tokensSalida": 109,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 91,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PT-O-2X8-C",
+     "cantidad": 10,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2656,
+   "costoUsd": 0.0003356,
+   "esperadosOk": 1,
+   "tokensEntrada": 2831,
+   "tokensSalida": 105,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 92,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "MAR-R-2X4-B",
+     "cantidad": 18,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "YEL-L-7-D",
+     "cantidad": 12,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "RAN-L-5-B",
+     "cantidad": 10,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3364,
+   "costoUsd": 0.0004082,
+   "esperadosOk": 3,
+   "tokensEntrada": 2862,
+   "tokensSalida": 244,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 3
+  },
+  {
+   "id": 93,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "LIP-O-7-D",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 2428,
+   "costoUsd": 0.0003368,
+   "esperadosOk": 1,
+   "tokensEntrada": 2833,
+   "tokensSalida": 107,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 94,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 1,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 15247,
+   "costoUsd": 0.00033810000000000003,
+   "esperadosOk": 0,
+   "tokensEntrada": 2831,
+   "tokensSalida": 110,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  },
+  {
+   "id": 95,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "FUTA-O-8-F",
+     "cantidad": 2,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "TOLT-L-1-G",
+     "cantidad": 20,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3159,
+   "costoUsd": 0.0003751,
+   "esperadosOk": 2,
+   "tokensEntrada": 2846,
+   "tokensSalida": 181,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 96,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PT-R-2X8-A",
+     "cantidad": 5,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "MAR-O-2X5-C",
+     "cantidad": 12,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3013,
+   "costoUsd": 0.0003746,
+   "esperadosOk": 2,
+   "tokensEntrada": 2851,
+   "tokensSalida": 179,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 97,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "NEL-M-1-F",
+     "cantidad": 4,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "RUP-L-8-F",
+     "cantidad": 15,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 9151,
+   "costoUsd": 0.000371,
+   "esperadosOk": 2,
+   "tokensEntrada": 2845,
+   "tokensSalida": 173,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 98,
+   "grupo": "claro",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "MOL-M-6-A",
+     "cantidad": 3,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 4287,
+   "costoUsd": 0.0003331,
+   "esperadosOk": 1,
+   "tokensEntrada": 2831,
+   "tokensSalida": 100,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 1
+  },
+  {
+   "id": 99,
+   "grupo": "accesorio",
+   "obtenidos": [
+    {
+     "estado": "ok",
+     "codigo": "PIR-R-4-C",
+     "cantidad": 19,
+     "referencia": null
+    },
+    {
+     "estado": "ok",
+     "codigo": "MAR-M-2X4-F",
+     "cantidad": 2,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3019,
+   "costoUsd": 0.0003752,
+   "esperadosOk": 2,
+   "tokensEntrada": 2852,
+   "tokensSalida": 180,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 2
+  },
+  {
+   "id": 100,
+   "grupo": "ambiguo",
+   "obtenidos": [
+    {
+     "estado": "por_confirmar",
+     "codigo": null,
+     "cantidad": 4,
+     "referencia": null
+    }
+   ],
+   "latenciaMs": 3739,
+   "costoUsd": 0.0003326,
+   "esperadosOk": 0,
+   "tokensEntrada": 2826,
+   "tokensSalida": 100,
+   "ok": true,
+   "motivos": [],
+   "aciertos": 0
+  }
+ ],
+ "propuestas": {
+  "1": {
+   "items": [
+    {
+     "texto_fuente": "10 pilastras mara 6x4,5 cm de 3",
+     "tipo": "pilastra",
+     "modelo": null,
+     "madera": "MARA",
+     "ancho_m": null,
+     "alto_m": 3,
+     "medida_accesorio": "6x4,5 cm",
+     "cantidad": 10,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "un par de Huerquehue mara de 130",
+     "tipo": "puerta",
+     "modelo": "HUERQUEHUE",
+     "madera": "MARA",
+     "ancho_m": 1.3,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la altura."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "2": {
+   "items": [
+    {
+     "texto_fuente": "una docena de guardapolvos lenga 12x4,5 cm de 1,00 m",
+     "tipo": "guardapolvo",
+     "modelo": null,
+     "madera": "LENGA",
+     "ancho_m": null,
+     "alto_m": 1,
+     "medida_accesorio": "12x4,5 cm",
+     "cantidad": 12,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "3": {
+   "items": [
+    {
+     "texto_fuente": "cuatro puertas toledo en rauli de 1100x2500 mm",
+     "tipo": "puerta",
+     "modelo": "TOLEDO",
+     "madera": "RAULI",
+     "ancho_m": 1.1,
+     "alto_m": 2.5,
+     "medida_accesorio": null,
+     "cantidad": 4,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "4": {
+   "items": [
+    {
+     "texto_fuente": "13 punir oregon 60 por 210",
+     "tipo": "puerta",
+     "modelo": "PUNIR",
+     "madera": "PINO OREGON",
+     "ancho_m": 0.6,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 13,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "5": {
+   "items": [
+    {
+     "texto_fuente": "7 marcos lenga 2x6 de 3",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "LENGA",
+     "ancho_m": null,
+     "alto_m": 3,
+     "medida_accesorio": "2x6",
+     "cantidad": 7,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "6": {
+   "items": [
+    {
+     "texto_fuente": "6 pilastras rauli 12x4,5 cm de 2,00 m",
+     "tipo": "pilastra",
+     "modelo": null,
+     "madera": null,
+     "ancho_m": null,
+     "alto_m": 2,
+     "medida_accesorio": "12x4,5 cm",
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "7": {
+   "items": [
+    {
+     "texto_fuente": "seis Ancacomoe rauli 70x200",
+     "tipo": "puerta",
+     "modelo": "ANCACOMOE",
+     "madera": "RAULI",
+     "ancho_m": 0.7,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "2 futaleufu de 1,10 por 2,40 en mara",
+     "tipo": "puerta",
+     "modelo": "FUTALEUFU",
+     "madera": "MARA",
+     "ancho_m": 1.1,
+     "alto_m": 2.4,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "8": {
+   "items": [
+    {
+     "texto_fuente": "7 endolados mara 6x2 cm de 1",
+     "tipo": "endolado",
+     "modelo": null,
+     "madera": "MARA",
+     "ancho_m": null,
+     "alto_m": 1,
+     "medida_accesorio": "6x2 cm",
+     "cantidad": 7,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "9": {
+   "items": [
+    {
+     "texto_fuente": "una docena de pilastras mara 12x4,5 cm de 3,00 m",
+     "tipo": "pilastra",
+     "modelo": null,
+     "madera": "MARA",
+     "ancho_m": null,
+     "alto_m": 3,
+     "medida_accesorio": "12x4,5 cm",
+     "cantidad": 12,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "10": {
+   "items": [
+    {
+     "texto_fuente": "15 puertas Futaleufu en mara de 110x240",
+     "tipo": "puerta",
+     "modelo": "FUTALEUFU",
+     "madera": "MARA",
+     "ancho_m": 1.1,
+     "alto_m": 2.4,
+     "medida_accesorio": null,
+     "cantidad": 15,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "11": {
+   "items": [
+    {
+     "texto_fuente": "una puerta Toledo en mara de 1100x2600 mm",
+     "tipo": "puerta",
+     "modelo": "TOLEDO",
+     "madera": "MARA",
+     "ancho_m": 1.1,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 1,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "6 marcos de 5 en rauli de 2,30 m",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "RAULI",
+     "ancho_m": null,
+     "alto_m": 2.3,
+     "medida_accesorio": "2x5",
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "12": {
+   "items": [
+    {
+     "texto_fuente": "11 puertas Chan Chan en pino oregón de 1000x2000 mm",
+     "tipo": "puerta",
+     "modelo": "CHAN CHAN",
+     "madera": "PINO OREGON",
+     "ancho_m": 1,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 11,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "13": {
+   "items": [
+    {
+     "texto_fuente": "10 marcos de 6 pulgadas en oregón de 2,20 m",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "PINO OREGON",
+     "ancho_m": null,
+     "alto_m": 2.2,
+     "medida_accesorio": "2x6",
+     "cantidad": 10,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "14": {
+   "items": [
+    {
+     "texto_fuente": "14 endolados mara 6x4,5 cm de 1",
+     "tipo": "endolado",
+     "modelo": null,
+     "madera": "MARA",
+     "ancho_m": null,
+     "alto_m": 1,
+     "medida_accesorio": "6x4,5 cm",
+     "cantidad": 14,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "15": {
+   "items": [
+    {
+     "texto_fuente": "2 marcos pino oregón 2x4 de 2,60",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "PINO OREGON",
+     "ancho_m": null,
+     "alto_m": 2.6,
+     "medida_accesorio": "2x4",
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "16": {
+   "items": [
+    {
+     "texto_fuente": "5 puertas toledo en mara de 1,30x2,10 m",
+     "tipo": "puerta",
+     "modelo": "TOLEDO",
+     "madera": "MARA",
+     "ancho_m": 1.3,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 5,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "11 guardapolvos 12x4,5 cm de 3",
+     "tipo": "guardapolvo",
+     "modelo": null,
+     "madera": null,
+     "ancho_m": null,
+     "alto_m": 3,
+     "medida_accesorio": "12x4,5",
+     "cantidad": 11,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "17": {
+   "items": [
+    {
+     "texto_fuente": "19 puertas Coz Coz en oregon de 0,80x2,00",
+     "tipo": "puerta",
+     "modelo": "COZ COZ",
+     "madera": "PINO OREGON",
+     "ancho_m": 0.8,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 19,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "18": {
+   "items": [
+    {
+     "texto_fuente": "11 puertas Futaleufu en raulí de 130",
+     "tipo": "puerta",
+     "modelo": "FUTALEUFU",
+     "madera": "RAULI",
+     "ancho_m": 1.3,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 11,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la altura."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "19": {
+   "items": [
+    {
+     "texto_fuente": "3 pilastras mara 12x1 cm de 1",
+     "tipo": "pilastra",
+     "modelo": null,
+     "madera": "MARA",
+     "ancho_m": null,
+     "alto_m": 1,
+     "medida_accesorio": "12x1 cm",
+     "cantidad": 3,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "10 Panguipulli de 1200x2500 mm en raulí",
+     "tipo": "puerta",
+     "modelo": "PANGUIPULLI",
+     "madera": "RAULI",
+     "ancho_m": 1.2,
+     "alto_m": 2.5,
+     "medida_accesorio": null,
+     "cantidad": 10,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "20": {
+   "items": [
+    {
+     "texto_fuente": "16 marcos de 4 pulgadas en raulí de 2,00 m",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "RAULI",
+     "ancho_m": null,
+     "alto_m": 2,
+     "medida_accesorio": "2x4",
+     "cantidad": 16,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "4 Rupanco de 60x260 en lenga",
+     "tipo": "puerta",
+     "modelo": "RUPANCO",
+     "madera": "LENGA",
+     "ancho_m": 0.6,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 4,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "siete fuy de 60x240 en oregon",
+     "tipo": "puerta",
+     "modelo": "FUY",
+     "madera": "PINO OREGON",
+     "ancho_m": 0.6,
+     "alto_m": 2.4,
+     "medida_accesorio": null,
+     "cantidad": 7,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "21": {
+   "items": [
+    {
+     "texto_fuente": "una Neltume lenga 130x200",
+     "tipo": "puerta",
+     "modelo": "NELTUME",
+     "madera": "LENGA",
+     "ancho_m": 1.3,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 1,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "11 puertas Panguipulli en raulí de 1,00x2,10 m",
+     "tipo": "puerta",
+     "modelo": "PANGUIPULLI",
+     "madera": "RAULI",
+     "ancho_m": 1,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 11,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "22": {
+   "items": [
+    {
+     "texto_fuente": "6 Enco de 1,20x2,60 en mara",
+     "tipo": "puerta",
+     "modelo": "ENCO",
+     "madera": "MARA",
+     "ancho_m": 1.2,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "18 puertas Chauquen en lenga de 110 por 220",
+     "tipo": "puerta",
+     "modelo": "CHAUQUEN",
+     "madera": "LENGA",
+     "ancho_m": 1.1,
+     "alto_m": 2.2,
+     "medida_accesorio": null,
+     "cantidad": 18,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "23": {
+   "items": [
+    {
+     "texto_fuente": "7 palena lenga 95 por 230",
+     "tipo": "puerta",
+     "modelo": "PALENA",
+     "madera": "LENGA",
+     "ancho_m": 0.95,
+     "alto_m": 2.3,
+     "medida_accesorio": null,
+     "cantidad": 7,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "14 piezas T 2x5 pino oregón de 2,30",
+     "tipo": "piezas_t",
+     "modelo": null,
+     "madera": "PINO OREGON",
+     "ancho_m": null,
+     "alto_m": 2.3,
+     "medida_accesorio": "2x5",
+     "cantidad": 14,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "24": {
+   "items": [
+    {
+     "texto_fuente": "1 guardapolvo rauli 6x2 cm",
+     "tipo": "guardapolvo",
+     "modelo": null,
+     "madera": "RAULI",
+     "ancho_m": null,
+     "alto_m": null,
+     "medida_accesorio": "6x2 cm",
+     "cantidad": 1,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta el largo."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "25": {
+   "items": [
+    {
+     "texto_fuente": "nueve punir 130x260",
+     "tipo": "puerta",
+     "modelo": "PUNIR",
+     "madera": null,
+     "ancho_m": 1.3,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 9,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la madera."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "26": {
+   "items": [
+    {
+     "texto_fuente": "cinco puertas Cochamo en lenga de 110x260",
+     "tipo": "puerta",
+     "modelo": "COCHAMO",
+     "madera": "LENGA",
+     "ancho_m": 1.1,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 5,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "19 endolados mara 6x1 cm de 3,00 m",
+     "tipo": "endolado",
+     "modelo": null,
+     "madera": "MARA",
+     "ancho_m": null,
+     "alto_m": 3,
+     "medida_accesorio": "6x1",
+     "cantidad": 19,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "12 Neltume lenga de 105",
+     "tipo": "puerta",
+     "modelo": "NELTUME",
+     "madera": "LENGA",
+     "ancho_m": 1.05,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 12,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta el alto."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "27": {
+   "items": [
+    {
+     "texto_fuente": "seis Palena de 1,40 por 2,60 m en mara",
+     "tipo": "puerta",
+     "modelo": "PALENA",
+     "madera": "MARA",
+     "ancho_m": 1.4,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "28": {
+   "items": [
+    {
+     "texto_fuente": "siete puertas Punir en raulí de 1,05x2,40 m",
+     "tipo": "puerta",
+     "modelo": "PUNIR",
+     "madera": "RAULI",
+     "ancho_m": 1.05,
+     "alto_m": 2.4,
+     "medida_accesorio": null,
+     "cantidad": 7,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "29": {
+   "items": [
+    {
+     "texto_fuente": "2 Toledo mara 1,15 por 2,10",
+     "tipo": "puerta",
+     "modelo": "TOLEDO",
+     "madera": "MARA",
+     "ancho_m": 1.15,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "30": {
+   "items": [
+    {
+     "texto_fuente": "10 puertas ancacomoe en rauli de 120 por 210",
+     "tipo": "puerta",
+     "modelo": "ANCACOMOE",
+     "madera": "RAULI",
+     "ancho_m": 1.2,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 10,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "31": {
+   "items": [
+    {
+     "texto_fuente": "2 puertas Lipinza en raulí de 950x2400 mm",
+     "tipo": "puerta",
+     "modelo": "LIPINZA",
+     "madera": "RAULI",
+     "ancho_m": 0.95,
+     "alto_m": 2.4,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "un par de marcos pino 2x4 de 2,10 m",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "PINO OREGON",
+     "ancho_m": null,
+     "alto_m": 2.1,
+     "medida_accesorio": "2x4",
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "32": {
+   "items": [
+    {
+     "texto_fuente": "4 marcos de 8 pulgadas en lenga de 3,00 m",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "LENGA",
+     "ancho_m": null,
+     "alto_m": 3,
+     "medida_accesorio": "2x8",
+     "cantidad": 4,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "33": {
+   "items": [
+    {
+     "texto_fuente": "3 puertas Huilo Huilo en raulí de 125x200",
+     "tipo": "puerta",
+     "modelo": "HUILO HUILO",
+     "madera": "RAULI",
+     "ancho_m": 1.25,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 3,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "34": {
+   "items": [
+    {
+     "texto_fuente": "2 Baker de 105x250 en rauli",
+     "tipo": "puerta",
+     "modelo": "BAKER",
+     "madera": "RAULI",
+     "ancho_m": 1.05,
+     "alto_m": 2.5,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "35": {
+   "items": [
+    {
+     "texto_fuente": "19 puertas Chauquen de 130x210",
+     "tipo": "puerta",
+     "modelo": "CHAUQUEN",
+     "madera": null,
+     "ancho_m": 1.3,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 19,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la madera."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "36": {
+   "items": [
+    {
+     "texto_fuente": "pilastras mara 6x4,5 cm de 1",
+     "tipo": "pilastra",
+     "modelo": null,
+     "madera": "MARA",
+     "ancho_m": null,
+     "alto_m": 1,
+     "medida_accesorio": "6x4,5 cm",
+     "cantidad": null,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la cantidad."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "37": {
+   "items": [
+    {
+     "texto_fuente": "dos Huilo Huilo de 750x2500 mm en rauli",
+     "tipo": "puerta",
+     "modelo": "HUILO HUILO",
+     "madera": "RAULI",
+     "ancho_m": 0.75,
+     "alto_m": 2.5,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "38": {
+   "items": [
+    {
+     "texto_fuente": "cuatro juegos de marco 2x6 oregón de 2,60 m",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "PINO OREGON",
+     "ancho_m": null,
+     "alto_m": 2.6,
+     "medida_accesorio": "2x6",
+     "cantidad": 4,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "39": {
+   "items": [
+    {
+     "texto_fuente": "ocho chan chan de 65x230 en pino oregón",
+     "tipo": "puerta",
+     "modelo": "CHAN CHAN",
+     "madera": "PINO OREGON",
+     "ancho_m": 0.65,
+     "alto_m": 2.3,
+     "medida_accesorio": null,
+     "cantidad": 8,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "40": {
+   "items": [
+    {
+     "texto_fuente": "3 Baker rauli 130 por 230",
+     "tipo": "puerta",
+     "modelo": "BAKER",
+     "madera": "RAULI",
+     "ancho_m": 1.3,
+     "alto_m": 2.3,
+     "medida_accesorio": null,
+     "cantidad": 3,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "41": {
+   "items": [
+    {
+     "texto_fuente": "6 piezas T 2x5 raulí de 2,20",
+     "tipo": "piezas_t",
+     "modelo": null,
+     "madera": "RAULI",
+     "ancho_m": null,
+     "alto_m": 2.2,
+     "medida_accesorio": "2x5",
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "42": {
+   "items": [
+    {
+     "texto_fuente": "dos Punir de 60x220 en rauli",
+     "tipo": "puerta",
+     "modelo": "PUNIR",
+     "madera": "RAULI",
+     "ancho_m": 0.6,
+     "alto_m": 2.2,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "43": {
+   "items": [
+    {
+     "texto_fuente": "9 puertas Los Lagos en mara de 0,60x2,00",
+     "tipo": "puerta",
+     "modelo": "LOS LAGOS",
+     "madera": "MARA",
+     "ancho_m": 0.6,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 9,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "44": {
+   "items": [
+    {
+     "texto_fuente": "diez puertas Lipinza en raulí de 135",
+     "tipo": "puerta",
+     "modelo": "LIPINZA",
+     "madera": "RAULI",
+     "ancho_m": 1.35,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 10,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la altura."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "45": {
+   "items": [
+    {
+     "texto_fuente": "un par de Cochamo de 1050x2500 mm en oregon",
+     "tipo": "puerta",
+     "modelo": "COCHAMO",
+     "madera": "PINO OREGON",
+     "ancho_m": 1.05,
+     "alto_m": 2.5,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "46": {
+   "items": [
+    {
+     "texto_fuente": "5 puertas Huilo Huilo en lenga de 1,30 por 2,50",
+     "tipo": "puerta",
+     "modelo": "HUILO HUILO",
+     "madera": "LENGA",
+     "ancho_m": 1.3,
+     "alto_m": 2.5,
+     "medida_accesorio": null,
+     "cantidad": 5,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "19 Los Lagos 700x2000 mm",
+     "tipo": "puerta",
+     "modelo": "LOS LAGOS",
+     "madera": null,
+     "ancho_m": 0.7,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 19,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la madera."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "47": {
+   "items": [
+    {
+     "texto_fuente": "diez piezas T 2x5 raulí de 2,20 m",
+     "tipo": "piezas_t",
+     "modelo": null,
+     "madera": "RAULI",
+     "ancho_m": null,
+     "alto_m": 2.2,
+     "medida_accesorio": "2x5",
+     "cantidad": 10,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "48": {
+   "items": [
+    {
+     "texto_fuente": "cuatro Ensenada de 0,90 por 2,10 m en mara",
+     "tipo": "puerta",
+     "modelo": "ENSENADA",
+     "madera": "MARA",
+     "ancho_m": 0.9,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 4,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "ocho marcos lenga 2x4 de 2,50",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "LENGA",
+     "ancho_m": null,
+     "alto_m": 2.5,
+     "medida_accesorio": "2x4",
+     "cantidad": 8,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "49": {
+   "items": [
+    {
+     "texto_fuente": "siete guardapolvos lenga 12x1 cm de 2,00 m",
+     "tipo": "guardapolvo",
+     "modelo": null,
+     "madera": "LENGA",
+     "ancho_m": null,
+     "alto_m": 2,
+     "medida_accesorio": "12x1 cm",
+     "cantidad": 7,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "50": {
+   "items": [
+    {
+     "texto_fuente": "6 Huellahue mara 60x210",
+     "tipo": "puerta",
+     "modelo": "HUELLAHUE",
+     "madera": "MARA",
+     "ancho_m": 0.6,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "51": {
+   "items": [
+    {
+     "texto_fuente": "un par de rupanco de 1400x2000 mm en lenga",
+     "tipo": "puerta",
+     "modelo": "RUPANCO",
+     "madera": "LENGA",
+     "ancho_m": 1.4,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "52": {
+   "items": [
+    {
+     "texto_fuente": "seis puertas Tolten en lenga de 1,45x2,60",
+     "tipo": "puerta",
+     "modelo": "TOLTEN",
+     "madera": "LENGA",
+     "ancho_m": 1.45,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "9 Ancacomoe de 140 por 230 en oregon",
+     "tipo": "puerta",
+     "modelo": "ANCACOMOE",
+     "madera": "PINO OREGON",
+     "ancho_m": 1.4,
+     "alto_m": 2.3,
+     "medida_accesorio": null,
+     "cantidad": 9,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "53": {
+   "items": [
+    {
+     "texto_fuente": "8 piezas T 2x5 lenga de 2,10 m",
+     "tipo": "piezas_t",
+     "modelo": null,
+     "madera": "LENGA",
+     "ancho_m": null,
+     "alto_m": 2.1,
+     "medida_accesorio": "2x5",
+     "cantidad": 8,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "54": {
+   "items": [
+    {
+     "texto_fuente": "5 endolados rauli 6x1 cm",
+     "tipo": "endolado",
+     "modelo": null,
+     "madera": "RAULI",
+     "ancho_m": null,
+     "alto_m": null,
+     "medida_accesorio": "6x1 cm",
+     "cantidad": 5,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta el largo."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "55": {
+   "items": [
+    {
+     "texto_fuente": "un par de guardapolvos oregon 12x4,5 cm de 2",
+     "tipo": "guardapolvo",
+     "modelo": null,
+     "madera": "PINO OREGON",
+     "ancho_m": null,
+     "alto_m": 2,
+     "medida_accesorio": "12x4,5 cm",
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "56": {
+   "items": [
+    {
+     "texto_fuente": "6 Ranco lenga de 85",
+     "tipo": "puerta",
+     "modelo": "RANCO",
+     "madera": "LENGA",
+     "ancho_m": 0.85,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la altura."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "57": {
+   "items": [
+    {
+     "texto_fuente": "un par de Fuy de 110 por 260 en oregón",
+     "tipo": "puerta",
+     "modelo": "FUY",
+     "madera": "PINO OREGON",
+     "ancho_m": 1.1,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "58": {
+   "items": [
+    {
+     "texto_fuente": "siete Futaleufu mara de 110",
+     "tipo": "puerta",
+     "modelo": "FUTALEUFU",
+     "madera": "MARA",
+     "ancho_m": 1.1,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 7,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la altura."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "59": {
+   "items": [
+    {
+     "texto_fuente": "8 pilastras oregon 6x1 cm de 1,00 m",
+     "tipo": "pilastra",
+     "modelo": null,
+     "madera": null,
+     "ancho_m": null,
+     "alto_m": 1,
+     "medida_accesorio": "6x1 cm",
+     "cantidad": 8,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "60": {
+   "items": [
+    {
+     "texto_fuente": "una docena de endolados mara 12x4,5 cm de 1",
+     "tipo": "endolado",
+     "modelo": null,
+     "madera": "MARA",
+     "ancho_m": null,
+     "alto_m": 1,
+     "medida_accesorio": "12x4,5 cm",
+     "cantidad": 12,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "61": {
+   "items": [
+    {
+     "texto_fuente": "tres Lanco lenga de 60",
+     "tipo": "puerta",
+     "modelo": "LANCO",
+     "madera": "LENGA",
+     "ancho_m": 0.6,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 3,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la altura."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "62": {
+   "items": [
+    {
+     "texto_fuente": "6 ranco 80x210",
+     "tipo": "puerta",
+     "modelo": "RANCO",
+     "madera": null,
+     "ancho_m": 0.8,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la madera."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "63": {
+   "items": [
+    {
+     "texto_fuente": "19 puertas Enco en oregón de 1,30 por 2,30 m",
+     "tipo": "puerta",
+     "modelo": "ENCO",
+     "madera": "PINO OREGON",
+     "ancho_m": 1.3,
+     "alto_m": 2.3,
+     "medida_accesorio": null,
+     "cantidad": 19,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "64": {
+   "items": [
+    {
+     "texto_fuente": "16 Cochamo lenga de 140",
+     "tipo": "puerta",
+     "modelo": "COCHAMO",
+     "madera": "LENGA",
+     "ancho_m": 1.4,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 16,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la altura."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "65": {
+   "items": [
+    {
+     "texto_fuente": "un par de Cochamo mara 1,40 por 2,20 m",
+     "tipo": "puerta",
+     "modelo": "COCHAMO",
+     "madera": "MARA",
+     "ancho_m": 1.4,
+     "alto_m": 2.2,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "66": {
+   "items": [
+    {
+     "texto_fuente": "5 puertas Huerquehue en raulí de 115x240",
+     "tipo": "puerta",
+     "modelo": "HUERQUEHUE",
+     "madera": "RAULI",
+     "ancho_m": 1.15,
+     "alto_m": 2.4,
+     "medida_accesorio": null,
+     "cantidad": 5,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "67": {
+   "items": [
+    {
+     "texto_fuente": "17 Los Lagos de 140 por 200 en mara",
+     "tipo": "puerta",
+     "modelo": "LOS LAGOS",
+     "madera": "MARA",
+     "ancho_m": 1.4,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 17,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "68": {
+   "items": [
+    {
+     "texto_fuente": "16 Molco de 700x2200 mm en oregón",
+     "tipo": "puerta",
+     "modelo": "MOLCO",
+     "madera": "PINO OREGON",
+     "ancho_m": 0.7,
+     "alto_m": 2.2,
+     "medida_accesorio": null,
+     "cantidad": 16,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "69": {
+   "items": [
+    {
+     "texto_fuente": "2 Ancacomoe lenga 90 por 230",
+     "tipo": "puerta",
+     "modelo": "ANCACOMOE",
+     "madera": "LENGA",
+     "ancho_m": 0.9,
+     "alto_m": 2.3,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "70": {
+   "items": [
+    {
+     "texto_fuente": "seis endolados lenga 12x1 cm de 1,00 m",
+     "tipo": "endolado",
+     "modelo": null,
+     "madera": "LENGA",
+     "ancho_m": null,
+     "alto_m": 1,
+     "medida_accesorio": "12x1 cm",
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "71": {
+   "items": [
+    {
+     "texto_fuente": "19 Huilo Huilo mara 1300x2400 mm",
+     "tipo": "puerta",
+     "modelo": "HUILO HUILO",
+     "madera": "MARA",
+     "ancho_m": 1.3,
+     "alto_m": 2.4,
+     "medida_accesorio": null,
+     "cantidad": 19,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "72": {
+   "items": [
+    {
+     "texto_fuente": "7 Petrohue mara 950x2300 mm",
+     "tipo": "puerta",
+     "modelo": "PETROHUE",
+     "madera": "MARA",
+     "ancho_m": 0.95,
+     "alto_m": 2.3,
+     "medida_accesorio": null,
+     "cantidad": 7,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "9 palena de 1,20 por 2,00 en lenga",
+     "tipo": "puerta",
+     "modelo": "PALENA",
+     "madera": "LENGA",
+     "ancho_m": 1.2,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 9,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "73": {
+   "items": [
+    {
+     "texto_fuente": "19 guardapolvos raulí 12x2 cm de 1",
+     "tipo": "guardapolvo",
+     "modelo": null,
+     "madera": "RAULI",
+     "ancho_m": null,
+     "alto_m": 1,
+     "medida_accesorio": "12x2",
+     "cantidad": 19,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "74": {
+   "items": [
+    {
+     "texto_fuente": "5 Lanco de 70x210 en lenga",
+     "tipo": "puerta",
+     "modelo": "LANCO",
+     "madera": "LENGA",
+     "ancho_m": 0.7,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 5,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "75": {
+   "items": [
+    {
+     "texto_fuente": "14 puertas Futrono en rauli de 1300x2000 mm",
+     "tipo": "puerta",
+     "modelo": "FUTRONO",
+     "madera": "RAULI",
+     "ancho_m": 1.3,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 14,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "76": {
+   "items": [
+    {
+     "texto_fuente": "ocho juegos de marco 2x5 pino oregón de 2,30",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "PINO OREGON",
+     "ancho_m": null,
+     "alto_m": 2.3,
+     "medida_accesorio": "2x5",
+     "cantidad": 8,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "77": {
+   "items": [
+    {
+     "texto_fuente": "tres puertas Rupanco en mara de 0,65x2,60 m",
+     "tipo": "puerta",
+     "modelo": "RUPANCO",
+     "madera": "MARA",
+     "ancho_m": 0.65,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 3,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "78": {
+   "items": [
+    {
+     "texto_fuente": "14 Huellahue de 900x2500 mm en pino oregón",
+     "tipo": "puerta",
+     "modelo": "HUELLAHUE",
+     "madera": "PINO OREGON",
+     "ancho_m": 0.9,
+     "alto_m": 2.5,
+     "medida_accesorio": null,
+     "cantidad": 14,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "diez Malalhue de 140x240 en rauli",
+     "tipo": "puerta",
+     "modelo": "MALALHUE",
+     "madera": "RAULI",
+     "ancho_m": 1.4,
+     "alto_m": 2.4,
+     "medida_accesorio": null,
+     "cantidad": 10,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "79": {
+   "items": [
+    {
+     "texto_fuente": "un par de Huellahue de 0,70 por 2,50 en lenga",
+     "tipo": "puerta",
+     "modelo": "HUELLAHUE",
+     "madera": "LENGA",
+     "ancho_m": 0.7,
+     "alto_m": 2.5,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "80": {
+   "items": [
+    {
+     "texto_fuente": "11 guardapolvos lenga 12x4,5 cm de 2",
+     "tipo": "guardapolvo",
+     "modelo": null,
+     "madera": "LENGA",
+     "ancho_m": null,
+     "alto_m": 2,
+     "medida_accesorio": "12x4,5 cm",
+     "cantidad": 11,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "81": {
+   "items": [
+    {
+     "texto_fuente": "6 Los Lagos de 1,10x2,10 en pino oregón",
+     "tipo": "puerta",
+     "modelo": "LOS LAGOS",
+     "madera": "PINO OREGON",
+     "ancho_m": 1.1,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "82": {
+   "items": [
+    {
+     "texto_fuente": "5 puertas los lagos en mara de 1,00 por 2,20 m",
+     "tipo": "puerta",
+     "modelo": "LOS LAGOS",
+     "madera": "MARA",
+     "ancho_m": 1,
+     "alto_m": 2.2,
+     "medida_accesorio": null,
+     "cantidad": 5,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "83": {
+   "items": [
+    {
+     "texto_fuente": "seis pilastras mara 6x1 cm de 2",
+     "tipo": "pilastra",
+     "modelo": null,
+     "madera": "MARA",
+     "ancho_m": null,
+     "alto_m": 2,
+     "medida_accesorio": "6x1",
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "84": {
+   "items": [
+    {
+     "texto_fuente": "16 Futrono mara 1,40x2,10 m",
+     "tipo": "puerta",
+     "modelo": "FUTRONO",
+     "madera": "MARA",
+     "ancho_m": 1.4,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 16,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "85": {
+   "items": [
+    {
+     "texto_fuente": "siete Ensenada de 0,80x2,60 en mara",
+     "tipo": "puerta",
+     "modelo": "ENSENADA",
+     "madera": "MARA",
+     "ancho_m": 0.8,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 7,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "86": {
+   "items": [
+    {
+     "texto_fuente": "2 Rinihue de 100 por 230 en mara",
+     "tipo": "puerta",
+     "modelo": "RINIHUE",
+     "madera": "MARA",
+     "ancho_m": 1,
+     "alto_m": 2.3,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "87": {
+   "items": [
+    {
+     "texto_fuente": "una Huerquehue lenga 90x260",
+     "tipo": "puerta",
+     "modelo": "HUERQUEHUE",
+     "madera": "LENGA",
+     "ancho_m": 0.9,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 1,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "88": {
+   "items": [
+    {
+     "texto_fuente": "6 palena de 115 en mara",
+     "tipo": "puerta",
+     "modelo": "PALENA",
+     "madera": "MARA",
+     "ancho_m": 1.15,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 6,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta el alto."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "89": {
+   "items": [
+    {
+     "texto_fuente": "diez Calafquen mara 1,00x2,60 m",
+     "tipo": "puerta",
+     "modelo": "CALAFQUEN",
+     "madera": "MARA",
+     "ancho_m": 1,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 10,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "90": {
+   "items": [
+    {
+     "texto_fuente": "un par de endolados rauli 6x4,5 cm de 1,00 m",
+     "tipo": "endolado",
+     "modelo": null,
+     "madera": "RAULI",
+     "ancho_m": null,
+     "alto_m": 1,
+     "medida_accesorio": "6x4,5 cm",
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "91": {
+   "items": [
+    {
+     "texto_fuente": "diez piezas T 2x8 pino de 2,20",
+     "tipo": "piezas_t",
+     "modelo": null,
+     "madera": "PINO OREGON",
+     "ancho_m": null,
+     "alto_m": 2.2,
+     "medida_accesorio": "2x8",
+     "cantidad": 10,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "92": {
+   "items": [
+    {
+     "texto_fuente": "18 marcos de 4 en rauli de 2,10 m",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "RAULI",
+     "ancho_m": null,
+     "alto_m": 2.1,
+     "medida_accesorio": "2x4",
+     "cantidad": 18,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "una docena de Yelcho de 120 por 230 en lenga",
+     "tipo": "puerta",
+     "modelo": "YELCHO",
+     "madera": "LENGA",
+     "ancho_m": 1.2,
+     "alto_m": 2.3,
+     "medida_accesorio": null,
+     "cantidad": 12,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "10 Ranco lenga 105x210",
+     "tipo": "puerta",
+     "modelo": "RANCO",
+     "madera": "LENGA",
+     "ancho_m": 1.05,
+     "alto_m": 2.1,
+     "medida_accesorio": null,
+     "cantidad": 10,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "93": {
+   "items": [
+    {
+     "texto_fuente": "un par de Lipinza de 1250x2300 mm en oregon",
+     "tipo": "puerta",
+     "modelo": "LIPINZA",
+     "madera": "PINO OREGON",
+     "ancho_m": 1.25,
+     "alto_m": 2.3,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "94": {
+   "items": [
+    {
+     "texto_fuente": "puertas Futrono rauli 0,75 por 2,50",
+     "tipo": "puerta",
+     "modelo": "FUTRONO",
+     "madera": "RAULI",
+     "ancho_m": 0.75,
+     "alto_m": 2.5,
+     "medida_accesorio": null,
+     "cantidad": null,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la cantidad."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "95": {
+   "items": [
+    {
+     "texto_fuente": "un par de Futaleufu de 130 por 250 en oregón",
+     "tipo": "puerta",
+     "modelo": "FUTALEUFU",
+     "madera": "PINO OREGON",
+     "ancho_m": 1.3,
+     "alto_m": 2.5,
+     "medida_accesorio": null,
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "20 puertas tolten en lenga de 650x2600 mm",
+     "tipo": "puerta",
+     "modelo": "TOLTEN",
+     "madera": "LENGA",
+     "ancho_m": 0.65,
+     "alto_m": 2.6,
+     "medida_accesorio": null,
+     "cantidad": 20,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "96": {
+   "items": [
+    {
+     "texto_fuente": "cinco piezas T 2x8 raulí de 2,00 m",
+     "tipo": "piezas_t",
+     "modelo": null,
+     "madera": "RAULI",
+     "ancho_m": null,
+     "alto_m": 2,
+     "medida_accesorio": "2x8",
+     "cantidad": 5,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "12 marcos de 5 pulgadas en oregón de 2,20",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "PINO OREGON",
+     "ancho_m": null,
+     "alto_m": 2.2,
+     "medida_accesorio": "2x5",
+     "cantidad": 12,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "97": {
+   "items": [
+    {
+     "texto_fuente": "4 neltume mara 0,60x2,50 m",
+     "tipo": "puerta",
+     "modelo": "NELTUME",
+     "madera": "MARA",
+     "ancho_m": 0.6,
+     "alto_m": 2.5,
+     "medida_accesorio": null,
+     "cantidad": 4,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "15 puertas rupanco en lenga de 130x250",
+     "tipo": "puerta",
+     "modelo": "RUPANCO",
+     "madera": "LENGA",
+     "ancho_m": 1.3,
+     "alto_m": 2.5,
+     "medida_accesorio": null,
+     "cantidad": 15,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "98": {
+   "items": [
+    {
+     "texto_fuente": "tres puertas Molco en mara de 1100x2000 mm",
+     "tipo": "puerta",
+     "modelo": "MOLCO",
+     "madera": "MARA",
+     "ancho_m": 1.1,
+     "alto_m": 2,
+     "medida_accesorio": null,
+     "cantidad": 3,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "99": {
+   "items": [
+    {
+     "texto_fuente": "19 Pirihueico rauli 0,90 por 2,20 m",
+     "tipo": "puerta",
+     "modelo": "PIRIHUEICO",
+     "madera": "RAULI",
+     "ancho_m": 0.9,
+     "alto_m": 2.2,
+     "medida_accesorio": null,
+     "cantidad": 19,
+     "tipo_medida": null,
+     "dudas": []
+    },
+    {
+     "texto_fuente": "un par de marcos de 4 en mara de 2,50 m",
+     "tipo": "marco",
+     "modelo": null,
+     "madera": "MARA",
+     "ancho_m": null,
+     "alto_m": 2.5,
+     "medida_accesorio": "2x4",
+     "cantidad": 2,
+     "tipo_medida": null,
+     "dudas": []
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  },
+  "100": {
+   "items": [
+    {
+     "texto_fuente": "4 Neltume lenga de 120",
+     "tipo": "puerta",
+     "modelo": "NELTUME",
+     "madera": "LENGA",
+     "ancho_m": 1.2,
+     "alto_m": null,
+     "medida_accesorio": null,
+     "cantidad": 4,
+     "tipo_medida": null,
+     "dudas": [
+      "Falta la altura."
+     ]
+    }
+   ],
+   "alertas": [],
+   "sin_items": false
+  }
+ }
+}

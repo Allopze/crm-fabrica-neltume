@@ -142,7 +142,8 @@
    "pedido": "4 puertas Yelcho 90x210",
    "esperado": [
     {
-     "estado": "por_confirmar"
+     "estado": "por_confirmar",
+     "cantidad": 4
     }
    ]
   },
@@ -170,7 +171,8 @@
    "esperado": [
     {
      "estado": "a_pedido",
-     "referencia": "TOLT-R-4-C"
+     "referencia": "TOLT-R-4-C",
+     "cantidad": 2
     }
    ]
   },
@@ -185,14 +187,28 @@
    "id": 16,
    "grupo": "ambiguo",
    "pedido": "1 puerta modelo Osorno lenga 80x200",
-   "esperado": [],
+   "esperado": [
+    {
+     "estado": "por_confirmar",
+     "cantidad": 1
+    }
+   ],
    "todos": "por_confirmar"
   },
   {
    "id": 17,
    "grupo": "ambiguo",
    "pedido": "2 para baño y 1 para dormitorio, algo económico",
-   "esperado": [],
+   "esperado": [
+    {
+     "estado": "por_confirmar",
+     "cantidad": 2
+    },
+    {
+     "estado": "por_confirmar",
+     "cantidad": 1
+    }
+   ],
    "todos": "por_confirmar"
   },
   {
@@ -213,7 +229,8 @@
      "cantidad": 2
     },
     {
-     "estado": "por_confirmar"
+     "estado": "por_confirmar",
+     "cantidad": 2
     }
    ]
   },
@@ -300,7 +317,8 @@
    "pedido": "4 coscos de 80 por 200",
    "esperado": [
     {
-     "estado": "por_confirmar"
+     "estado": "por_confirmar",
+     "cantidad": 4
     }
    ],
    "fuente": "tienda:reunion-sin-madera"
@@ -374,7 +392,8 @@
    "pedido": "2 Ranco de 70",
    "esperado": [
     {
-     "estado": "por_confirmar"
+     "estado": "por_confirmar",
+     "cantidad": 2
     }
    ],
    "fuente": "tienda:sin-alto"
@@ -484,7 +503,8 @@
    "pedido": "3 Pillo oregón 80×210",
    "esperado": [
     {
-     "estado": "por_confirmar"
+     "estado": "por_confirmar",
+     "cantidad": 3
     }
    ],
    "fuente": "tienda:nombre-dudoso"
@@ -539,7 +559,8 @@
    "pedido": "6 Coz Coz 80x200, lo de siempre",
    "esperado": [
     {
-     "estado": "por_confirmar"
+     "estado": "por_confirmar",
+     "cantidad": 6
     }
    ],
    "fuente": "tienda:sin-madera-habitual"
@@ -563,7 +584,8 @@
    "pedido": "20 guardapolvos 12x2 en lenga",
    "esperado": [
     {
-     "estado": "por_confirmar"
+     "estado": "por_confirmar",
+     "cantidad": 20
     }
    ],
    "fuente": "tienda:guardapolvo-sin-largo"
@@ -592,18 +614,22 @@
    "pedido": "Cotizar a Ana Rojas\nDespacho a Chillan\n2 unidades Huilo Huilo enchapada de\n0.82x2.27 mts (vano) con su marco de\n30x90 enchapado\n1 unidad ranco lenga solida 0.87x2.44 mts\n(vano) con su marco de 2x5 pulgadas en\nlenga",
    "esperado": [
     {
-     "estado": "por_confirmar"
+     "estado": "por_confirmar",
+     "cantidad": 2
     },
     {
-     "estado": "por_confirmar"
+     "estado": "por_confirmar",
+     "cantidad": 2
     },
     {
      "estado": "a_pedido",
-     "referencia": "RAN-L-4-F"
+     "referencia": "RAN-L-4-F",
+     "cantidad": 1
     },
     {
      "estado": "a_pedido",
-     "referencia": "MAR-L-2X5-F"
+     "referencia": "MAR-L-2X5-F",
+     "cantidad": 1
     }
    ],
    "fuente": "tienda:cliente-enchapadas"
@@ -640,7 +666,8 @@
    "pedido": "2 Petrohue en pino radiata de 140 x 250",
    "esperado": [
     {
-     "estado": "por_confirmar"
+     "estado": "por_confirmar",
+     "cantidad": 2
     }
    ],
    "fuente": "tienda:pino-radiata"
@@ -731,10 +758,89 @@
    "pedido": "precio de 3 Rupanco de 83 x 240",
    "esperado": [
     {
-     "estado": "por_confirmar"
+     "estado": "por_confirmar",
+     "cantidad": 3
     }
    ],
    "fuente": "tienda:responder-indebido"
+  },
+  {
+   "id": 58,
+   "grupo": "ambiguo",
+   "pedido": "Se necesitan 4 para el baño y 2 para los dormitorios",
+   "esperado": [
+    {
+     "estado": "por_confirmar",
+     "cantidad": 4
+    },
+    {
+     "estado": "por_confirmar",
+     "cantidad": 2
+    }
+   ],
+   "fuente": "sintetico:destinos-plural"
+  },
+  {
+   "id": 59,
+   "grupo": "ambiguo",
+   "pedido": "Cotízame dos para la pieza y una para el living",
+   "esperado": [
+    {
+     "estado": "por_confirmar",
+     "cantidad": 2
+    },
+    {
+     "estado": "por_confirmar",
+     "cantidad": 1
+    }
+   ],
+   "fuente": "sintetico:destinos-palabras"
+  },
+  {
+   "id": 60,
+   "grupo": "ambiguo",
+   "pedido": "1 Lican lenga 90x210 y 3 para baño",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "LIC-L-4-B",
+     "cantidad": 1
+    },
+    {
+     "estado": "por_confirmar",
+     "cantidad": 3
+    }
+   ],
+   "fuente": "sintetico:mixto-destino"
+  },
+  {
+   "id": 61,
+   "grupo": "ambiguo",
+   "pedido": "3 para baño, entrega la próxima semana",
+   "esperado": [
+    {
+     "estado": "por_confirmar",
+     "cantidad": 3
+    }
+   ],
+   "fuente": "sintetico:destino-entrega"
+  },
+  {
+   "id": 62,
+   "grupo": "ambiguo",
+   "pedido": "2 Neltume raulí 90x210 y 2 para oficina",
+   "esperado": [
+    {
+     "estado": "ok",
+     "codigo": "NEL-R-4-B",
+     "cantidad": 2
+    },
+    {
+     "estado": "por_confirmar",
+     "cantidad": 2
+    }
+   ],
+   "fuente": "sintetico:destino-mismo-numero"
   }
  ]
 }

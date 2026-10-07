@@ -33,7 +33,7 @@ export default async function MetricasPage() {
         <Cifra etiqueta="Gasto de hoy" valor={usd(m.gasto.diaUsd)} nota={m.topes.diarioUsd ? `tope diario ${usd(m.topes.diarioUsd)}` : "sin tope diario configurado"} />
         <Cifra etiqueta="Gasto del mes" valor={usd(m.gasto.mesUsd)} nota={m.topes.mensualUsd ? `presupuesto ${usd(m.topes.mensualUsd)}` : "sin presupuesto configurado"} />
       </div>
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 lg:grid-cols-2">
         <Panel titulo="Interpretaciones">
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between"><dt className="text-tinta-suave">Pedidos interpretados</dt><dd className="tabular-nums">{m.trabajos.total}</dd></div>

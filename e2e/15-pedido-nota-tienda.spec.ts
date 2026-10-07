@@ -66,6 +66,7 @@ test("con stock nuevo se completa la reserva, se marca lista y se despacha", asy
   await page.getByRole("button", { name: "Marcar lista" }).click();
   await expect(page.getByRole("button", { name: "Registrar despacho" })).toBeVisible();
   await page.getByRole("button", { name: "Registrar despacho" }).click();
+  await page.getByRole("button", { name: "Confirmar despacho" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Despachada el" })).toBeVisible();
   const stock = (await api(page, "GET", "/api/v1/stock/FUY-O-2-A")).cuerpo;
   expect(stock).toMatchObject({ existencia: 0, reservado: 0 });

@@ -27,6 +27,7 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
   const [c, setC] = useState(inicial);
   const [activo, setActivo] = useState<string | null>(null);
   const [vistaIA, setVistaIA] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
   const aprobada = c.estado === "aprobada" || c.estado === "aceptada";
@@ -46,6 +47,7 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
       }
     });
   }
+  if (confirmando && (aprobada || c.pendientes > 0 || !c.clienteId)) setConfirmando(false);
   const item = (itemId: string, cuerpo: object) => accion(() => pedir("PATCH", `${base}/items/${itemId}`, { csrf, cuerpo: { ...cuerpo, version: c.version } }));
 
   return (
@@ -76,18 +78,18 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
       )}
       {error && <p role="alert" className="rounded-md border border-error/25 bg-error-velo px-4 py-2 text-sm text-error">{error}</p>}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+      <div className="grid grid-cols-1 gap-6 [&>*]:min-w-0 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         {c.textoOriginal ? (
           <section className="rounded-lg border border-linea bg-papel-hundido/50 p-6 xl:sticky xl:top-20 xl:self-start">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
               <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-tinta-tenue">{vistaIA ? "Lo que recibió la IA" : "Texto original · tal como llegó"}</h2>
-              <button onClick={() => setVistaIA((v) => !v)} className="inline-flex items-center gap-1.5 text-xs text-tinta-suave hover:text-tinta">
+              <button type="button" aria-pressed={vistaIA} onClick={() => setVistaIA((v) => !v)} className="-my-2 inline-flex min-h-9 items-center gap-1.5 text-xs text-tinta-suave hover:text-tinta">
                 <Eye className="h-3.5 w-3.5" /> {vistaIA ? "Ver original" : "Ver lo que recibió la IA"}
               </button>
             </div>
             <TextoMarcado texto={c.textoOriginal} items={c.items} activo={activo} onActivar={setActivo} vistaIA={vistaIA} />
           </section>
-        ) : <section className="rounded-lg border border-dashed border-linea p-6 text-sm text-tinta-tenue">Cotización manual: sin texto del cliente.</section>}
+        ) : <section className="rounded-lg border border-dashed border-linea p-6 text-sm text-tinta-tenue xl:self-start">Cotización manual: sin texto del cliente.</section>}
 
         <section>
           {c.estado === "ia_fallida" && (
@@ -132,8 +134,9 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
               {Number(c.descuento) > 0 && <div className="flex justify-between px-5 py-2.5"><dt className="text-tinta-suave">Descuento {numeroPct(Number(c.descuentoPct))} ({c.descuentoMotivo})</dt><dd className="tabular-nums">−{clp(Number(c.descuento))}</dd></div>}
               {puedeDescontar && !aprobada && (
                 <div className="px-5 py-2.5">
-                  <Descuento key={`${c.descuentoPct}:${c.descuentoMotivo}`} pct={Number(c.descuentoPct)} motivo={c.descuentoMotivo} deshabilitado={pendiente}
-                    onAplicar={(porcentaje, motivo) => accion(() => pedir("POST", `${base}/descuento`, { csrf, cuerpo: { porcentaje, motivo, version: c.version } }))} />
+                  <dt className="sr-only">Aplicar descuento</dt>
+                  <dd><Descuento key={`${c.descuentoPct}:${c.descuentoMotivo}`} pct={Number(c.descuentoPct)} motivo={c.descuentoMotivo} deshabilitado={pendiente}
+                    onAplicar={(porcentaje, motivo) => accion(() => pedir("POST", `${base}/descuento`, { csrf, cuerpo: { porcentaje, motivo, version: c.version } }))} /></dd>
                 </div>
               )}
               <div className="flex justify-between px-5 py-2.5"><dt className="text-tinta-suave">IVA 19 %</dt><dd className="tabular-nums">{clp(Number(c.iva))}</dd></div>
@@ -142,15 +145,32 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
             <p className="border-t border-linea px-5 py-2 text-xs text-tinta-tenue">Valores puestos en fábrica, flete aparte. Precios calculados por el sistema (lista v{c.lista.usada ?? c.lista.vigente}); la IA no fija importes.</p>
           </div>
 
-          {!aprobada && puedeAprobar && (
+          {!aprobada && puedeAprobar && !confirmando && (
             <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
               {c.pendientes > 0 && <p className="text-sm text-ambar">Resuelve {c.pendientes} {c.pendientes === 1 ? "ítem" : "ítems"} para poder aprobar.</p>}
               {c.pendientes === 0 && !c.clienteId && <p className="text-sm text-ambar">Elige el cliente para poder aprobar.</p>}
               <Boton variante="primario" className={cn("h-11 px-5", c.pendientes === 0 && c.clienteId && "ring-4 ring-rauli/15")}
                 disabled={pendiente || c.pendientes > 0 || !c.clienteId || c.items.length === 0}
-                onClick={() => accion(() => pedir("POST", `${base}/aprobar`, { csrf, idempotente: true, cuerpo: { version: c.version } }), true)}>
+                onClick={() => setConfirmando(true)}>
                 <Check className="h-4 w-4" /> Aprobar cotización
               </Boton>
+            </div>
+          )}
+          {!aprobada && puedeAprobar && confirmando && (
+            <div role="group" aria-labelledby="confirmar-aprobacion" className="mt-5 rounded-lg border border-rauli/30 bg-rauli-velo/50 p-5">
+              <p id="confirmar-aprobacion" className="font-display text-lg font-medium">Aprobar la cotización #{c.numero}</p>
+              <ul className="mt-2 space-y-1 text-sm text-tinta-suave">
+                <li>{c.items.length === 1 ? "1 ítem" : `${c.items.length} ítems`} para <strong className="text-tinta">{clientes?.find((x) => x.id === c.clienteId)?.nombre ?? "el cliente elegido"}</strong> · total <strong className="text-tinta tabular-nums">{clp(Number(c.total))}</strong> IVA incluido.</li>
+                <li>Los precios quedan congelados con la lista v{c.lista.usada ?? c.lista.vigente}, aunque la lista cambie después.</li>
+                <li>Vigencia de 10 días hábiles desde hoy. Después ya no se puede editar: queda lista para el PDF y para convertirla en pedido.</li>
+              </ul>
+              <div className="mt-4 flex flex-wrap justify-end gap-2">
+                <Boton variante="fantasma" disabled={pendiente} onClick={() => setConfirmando(false)}>Volver a revisar</Boton>
+                <Boton variante="primario" className="h-11 px-5" disabled={pendiente} autoFocus
+                  onClick={() => accion(() => pedir("POST", `${base}/aprobar`, { csrf, idempotente: true, cuerpo: { version: c.version } }), true)}>
+                  <Check className="h-4 w-4" /> {pendiente ? "Aprobando…" : "Confirmar aprobación"}
+                </Boton>
+              </div>
             </div>
           )}
         </section>

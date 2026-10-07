@@ -52,7 +52,7 @@ export function FormularioRecepcion({ materias, csrf }: { materias: { id: string
         <p className="self-end pb-2.5 font-mono text-xs text-tinta-tenue">{unidad}</p>
       </div>
       <label className="block text-sm font-medium">Guía o factura del proveedor<input name="referencia" placeholder="Ej. guía 18.442" className={`${campo} mt-1.5`} /></label>
-      <Boton variante="primario" className="h-10 w-full" type="submit" disabled={pendiente || !mpId}><PackagePlus className="h-4 w-4" /> Registrar recepción</Boton>
+      <Boton variante="primario" className="h-10 w-full" type="submit" disabled={pendiente || !mpId}><PackagePlus className="h-4 w-4" /> {pendiente ? "Registrando…" : "Registrar recepción"}</Boton>
       {aviso}
     </form>
   );
@@ -76,7 +76,7 @@ export function FormularioNuevaMp({ unidades, csrf }: { unidades: { codigo: stri
       <input name="nombre" required minLength={2} placeholder="Nombre" aria-label="Nombre" className={campo} />
       <select name="unidad" aria-label="Unidad" className={campo}>{unidades.map((u) => <option key={u.codigo} value={u.codigo}>{u.codigo} · {u.nombre}</option>)}</select>
       <input name="minimo" inputMode="decimal" placeholder="Mínimo" aria-label="Mínimo" className={campo} />
-      <Boton variante="primario" type="submit" disabled={pendiente} className="h-10">Crear</Boton>
+      <Boton variante="primario" type="submit" disabled={pendiente} className="h-10">{pendiente ? "Creando…" : "Crear"}</Boton>
       <div className="sm:col-span-4">{aviso}</div>
     </form>
   );
@@ -106,7 +106,7 @@ export function FormularioAjusteMp({ materias, csrf }: { materias: { id: string;
         <p className="self-end pb-2.5 font-mono text-xs text-tinta-tenue">{unidad}</p>
       </div>
       <label className="block text-sm font-medium">Motivo<input name="motivo" required minLength={3} maxLength={300} placeholder="Ej. conteo físico, merma por humedad" className={`${campo} mt-1.5`} /></label>
-      <Boton className="h-10 w-full" type="submit" disabled={pendiente || !mpId}><SlidersHorizontal className="h-4 w-4" /> Registrar ajuste</Boton>
+      <Boton className="h-10 w-full" type="submit" disabled={pendiente || !mpId}><SlidersHorizontal className="h-4 w-4" /> {pendiente ? "Registrando…" : "Registrar ajuste"}</Boton>
       {aviso}
     </form>
   );

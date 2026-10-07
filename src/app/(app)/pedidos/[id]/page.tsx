@@ -63,7 +63,7 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
         </Panel>
       )}
 
-      <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 lg:grid-cols-[1.5fr_1fr]">
         <Panel titulo="Ítems y reserva">
           <ul className="space-y-6">
             {p.items.map((i) => (

@@ -31,7 +31,8 @@ export function TarjetaItem({ item, n, activo, bloqueado, listaVersion, onActiva
   const distinta = cifra !== null && cifra !== item.cantidad;
 
   return (
-    <article onMouseEnter={() => onActivar(item.id)} onMouseLeave={() => onActivar(null)} aria-label={`Ítem ${n}`}
+    <article onMouseEnter={() => onActivar(item.id)} onMouseLeave={() => onActivar(null)}
+      onFocus={() => onActivar(item.id)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) onActivar(null); }} aria-label={`Ítem ${n}`}
       className={cn("relative rounded-md border border-l-[3px] border-linea bg-lamina p-4 transition-shadow", borde[item.estadoItem], activo && "shadow-[0_0_0_2px_var(--tinta)]")}>
       <div className="flex items-start gap-3">
         <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-tinta font-mono text-[11px] font-semibold text-lamina">{n}</span>
@@ -65,7 +66,7 @@ export function TarjetaItem({ item, n, activo, bloqueado, listaVersion, onActiva
               <div className="mt-2 flex flex-wrap gap-2">
                 <input inputMode="numeric" placeholder="Precio unitario neto" aria-label={`Precio unitario del ítem ${n}`} value={precio}
                   onChange={(e) => setPrecio(e.target.value.replace(/\D/g, ""))}
-                  className="h-9 w-48 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm tabular-nums focus:border-tinta focus:outline-none" />
+                  className="h-9 w-full max-w-48 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm tabular-nums focus:border-tinta focus:outline-none" />
                 {item.precioReferencia !== null && <Boton variante="fantasma" onClick={() => setPrecio(String(item.precioReferencia))}>Usar referencia</Boton>}
                 <Boton disabled={!precio} onClick={() => acciones.fijarPrecio(Number(precio))}><Check className="h-4 w-4" /> Fijar precio</Boton>
               </div>
@@ -75,11 +76,11 @@ export function TarjetaItem({ item, n, activo, bloqueado, listaVersion, onActiva
 
         <div className="flex shrink-0 flex-col items-end gap-2">
           <div className="flex items-center rounded-md border border-linea">
-            <button aria-label="Restar" disabled={bloqueado || item.cantidad <= 1} onClick={() => acciones.cantidad(item.cantidad - 1)}
-              className="grid h-7 w-7 place-items-center text-tinta-suave hover:text-tinta disabled:opacity-30"><Minus className="h-3.5 w-3.5" /></button>
-            <span className="w-8 text-center font-mono text-sm tabular-nums" aria-label="Cantidad">{item.cantidad}</span>
-            <button aria-label="Sumar" disabled={bloqueado} onClick={() => acciones.cantidad(item.cantidad + 1)}
-              className="grid h-7 w-7 place-items-center text-tinta-suave hover:text-tinta disabled:opacity-30"><Plus className="h-3.5 w-3.5" /></button>
+            <button type="button" aria-label={`Restar uno al ítem ${n}`} disabled={bloqueado || item.cantidad <= 1} onClick={() => acciones.cantidad(item.cantidad - 1)}
+              className="grid h-9 w-9 place-items-center pointer-coarse:h-11 pointer-coarse:w-11 text-tinta-suave hover:text-tinta disabled:opacity-30"><Minus className="h-3.5 w-3.5" /></button>
+            <output className="w-8 text-center font-mono text-sm tabular-nums" aria-label={`Cantidad del ítem ${n}`} aria-live="polite">{item.cantidad}</output>
+            <button type="button" aria-label={`Sumar uno al ítem ${n}`} disabled={bloqueado} onClick={() => acciones.cantidad(item.cantidad + 1)}
+              className="grid h-9 w-9 place-items-center pointer-coarse:h-11 pointer-coarse:w-11 text-tinta-suave hover:text-tinta disabled:opacity-30"><Plus className="h-3.5 w-3.5" /></button>
           </div>
           {item.precioUnitario !== null ? (
             <div className="text-right tabular-nums">
@@ -88,7 +89,7 @@ export function TarjetaItem({ item, n, activo, bloqueado, listaVersion, onActiva
             </div>
           ) : <p className="text-sm text-tinta-tenue">sin precio</p>}
           {item.estadoItem === "ok" && !bloqueado && (
-            <button onClick={acciones.quitar} aria-label={`Quitar ítem ${n}`} className="text-tinta-tenue hover:text-error"><Trash2 className="h-4 w-4" /></button>
+            <button type="button" onClick={acciones.quitar} aria-label={`Quitar ítem ${n}`} className="-mr-2 grid h-9 w-9 place-items-center rounded-md text-tinta-tenue hover:bg-error-velo hover:text-error pointer-coarse:h-11 pointer-coarse:w-11"><Trash2 className="h-4 w-4" /></button>
           )}
         </div>
       </div>

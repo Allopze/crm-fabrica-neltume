@@ -50,7 +50,7 @@ export function UsuariosCliente({ usuarios, roles, csrf, yo }: { usuarios: Usuar
             {roles.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
           </select>
           <div className="flex gap-2 md:col-span-2">
-            <Boton variante="primario" disabled={pendiente} type="submit">Crear usuario</Boton>
+            <Boton variante="primario" disabled={pendiente} type="submit">{pendiente ? "Creando…" : "Crear usuario"}</Boton>
             <Boton type="button" variante="fantasma" onClick={() => setAbierto(false)}><X className="h-4 w-4" /> Cancelar</Boton>
           </div>
         </form>
@@ -60,7 +60,7 @@ export function UsuariosCliente({ usuarios, roles, csrf, yo }: { usuarios: Usuar
         </div>
       )}
       <Tabla>
-        <thead><tr><Th>Nombre</Th><Th>Correo</Th><Th>Rol</Th><Th>Último ingreso</Th><Th>Estado</Th><Th /></tr></thead>
+        <thead><tr><Th>Nombre</Th><Th>Correo</Th><Th>Rol</Th><Th>Último ingreso</Th><Th>Estado</Th><Th><span className="sr-only">Acciones</span></Th></tr></thead>
         <tbody>
           {usuarios.map((u) => (
             <Tr key={u.id}>

@@ -36,7 +36,7 @@ export function FormularioDespacho({ id, inicial, csrf }: {
       <label className="block text-tinta-tenue">Observaciones para la fábrica
         <textarea name="observaciones" defaultValue={inicial.observaciones ?? ""} maxLength={1000} rows={3} className="mt-1 w-full rounded-md border border-linea-fuerte bg-lamina px-3 py-2 text-sm focus:border-tinta focus:outline-none" />
       </label>
-      <Boton type="submit" disabled={pendiente}>Guardar despacho</Boton>
+      <Boton type="submit" disabled={pendiente}>{pendiente ? "Guardando…" : "Guardar despacho"}</Boton>
       {msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-musgo" : "text-error"}>{msg.texto}</p>}
     </form>
   );

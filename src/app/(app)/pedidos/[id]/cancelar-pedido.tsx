@@ -33,7 +33,7 @@ export function CancelarPedido({ id, csrf }: { id: string; csrf: string }) {
     <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); cancelar(); }}>
       <input autoFocus value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={300} placeholder="Motivo de la cancelación" aria-label="Motivo de la cancelación"
         className="h-9 w-64 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none" />
-      <Boton type="submit" variante="peligro" disabled={!motivo.trim() || enviando}>Confirmar cancelación</Boton>
+      <Boton type="submit" variante="peligro" disabled={!motivo.trim() || enviando}>{enviando ? "Cancelando…" : "Confirmar cancelación"}</Boton>
       <Boton type="button" variante="fantasma" onClick={() => setAbierto(false)}>Volver</Boton>
       {error && <p role="alert" className="w-full text-sm text-error">{error}</p>}
     </form>

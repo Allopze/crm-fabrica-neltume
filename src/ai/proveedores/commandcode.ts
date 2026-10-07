@@ -1,7 +1,7 @@
 // Command Code Provider API, formato OpenAI chat/completions (ADR-0001). Lo específico del proveedor vive solo aquí.
 import { HERRAMIENTA_PROPONER_ITEMS, Propuesta } from "../esquema";
 import { type CatalogoResumido, ErrorIA, type InterpreteIA, type OpcionesInterpretacion, type ResultadoInterpretacion } from "../interfaz";
-import { mensajeUsuario, promptSistema } from "../prompt";
+import { mensajeUsuario, motivoEsquema, promptSistema } from "../prompt";
 import { leerRetryAfterMs } from "../retry-after";
 
 export interface ConfigCommandCode {
@@ -37,7 +37,7 @@ export class CommandCodeIA implements InterpreteIA {
           model: this.cfg.modelo,
           temperature: 0,
           max_tokens: this.cfg.maxTokensSalida || MAX_TOKENS_SALIDA,
-          messages: [{ role: "system", content: promptSistema(catalogo) }, { role: "user", content: mensajeUsuario(texto, opciones.omitidos) }],
+          messages: [{ role: "system", content: promptSistema(catalogo) }, { role: "user", content: mensajeUsuario(texto, opciones.omitidos, opciones.correccion) }],
           tools: [HERRAMIENTA_PROPONER_ITEMS],
           tool_choice: { type: "function", function: { name: "proponer_items" } },
         }),
@@ -69,7 +69,7 @@ export class CommandCodeIA implements InterpreteIA {
       throw new ErrorIA("invalida", "Los argumentos de la herramienta no son JSON");
     }
     const propuesta = Propuesta.safeParse(argumentos);
-    if (!propuesta.success) throw new ErrorIA("invalida", `Salida fuera del esquema: ${propuesta.error.issues[0]?.path.join(".")}`);
+    if (!propuesta.success) throw new ErrorIA("invalida", `Salida fuera del esquema: ${motivoEsquema(propuesta.error)}`);
 
     const tokensEntrada = Number(cuerpo.usage?.prompt_tokens ?? 0);
     const tokensSalida = Number(cuerpo.usage?.completion_tokens ?? 0);

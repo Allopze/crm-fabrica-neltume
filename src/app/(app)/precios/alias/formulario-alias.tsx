@@ -29,7 +29,7 @@ export function NuevoAlias({ modelos, csrf }: { modelos: string[]; csrf: string 
       <select name="tipo" aria-label="Tipo de alias" className={campo} defaultValue="seguro">
         <option value="seguro">Seguro (se aplica)</option><option value="posible">Dudoso (se pregunta)</option>
       </select>
-      <Boton type="submit" disabled={pendiente}><Plus className="h-4 w-4" /> Agregar</Boton>
+      <Boton type="submit" disabled={pendiente}><Plus className="h-4 w-4" /> {pendiente ? "Agregando…" : "Agregar"}</Boton>
       {error && <p role="alert" className="w-full text-sm text-error">{error}</p>}
     </form>
   );

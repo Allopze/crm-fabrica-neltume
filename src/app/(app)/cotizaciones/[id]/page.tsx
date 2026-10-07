@@ -24,15 +24,16 @@ export default async function CotizacionPage({ params }: PageProps<"/cotizacione
   const c = await obtenerCotizacion(bd(), id, verClientes).catch((e) => { if (e instanceof ErrorDominio) notFound(); throw e; });
   const clientes = verClientes ? (await buscarClientes(bd(), { limite: 200 })).datos.map((x) => ({ id: x.id, nombre: x.nombre })) : null;
 
+  const aprobada = c.estado === "aprobada" || c.estado === "aceptada";
   return (
     <>
       <nav aria-label="Ruta" className="mb-4 flex items-center gap-1 text-sm text-tinta-tenue">
         <Link href="/cotizaciones" className="hover:text-tinta">Cotizaciones</Link><ChevronRight className="h-3.5 w-3.5" /><span className="text-tinta">#{c.numero}</span>
       </nav>
       <Encabezado
-        antetitulo={`Cotizador · ${c.estado === "borrador" || c.estado === "interpretando" ? "paso 2 de 3" : c.estado === "ia_fallida" ? "cotización a mano" : "paso 3 de 3"} · ${fechaHora(new Date(c.creadoEn).toISOString())}`}
+        antetitulo={`Cotizador · ${c.estado === "borrador" || c.estado === "interpretando" ? "paso 2 de 3" : c.estado === "ia_fallida" ? "paso 2 de 3 · a mano" : "paso 3 de 3"} · ${fechaHora(new Date(c.creadoEn).toISOString())}`}
         titulo={<>Cotización <span className="text-rauli">#{c.numero}</span></>}
-        descripcion={<>{c.cliente ? <>Para <strong className="text-tinta">{c.cliente.nombre}</strong>. </> : null}Revisa lo que entendió la IA: nada se envía sin tu aprobación.</>}
+        descripcion={<>{c.cliente ? <>Para <strong className="text-tinta">{c.cliente.nombre}</strong>. </> : null}{c.estado === "ia_fallida" ? "La IA no pudo interpretar el pedido: arma los ítems a mano." : c.origen === "ia" && !aprobada ? "Revisa lo que entendió la IA: nada se envía sin tu aprobación." : !aprobada ? "Revisa los ítems: nada se envía sin tu aprobación." : null}</>}
         acciones={
           <div className="flex items-center gap-2">
             {c.vencida ? <Etiqueta>Vencida</Etiqueta> : <EstadoCotizacionEtiqueta estado={c.estado as never} />}

@@ -12,6 +12,7 @@ export function AccionesCiclo({ id, estado, faltanteCatalogo, itemsAPedido, pued
 }) {
   const router = useRouter();
   const [confirmo, setConfirmo] = useState(false);
+  const [despachando, setDespachando] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   const [pendiente, iniciar] = useTransition();
   const hacer = (ruta: string, ok: string, cuerpo?: object) => iniciar(async () => {
@@ -29,7 +30,7 @@ export function AccionesCiclo({ id, estado, faltanteCatalogo, itemsAPedido, pued
       <div className="flex flex-wrap gap-2">
         {estado === "pendiente" && puedeProducir && (
           <Boton variante={faltanteCatalogo > 0 ? "primario" : "secundario"} disabled={pendiente} onClick={() => hacer("produccion", "Pedido en producción.")}>
-            <Factory className="h-4 w-4" /> {faltanteCatalogo > 0 ? `Producir faltante (${faltanteCatalogo})` : "Pasar a producción"}
+            <Factory className="h-4 w-4" /> {pendiente ? "Guardando…" : faltanteCatalogo > 0 ? `Producir faltante (${faltanteCatalogo})` : "Pasar a producción"}
           </Boton>
         )}
         {(estado === "pendiente" || estado === "en_produccion") && faltanteCatalogo > 0 && (
@@ -43,12 +44,24 @@ export function AccionesCiclo({ id, estado, faltanteCatalogo, itemsAPedido, pued
             <CheckCheck className="h-4 w-4" /> Marcar lista
           </Boton>
         )}
-        {estado === "lista" && (
-          <Boton variante="primario" disabled={pendiente} onClick={() => hacer("despachar", "Despacho registrado: stock descontado.")}>
+        {estado === "lista" && !despachando && (
+          <Boton variante="primario" disabled={pendiente} onClick={() => setDespachando(true)}>
             <Truck className="h-4 w-4" /> Registrar despacho
           </Boton>
         )}
       </div>
+      {estado === "lista" && despachando && (
+        <div role="group" aria-labelledby="confirmar-despacho" className="rounded-md border border-rauli/30 bg-rauli-velo/50 p-4 text-sm">
+          <p id="confirmar-despacho" className="font-medium">Se descontará del stock todo lo reservado para este pedido.</p>
+          <p className="mt-1 text-tinta-suave">Los movimientos de despacho no se pueden editar ni borrar; una corrección posterior es un ajuste con motivo.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Boton variante="primario" disabled={pendiente} autoFocus onClick={() => hacer("despachar", "Despacho registrado: stock descontado.")}>
+              <Truck className="h-4 w-4" /> {pendiente ? "Registrando…" : "Confirmar despacho"}
+            </Boton>
+            <Boton variante="fantasma" disabled={pendiente} onClick={() => setDespachando(false)}>Cancelar</Boton>
+          </div>
+        </div>
+      )}
       {(estado === "pendiente" || estado === "en_produccion") && itemsAPedido > 0 && (
         <label className="flex items-center gap-2 text-sm text-tinta-suave">
           <input type="checkbox" checked={confirmo} onChange={(e) => setConfirmo(e.target.checked)} className="accent-[var(--rauli)]" />

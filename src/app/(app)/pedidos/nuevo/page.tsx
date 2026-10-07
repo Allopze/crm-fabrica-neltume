@@ -21,6 +21,8 @@ export default async function NuevoPedidoPage({ searchParams }: PageProps<"/pedi
   const sesion = await requerirSesion();
   if (!sesion.permisos.has("pedidos.gestionar")) return <SinPermiso permiso="pedidos.gestionar" />;
   const id = String((await searchParams).cotizacion ?? "");
+  // Sin cotización no hay nada que convertir: se elige una aprobada en la lista.
+  if (!id) redirect("/cotizaciones?estado=aprobada");
   const verClientes = sesion.permisos.has("clientes.ver");
   const c = await obtenerCotizacion(bd(), id, verClientes).catch((e) => { if (e instanceof ErrorDominio) notFound(); throw e; });
   if (c.estado === "aceptada") {
@@ -43,7 +45,7 @@ export default async function NuevoPedidoPage({ searchParams }: PageProps<"/pedi
       {bloqueo ? (
         <Panel><p className="text-sm text-ambar">{bloqueo}</p><BotonLink href={`/cotizaciones/${c.id}`} className="mt-4">Volver a la cotización</BotonLink></Panel>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <div className="grid grid-cols-1 gap-6 [&>*]:min-w-0 lg:grid-cols-[1.4fr_1fr]">
           <Panel titulo="Reserva prevista" sinRelleno>
             <ul className="divide-y divide-linea">
               {c.items.map((i, k) => (
