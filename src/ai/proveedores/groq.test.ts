@@ -19,9 +19,20 @@ describe("proveedor Groq (REQ-ADM-4.2, REQ-COT-2.8)", () => {
     expect(init.headers).toMatchObject({ authorization: "Bearer clave-de-prueba" });
     expect(body.tool_choice).toEqual({ type: "function", function: { name: "proponer_items" } });
     expect(body.parallel_tool_calls).toBe(false);
+    expect(body.reasoning_effort).toBe("low");
     expect(r.proveedor).toBe("groq");
     expect(r.propuesta).toEqual(propuesta);
     expect(r.costoUsd).toBeUndefined();
+  });
+
+  it("desactiva razonamiento en Qwen y omite esfuerzo donde no hay control verificado", async () => {
+    const fn = vi.fn(async () => response(propuesta));
+    await new GroqIA({ ...cfg, modelo: "qwen/qwen3.8-27b" }, fn as unknown as typeof fetch).interpretar("3 Neltume", cat);
+    expect(JSON.parse(String((fn.mock.calls[0] as unknown as [string, RequestInit])[1].body)).reasoning_effort).toBe("none");
+    await new GroqIA({ ...cfg, modelo: "llama-3.3-70b-versatile" }, fn as unknown as typeof fetch).interpretar("3 Neltume", cat);
+    expect(JSON.parse(String((fn.mock.calls[1] as unknown as [string, RequestInit])[1].body))).not.toHaveProperty("reasoning_effort");
+    await new GroqIA({ ...cfg, modelo: "minimaxai/minimax-m2.7" }, fn as unknown as typeof fetch).interpretar("3 Neltume", cat);
+    expect(JSON.parse(String((fn.mock.calls[2] as unknown as [string, RequestInit])[1].body))).not.toHaveProperty("reasoning_effort");
   });
 
   it("rechaza tool ausente, JSON inválido, campos de precio y respuesta truncada", async () => {

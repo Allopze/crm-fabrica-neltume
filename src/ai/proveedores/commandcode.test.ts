@@ -3,11 +3,11 @@ import { ErrorIA, type InterpreteIA } from "../interfaz";
 import { interpretarConReintentos, reintentosDesdeEntorno } from "../reintentos";
 import { baseDeApi, CommandCodeIA } from "./commandcode";
 
-const cfg = { apiKey: "clave-de-prueba", baseUrl: "https://ejemplo.invalid", modelo: "modelo-x", timeoutMs: 50, precioEntradaMTok: 1, precioSalidaMTok: 5 };
+const cfg = { apiKey: "clave-de-prueba", baseUrl: "https://ejemplo.invalid", modelo: "gpt-6-luna", timeoutMs: 50, precioEntradaMTok: 1, precioSalidaMTok: 5 };
 const cat = { modelos: ["NELTUME"], maderas: ["RAULI"], anchos: [{ codigo: "4", etiqueta: "0,90 a 0,95" }], altosM: [2.1], accesorios: [] };
 const propuesta = { items: [{ texto_fuente: "3 Neltume", tipo: "puerta", modelo: "NELTUME", madera: "RAULI", ancho_m: 0.9, alto_m: 2.1, medida_accesorio: null, cantidad: 3, dudas: [] }], alertas: [], sin_items: false };
 const respuesta = (args: unknown, status = 200) => new Response(JSON.stringify({
-  model: "modelo-x", usage: { prompt_tokens: 4000, completion_tokens: 400 },
+  model: "gpt-6-luna", usage: { prompt_tokens: 4000, completion_tokens: 400 },
   choices: [{ message: { tool_calls: [{ function: { name: "proponer_items", arguments: JSON.stringify(args) } }] } }],
 }), { status });
 
@@ -24,6 +24,16 @@ describe("proveedor Command Code (ADR-0001)", () => {
     expect(cuerpo.messages[0].content).not.toMatch(/\$|precio de lista/);
     expect(r.costoUsd).toBeCloseTo(0.006, 6); // 4000 × 1 + 400 × 5 por millón
     expect(cuerpo.max_tokens).toBe(2000); // un pedido de varias líneas con dudas no cabía en 800
+    expect(cuerpo.reasoning_effort).toBe("low"); // REQ-COT-2.17: mínimo verificado en Command Code
+  });
+
+  it("permite Qwen 3.7 Flash sin enviar un effort que Command Code rechaza", async () => {
+    const fetchFn = vi.fn(async () => respuesta(propuesta));
+    await new CommandCodeIA({ ...cfg, modelo: "Qwen/Qwen3.7-Flash" }, fetchFn as unknown as typeof fetch).interpretar("3 Neltume", cat);
+    const cuerpo = JSON.parse(String((fetchFn.mock.calls[0] as unknown as [string, RequestInit])[1].body));
+    expect(cuerpo.model).toBe("Qwen/Qwen3.7-Flash");
+    expect(cuerpo).not.toHaveProperty("reasoning_effort");
+    expect(cuerpo).not.toHaveProperty("enable_thinking");
   });
 
   it("en la segunda pasada envía las partes omitidas delimitadas, sin dejar cerrar las etiquetas (REQ-COT-2.15)", async () => {

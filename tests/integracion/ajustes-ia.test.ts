@@ -25,7 +25,8 @@ beforeAll(async () => {
   process.env.CMD_API_KEY = "commandcode-clave-integracion";
   process.env.GROQ_API_KEY = "groq-clave-integracion";
   await escribirCatalogo("commandcode", { actualizadoEn: new Date().toISOString(), fuente: "prueba oficial", modelos: [
-    { id: "google/gemini-3.5-flash", nombre: "Gemini Flash", compatible: true, preview: false, precioEntradaUsdMTok: 1.5, precioSalidaUsdMTok: 9 },
+    { id: "gpt-6-luna", nombre: "GPT-6 Luna", compatible: true, preview: false, precioEntradaUsdMTok: 1.5, precioSalidaUsdMTok: 9 },
+    { id: "Qwen/Qwen3.7-Flash", nombre: "Qwen 3.7 Flash", compatible: true, preview: false, precioEntradaUsdMTok: 0.03, precioSalidaUsdMTok: 0.13 },
   ] });
   await escribirCatalogo("groq", { actualizadoEn: new Date().toISOString(), fuente: "prueba oficial", modelos: [
     { id: "openai/gpt-oss-120b", nombre: "GPT OSS 120B", compatible: true, preview: false, limites: { rpm: "30", rpd: "1K", tpm: "8K", tpd: "200K" } },
@@ -61,6 +62,8 @@ describe("Ajustes de IA (REQ-ADM-4.1–4.3)", () => {
     const r = await llamar(rutaAjustesIA.GET, "GET", "/api/v1/ajustes/ia", admin);
     expect(r.estado).toBe(200);
     expect(r.cuerpo.catalogos.commandcode.modelos[0]).toMatchObject({ precioEntradaUsdMTok: 1.5, precioSalidaUsdMTok: 9 });
+    expect(r.cuerpo.catalogos.commandcode.modelos[0]).toMatchObject({ modoRazonamiento: "Esfuerzo mínimo (low)" });
+    expect(r.cuerpo.catalogos.commandcode.modelos[1]).toMatchObject({ compatible: true, modoRazonamiento: "Esfuerzo predeterminado del proveedor" });
     expect(r.cuerpo.catalogos.groq.modelos[0].limites).toEqual({ rpm: "30", rpd: "1K", tpm: "8K", tpd: "200K" });
     expect(JSON.stringify(r.cuerpo)).not.toMatch(/keyCipher|"sobre"|Cipher/i);
     expect(r.cuerpo).not.toHaveProperty("clavePublica");
@@ -99,9 +102,15 @@ describe("Ajustes de IA (REQ-ADM-4.1–4.3)", () => {
     expect(rows.at(-1).despues).toMatchObject({ proveedor: "groq", modelo: "openai/gpt-oss-120b" });
 
     const activarCommandCode = await llamar(rutaAjustesIA.PUT, "PUT", "/api/v1/ajustes/ia", {
-      ...admin, cuerpo: { proveedorActivo: "commandcode", modelo: "google/gemini-3.5-flash", groqZdrConfirmado: true },
+      ...admin, cuerpo: { proveedorActivo: "commandcode", modelo: "gpt-6-luna", groqZdrConfirmado: true },
     });
     expect(activarCommandCode.estado).toBe(200);
+    expect(await crearInterpreteDesdeAjustes()).toMatchObject({ nombre: "commandcode" });
+
+    const qwenSinEffort = await llamar(rutaAjustesIA.PUT, "PUT", "/api/v1/ajustes/ia", {
+      ...admin, cuerpo: { proveedorActivo: "commandcode", modelo: "Qwen/Qwen3.7-Flash", groqZdrConfirmado: true },
+    });
+    expect(qwenSinEffort.estado).toBe(200);
     expect(await crearInterpreteDesdeAjustes()).toMatchObject({ nombre: "commandcode" });
 
     const noExiste = await llamar(rutaAjustesIA.PUT, "PUT", "/api/v1/ajustes/ia", {

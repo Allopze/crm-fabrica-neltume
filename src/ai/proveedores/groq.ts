@@ -3,6 +3,7 @@ import { HERRAMIENTA_PROPONER_ITEMS, Propuesta } from "../esquema";
 import { type CatalogoResumido, ErrorIA, type InterpreteIA, type OpcionesInterpretacion, type ResultadoInterpretacion } from "../interfaz";
 import { mensajeUsuario, motivoEsquema, promptSistema } from "../prompt";
 import { leerRetryAfterMs } from "../retry-after";
+import { perfilRazonamiento } from "../razonamiento";
 
 export interface ConfigGroq { apiKey: string; modelo: string; timeoutMs: number; maxTokensSalida?: number; baseUrl?: string }
 export const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
@@ -13,13 +14,15 @@ export class GroqIA implements InterpreteIA {
 
   async interpretar(texto: string, catalogo: CatalogoResumido, opciones: OpcionesInterpretacion = {}): Promise<ResultadoInterpretacion> {
     const inicio = Date.now();
+    const perfil = perfilRazonamiento("groq", this.cfg.modelo);
     let res: Response;
     try {
       res = await this.fetchFn(`${(this.cfg.baseUrl || GROQ_BASE_URL).replace(/\/$/, "")}/chat/completions`, {
         method: "POST",
         headers: { authorization: `Bearer ${this.cfg.apiKey}`, "content-type": "application/json" },
         body: JSON.stringify({
-          model: this.cfg.modelo, temperature: 0, max_tokens: this.cfg.maxTokensSalida || 2000,
+          model: perfil.modeloEfectivo, temperature: 0, max_tokens: this.cfg.maxTokensSalida || 2000,
+          ...perfil.parametros,
           messages: [{ role: "system", content: promptSistema(catalogo) }, { role: "user", content: mensajeUsuario(texto, opciones.omitidos, opciones.correccion) }],
           tools: [HERRAMIENTA_PROPONER_ITEMS],
           tool_choice: { type: "function", function: { name: "proponer_items" } },
@@ -51,7 +54,7 @@ export class GroqIA implements InterpreteIA {
     const propuesta = Propuesta.safeParse(argumentos);
     if (!propuesta.success) throw new ErrorIA("invalida", `Salida fuera del esquema: ${motivoEsquema(propuesta.error)}`);
     return {
-      propuesta: propuesta.data, proveedor: this.nombre, modelo: cuerpo.model ?? this.cfg.modelo,
+      propuesta: propuesta.data, proveedor: this.nombre, modelo: cuerpo.model ?? perfil.modeloEfectivo,
       tokensEntrada: Number(cuerpo.usage?.prompt_tokens ?? 0), tokensSalida: Number(cuerpo.usage?.completion_tokens ?? 0),
       latenciaMs: Date.now() - inicio,
     };

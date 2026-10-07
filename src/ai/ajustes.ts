@@ -5,6 +5,7 @@ import { parametro } from "@/db/esquema/catalogo";
 import { registrarAuditoria, type Actor } from "@/domain/auditoria";
 import { ErrorDominio } from "@/domain/errores";
 import type { TipoProveedor } from "./interfaz";
+import { perfilRazonamiento } from "./razonamiento";
 
 const CLAVE_CONFIG = "ia.proveedores.config";
 const CLAVE_CATALOGO = { commandcode: "ia.catalogo.commandcode", groq: "ia.catalogo.groq" } as const;
@@ -13,6 +14,7 @@ export interface LimitesGroq { rpm?: string; rpd?: string; tpm?: string; tpd?: s
 export interface ModeloIA {
   id: string; nombre: string; compatible: boolean; preview: boolean; motivo?: string;
   precioEntradaUsdMTok?: number; precioSalidaUsdMTok?: number; limites?: LimitesGroq;
+  modoRazonamiento?: string; modeloEfectivo?: string;
 }
 export interface CatalogoIA { actualizadoEn: string | null; fuente: string; modelos: ModeloIA[] }
 export interface EstadoAjustesIA {
@@ -44,13 +46,22 @@ export async function escribirCatalogo(p: ProveedorConfigurado, catalogo: Catalo
   await tx.insert(parametro).values({ clave: CLAVE_CATALOGO[p], valor: catalogo }).onConflictDoUpdate({ target: parametro.clave, set: { valor: catalogo } });
 }
 
+/** Muestra el modo efectivo sin alterar la compatibilidad del catálogo. */
+export function modeloConPolitica(proveedor: ProveedorConfigurado, modelo: ModeloIA): ModeloIA {
+  const perfil = perfilRazonamiento(proveedor, modelo.id);
+  return { ...modelo, modoRazonamiento: perfil.modo, modeloEfectivo: perfil.modeloEfectivo };
+}
+
 export async function estadoAjustesIA(): Promise<EstadoAjustesIA> {
   const [config, commandcode, groq] = await Promise.all([
     leerConfiguracionPrivada(), leerCatalogo("commandcode"), leerCatalogo("groq"),
   ]);
   return {
     proveedor: config.proveedor, modelo: config.modelo, groqZdrConfirmado: config.groqZdrConfirmado,
-    catalogos: { commandcode, groq },
+    catalogos: {
+      commandcode: { ...commandcode, modelos: commandcode.modelos.map((m) => modeloConPolitica("commandcode", m)) },
+      groq: { ...groq, modelos: groq.modelos.map((m) => modeloConPolitica("groq", m)) },
+    },
   };
 }
 
@@ -85,7 +96,8 @@ export async function guardarAjustesIA(entrada: EntradaAjustesIA, actor: Actor, 
     if (entrada.proveedorActivo) {
       if (!modelo) throw new ErrorDominio("VALIDACION", "Selecciona un modelo compatible antes de activar el proveedor.");
       const catalogo = await leerCatalogo(entrada.proveedorActivo, tx);
-      const seleccionado = catalogo.modelos.find((m) => m.id === modelo);
+      const encontrado = catalogo.modelos.find((m) => m.id === modelo);
+      const seleccionado = encontrado && modeloConPolitica(entrada.proveedorActivo, encontrado);
       if (!seleccionado) throw new ErrorDominio("VALIDACION", "El modelo no pertenece al catálogo actualizado del proveedor.");
       if (!seleccionado.compatible || seleccionado.preview) throw new ErrorDominio("VALIDACION", seleccionado.motivo ?? "Ese modelo no se puede activar para el cotizador.");
     }

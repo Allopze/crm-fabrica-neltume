@@ -102,6 +102,7 @@ En v1 el catálogo resumido va completo en el contexto (es pequeño), así que n
 - **Topes:** 20 interpretaciones por usuario por hora y `LLM_TOPE_DIARIO_USD` (al alcanzarlo, `ia_fallida`). `LLM_PRESUPUESTO_MENSUAL_USD` solo alerta al 80 % (SECURITY T4). El costo de cada llamada queda en `llamada_ia`.
 - **Latencia:** el timeout es de 12 s por intento y el presupuesto total de 15 s p90 (REQ-NFR-1).
 - **Modelo:** se elige desde `/administracion/ia`; catálogo Command Code y tarifas públicas se refrescan desde el worker. La selección se activa inmediatamente; §6 describe una verificación informativa, no un bloqueo.
+- **Razonamiento (REQ-COT-2.17, ADR-0015):** Groq Qwen 3.6/3.8 usa `reasoning_effort: "none"`; GPT-OSS 20B/120B usa `"low"`; Llama 3.1/3.3 no necesita parámetro. Command Code GPT-6 Luna usa `"low"`. Qwen 3.7 Flash de Command Code sigue disponible sin parámetro de effort: su Provider API rechazó `none` y una prueba con `enable_thinking: false` siguió informando tokens de razonamiento. Para los demás modelos sin control comprobado se usa el valor predeterminado del proveedor. `reasoning_format: "hidden"` solo oculta la salida. La misma política rige para la primera lectura, las segundas pasadas y `npm run eval:ia`.
 - **Credenciales:** cada proveedor tiene una variable (`CMD_API_KEY`, `GROQ_API_KEY`) en el entorno privado del worker. En desarrollo se carga `.env.worker.local`; en producción Compose solo las inyecta en `worker`. Ni la web ni Ajustes reciben o guardan las claves. Command Code conserva `x-cmd-zdr: 1`.
 
 ## 5. Baja confianza y fallas

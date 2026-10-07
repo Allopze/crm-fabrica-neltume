@@ -32,5 +32,5 @@ const servidor = createServer((req, res) => {
   });
 });
 
-servidor.listen(3202, "127.0.0.1");
+servidor.listen(Number(process.env.E2E_MOCK_PUERTO || 3202), "127.0.0.1");
 for (const senal of ["SIGINT", "SIGTERM"] as const) process.on(senal, () => servidor.close(() => process.exit(0)));

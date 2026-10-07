@@ -75,6 +75,7 @@ export function AjustesIA({ csrf }: { csrf: string }) {
             <div className="flex items-center gap-2"><span className="font-medium">{modeloElegido.nombre}</span>{modeloElegido.preview && <Etiqueta tono="ambar">Preview</Etiqueta>}{modeloElegido.compatible && <Etiqueta tono="musgo">Compatible</Etiqueta>}</div>
             <p className="mt-1 font-mono text-xs text-tinta-tenue">{modeloElegido.id}</p>
             {modeloElegido.motivo && <p className="mt-2 text-error">{modeloElegido.motivo}</p>}
+            {modeloElegido.modoRazonamiento && <p className="mt-2 text-tinta-suave">Modo efectivo: {modeloElegido.modoRazonamiento}{modeloElegido.modeloEfectivo !== modeloElegido.id ? ` · ${modeloElegido.modeloEfectivo}` : ""}</p>}
             {proveedor === "commandcode" ? <p className="mt-2 text-tinta-suave">{precios(modeloElegido)} · tarifa publicada</p> : <p className="mt-2 text-tinta-suave">Límites Free de referencia: {limites(modeloElegido)}</p>}
           </div>}
           {proveedor === "groq" && <label className="flex items-start gap-3 rounded-md border border-ambar/30 bg-ambar-velo p-3 text-sm text-ambar">
@@ -84,7 +85,7 @@ export function AjustesIA({ csrf }: { csrf: string }) {
           <Boton variante="primario" disabled={pendiente || !modelo || !modeloElegido?.compatible || modeloElegido.preview} onClick={() => iniciar(() => void activar())}>
             <Check className="h-4 w-4" /> {pendiente ? "Activando…" : "Activar proveedor y modelo"}
           </Boton>
-          {estado.proveedor && <p className="text-xs text-tinta-tenue">Activo ahora: {estado.proveedor} · {estado.modelo}</p>}
+          {estado.proveedor && <p className="text-xs text-tinta-tenue">Activo ahora: {estado.proveedor} · {estado.modelo} · {estado.catalogos[estado.proveedor].modelos.find((m) => m.id === estado.modelo)?.modoRazonamiento ?? "Esfuerzo predeterminado del proveedor"}</p>}
         </div>
       </Panel>
 
@@ -104,8 +105,8 @@ export function AjustesIA({ csrf }: { csrf: string }) {
       {proveedor === "commandcode" && <p className="mb-4 text-sm text-tinta-suave">Tarifas de referencia por millón de tokens, consultadas desde <a className="underline" href={estado.catalogos.commandcode.fuente} target="_blank" rel="noreferrer">precios oficiales de Command Code</a>.</p>}
       <div role="region" aria-label="Tarifas publicadas" tabIndex={0} className="mt-4 max-h-[420px] overflow-auto rounded-md border border-linea">
         {modelos.length === 0 ? <p className="p-5 text-sm text-tinta-tenue">El worker aún no ha cargado el catálogo de este proveedor.</p> : <table className="w-full text-left text-sm">
-          <thead className="sticky top-0 bg-papel text-xs uppercase tracking-wide text-tinta-tenue"><tr><th className="px-4 py-2">Modelo</th><th className="px-4 py-2">{proveedor === "commandcode" ? "Tarifa / 1M" : "RPM · RPD · TPM · TPD"}</th><th className="px-4 py-2">Estado</th></tr></thead>
-          <tbody>{modelos.map((m) => <tr key={m.id} className="border-t border-linea align-top"><td className="px-4 py-2"><span className="font-medium">{m.nombre}</span><span className="mt-0.5 block font-mono text-xs text-tinta-tenue">{m.id}</span></td><td className="px-4 py-2 text-xs tabular-nums">{proveedor === "commandcode" ? precios(m) : limites(m)}</td><td className="px-4 py-2">{m.compatible && !m.preview ? <Etiqueta tono="musgo">Disponible</Etiqueta> : <span className="text-xs text-tinta-suave">{m.motivo ?? "No disponible"}</span>}</td></tr>)}</tbody>
+          <thead className="sticky top-0 bg-papel text-xs uppercase tracking-wide text-tinta-tenue"><tr><th className="px-4 py-2">Modelo</th><th className="px-4 py-2">{proveedor === "commandcode" ? "Tarifa / 1M" : "RPM · RPD · TPM · TPD"}</th><th className="px-4 py-2">Modo</th><th className="px-4 py-2">Estado</th></tr></thead>
+          <tbody>{modelos.map((m) => <tr key={m.id} className="border-t border-linea align-top"><td className="px-4 py-2"><span className="font-medium">{m.nombre}</span><span className="mt-0.5 block font-mono text-xs text-tinta-tenue">{m.id}</span></td><td className="px-4 py-2 text-xs tabular-nums">{proveedor === "commandcode" ? precios(m) : limites(m)}</td><td className="px-4 py-2 text-xs text-tinta-suave">{m.modoRazonamiento ?? "Esfuerzo predeterminado del proveedor"}</td><td className="px-4 py-2">{m.compatible && !m.preview ? <Etiqueta tono="musgo">Disponible</Etiqueta> : <span className="text-xs text-tinta-suave">{m.motivo ?? "No disponible"}</span>}</td></tr>)}</tbody>
         </table>}
       </div>
     </Panel>

@@ -3,7 +3,7 @@ import { cargarEnvLocal, conBase, requerirEnv } from "./src/db/urls";
 
 cargarEnvLocal();
 
-const PUERTO = 3200;
+const PUERTO = Number(process.env.PLAYWRIGHT_PUERTO || 3200);
 const DATABASE_E2E = conBase(requerirEnv("DATABASE_URL"), "neltume_e2e");
 process.env.DATABASE_URL = DATABASE_E2E;
 
@@ -44,6 +44,7 @@ export default defineConfig({
       url: `http://localhost:${PUERTO + 2}/health`,
       reuseExistingServer: false,
       timeout: 30_000,
+      env: { E2E_MOCK_PUERTO: String(PUERTO + 2) },
     },
   ],
 });

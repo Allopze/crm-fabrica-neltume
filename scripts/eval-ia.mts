@@ -13,7 +13,7 @@ import { ordenarPorCostoEstimado } from "../src/ai/costo-estimado";
 import { renderizarTablaCLI } from "../src/ai/tabla-cli";
 import { type Caso, evaluarCaso, type Obtenido, type ResultadoCaso, resumir } from "../src/ai/evaluacion";
 import type { InterpreteIA } from "../src/ai/interfaz";
-import { apiKeyDesdeEntorno, leerCatalogo, leerConfiguracionPrivada, type CatalogoIA, type ConfiguracionPrivadaIA, type ModeloIA, type ProveedorConfigurado } from "../src/ai/ajustes";
+import { apiKeyDesdeEntorno, leerCatalogo, leerConfiguracionPrivada, modeloConPolitica, type CatalogoIA, type ConfiguracionPrivadaIA, type ModeloIA, type ProveedorConfigurado } from "../src/ai/ajustes";
 import { normalizarPedido, redactar } from "../src/ai/redaccion";
 import { promptSistema } from "../src/ai/prompt";
 import { interpretarRevisado } from "../src/ai/revision";
@@ -53,7 +53,7 @@ function modelosEvaluables(proveedor: ProveedorConfigurado, catalogo: CatalogoIA
   if (config.proveedor === proveedor && config.modelo && !modelos.some((m) => m.id === config.modelo)) {
     modelos.push({ id: config.modelo, nombre: config.modelo, compatible: true, preview: false });
   }
-  return modelos;
+  return modelos.map((m) => modeloConPolitica(proveedor, m));
 }
 
 const numeroTabla = (n: number | undefined) => n === undefined ? "—" : n.toLocaleString("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 6 });
@@ -172,7 +172,7 @@ async function main() {
     "src/domain/cotizaciones/mapear.ts", "src/ai/revision.ts", "src/ai/evaluacion.ts",
   ].map((ruta) => readFileSync(ruta, "utf8")).join("\n"));
   const origen = ids ? `muestra de ${casos.length} casos (${ids.join(",")})` : generados ? `${generados} casos generados (semilla ${semilla})` : `${casos.length} casos de AI.md §6`;
-  console.log(`\nEvaluando ${casos.length} casos con ${base.nombre} · ${modelo.id}\n`);
+  console.log(`\nEvaluando ${casos.length} casos con ${base.nombre} · ${modelo.modeloEfectivo ?? modelo.id} · ${modelo.modoRazonamiento}\n`);
 
   const resultados: ResultadoCaso[] = [];
   const propuestas: Record<number, unknown> = {};
@@ -209,6 +209,7 @@ async function main() {
   const md = [
     `# Evaluación del intérprete · ${modelo.id}`, "",
     `Fecha ${fecha.split("-").reverse().join("-")} · proveedor ${base.nombre} · ${origen} · **${aprobado ? "APROBADO" : "NO APROBADO"}**`, "",
+    `Modo efectivo: ${modelo.modoRazonamiento} · modelo ${modelo.modeloEfectivo ?? modelo.id}.`, "",
     `Tokens medios por pedido: ${tokensMedios.entrada} de entrada y ${tokensMedios.salida} de salida.${conTarifa ? "" : proveedor === "groq" ? " Groq no informó costos por llamada; el costo no se evalúa." : " Sin tarifas del modelo: el costo no se evalúa."}`, "",
     `Identificadores de comparación: prompt ${promptHash} · casos ${casosHash} · pipeline ${pipelineHash}.`, "",
     "| Criterio | Resultado | Meta | |", "|---|---|---|---|",
@@ -218,7 +219,7 @@ async function main() {
     "",
   ].join("\n");
   writeFileSync(`${nombre}.md`, md);
-  writeFileSync(`${nombre}.json`, JSON.stringify({ modelo: modelo.id, proveedor: base.nombre, fecha, promptHash, casosHash, pipelineHash, criterios, aprobado, tokensMedios, resultados, propuestas }, null, 1));
+  writeFileSync(`${nombre}.json`, JSON.stringify({ modelo: modelo.id, modeloEfectivo: modelo.modeloEfectivo ?? modelo.id, modoRazonamiento: modelo.modoRazonamiento, proveedor: base.nombre, fecha, promptHash, casosHash, pipelineHash, criterios, aprobado, tokensMedios, resultados, propuestas }, null, 1));
   console.log(`Tokens medios: ${tokensMedios.entrada} entrada / ${tokensMedios.salida} salida`);
   console.log(`\n${criterios.map((k) => `${marca(k.cumple)} ${k.nombre}: ${valor(k.nombre, k.valor)} (meta ${k.meta})`).join("\n")}`);
   console.log(`\n${aprobado ? "APROBADO" : "NO APROBADO"} · informe en ${nombre}.md`);

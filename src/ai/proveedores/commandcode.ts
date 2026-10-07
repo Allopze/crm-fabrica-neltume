@@ -3,6 +3,7 @@ import { HERRAMIENTA_PROPONER_ITEMS, Propuesta } from "../esquema";
 import { type CatalogoResumido, ErrorIA, type InterpreteIA, type OpcionesInterpretacion, type ResultadoInterpretacion } from "../interfaz";
 import { mensajeUsuario, motivoEsquema, promptSistema } from "../prompt";
 import { leerRetryAfterMs } from "../retry-after";
+import { perfilRazonamiento } from "../razonamiento";
 
 export interface ConfigCommandCode {
   apiKey: string;
@@ -28,15 +29,17 @@ export class CommandCodeIA implements InterpreteIA {
 
   async interpretar(texto: string, catalogo: CatalogoResumido, opciones: OpcionesInterpretacion = {}): Promise<ResultadoInterpretacion> {
     const inicio = Date.now();
+    const perfil = perfilRazonamiento("commandcode", this.cfg.modelo);
     let res: Response;
     try {
       res = await this.fetchFn(`${this.cfg.baseUrl}/provider/v1/chat/completions`, {
         method: "POST",
         headers: { authorization: `Bearer ${this.cfg.apiKey}`, "content-type": "application/json", "x-cmd-zdr": "1" },
         body: JSON.stringify({
-          model: this.cfg.modelo,
+          model: perfil.modeloEfectivo,
           temperature: 0,
           max_tokens: this.cfg.maxTokensSalida || MAX_TOKENS_SALIDA,
+          ...perfil.parametros,
           messages: [{ role: "system", content: promptSistema(catalogo) }, { role: "user", content: mensajeUsuario(texto, opciones.omitidos, opciones.correccion) }],
           tools: [HERRAMIENTA_PROPONER_ITEMS],
           tool_choice: { type: "function", function: { name: "proponer_items" } },
@@ -74,7 +77,7 @@ export class CommandCodeIA implements InterpreteIA {
     const tokensEntrada = Number(cuerpo.usage?.prompt_tokens ?? 0);
     const tokensSalida = Number(cuerpo.usage?.completion_tokens ?? 0);
     return {
-      propuesta: propuesta.data, proveedor: this.nombre, modelo: cuerpo.model ?? this.cfg.modelo, tokensEntrada, tokensSalida,
+      propuesta: propuesta.data, proveedor: this.nombre, modelo: cuerpo.model ?? perfil.modeloEfectivo, tokensEntrada, tokensSalida,
       costoUsd: (tokensEntrada * this.cfg.precioEntradaMTok + tokensSalida * this.cfg.precioSalidaMTok) / 1_000_000,
       latenciaMs: Date.now() - inicio,
     };
