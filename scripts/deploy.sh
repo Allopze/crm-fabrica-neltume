@@ -41,7 +41,8 @@ rsync -az --delete \
   --exclude=/.git/ --exclude=/.claude/ \
   -f ':- .gitignore' \
   ./ "$HOST:$DIR/"
-rsync -az --chmod=F600 "$ENV_FILE" "$HOST:$DIR/.env"
+# Por ssh y con umask 077: el .env nace con permisos 600 (el openrsync de macOS no acepta --chmod).
+ssh "$HOST" "umask 077 && cat > '$DIR/.env'" < "$ENV_FILE"
 
 echo "→ Levantando Docker Compose"
 # Los perfiles opcionales (p. ej. el worker de IA) se activan con COMPOSE_PROFILES en el .env.
