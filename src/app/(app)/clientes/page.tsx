@@ -26,7 +26,7 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
       <Encabezado
         titulo="Clientes"
         descripcion="Solo los datos necesarios para cotizar y despachar. Son datos personales: nunca se envían a la IA."
-        acciones={sesion.permisos.has("clientes.editar") && <NuevoCliente csrf={sesion.csrf} />}
+        acciones={sesion.permisos.has("clientes.editar") && <NuevoCliente csrf={sesion.csrf} rutInicial={typeof sp.nuevo === "string" ? sp.nuevo : undefined} />}
       />
       <form className="mb-5 flex flex-wrap items-center gap-2" role="search" aria-label="Buscar clientes">
         <input type="search" name="q" defaultValue={q} aria-label="Buscar cliente" placeholder="Nombre, RUT o comuna" className={`${campo} w-full sm:w-72`} />

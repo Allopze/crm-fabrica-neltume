@@ -7,6 +7,8 @@ import { usuario } from "@/db/esquema/seguridad";
 import { ErrorDominio } from "../errores";
 import { hoySantiago } from "../precios/dias-habiles";
 import { saldo } from "../stock";
+import { pistasBorrador } from "./pistas";
+import { leerPlazo } from "./plazo";
 
 export async function obtenerCotizacion(tx: Tx, id: string, verCliente: boolean) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) throw new ErrorDominio("NO_ENCONTRADO", "Cotización no encontrada");
@@ -28,9 +30,13 @@ export async function obtenerCotizacion(tx: Tx, id: string, verCliente: boolean)
     return { ...i, avisoStock: faltan > 0 ? `Disponible ${Math.max(disponible, 0)} · faltan ${faltan} (a fabricar)` : null };
   }));
   const vencida = c.estado === "aprobada" && c.vigenciaHasta !== null && c.vigenciaHasta < hoySantiago();
+  // Sugerencias (REQ-COT-2.18–2.20): mientras se revisa, las tres; después solo el plazo, para la nota de pedido.
+  const pistas = c.estado === "borrador" || c.estado === "ia_fallida"
+    ? await pistasBorrador(tx, c, verCliente)
+    : { cliente: null, repetidas: [], plazo: c.textoOriginal ? leerPlazo(c.textoOriginal, hoySantiago(c.creadoEn)) : null };
 
   return {
-    ...c, vencida, items: conAviso,
+    ...c, vencida, items: conAviso, pistas,
     cliente: cli ? { id: cli.id, nombre: cli.nombre, rut: cli.rut, comuna: cli.comuna, contacto: cli.contacto } : c.clienteId ? { id: c.clienteId, nombre: "(oculto)" } : null,
     lista: { usada: usada?.version ?? null, vigente: vigente?.version ?? null, desactualizada: Boolean(usada && vigente && usada.version !== vigente.version && c.estado === "borrador") },
     aprobador: aprobador?.nombre ?? null,

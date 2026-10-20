@@ -10,9 +10,11 @@ import { actualizarCabecera } from "@/domain/cotizaciones/edicion";
 export const GET = conPermiso<{ id: string }>("cotizaciones.crear", async ({ params, sesion }) =>
   NextResponse.json(await obtenerCotizacion(bd(), params.id, sesion.permisos.has("clientes.ver"))), { ocultar: "Cotización no encontrada" });
 
-const Cabecera = z.strictObject({ clienteId: z.uuid().nullable().optional(), notas: z.string().trim().max(1000).nullable().optional(), version: z.number().int().positive() });
+const Cabecera = z.strictObject({ clienteId: z.uuid().nullable().optional(), notas: z.string().trim().max(1000).nullable().optional(),
+  clienteDetectadoPor: z.enum(["rut", "correo", "telefono"]).optional(), version: z.number().int().positive() });
 
-// PATCH /api/v1/cotizaciones/:id — cliente y notas de un borrador (versión optimista)
+// PATCH /api/v1/cotizaciones/:id — cliente y notas de un borrador (versión optimista); el origen del cliente sugerido
+// va a la auditoría (REQ-COT-2.18)
 export const PATCH = conPermiso<{ id: string }>("cotizaciones.crear", async ({ req, params, actor, sesion }) => {
   const { version, ...d } = Cabecera.parse(await req.json());
   await bd().transaction((tx) => actualizarCabecera(tx, params.id, d, version, actor, "web"));

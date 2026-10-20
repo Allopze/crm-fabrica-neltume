@@ -24,14 +24,29 @@ const PATRONES: [RegExp, string][] = [
   [/(?<![\p{N}.,-])\d(?:\.?\d){6,}(?![\p{N}-])/gu, "[NUMERO]"],
 ];
 
+function prenormalizar(texto: string): string {
+  return texto
+    .replace(CIFRA_ANCHA, (c) => String.fromCharCode(c.charCodeAt(0) - 0xff10 + 48))
+    .replace(GUION_ENTRE_CIFRAS, "-");
+}
+
 /** Reemplaza RUT, correo, teléfono, URL y secuencias largas de cifras. `marca` fija un único reemplazo (logs). */
 export function enmascararDatosPersonales(texto: string, marca?: string): { texto: string; reemplazos: number } {
   let reemplazos = 0;
-  let salida = texto
-    .replace(CIFRA_ANCHA, (c) => String.fromCharCode(c.charCodeAt(0) - 0xff10 + 48))
-    .replace(GUION_ENTRE_CIFRAS, "-");
+  let salida = prenormalizar(texto);
   for (const [patron, etiqueta] of PATRONES) {
     salida = salida.replace(patron, () => { reemplazos++; return marca ?? etiqueta; });
   }
   return { texto: salida, reemplazos };
+}
+
+/** Lo que el enmascarado reemplazaría, por tipo y en el mismo orden (detección de cliente, REQ-COT-2.18). */
+export function encontrarDatosPersonales(texto: string): { tipo: "rut" | "correo" | "telefono"; valor: string }[] {
+  const hallados: { tipo: "rut" | "correo" | "telefono"; valor: string }[] = [];
+  let salida = prenormalizar(texto);
+  for (const [patron, etiqueta] of PATRONES) {
+    const tipo = ({ "[RUT]": "rut", "[CORREO]": "correo", "[TELEFONO]": "telefono" } as const)[etiqueta as "[RUT]"];
+    salida = salida.replace(patron, (m) => { if (tipo) hallados.push({ tipo, valor: m }); return etiqueta; });
+  }
+  return hallados;
 }

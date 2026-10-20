@@ -282,3 +282,15 @@ Correcciones de fidelidad, permisos y operabilidad detectadas en la auditoría d
 - [x] T14.11 Resto de errores de acción con `ErrorAccion`, foco de confirmaciones y `aria-describedby` del botón Aprobar · UX §2 · lint/typecheck
 
 **Checkpoint F14:** `npm test` completo verde, lint y build; recorrido por teclado y en 390 px; fechas cerca de medianoche en Santiago; ficha de cliente; selector con flechas/Enter/Escape. Espero tu OK.
+
+
+## Fase 15 — Sugerencias del texto del pedido (aprobada el 20-10-2026)
+
+Sugerencias sin IA sobre el texto original del borrador; ninguna se aplica sin un clic y no se guardan.
+
+- [x] T15.0 Decisiones en documentos: SPEC (REQ-COT-2.18–2.20), DESIGN §3 paso 9a, AI §1, UX §3 y API · — · — · —
+- [x] T15.1 (45) Cliente por RUT, correo o teléfono del texto (patrones compartidos con el enmascarado), solo con `clientes.ver`; aceptar la sugerencia audita `clienteDetectadoPor`; RUT nuevo → crear cliente con él · REQ-COT-2.18 · U `plazo` (identificadores), I `cotizacion-pistas` · T15.0
+- [x] T15.2 (30) Aviso de posible repetida: mismo texto, o mismo cliente con un artículo en común, en 14 días · REQ-COT-2.19 · I `cotizacion-pistas` · T15.0
+- [x] T15.3 (45) Plazo pedido leído sin IA, en la revisión y al convertir en pedido; nunca fija la entrega comprometida · REQ-COT-2.20 · U `plazo`, I `cotizacion-pistas` · T15.0
+
+**Checkpoint F15:** `npm test` completo verde, lint y build; recorrido: pegar un pedido con RUT y «para el viernes», asignar el cliente sugerido, repetir el pedido y ver el aviso. Espero tu OK.

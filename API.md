@@ -92,9 +92,10 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | POST `/cotizaciones/interpretaciones` (`texto, cliente_id?`) | `cotizaciones.crear` | ✔ | 202 `{ id, estado: interpretando }`; 429 `LIMITE_IA` |
 | POST `/cotizaciones` (`clienteId?, items:[{codigo, cantidad} \| {detalle, cantidad}]`) | `cotizaciones.crear` | ✔ | Cotización manual (REQ-COT-5) |
 | GET `/cotizaciones?estado&q&desde&hasta&antesDe&limite` | `cotizaciones.crear` | | `q`: número o nombre de cliente (este solo con `clientes.ver`); fechas de creación en días de Santiago; paginado por número (REQ-COT-10.1) |
-| GET `/cotizaciones/:id` | `cotizaciones.crear` | | Texto original, interpretación, ítems, avisos de stock y diferencia de lista. Sin permiso: el mismo 404 que si no existiera (REQ-COT-10.2) |
-| PATCH `/cotizaciones/:id` (`cliente_id, notas, version`) | `cotizaciones.crear` | | Solo en borrador |
-| POST `/cotizaciones/:id/items` · PATCH `/…/items/:itemId` · DELETE `/…/items/:itemId` | `cotizaciones.crear` | | Resolver: `{ codigo, cantidad }` o `{ precio_unitario }` si es `a_pedido`; recalcula |
+| GET `/cotizaciones/:id` | `cotizaciones.crear` | | Texto original, interpretación, ítems, avisos de stock, diferencia de lista y `pistas` (`cliente` solo con `clientes.ver`, `repetidas`, `plazo`; REQ-COT-2.18–2.20). Sin permiso: el mismo 404 que si no existiera (REQ-COT-10.2) |
+| GET `/cotizaciones/:id/estado` | `cotizaciones.crear` | | `{ estado, version }` para el sondeo ligero mientras la IA interpreta (UX §3) |
+| PATCH `/cotizaciones/:id` (`cliente_id, notas, clienteDetectadoPor?, version`) | `cotizaciones.crear` | | Solo en borrador; `clienteDetectadoPor` (`rut`/`correo`/`telefono`) exige cliente y solo va a la auditoría (REQ-COT-2.18) |
+| POST `/cotizaciones/:id/items` · PATCH `/…/items/:itemId` · DELETE `/…/items/:itemId` | `cotizaciones.crear` | | Agregar `{ codigo, cantidad }` o una línea libre `{ detalle, cantidad }` (por confirmar, REQ-COT-5.2); resolver con `{ codigo, cantidad }` o `{ precio_unitario }` si es `a_pedido`; recalcula |
 | POST `/cotizaciones/:id/recalcular` | `cotizaciones.crear` | | Pasa a la lista vigente (REQ-COT-6.3) |
 | POST `/cotizaciones/:id/descuento` (`porcentaje` en puntos 0–99,99, `motivo`, `version`) | `descuentos.aplicar` | | Solo borradores; 0 lo quita; auditado (REQ-COT-7.1, 7.2) |
 | POST `/cotizaciones/:id/aprobar` (`version`) | `cotizaciones.aprobar` | ✔ | 409 `ITEMS_POR_CONFIRMAR` |

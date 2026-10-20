@@ -15,10 +15,11 @@ const CAMPOS: [string, string, boolean][] = [
   ["direccionDespacho", "Dirección de despacho", false],
 ];
 
-/** Alta de cliente (REQ-COT-9.1): solo datos necesarios para cotizar y despachar. */
-export function NuevoCliente({ csrf }: { csrf: string }) {
+/** Alta de cliente (REQ-COT-9.1): solo datos necesarios para cotizar y despachar. `rutInicial`: el RUT detectado en
+ * el texto de una cotización (REQ-COT-2.18) abre el formulario con él. */
+export function NuevoCliente({ csrf, rutInicial }: { csrf: string; rutInicial?: string }) {
   const router = useRouter();
-  const [abierto, setAbierto] = useState(false);
+  const [abierto, setAbierto] = useState(Boolean(rutInicial));
   const [error, setError] = useState<unknown>(null);
   const [pendiente, iniciar] = useTransition();
   if (!abierto) return <Boton variante="primario" onClick={() => setAbierto(true)}><Plus className="h-4 w-4" /> Nuevo cliente</Boton>;
@@ -40,7 +41,8 @@ export function NuevoCliente({ csrf }: { csrf: string }) {
     }}>
       {CAMPOS.map(([k, etiqueta, req]) => (
         <label key={k} className={k === "direccionDespacho" ? "text-sm sm:col-span-2" : "text-sm"}>{etiqueta}{req && " *"}
-          <input name={k} required={req} className={`${campo} mt-1 ${k === "rut" ? "font-mono" : ""}`} placeholder={k === "rut" ? "12.345.678-5" : undefined} />
+          <input name={k} required={req} className={`${campo} mt-1 ${k === "rut" ? "font-mono" : ""}`} placeholder={k === "rut" ? "12.345.678-5" : undefined}
+            defaultValue={k === "rut" ? rutInicial : undefined} />
         </label>
       ))}
       <label className="text-sm">Tipo

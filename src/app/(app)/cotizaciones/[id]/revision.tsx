@@ -9,6 +9,7 @@ import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 import { clp, cn, fecha, fechaHora } from "@/lib/formato";
 import { Descuento } from "./descuento";
+import { PistasBorrador, PlazoPedido } from "./pistas";
 import { SelectorArticulo } from "./selector-articulo";
 import { TarjetaItem } from "./tarjeta-item";
 import { TextoMarcado } from "./texto-marcado";
@@ -21,10 +22,11 @@ interface Props {
   csrf: string;
   puedeAprobar: boolean;
   puedeDescontar: boolean;
+  puedeCrearCliente: boolean;
   clientes: { id: string; nombre: string }[] | null;
 }
 
-export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes }: Props) {
+export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, puedeCrearCliente, clientes }: Props) {
   const router = useRouter();
   const [c, setC] = useState(inicial);
   const [activo, setActivo] = useState<string | null>(null);
@@ -88,7 +90,8 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
             {c.estado === "aprobada" && !c.vencida && <BotonLink href={`/pedidos/nuevo?cotizacion=${c.id}`} variante="primario"><Truck className="h-4 w-4" /> Convertir en pedido</BotonLink>}
           </div>
         </div>
-      ) : (
+      ) : null}
+      {aprobada ? (c.pistas.plazo && <PlazoPedido plazo={c.pistas.plazo} />) : (
         <>
           {(c.alertas as string[]).map((a) => (
             <div key={a} role="alert" className="flex items-start gap-3 rounded-lg border border-error/25 bg-error-velo px-5 py-3.5 text-sm text-error">
@@ -101,6 +104,8 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
               <Boton onClick={() => accion(() => pedir("POST", `${base}/recalcular`, { csrf, cuerpo: { version: c.version } }))}><RotateCcw className="h-4 w-4" /> Recalcular con la lista vigente</Boton>
             </div>
           )}
+          <PistasBorrador pistas={c.pistas} deshabilitado={pendiente} puedeCrearCliente={puedeCrearCliente}
+            onAsignar={(clienteId, por) => accion(() => pedir("PATCH", base, { csrf, cuerpo: { clienteId, clienteDetectadoPor: por, version: c.version } }))} />
         </>
       )}
       <div className={cn("grid grid-cols-1 gap-6 [&>*]:min-w-0", c.textoOriginal ? "xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]" : "max-w-3xl")}>

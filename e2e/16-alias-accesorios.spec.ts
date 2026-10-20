@@ -25,5 +25,5 @@ test("«2 Fui oregón 70x200 con su marco 2x4 de 2,10» cotiza la puerta por ali
   await expect(page.getByRole("heading", { name: "Ítems · 2" })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("article", { name: "Ítem 1" })).toContainText("Fuy · Pino Oregón");
   await expect(page.getByRole("article", { name: "Ítem 2" })).toContainText("Marco · Pino Oregón · 2x4 pulg. kit 2,10 m");
-  await expect(page.getByText("Por confirmar")).toHaveCount(0);
+  await expect(page.getByText("Por confirmar", { exact: true })).toHaveCount(0);
 });

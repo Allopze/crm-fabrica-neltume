@@ -101,9 +101,12 @@ export async function eliminarItem(tx: Tx, id: string, itemId: string, version: 
   await registrarAuditoria(tx, { actor, accion: "quitar ítem", recurso: "cotizacion", recursoId: id, antes: { item: itemId, descripcion: borrados[0].descripcion, textoFuente: borrados[0].textoFuente }, resultado: "ok", origen });
 }
 
-export async function actualizarCabecera(tx: Tx, id: string, d: { clienteId?: string | null; notas?: string | null }, version: number, actor: Actor & { id: string }, origen: Origen) {
+/** `clienteDetectadoPor`: el usuario aceptó el cliente sugerido desde el texto; solo queda en la auditoría (REQ-COT-2.18). */
+export async function actualizarCabecera(tx: Tx, id: string, d: { clienteId?: string | null; notas?: string | null; clienteDetectadoPor?: "rut" | "correo" | "telefono" }, version: number, actor: Actor & { id: string }, origen: Origen) {
   const c = await tomarBorrador(tx, id, version);
-  await tx.update(cotizacion).set(d).where(eq(cotizacion.id, id));
+  const { clienteDetectadoPor, ...datos } = d;
+  if (clienteDetectadoPor && !datos.clienteId) throw new ErrorDominio("VALIDACION", "Falta el cliente sugerido");
+  await tx.update(cotizacion).set(datos).where(eq(cotizacion.id, id));
   await registrarAuditoria(tx, { actor, accion: "editar cabecera", recurso: "cotizacion", recursoId: id, antes: { clienteId: c.clienteId, notas: c.notas }, despues: d, resultado: "ok", origen });
 }
 

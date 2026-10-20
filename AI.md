@@ -16,6 +16,7 @@ Refs: REQ-COT-2.x, 3.x, 7.3 · REQ-NFR-1, 2, 5 · ADR-0001 (proveedor), ADR-0006
 | Guardar, aprobar o enviar | No tiene herramientas de escritura; la aprobación es humana (REQ-COT-4.x) |
 | Obedecer instrucciones del texto del cliente | El texto va como dato delimitado; lo que parezca instrucción se reporta en `alertas` |
 | Recibir datos personales | Enmascarado previo; nunca se envían nombre, RUT, correo ni teléfono (REQ-COT-2.9) |
+| Detectar el cliente o el plazo | Lo hace el backend sobre el texto original, sin IA (REQ-COT-2.18, 2.20) |
 
 ## 2. Esquema de salida (herramienta `proponer_items`)
 

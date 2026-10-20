@@ -13,6 +13,7 @@ import { ErrorDominio } from "@/domain/errores";
 import { repartirReserva } from "@/domain/pedidos/reserva";
 import { saldo } from "@/domain/stock";
 import { clp } from "@/lib/formato";
+import { PlazoPedido } from "../../cotizaciones/[id]/pistas";
 import { FormularioPedido } from "./formulario-pedido";
 
 export const metadata: Metadata = { title: "Convertir en pedido" };
@@ -45,6 +46,8 @@ export default async function NuevoPedidoPage({ searchParams }: PageProps<"/pedi
       {bloqueo ? (
         <Panel><p className="text-sm text-ambar">{bloqueo}</p><BotonLink href={`/cotizaciones/${c.id}`} className="mt-4">Volver a la cotización</BotonLink></Panel>
       ) : (
+        <>
+        {c.pistas.plazo && <div className="mb-6"><PlazoPedido plazo={c.pistas.plazo} /></div>}
         <div className="grid grid-cols-1 gap-6 [&>*]:min-w-0 lg:grid-cols-[1.4fr_1fr]">
           <Panel titulo="Reserva prevista" sinRelleno>
             <ul className="divide-y divide-linea">
@@ -63,6 +66,7 @@ export default async function NuevoPedidoPage({ searchParams }: PageProps<"/pedi
           <FormularioPedido cotizacionId={c.id} csrf={sesion.csrf} cliente={c.cliente?.nombre ?? null}
             direccion={cli?.direccionDespacho ?? cli?.direccion ?? ""} total={clp(Number(c.total))} />
         </div>
+        </>
       )}
     </>
   );

@@ -43,7 +43,7 @@ export default async function CotizacionPage({ params }: PageProps<"/cotizacione
       />
       {c.estado === "interpretando"
         ? <EsperaInterpretacion id={c.id} texto={c.textoOriginal ?? ""} />
-        : <Revision inicial={c} csrf={sesion.csrf} puedeAprobar={sesion.permisos.has("cotizaciones.aprobar")} puedeDescontar={sesion.permisos.has("descuentos.aplicar")} clientes={clientes} />}
+        : <Revision inicial={c} csrf={sesion.csrf} puedeAprobar={sesion.permisos.has("cotizaciones.aprobar")} puedeDescontar={sesion.permisos.has("descuentos.aplicar")} puedeCrearCliente={sesion.permisos.has("clientes.editar")} clientes={clientes} />}
     </>
   );
 }

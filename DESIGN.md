@@ -61,6 +61,7 @@ Cada petición lleva un `correlacion_id` que viaja a logs, `audit_log` y `llamad
 | 7 | Validación contra catálogo: coincidencia exacta de modelo (o alias seguro) + madera + rango de ancho + alto, o de accesorio + madera + escuadría/sección + largo, con la medida en m, cm o mm; si no, `por_confirmar` (o `a_pedido` con precio de referencia del rango o altura superior) | `src/domain/cotizaciones/mapear.ts` | Nunca se completa en silencio |
 | 8 | Cálculo determinista: precio de lista neto × (1 + recargo del tipo), redondeado a peso; línea = cantidad × unitario; subtotal, IVA 19 % y total; aviso de stock por ítem | `src/domain/precios/calcular.ts` | — |
 | 9 | Borrador listo: la UI hace polling cada 1 s (máx. 30 s) y muestra la revisión lado a lado | UX.md §3 | — |
+| 9a | Sugerencias sin IA, calculadas al leer y sin guardarse: cliente por RUT/correo/teléfono del texto original (patrones del enmascarado), cotizaciones posiblemente repetidas y plazo pedido | `src/domain/cotizaciones/pistas.ts`, `plazo.ts` · REQ-COT-2.18–2.20 | Ninguna se aplica sola; aceptar el cliente es un PATCH auditado con `clienteDetectadoPor` |
 | 10 | Si la IA falló: aviso y botón "Cotizar a mano" con el texto ya pegado | REQ-COT-2.7 | — |
 | 11 | Revisión: el usuario resuelve los `por_confirmar`, fija precios `a_pedido` y aplica descuento con motivo; cada cambio recalcula y se audita | `PATCH .../items/:id` | — |
 | 12 | Aprobación: sin ítems por confirmar, congela precios, `aprobada_por/en` y `vigencia_hasta` (+10 días hábiles) | `POST .../aprobar` | 409 si quedan pendientes |
