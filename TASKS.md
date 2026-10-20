@@ -301,6 +301,6 @@ Sugerencias sin IA sobre el texto original del borrador; ninguna se aplica sin u
 - [x] T16.1 ADR-0019 (fábrica y tienda en una sola app) rechazado; sigue ADR-0008
 - [x] T16.2 La tienda no exige abono ni saldo: `exige_pago = false` para clientes tipo tienda, migración 0022 para sus notas abiertas, sin condición de pago en su PDF · REQ-COT-8.17, ADR-0020 §9 · U `pdf.contenido`, I `pedidos-pagos`, E 15
 - [x] T16.3 Proveedores de Chipax definidos (ADR-0021) y `npm run compras:proveedores` para encontrar su RUT · REQ-MP-7.1
-- [ ] T16.4 Habilitar los proveedores por RUT en el entorno real tras tu confirmación; falta ubicar a Agrícola Villarrica en Chipax · REQ-MP-7.1
+- [ ] T16.4 Habilitar los 9 proveedores por RUT (Agrícola Villarrica = Maderas Villarica SpA): hecho en desarrollo el 20-10-2026 con `scripts/habilitar-proveedores.mts`; falta producción, que necesita desplegar las fases 12–16 y las credenciales de Chipax en su `.env` · REQ-MP-7.1
 
 **Checkpoint F16:** `npm test` completo verde, lint y build; una nota de la tienda se produce y despacha sin pagos. Espero tu OK.
