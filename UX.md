@@ -1,6 +1,6 @@
 # UX.md — Pantallas y estados
 
-Uso principal en PC (≥ 1280 px); las pantallas deben poder leerse en celular, sin flujos propios (REQ-NFR-6). Español, CLP con separador de miles ($1.234.567) y fechas dd-mm-aaaa.
+Uso principal en PC (≥ 1280 px); las pantallas deben poder leerse en celular, sin flujos propios (REQ-NFR-6). Español, CLP con separador de miles ($1.234.567) y fechas dd-mm-aaaa. Las fechas y horas con zona se muestran en America/Santiago, nunca en UTC.
 
 Documentos con un solo formato de número, igual en pantalla y en PDF: «Cotización N.º 7», «Nota de pedido N.º 1», «Orden N.º 3»; en una columna «N.º» basta el número. Cada página abre con su título y, si hace falta, una línea de contexto (fecha, origen) debajo; sin antetítulos. Nunca se muestran ids internos, claves de permiso ni nombres de archivos de configuración: se nombra el documento (con enlace) o la acción en español.
 
@@ -20,10 +20,10 @@ Documentos con un solo formato de número, igual en pantalla y en PDF: «Cotizac
 | Materias primas | Lista con búsqueda y filtro «bajo el mínimo» · Recepción (también desde «Recibir» en la fila) · Ajuste · Conteo | `mp.*`, `stock.ajustar` | REQ-MP |
 | Producción | Pestañas: Órdenes (crear y cerrar) · Recetas (BOM) · Madera de la puerta | `produccion.gestionar`, `mp.editar` | REQ-MP |
 | Precios | Precios vigentes con filtros (código o modelo, madera, tipo, alto) · Versiones · Recargos · Editar (nueva versión) · Importar Excel con informe | `precios.editar`, `catalogo.editar` | REQ-COT-1, REQ-STK-1 |
-| Clientes | Lista · Ficha | `clientes.*` | REQ-COT-9 |
-| Administración | Usuarios · Roles y permisos · Auditoría · Métricas IA · Feriados · Ajustes de IA (proveedor, modelo y ZDR; claves en entorno privado del worker) | `usuarios.gestionar`, `auditoria.ver`, `config.editar` | REQ-ADM |
+| Clientes | Lista · Ficha (datos, cotizaciones y notas) | `clientes.*` | REQ-COT-9 |
+| Administración | Usuarios · Roles y permisos · Auditoría · Métricas IA · Feriados · Ajustes de IA (proveedor, modelo y privacidad de datos; claves en el entorno privado del servidor) | `usuarios.gestionar`, `auditoria.ver`, `config.editar` | REQ-ADM |
 
-Navegación lateral fija desde 1024 px; en pantallas más angostas se abre como cajón con el botón de menú (Esc lo cierra). La opción de cotizar está siempre visible arriba (es la entrada «desde texto»; las listas solo agregan «Cotizar a mano»). En celular las tablas ocultan las columnas secundarias y conservan número, cliente o artículo, estado y total o disponible. Sin buscador global: cada lista tiene su propio filtro. Las tablas anchas se desplazan dentro de su marco (también con teclado) y la página nunca se desplaza hacia el costado; en pantallas táctiles los controles miden al menos 44 px.
+Navegación lateral fija desde 1024 px; en pantallas más angostas se abre como cajón con el botón de menú (Esc lo cierra). Para quien puede cotizar, la entrada «desde texto» está siempre visible arriba; las listas solo agregan «Cotizar a mano». En celular las tablas ocultan las columnas secundarias y conservan número, cliente o artículo, estado y total o disponible. Sin buscador global: cada lista tiene su propio filtro. Las tablas anchas se desplazan dentro de su marco (también con teclado) y la página nunca se desplaza hacia el costado; en pantallas táctiles los controles miden al menos 44 px.
 
 ## 2. Estados comunes (toda pantalla)
 
@@ -83,5 +83,6 @@ Navegación lateral fija desde 1024 px; en pantallas más angostas se abre como 
 - **Conteo de existencias** (Materias primas): una tabla con lo contado y el mínimo de cada materia prima; cada diferencia queda como ajuste con motivo «Conteo de existencias dd-mm-aaaa» y los mínimos se guardan juntos. El mínimo también se edita en la fila (Enter guarda, Esc cancela).
 - **Puertas** (ADR-0018): el código de la etiqueta en mono y con enlace a su ficha; «de segunda» en ámbar; estado En stock (musgo), Apartada (pizarra), Despachada o Dada de baja (neutro). La ficha muestra el aviso «Apartada para …» (el nombre solo con `clientes.ver`) o «Fuera de catálogo: no se cotiza», y su historia completa, con los despachos anteriores a la app si los hay.
 - **Despachos anteriores:** tabla de solo lectura; una fila con datos dudosos lo dice en ámbar («código repetido», «fecha imposible»). Sin `clientes.ver` no hay columna de cliente.
+- **Clientes:** la ficha reúne los datos mínimos, sus últimas cotizaciones y notas de pedido. Sin `clientes.ver` se responde como si no existiera. Los datos personales solo se muestran ahí y nunca se envían a la IA.
 - **Costos y márgenes:** columnas visibles solo con `costos.ver`.
 - **PDF:** logo, datos de la fábrica, cliente, ítems, subtotal, IVA, total, vigencia y la nota "valores puestos en fábrica, flete aparte".

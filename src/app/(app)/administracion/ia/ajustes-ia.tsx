@@ -3,11 +3,14 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { Check, RefreshCw } from "lucide-react";
 import { Aviso, Boton, Etiqueta, Panel } from "@/components/ui/base";
+import { campoAlto } from "@/components/ui/campos";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import type { EstadoAjustesIA, ModeloIA, ProveedorConfigurado } from "@/ai/ajustes";
 import { pedir } from "@/lib/api-cliente";
+import { fechaHora } from "@/lib/formato";
 
-const campo = "h-10 w-full rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
-const fecha = (iso: string | null) => iso ? new Intl.DateTimeFormat("es-CL", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Santiago" }).format(new Date(iso)) : "aún no consultado";
+const campo = `w-full ${campoAlto}`;
+const fecha = (iso: string | null) => iso ? fechaHora(iso) : "aún no consultado";
 const precios = (m: ModeloIA) => m.precioEntradaUsdMTok === undefined ? "tarifa no disponible" : `US$ ${m.precioEntradaUsdMTok} entrada / US$ ${m.precioSalidaUsdMTok} salida por millón`;
 const NOMBRE_PROVEEDOR: Record<string, string> = { commandcode: "Command Code", groq: "Groq" };
 const limites = (m: ModeloIA) => m.limites ? `RPM ${m.limites.rpm ?? "—"} · RPD ${m.limites.rpd ?? "—"} · TPM ${m.limites.tpm ?? "—"} · TPD ${m.limites.tpd ?? "—"}` : "Sin límite Free publicado";
@@ -17,7 +20,7 @@ export function AjustesIA({ csrf }: { csrf: string }) {
   const [proveedor, setProveedor] = useState<ProveedorConfigurado>("commandcode");
   const [modelo, setModelo] = useState("");
   const [zdr, setZdr] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
 
@@ -36,7 +39,7 @@ export function AjustesIA({ csrf }: { csrf: string }) {
       if (datos.proveedor) setProveedor(datos.proveedor);
       if (datos.modelo) setModelo(datos.modelo);
       setZdr(datos.groqZdrConfirmado);
-    }).catch((e) => { if (montado) setError((e as Error).message); });
+    }).catch((e) => { if (montado) setError(e); });
     return () => { montado = false; };
   }, []);
   const modelos = useMemo(() => estado?.catalogos[proveedor].modelos ?? [], [estado, proveedor]);
@@ -50,12 +53,12 @@ export function AjustesIA({ csrf }: { csrf: string }) {
       await pedir("PUT", "/api/v1/ajustes/ia", { csrf, cuerpo: { proveedorActivo: proveedor, modelo, groqZdrConfirmado: zdr } });
       await cargar();
       setAviso("Configuración activa. Se aplicará a los trabajos que comiencen desde ahora.");
-    } catch (e) { setError((e as Error).message); }
+    } catch (e) { setError(e); }
   }
 
   if (!estado) return <Panel><p className="text-sm text-tinta-suave">Cargando configuración de proveedores…</p></Panel>;
   return <div className="space-y-6">
-    {error && <Aviso tono="error" titulo="No se guardaron los cambios">{error}</Aviso>}
+    {error ? <ErrorAccion error={error} /> : null}
     {aviso && <Aviso tono="musgo" titulo="Listo">{aviso}</Aviso>}
     <div className="grid grid-cols-1 gap-6 [&>*]:min-w-0 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
       <Panel titulo="Proveedor y modelo">
@@ -83,7 +86,7 @@ export function AjustesIA({ csrf }: { csrf: string }) {
           </div>}
           {proveedor === "groq" && <label className="flex items-start gap-3 rounded-md border border-ambar/30 bg-ambar-velo p-3 text-sm text-ambar">
             <input type="checkbox" className="mt-0.5 accent-current" checked={zdr} onChange={(e) => setZdr(e.target.checked)} />
-            <span>Confirmo que activé Zero Data Retention (ZDR) para el proyecto en Groq Console. La app no puede comprobarlo.</span>
+            <span>Confirmo que el proveedor no guarda los datos que le enviamos (retención cero). Es una configuración de su cuenta; la app no puede comprobarla.</span>
           </label>}
           <Boton variante="primario" disabled={pendiente || !modelo || !modeloElegido?.compatible || modeloElegido.preview} onClick={() => iniciar(() => void activar())}>
             <Check className="h-4 w-4" /> {pendiente ? "Activando…" : "Activar proveedor y modelo"}
@@ -97,8 +100,7 @@ export function AjustesIA({ csrf }: { csrf: string }) {
           <p className="text-sm text-tinta-suave">Por seguridad, las claves no se escriben en esta pantalla y la app web nunca las recibe. Las instala quien administra el servidor, en el entorno del proceso que habla con la IA.</p>
           <div>
             <p className="text-xs font-semibold text-tinta-tenue">Para quien administra el servidor</p>
-            <p className="mt-1 text-xs leading-relaxed text-tinta-tenue">En desarrollo van en el archivo <code className="font-mono">.env.worker.local</code>; en producción, como variables del servicio <code className="font-mono">worker</code>. Después de cambiarlas, reinicia ese proceso.</p>
-            <pre className="mt-2 overflow-auto rounded-md border border-linea bg-papel p-3 font-mono text-xs leading-relaxed">{`CMD_API_KEY=\nGROQ_API_KEY=`}</pre>
+            <p className="mt-1 text-xs leading-relaxed text-tinta-tenue">La clave se instala en el entorno privado del servidor que habla con la IA. Si falta, pídesela a quien administra el sistema.</p>
           </div>
         </div>
       </Panel>

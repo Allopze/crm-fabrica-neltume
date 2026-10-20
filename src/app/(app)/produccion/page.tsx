@@ -13,7 +13,7 @@ import { NOMBRE_MADERA } from "@/domain/cotizaciones/mapear";
 import { listarOrdenes, planDeCierre } from "@/domain/ordenes";
 import { puertasDeOrden } from "@/domain/puertas/consulta";
 import { cn, fecha } from "@/lib/formato";
-import { CierreOrden, NuevaOrden } from "./acciones-orden";
+import { AnularOrden, CierreOrden, NuevaOrden } from "./acciones-orden";
 import { AplicarRecetas } from "./aplicar-recetas";
 import { EditorBom } from "./editor-bom";
 import { LineasBom } from "./lineas-bom";
@@ -61,7 +61,8 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
   const abiertas = ordenes.filter((o) => o.estado === "abierta");
   // Tras cerrar una orden no se elige otra sola: queda el aviso y la persona decide la siguiente.
   const cerrada = typeof sp.cerrada === "string" ? sp.cerrada : null;
-  const elegida = abiertas.find((o) => o.id === sp.orden) ?? (cerrada ? undefined : abiertas[0]);
+  // La orden se elige explícitamente: cerrar mueve stock y no se puede deshacer.
+  const elegida = abiertas.find((o) => o.id === sp.orden);
   const plan = elegida ? await planDeCierre(bd(), elegida.id) : null;
   const nuevas = cerrada && /^\d+$/.test(cerrada) ? await puertasDeOrden(bd(), Number(cerrada)) : [];
   const filtroBom = typeof sp.modelo === "string" ? sp.modelo.trim() : "";
@@ -99,7 +100,7 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
           <Panel titulo="Órdenes de producción" sinRelleno>
             {ordenes.length === 0 ? <Vacio titulo="Aún no hay órdenes">Crea una con «Nueva orden».</Vacio> : (
               <Tabla>
-                <thead><tr><Th>N.º</Th><Th>Artículos</Th><Th>Creada</Th><Th>Estado</Th></tr></thead>
+                <thead><tr><Th>N.º</Th><Th>Artículos</Th><Th>Creada</Th><Th>Estado</Th><Th><span className="sr-only">Acciones</span></Th></tr></thead>
                 <tbody>
                   {ordenes.map((o) => (
                     <Tr key={o.id} className={cn(o.id === elegida?.id && "bg-rauli-velo/40")}>
@@ -107,12 +108,18 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
                       <Td>{o.lineas.map((l) => <span key={l.codigo} className="mr-2 inline-flex items-center gap-1"><Placa codigo={l.codigo} /> ×{l.cantidad}</span>)}</Td>
                       <Td className="text-tinta-suave">{fecha(new Date(o.creadaEn).toISOString())}</Td>
                       <Td><Etiqueta tono={ESTADO[o.estado as keyof typeof ESTADO][1]}>{ESTADO[o.estado as keyof typeof ESTADO][0]}</Etiqueta></Td>
+                      <Td className="text-right">{o.estado === "abierta" && <AnularOrden id={o.id} numero={o.numero} csrf={sesion.csrf} />}</Td>
                     </Tr>
                   ))}
                 </tbody>
               </Tabla>
             )}
           </Panel>
+          {!elegida && (
+            <Panel titulo="Cerrar una orden">
+              <p className="text-sm text-tinta-suave">Elige una orden abierta en la lista para ver el consumo y cerrarla. Cerrar mueve stock y no se puede deshacer.</p>
+            </Panel>
+          )}
           {elegida && plan && (
             <Panel titulo={<>Cerrar orden N.º {elegida.numero}</>} accion={Object.values(plan.origenBom).includes("demo") && <Etiqueta tono="ambar">BOM DEMO</Etiqueta>}>
               <p className="mb-4 text-sm text-tinta-suave">

@@ -3,28 +3,35 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Boton } from "@/components/ui/base";
+import { campoAlto } from "@/components/ui/campos";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
-const campo = "h-10 w-full rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
+const campo = `w-full ${campoAlto}`;
 
 function useEnvio() {
   const router = useRouter();
-  const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  const [exito, setExito] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [pendiente, iniciar] = useTransition();
   const enviar = (fn: () => Promise<unknown>, ok: string, alTerminar?: () => void) => iniciar(async () => {
-    try { await fn(); setMsg({ ok: true, texto: ok }); alTerminar?.(); router.refresh(); } catch (e) { setMsg({ ok: false, texto: (e as Error).message }); }
+    try { await fn(); setError(null); setExito(ok); alTerminar?.(); router.refresh(); } catch (e) { setExito(null); setError(e); }
   });
-  return { enviar, pendiente, msg };
+  return { enviar, pendiente, exito, error };
 }
 
-const Mensaje = ({ msg }: { msg: { ok: boolean; texto: string } | null }) =>
-  msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "mt-3 text-sm text-musgo" : "mt-3 text-sm text-error"}>{msg.texto}</p>;
+const Mensaje = ({ exito, error }: { exito: string | null; error: unknown }) => (
+  <>
+    {exito && <p role="status" className="mt-3 text-sm text-musgo">{exito}</p>}
+    {error ? <ErrorAccion error={error} className="mt-3" /> : null}
+  </>
+);
 
 /** Ubicación, calidad y observación; la existencia no se edita (REQ-STK-8.4). */
 export function EditarPuerta({ codigo, ubicacion, calidad, observacion, ubicaciones, csrf }: {
   codigo: string; ubicacion: string; calidad: string; observacion: string | null; ubicaciones: string[]; csrf: string;
 }) {
-  const { enviar, pendiente, msg } = useEnvio();
+  const { enviar, pendiente, exito, error } = useEnvio();
   return (
     <form aria-label="Datos de la puerta" className="space-y-3" onSubmit={(e) => {
       e.preventDefault();
@@ -43,7 +50,7 @@ export function EditarPuerta({ codigo, ubicacion, calidad, observacion, ubicacio
         <input name="observacion" defaultValue={observacion ?? ""} maxLength={300} className={`${campo} mt-1`} placeholder="Manchada, pintada, sin film…" />
       </label>
       <Boton type="submit" disabled={pendiente} className="w-full">{pendiente ? "Guardando…" : "Guardar cambios"}</Boton>
-      <Mensaje msg={msg} />
+      <Mensaje exito={exito} error={error} />
     </form>
   );
 }
@@ -61,7 +68,7 @@ const ACCION: Record<Accion, { boton: string; dato: string; ok: string; minimo: 
 export function AccionesPuerta({ codigo, existencia, apartada, puedeMover, puedeAjustar, csrf }: {
   codigo: string; existencia: number; apartada: number; puedeMover: boolean; puedeAjustar: boolean; csrf: string;
 }) {
-  const { enviar, pendiente, msg } = useEnvio();
+  const { enviar, pendiente, exito, error } = useEnvio();
   const [abierta, setAbierta] = useState<Accion | null>(null);
   const disponibles: Accion[] = [
     ...(puedeMover && existencia === 1 && apartada === 0 ? ["apartar" as const] : []),
@@ -95,7 +102,7 @@ export function AccionesPuerta({ codigo, existencia, apartada, puedeMover, puede
           <Boton type="submit" variante="primario" disabled={pendiente} className="mt-3 w-full">{pendiente ? "Registrando…" : `Confirmar: ${ACCION[abierta].boton.toLowerCase()}`}</Boton>
         </form>
       )}
-      <Mensaje msg={msg} />
+      <Mensaje exito={exito} error={error} />
     </div>
   );
 }

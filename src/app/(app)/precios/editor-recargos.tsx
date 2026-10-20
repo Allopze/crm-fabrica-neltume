@@ -42,7 +42,7 @@ export function EditorRecargos({ recargos, csrf, puedeEditar }: { recargos: Reco
             <span className="flex items-center gap-1">
               <input id={`rec-${t}`} inputMode="decimal" disabled={!puedeEditar} value={valores[t]}
                 onChange={(e) => setValores({ ...valores, [t]: e.target.value.replace(/[^\d,.]/g, "") })}
-                className="h-8 w-16 rounded-md border border-linea-fuerte bg-lamina px-2 text-right font-mono text-sm tabular-nums disabled:border-transparent disabled:bg-transparent" />
+                className="h-9 w-16 rounded-md border border-linea-fuerte bg-lamina px-2 text-right font-mono text-sm tabular-nums disabled:border-transparent disabled:bg-transparent pointer-coarse:h-11" />
               <span className="text-sm text-tinta-tenue">%</span>
             </span>
           </li>

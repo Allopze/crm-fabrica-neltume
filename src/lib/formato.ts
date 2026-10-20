@@ -38,13 +38,37 @@ export function metros(valor: number): string {
   return mFmt.format(valor);
 }
 
-export function fecha(iso: string): string {
-  const [a, m, d] = iso.slice(0, 10).split("-");
+const SANTIAGO = "America/Santiago";
+const santiagoFmt = new Intl.DateTimeFormat("en-CA", {
+  timeZone: SANTIAGO, year: "numeric", month: "2-digit", day: "2-digit",
+  hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+});
+
+/** Una fecha-hora con zona (Z u offset) se lee en Santiago; una sin zona ya viene en hora local. */
+const tieneZona = (iso: string) => /T\d{2}:\d{2}/.test(iso) && /(?:Z|[+-]\d{2}:?\d{2})$/i.test(iso);
+
+function enSantiago(valor: Date): { dia: string; hora: string } {
+  const p = Object.fromEntries(santiagoFmt.formatToParts(valor).map((x) => [x.type, x.value]));
+  return { dia: `${p.day}-${p.month}-${p.year}`, hora: `${p.hour}:${p.minute}` };
+}
+
+export function fecha(valor: string | Date): string {
+  if (valor instanceof Date) return enSantiago(valor).dia;
+  if (tieneZona(valor)) return enSantiago(new Date(valor)).dia;
+  const [a, m, d] = valor.slice(0, 10).split("-");
   return `${d}-${m}-${a}`;
 }
 
-export function fechaHora(iso: string): string {
-  return `${fecha(iso)} ${iso.slice(11, 16)}`;
+export function fechaHora(valor: string | Date): string {
+  if (valor instanceof Date) {
+    const p = enSantiago(valor);
+    return `${p.dia} ${p.hora}`;
+  }
+  if (tieneZona(valor)) {
+    const p = enSantiago(new Date(valor));
+    return `${p.dia} ${p.hora}`;
+  }
+  return `${fecha(valor)} ${valor.slice(11, 16)}`;
 }
 
 export function cn(...clases: Array<string | false | null | undefined>): string {

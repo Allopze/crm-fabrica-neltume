@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { FileSpreadsheet, Upload } from "lucide-react";
 import { Boton, Etiqueta } from "@/components/ui/base";
 import { CampoArchivo } from "@/components/ui/campo-archivo";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
-import { enviarIdempotente, huellaFormulario } from "@/lib/api-cliente";
+import { enviarIdempotente, ErrorApi, huellaFormulario } from "@/lib/api-cliente";
 
 interface Informe {
   repetida: boolean; listaVersion: number | null; creadas: number; actualizadas: number; sinCambios: number; rechazadas: number;
@@ -19,7 +20,7 @@ export function SubirExcel({ csrf }: { csrf: string }) {
   const entrada = useRef<HTMLInputElement>(null);
   const [estado, setEstado] = useState<"listo" | "subiendo">("listo");
   const [informe, setInforme] = useState<Informe | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   async function subir() {
     // Se lee del input al hacer clic: no depende de que el onChange haya alcanzado a actualizar el estado.
@@ -35,11 +36,11 @@ export function SubirExcel({ csrf }: { csrf: string }) {
         method: "POST", body: form, headers: { "x-csrf-token": csrf, "idempotency-key": clave },
       }));
       const datos = await r.json();
-      if (!r.ok) throw new Error(datos?.error?.mensaje ?? "No se pudo importar");
+      if (!r.ok) throw new ErrorApi(datos?.error?.codigo ?? "INTERNO", datos?.error?.mensaje ?? "No se pudo importar", datos?.error?.correlacion_id);
       setInforme(datos);
       router.refresh();
     } catch (e) {
-      setError((e as Error).message);
+      setError(e);
     } finally {
       setEstado("listo");
     }
@@ -58,7 +59,7 @@ export function SubirExcel({ csrf }: { csrf: string }) {
         </Boton>
       </div>
 
-      {error && <p role="alert" className="rounded-md border border-error/25 bg-error-velo px-4 py-3 text-sm text-error">{error}</p>}
+      {error ? <ErrorAccion error={error} /> : null}
 
       {informe && (
         <section aria-label="Informe de importación" className="space-y-4">
@@ -84,7 +85,7 @@ export function SubirExcel({ csrf }: { csrf: string }) {
                 Filas corregidas · {informe.correcciones.length} <Etiqueta tono="ambar">revisar en el Excel</Etiqueta>
               </p>
               <p className="px-4 pt-2.5 text-xs text-tinta-tenue">El código no coincidía con los atributos y solo una corrección era consistente con el resto del catálogo.</p>
-              <Tabla>
+              <Tabla etiqueta="Correcciones de la importación">
                 <thead><tr><Th>Fila</Th><Th>Corrección</Th></tr></thead>
                 <tbody>
                   {informe.correcciones.map((c) => (
@@ -99,7 +100,7 @@ export function SubirExcel({ csrf }: { csrf: string }) {
               <p className="flex items-center justify-between border-b border-linea px-4 py-2.5 text-sm font-medium">
                 Filas rechazadas <Etiqueta tono="error">corregir en el Excel</Etiqueta>
               </p>
-              <Tabla>
+              <Tabla etiqueta="Filas rechazadas de la importación">
                 <thead><tr><Th>Fila</Th><Th>Motivo</Th></tr></thead>
                 <tbody>
                   {informe.rechazos.map((r) => (

@@ -29,11 +29,11 @@ export default async function FeriadosPage({ searchParams }: PageProps<"/adminis
       <nav aria-label="Año" className="mb-5 flex gap-1.5">
         {[anio - 1, anio, anio + 1].map((a) => (
           <Link key={a} href={`/administracion/feriados?anio=${a}`} aria-current={a === anio ? "page" : undefined}
-            className={cn("rounded-full px-3.5 py-1.5 text-sm", a === anio ? "bg-tinta text-lamina" : "border border-linea text-tinta-suave hover:border-tinta")}>{a}</Link>
+            className={cn("rounded-full px-3.5 py-1.5 text-sm pointer-coarse:py-2.5", a === anio ? "bg-tinta text-lamina" : "border border-linea text-tinta-suave hover:border-tinta")}>{a}</Link>
         ))}
       </nav>
       <Panel sinRelleno>
-        <Tabla>
+        <Tabla etiqueta="Feriados">
           <thead><tr><Th>Fecha</Th><Th>Día</Th><Th>Feriado</Th><Th>Origen</Th><Th><span className="sr-only">Acciones</span></Th></tr></thead>
           <tbody>
             {datos.map((f) => (

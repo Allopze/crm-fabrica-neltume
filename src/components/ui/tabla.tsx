@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/formato";
 
 /** Contenedor con scroll horizontal: enfocable para recorrerlo con el teclado (WCAG 2.1.1). */
-export function Tabla({ children, className, etiqueta = "Tabla" }: { children: ReactNode; className?: string; etiqueta?: string }) {
+export function Tabla({ children, className, etiqueta = "Tabla de datos" }: { children: ReactNode; className?: string; etiqueta?: string }) {
   return (
     <div role="region" aria-label={etiqueta} tabIndex={0} className={cn("relative overflow-x-auto focus-visible:outline-offset-[-2px]", className)}>
       <table className="w-full border-collapse text-sm">{children}</table>
@@ -13,6 +13,7 @@ export function Tabla({ children, className, etiqueta = "Tabla" }: { children: R
 export function Th({ className, alinear, ...p }: ComponentProps<"th"> & { alinear?: "der" }) {
   return (
     <th
+      scope="col"
       className={cn(
         "border-b border-linea-fuerte px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.08em] text-tinta-tenue",
         alinear === "der" && "text-right",

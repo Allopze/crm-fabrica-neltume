@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, PencilLine, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
+import { Copy, PencilLine, ShieldCheck, Sparkles } from "lucide-react";
 import { Boton, BotonLink } from "@/components/ui/base";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
 const LIMITE = 4000;
@@ -13,8 +14,12 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
   const [texto, setTexto] = useState("");
   const [clienteId, setClienteId] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [copiado, setCopiado] = useState(false);
+
+  const guardarTexto = () => {
+    try { if (texto.trim()) sessionStorage.setItem("neltume:texto-pedido", texto); } catch { /* sin almacenamiento: no se pierde el texto visible */ }
+  };
 
   // Crea la cotización en estado "interpretando" (202) y abre la revisión, que espera al worker (REQ-COT-2.1).
   async function interpretar() {
@@ -26,7 +31,7 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
       });
       router.push(`/cotizaciones/${c.id}`);
     } catch (e) {
-      setError((e as Error).message);
+      setError(e);
       setEnviando(false);
     }
   }
@@ -58,24 +63,24 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
           )}
         </div>
 
-        {error && (
-          <div role="alert" className="mt-4 flex flex-wrap items-start justify-between gap-4 rounded-md border border-error/25 bg-error-velo px-4 py-3 text-sm text-error">
-            <span className="flex gap-2"><TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" /><span>{error}</span></span>
+        {error ? (
+          <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+            <ErrorAccion error={error} className="min-w-0 flex-1" />
             <span className="flex shrink-0 flex-wrap gap-2">
               <Boton variante="fantasma" onClick={() => navigator.clipboard.writeText(texto).then(() => setCopiado(true), () => setCopiado(false))}>
                 <Copy className="h-4 w-4" /> {copiado ? "Texto copiado" : "Copiar texto"}
               </Boton>
-              <BotonLink href="/cotizaciones/manual" variante="peligro">Cotizar a mano</BotonLink>
+              <BotonLink href="/cotizaciones/manual" variante="peligro" onClick={guardarTexto}>Cotizar a mano</BotonLink>
             </span>
           </div>
-        )}
+        ) : null}
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Boton variante="primario" className="h-11 px-5 text-[15px]" onClick={interpretar} disabled={!texto.trim() || enviando}>
             <Sparkles className="h-4 w-4" />
             {enviando ? "Enviando a interpretar…" : "Interpretar pedido"}
           </Boton>
-          <BotonLink href="/cotizaciones/manual" variante="fantasma"><PencilLine className="h-4 w-4" /> Prefiero cotizar a mano</BotonLink>
+          <BotonLink href="/cotizaciones/manual" variante="fantasma" onClick={guardarTexto}><PencilLine className="h-4 w-4" /> Prefiero cotizar a mano</BotonLink>
           <p id="atajo-interpretar" className="text-xs text-tinta-tenue">Atajo: <kbd className="rounded border border-linea-fuerte px-1 font-sans">Ctrl</kbd> + <kbd className="rounded border border-linea-fuerte px-1 font-sans">Enter</kbd></p>
         </div>
       </div>

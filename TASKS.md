@@ -234,3 +234,22 @@ Toda la planilla `datos/INVENTARIO.xlsx` entra a la app y deja de usarse: cada p
 - [x] T11.7 (30) Carga real en desarrollo: simulada y luego cargada con OK del usuario (07-10-2026): 405 puertas, 192 de catálogo y 213 fuera, 73 apartadas; 5.842 despachos, 220 dudosos · REQ-STK-9.4 · el propio informe · T11.5
 
 **Checkpoint F11:** `npm test` completo verde, lint y build; informe de la carga real simulada (conteos por destino y filas dudosas) revisado contigo; recorrido: buscar una puerta por código, moverla de ubicación, apartarla, despachar un pedido eligiendo puertas y ver la historia de una puerta despachada antes de la app. Espero tu OK.
+
+## Fase 14 — Auditoría UI/UX (aprobada el 20-10-2026)
+
+Correcciones de fidelidad, permisos y operabilidad detectadas en la auditoría de UI/UX; no cambia requisitos de negocio.
+
+- [x] T14.0 Fechas y horas: helper único con `America/Santiago` para timestamps con zona; el motivo del conteo usa `hoySantiago()` · REQ-NFR-9, REQ-ADM-3.2 · U `formato.cl`
+- [x] T14.1 Navegación por permisos: ítems del menú y CTA «Nueva cotización» filtrados por sesión; revisión sin callejones para aprobadores sin `clientes.ver` · REQ-ADM-2.2, UX §2 · E 11
+- [x] T14.2 Selector de artículos como combobox accesible: teclado, `aria-activedescendant`, estados de búsqueda, sin resultados y error · REQ-COT-3.2, UX §3 · E 13
+- [x] T14.3 Campos compartidos y objetivos táctiles ≥44 px en formularios y acciones icon-only · REQ-NFR-6, UX §1
+- [x] T14.4 Errores de acción con `correlacion_id` copiable; `Aviso` como alerta cuando corresponde; tono de foco sobre la barra oscura · UX §2, WCAG
+- [x] T14.5 Acciones destructivas con confirmación y manejo de error; consecuencias antes de cancelar un pedido o revertir un pago; fin de la preselección de la orden a cerrar y UI de anulación · REQ-STK-7.2, REQ-MP-4.1, UX §4
+- [x] T14.6 Ficha de cliente con datos, cotizaciones y notas; enlaces desde la lista · REQ-COT-9.3, UX §1 · E 11
+- [x] T14.7 Cotizador con IA caída: línea libre «por confirmar» dentro del borrador y texto conservado al pasar a manual · REQ-COT-2.7, 5.2 · I `cotizacion-edicion`
+- [x] T14.8 Shell accesible: skip-link, foco atrapado en el cajón móvil, tablas con `scope`, esqueleto con reduced-motion y sondeo ligero de interpretación · UX §2, REQ-NFR-6
+- [x] T14.9 Ajustes de IA sin nombres de archivos ni claves en la UI; confirmación de retención cero en lenguaje llano · UX §2
+- [x] T14.10 Pulido de estados vacíos y paginación, panel «parte de turno» con colas deduplicadas, mapa de maderas de la UI y etiquetas de movimientos unificados, y E2E 20 de viewport 390 px sin scroll horizontal · UX §1, §2 · E 20
+- [x] T14.11 Resto de errores de acción con `ErrorAccion`, foco de confirmaciones y `aria-describedby` del botón Aprobar · UX §2 · lint/typecheck
+
+**Checkpoint F14:** `npm test` completo verde, lint y build; recorrido por teclado y en 390 px; fechas cerca de medianoche en Santiago; ficha de cliente; selector con flechas/Enter/Escape. Espero tu OK.

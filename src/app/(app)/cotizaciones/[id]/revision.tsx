@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ClipboardList, Download, Eye, Lock, PencilLine, Plus, RotateCcw, ShieldAlert, Truck } from "lucide-react";
 import { Boton, BotonDescarga, BotonLink } from "@/components/ui/base";
+import { campo } from "@/components/ui/campos";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 import { clp, cn, fecha, fechaHora } from "@/lib/formato";
 import { Descuento } from "./descuento";
@@ -28,10 +30,23 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
   const [activo, setActivo] = useState<string | null>(null);
   const [vistaIA, setVistaIA] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [detalleLibre, setDetalleLibre] = useState("");
+  const [error, setError] = useState<unknown>(null);
   const [pendiente, iniciar] = useTransition();
   const aprobada = c.estado === "aprobada" || c.estado === "aceptada";
   const base = `/api/v1/cotizaciones/${c.id}`;
+  // Los motivos visibles por los que Aprobar está deshabilitado se asocian al botón (UX §2).
+  const motivosAprobar = [
+    c.pendientes > 0 ? "aprobar-pendientes" : null,
+    c.pendientes === 0 && !c.clienteId ? "aprobar-cliente" : null,
+  ].filter((id): id is string => id !== null).join(" ") || undefined;
+
+  // El servidor sigue siendo la fuente de verdad, pero un refresco no debe remontar la pantalla ni borrar lo tecleado.
+  const [versionServidor, setVersionServidor] = useState(inicial.version);
+  if (inicial.version !== versionServidor) {
+    setVersionServidor(inicial.version);
+    setC(inicial);
+  }
 
   // Toda acción devuelve la cotización actualizada (con nueva versión) o un error legible.
   function accion(fn: () => Promise<CotizacionDetalle | unknown>, refrescar = false) {
@@ -42,13 +57,24 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
         if (r && typeof r === "object" && "items" in r) setC(r as CotizacionDetalle);
         if (refrescar) router.refresh();
       } catch (e) {
-        setError((e as Error).message);
+        setError(e);
         router.refresh();
       }
     });
   }
   if (confirmando && (aprobada || c.pendientes > 0 || !c.clienteId)) setConfirmando(false);
   const item = (itemId: string, cuerpo: object) => accion(() => pedir("PATCH", `${base}/items/${itemId}`, { csrf, cuerpo: { ...cuerpo, version: c.version } }));
+
+  function agregarLibre(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const detalle = detalleLibre.trim();
+    if (!detalle) return;
+    accion(async () => {
+      const r = await pedir("POST", `${base}/items`, { csrf, cuerpo: { detalle, cantidad: 1, version: c.version } });
+      setDetalleLibre("");
+      return r;
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -77,9 +103,7 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
           )}
         </>
       )}
-      {error && <p role="alert" className="rounded-md border border-error/25 bg-error-velo px-4 py-2 text-sm text-error">{error}</p>}
-
-      <div className={cn("grid grid-cols-1 gap-6 [&>*]:min-w-0", c.textoOriginal ? "xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]" : "max-w-3xl")}>
+      <div className={cn("grid grid-cols-1 gap-6 [&>*]:min-w-0", c.textoOriginal ? "xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]" : "max-w-3xl")}>
         {c.textoOriginal && (
           <section className="rounded-lg border border-linea bg-papel-hundido/50 p-6 xl:sticky xl:top-20 xl:self-start">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
@@ -93,9 +117,10 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
         )}
 
         <section>
+          {error ? <ErrorAccion error={error} className="mb-3" /> : null}
           {c.estado === "ia_fallida" && (
             <div role="alert" className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-error/25 bg-error-velo px-4 py-3 text-sm text-error">
-              <p><strong>No pudimos interpretar el pedido.</strong> El texto quedó guardado a la izquierda.</p>
+              <p><strong>No pudimos interpretar el pedido.</strong> El texto quedó guardado a la izquierda; agrega los ítems que reconozcas.</p>
               <Boton variante="peligro" onClick={() => document.getElementById("agregar-item")?.focus()}><PencilLine className="h-4 w-4" /> Cotizar a mano</Boton>
             </div>
           )}
@@ -112,10 +137,19 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
             ))}
           </div>
           {!aprobada && (
-            <div className="mt-3 flex items-center gap-2 rounded-md border border-dashed border-linea-fuerte p-3">
-              <Plus className="h-4 w-4 text-tinta-tenue" />
-              <SelectorArticulo id="agregar-item" version={c.lista.vigente} etiqueta="Agregar ítem del catálogo" onElegir={(codigo) => accion(() => pedir("POST", `${base}/items`, { csrf, cuerpo: { codigo, cantidad: 1, version: c.version } }))} />
-            </div>
+            <>
+              <div className="mt-3 flex items-center gap-2 rounded-md border border-dashed border-linea-fuerte p-3">
+                <Plus className="h-4 w-4 text-tinta-tenue" />
+                <SelectorArticulo id="agregar-item" version={c.lista.vigente} etiqueta="Agregar ítem del catálogo" onElegir={(codigo) => accion(() => pedir("POST", `${base}/items`, { csrf, cuerpo: { codigo, cantidad: 1, version: c.version } }))} />
+              </div>
+              <form aria-label="Agregar línea por confirmar" onSubmit={agregarLibre}
+                className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-dashed border-linea-fuerte p-3">
+                <input id="agregar-linea-libre" value={detalleLibre} onChange={(e) => setDetalleLibre(e.target.value)} maxLength={200}
+                  placeholder="¿No está en el catálogo? Descríbelo (queda por confirmar)" aria-label="Artículo fuera de catálogo"
+                  className={`${campo} min-w-0 flex-1`} />
+                <Boton type="submit" disabled={!detalleLibre.trim() || pendiente}><Plus className="h-4 w-4" /> Agregar por confirmar</Boton>
+              </form>
+            </>
           )}
 
           <div className="mt-6 rounded-lg border border-linea-fuerte bg-lamina">
@@ -152,10 +186,15 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
 
           {!aprobada && puedeAprobar && !confirmando && (
             <div className="sticky bottom-0 z-10 -mx-1 mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-linea bg-papel/95 px-1 py-3 backdrop-blur">
-              {c.pendientes > 0 && <p className="text-sm text-ambar">Resuelve {c.pendientes} {c.pendientes === 1 ? "ítem" : "ítems"} para poder aprobar.</p>}
-              {c.pendientes === 0 && !c.clienteId && <p className="text-sm text-ambar">Elige el cliente para poder aprobar.</p>}
+              {c.pendientes > 0 && <p id="aprobar-pendientes" className="text-sm text-ambar">Resuelve {c.pendientes} {c.pendientes === 1 ? "ítem" : "ítems"} para poder aprobar.</p>}
+              {c.pendientes === 0 && !c.clienteId && (
+                <p id="aprobar-cliente" className="text-sm text-ambar">
+                  {clientes ? "Elige el cliente para poder aprobar." : "Falta asignar el cliente. Pídelo a alguien con permiso para ver clientes."}
+                </p>
+              )}
               <Boton variante="primario" className={cn("h-11 px-5", c.pendientes === 0 && c.clienteId && "ring-4 ring-rauli/15")}
                 disabled={pendiente || c.pendientes > 0 || !c.clienteId || c.items.length === 0}
+                aria-describedby={motivosAprobar}
                 onClick={() => setConfirmando(true)}>
                 <Check className="h-4 w-4" /> Aprobar cotización
               </Boton>
@@ -177,6 +216,11 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, clientes
                 </Boton>
               </div>
             </div>
+          )}
+          {!aprobada && !puedeAprobar && (
+            <p role="status" className="mt-5 rounded-md border border-linea bg-papel-hundido/60 px-4 py-3 text-sm text-tinta-suave">
+              No tienes permiso para aprobar cotizaciones. Pídeselo a quien administra los usuarios.
+            </p>
           )}
         </section>
       </div>

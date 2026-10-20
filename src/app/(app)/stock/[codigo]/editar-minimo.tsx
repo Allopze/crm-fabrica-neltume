@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
 /** Mínimo de stock editable (config.editar). Vacío = sin mínimo. */
@@ -9,26 +10,26 @@ export function EditarMinimo({ codigo, minimo, csrf }: { codigo: string; minimo:
   const router = useRouter();
   const [editando, setEditando] = useState(false);
   const [valor, setValor] = useState(minimo === null ? "" : String(minimo));
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [pendiente, iniciar] = useTransition();
 
   if (!editando) {
-    return <>{minimo ?? "—"} <button onClick={() => setEditando(true)} className="ml-1 text-rauli hover:underline">editar</button></>;
+    return <>{minimo ?? "—"} <button onClick={() => setEditando(true)} className="ml-1 inline-flex min-h-9 items-center text-rauli hover:underline pointer-coarse:min-h-11">editar<span className="sr-only"> mínimo de stock</span></button></>;
   }
   return (
-    <span className="inline-flex items-center gap-2">
+    <div className="inline-flex flex-wrap items-center gap-2">
       <input autoFocus inputMode="numeric" aria-label="Mínimo de stock" value={valor} onChange={(e) => setValor(e.target.value.replace(/\D/g, ""))}
-        className="h-7 w-16 rounded border border-linea-fuerte bg-lamina px-2 text-right font-mono text-sm" />
-      <button disabled={pendiente} className="text-sm text-musgo" onClick={() => iniciar(async () => {
+        className="h-9 w-16 rounded border border-linea-fuerte bg-lamina px-2 text-right font-mono text-sm pointer-coarse:h-11" />
+      <button disabled={pendiente} className="inline-flex min-h-9 items-center text-sm text-musgo pointer-coarse:min-h-11" onClick={() => iniciar(async () => {
         try {
           await pedir("PATCH", `/api/v1/articulos/${encodeURIComponent(codigo)}`, { csrf, cuerpo: { stockMinimo: valor === "" ? null : Number(valor) } });
           setEditando(false);
           router.refresh();
         } catch (e) {
-          setError((e as Error).message);
+          setError(e);
         }
       })}>Guardar</button>
-      {error && <span role="alert" className="text-xs text-error">{error}</span>}
-    </span>
+      {error ? <ErrorAccion error={error} className="basis-full px-2 py-1 text-xs" /> : null}
+    </div>
   );
 }

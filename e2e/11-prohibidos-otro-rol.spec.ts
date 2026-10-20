@@ -45,6 +45,19 @@ test("ve precios pero nunca costos ni márgenes", async ({ page }) => {
   expect(r.cuerpo.datos[0]).not.toHaveProperty("margen");
 });
 
+test("el menú no ofrece secciones sin permiso", async ({ page }) => {
+  await ingresar(page, CONSULTA.email, CONSULTA.clave);
+  const nav = page.getByRole("navigation", { name: "Principal" });
+  await expect(nav.getByRole("link", { name: "Stock de puertas" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Clientes" })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Cotizaciones" })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Notas de pedido" })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Usuarios y permisos" })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Auditoría" })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Ajustes de IA" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Nueva cotización" })).toHaveCount(0);
+});
+
 test("abrir la cotización A por URL responde como si no existiera", async ({ page }) => {
   await ingresar(page, CONSULTA.email, CONSULTA.clave);
   await ir(page, `/cotizaciones/${idA}`);

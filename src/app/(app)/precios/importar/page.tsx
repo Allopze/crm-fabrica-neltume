@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Importar Excel" };
 export default async function ImportarPage() {
   const sesion = await requerirSesion();
   if (!sesion.permisos.has("catalogo.editar") || !sesion.permisos.has("precios.editar")) {
-    return <SinPermiso permiso="catalogo.editar + precios.editar" />;
+    return <SinPermiso permiso={["catalogo.editar", "precios.editar"]} />;
   }
   return (
     <>

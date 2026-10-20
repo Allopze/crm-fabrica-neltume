@@ -25,7 +25,9 @@ test("la cotización con IA caída se completa a mano y se aprueba (cotización 
   await page.getByRole("button", { name: "Cotizar a mano" }).click();
   await expect(page.getByLabel("Agregar ítem del catálogo")).toBeFocused();
   await page.keyboard.type("NEL-O-3-B");
-  await page.getByRole("option", { name: /NEL-O-3-B/ }).click();
+  await page.getByRole("option", { name: /NEL-O-3-B/ }).waitFor();
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Ítems · 1" })).toBeVisible();
   await page.getByLabel("Cliente", { exact: true }).selectOption({ label: CLIENTE_A.nombre });
   await expect(page.getByRole("button", { name: "Aprobar cotización" })).toBeEnabled();

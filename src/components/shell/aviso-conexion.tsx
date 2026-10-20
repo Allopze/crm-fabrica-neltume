@@ -18,7 +18,7 @@ export function AvisoConexion() {
   if (enLinea) return null;
   return (
     <div role="alert" className="flex items-center justify-center gap-2 bg-ambar px-4 py-2 text-sm font-medium text-lamina">
-      <WifiOff className="h-4 w-4" /> Sin conexión: los cambios no se guardaron. Se reintentará al volver la red.
+      <WifiOff className="h-4 w-4" /> Sin conexión: no podemos confirmar si los últimos cambios se guardaron. Revisa antes de repetir.
     </div>
   );
 }

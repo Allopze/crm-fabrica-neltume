@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Lock } from "lucide-react";
-import { Boton, Encabezado, Etiqueta, Panel } from "@/components/ui/base";
+import { Boton, Encabezado, Etiqueta, Panel, Vacio } from "@/components/ui/base";
+import { campo } from "@/components/ui/campos";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -12,7 +13,6 @@ import { cn, fecha } from "@/lib/formato";
 
 export const metadata: Metadata = { title: "Auditoría" };
 
-const campo = "h-9 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
 const tono = { ok: "musgo", denegado: "error", error: "ambar" } as const;
 const RESULTADO = { ok: "Hecho", denegado: "Denegado", error: "Error" } as const;
 const hora = new Intl.DateTimeFormat("es-CL", { timeZone: "America/Santiago", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
@@ -80,8 +80,8 @@ export default async function AuditoriaPage({ searchParams }: PageProps<"/admini
         {FILTROS.some((k) => filtro[k]) && <Link href="/administracion/auditoria" className="self-center text-sm text-tinta-suave hover:text-tinta">Limpiar</Link>}
       </form>
       <Panel sinRelleno>
-        {datos.length === 0 ? <p className="px-6 py-10 text-center text-sm text-tinta-tenue">No hay registros con estos filtros.</p> : (
-          <Tabla>
+        {datos.length === 0 ? <Vacio titulo="Sin registros">No hay registros con estos filtros.</Vacio> : (
+          <Tabla etiqueta="Registro de auditoría">
             <thead><tr><Th>Fecha</Th><Th>Quién</Th><Th>Acción</Th><Th>Sobre</Th><Th>Resultado</Th><Th>Detalle</Th></tr></thead>
             <tbody>
               {datos.map((e, i) => {

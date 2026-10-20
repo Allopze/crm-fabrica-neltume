@@ -2,11 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Boton } from "@/components/ui/base";
+import { campo } from "@/components/ui/campos";
+import { ConfirmarAccion } from "@/components/ui/confirmar-accion";
 import { pedir } from "@/lib/api-cliente";
-
-const campo = "h-9 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
 
 export function NuevoFeriado({ csrf }: { csrf: string }) {
   const router = useRouter();
@@ -38,11 +38,11 @@ export function NuevoFeriado({ csrf }: { csrf: string }) {
 
 export function QuitarFeriado({ fecha, csrf }: { fecha: string; csrf: string }) {
   const router = useRouter();
-  const [pendiente, iniciar] = useTransition();
   return (
-    <button aria-label={`Quitar feriado ${fecha}`} disabled={pendiente} className="text-tinta-tenue hover:text-error"
-      onClick={() => iniciar(async () => { await pedir("DELETE", `/api/v1/feriados/${fecha}`, { csrf }); router.refresh(); })}>
-      <Trash2 className="h-4 w-4" />
-    </button>
+    <ConfirmarAccion
+      etiqueta={`Quitar feriado ${fecha}`}
+      titulo={`¿Quitar el feriado ${fecha}?`}
+      onConfirmar={async () => { await pedir("DELETE", `/api/v1/feriados/${fecha}`, { csrf }); router.refresh(); }}
+    />
   );
 }

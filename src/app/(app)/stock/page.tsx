@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Encabezado, Panel, Placa, Vacio } from "@/components/ui/base";
+import { campo } from "@/components/ui/campos";
+import { maderas, type MaderaId } from "@/components/ui/maderas";
 import { NivelStock } from "@/components/ui/nivel-stock";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
@@ -16,9 +18,6 @@ import { PestanasStock } from "./pestanas";
 
 export const metadata: Metadata = { title: "Stock de puertas" };
 
-const campo = "h-9 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
-const MADERAS = [["O", "Pino Oregón"], ["L", "Lenga"], ["M", "Mara"], ["R", "Raulí"]];
-const COLOR: Record<string, string> = { O: "var(--pino-oregon)", L: "var(--lenga)", M: "var(--mara)", R: "var(--rauli-madera)" };
 
 export default async function StockPage({ searchParams }: PageProps<"/stock">) {
   const sesion = await requerirSesion();
@@ -32,7 +31,7 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
   return (
     <>
       <Encabezado
-        titulo="Stock de puertas"
+        titulo="Artículos en stock"
         descripcion="Cada puerta tiene su código y el saldo es la suma de sus movimientos: nadie lo edita a mano. Para corregir, registra un ajuste con motivo."
         acciones={tipos.length > 0 && <AccionesMovimiento tipos={[...tipos]} csrf={sesion.csrf} ubicaciones={lugares} />}
       />
@@ -49,7 +48,7 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
       <form className="mb-5 flex flex-wrap items-center gap-2" aria-label="Filtros">
         <input type="search" name="q" defaultValue={filtro.q} placeholder="Código o modelo" aria-label="Buscar" className={`${campo} w-full sm:w-56`} />
         <select name="madera" defaultValue={filtro.madera ?? ""} className={campo} aria-label="Madera">
-          <option value="">Todas las maderas</option>{MADERAS.map(([c, n]) => <option key={c} value={c}>{n}</option>)}
+          <option value="">Todas las maderas</option>{Object.entries(maderas).map(([c, m]) => <option key={c} value={c}>{m.nombre}</option>)}
         </select>
         <select name="tipo" defaultValue={filtro.tipo ?? ""} className={campo} aria-label="Tipo">
           <option value="">Todos los tipos</option><option value="BLOQUE">Bloque</option><option value="PANEL">Panel</option><option value="ESPECIAL">Especial</option>
@@ -81,8 +80,8 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
                     <Td><Link href={`/stock/${encodeURIComponent(a.codigo)}`}><Placa codigo={a.codigo} className="hover:border-tinta" /></Link></Td>
                     <Td className="hidden font-medium capitalize sm:table-cell">{a.modelo.toLowerCase()}{a.fueraCatalogo && <span className="ml-2 rounded-full bg-pizarra-velo px-1.5 text-xs font-normal normal-case text-pizarra">fuera de catálogo</span>}</Td>
                     <Td className="hidden md:table-cell"><span className="inline-flex items-center gap-1.5 text-sm capitalize text-tinta-suave">
-                      <span aria-hidden className="swatch h-3.5 w-5 rounded-[2px] ring-1 ring-black/10" style={{ backgroundColor: COLOR[a.maderaCodigo] }} />
-                      {MADERAS.find(([c]) => c === a.maderaCodigo)?.[1] ?? a.madera.toLowerCase()}</span></Td>
+                      <span aria-hidden className="swatch h-3.5 w-5 rounded-[2px] ring-1 ring-black/10" style={{ backgroundColor: maderas[a.maderaCodigo as MaderaId]?.css }} />
+                      {maderas[a.maderaCodigo as MaderaId]?.nombre ?? a.madera.toLowerCase()}</span></Td>
                     <Td className="hidden whitespace-nowrap text-tinta-suave md:table-cell">{a.ancho} × {metros(Number(a.altoM))}</Td>
                     <Td className="hidden capitalize text-tinta-suave lg:table-cell">{a.tipo?.toLowerCase() ?? "accesorio"}</Td>
                     <Td alinear="der" className="hidden sm:table-cell">{a.existencia}</Td>
@@ -100,7 +99,8 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
       </Panel>
       {siguiente && (
         <p className="mt-4 text-sm">
-          <Link className="text-rauli hover:underline" href={`/stock?${new URLSearchParams({ ...Object.fromEntries(Object.entries(filtro).filter(([k, v]) => v && k !== "cursor").map(([k, v]) => [k, v === true ? "1" : String(v)])), desde: siguiente })}`}>Ver más →</Link>
+          <Link className="text-rauli hover:underline" aria-label="Ver más artículos en stock"
+            href={`/stock?${new URLSearchParams({ ...Object.fromEntries(Object.entries(filtro).filter(([k, v]) => v && k !== "cursor").map(([k, v]) => [k, v === true ? "1" : String(v)])), desde: siguiente })}`}>Ver más</Link>
         </p>
       )}
     </>

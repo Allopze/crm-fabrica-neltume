@@ -4,12 +4,14 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ClipboardList } from "lucide-react";
 import { Boton } from "@/components/ui/base";
+import { campoNumero } from "@/components/ui/campos";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
+import { hoySantiago } from "@/domain/precios/dias-habiles";
 import { pedir } from "@/lib/api-cliente";
 import { cantidad, fecha, leerCantidad } from "@/lib/formato";
 
 interface Fila { id: string; nombre: string; unidad: string; existencia: number; minimo: number | null }
-const campo = "h-9 w-28 rounded-md border border-linea-fuerte bg-lamina px-2 text-right text-sm tabular-nums focus:border-tinta focus:outline-none";
+const campo = `w-28 ${campoNumero}`;
 
 /**
  * Conteo de existencias (stock inicial o inventario físico): se anota lo contado y el mínimo de cada materia prima
@@ -26,7 +28,7 @@ export function ConteoExistencias({ filas, puedeAjustar, puedeMinimo, csrf }: { 
 
   if (!abierto) return <Boton variante="secundario" onClick={() => setAbierto(true)}><ClipboardList className="h-4 w-4" /> Conteo de existencias</Boton>;
 
-  const motivo = `Conteo de existencias ${fecha(new Date().toISOString())}`;
+  const motivo = `Conteo de existencias ${fecha(hoySantiago())}`;
   const cambios = filas.flatMap((f) => {
     const c = contado[f.id]?.trim() ? leerCantidad(contado[f.id]) : NaN;
     const m = minimos[f.id]?.trim() ? leerCantidad(minimos[f.id]) : null;
@@ -59,7 +61,7 @@ export function ConteoExistencias({ filas, puedeAjustar, puedeMinimo, csrf }: { 
         <h2 className="font-display text-lg font-medium">Conteo de existencias</h2>
         <p className="text-sm text-tinta-suave">Anota lo contado; cada diferencia queda como ajuste con motivo «{motivo}». Deja en blanco lo que no contaste.</p>
       </div>
-      <Tabla>
+      <Tabla etiqueta="Conteo de existencias">
         <thead><tr><Th>Materia prima</Th><Th alinear="der">En sistema</Th>{puedeAjustar && <Th alinear="der">Contado</Th>}{puedeMinimo && <Th alinear="der">Mínimo</Th>}</tr></thead>
         <tbody>
           {filas.map((f) => {

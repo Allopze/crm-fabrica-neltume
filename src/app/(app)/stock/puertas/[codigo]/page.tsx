@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Lock } from "lucide-react";
 import { Aviso, Encabezado, Panel, Placa, Vacio } from "@/components/ui/base";
+import { nombreMovimiento } from "@/components/ui/movimientos";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -15,13 +16,9 @@ import { AccionesPuerta, EditarPuerta } from "./acciones-puerta";
 
 export const metadata: Metadata = { title: "Puerta" };
 
-const NOMBRE_TIPO: Record<string, string> = {
-  entrada_produccion: "Entrada de producción", salida_despacho: "Salida por despacho", ajuste: "Ajuste", reserva: "Apartada", liberacion: "Liberada",
-};
-
 function Referencia({ refTipo, refId, refNumero }: { refTipo: string | null; refId: string | null; refNumero: number | null }) {
   if (refTipo === "pedido" && refId && refNumero !== null) return <Link href={`/pedidos/${refId}`} className="text-rauli hover:underline">Nota de pedido N.º {refNumero}</Link>;
-  if (refTipo === "orden" && refNumero !== null) return <Link href="/produccion" className="text-rauli hover:underline">Orden N.º {refNumero}</Link>;
+  if (refTipo === "orden" && refNumero !== null) return <Link href={refId ? `/produccion?orden=${refId}` : "/produccion"} className="text-rauli hover:underline">Orden N.º {refNumero}</Link>;
   if (refTipo === "manual" && refId) return <>{refId}</>;
   if (refTipo === "inventario") return <>Planilla de inventario</>;
   return <>—</>;
@@ -67,7 +64,7 @@ export default async function PuertaPage({ params }: PageProps<"/stock/puertas/[
                     <Tr key={m.id}>
                       <Td className="whitespace-nowrap text-tinta-suave">{fechaHora(new Date(m.ocurridoEn).toISOString())}</Td>
                       <Td>
-                        <span className={cn(m.tipo !== "reserva" && m.tipo !== "liberacion" && (m.cantidad > 0 ? "text-musgo" : "text-error"))}>{NOMBRE_TIPO[m.tipo] ?? m.tipo}</span>
+                        <span className={cn(m.tipo !== "reserva" && m.tipo !== "liberacion" && (m.cantidad > 0 ? "text-musgo" : "text-error"))}>{nombreMovimiento(m.tipo, "puerta")}</span>
                         {m.motivo && <span className="block text-xs text-tinta-tenue">{m.motivo}</span>}
                       </Td>
                       <Td className="text-tinta-suave"><Referencia refTipo={m.refTipo} refId={m.refId} refNumero={m.refNumero} /></Td>

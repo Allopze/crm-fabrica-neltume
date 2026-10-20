@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal, X } from "lucide-react";
 import { Boton } from "@/components/ui/base";
+import { campoAlto } from "@/components/ui/campos";
 import { pedir } from "@/lib/api-cliente";
 
 type Tipo = "entrada" | "salida" | "ajuste";
@@ -15,7 +16,7 @@ const CONFIG: Record<Tipo, { titulo: string; ruta: string; icono: typeof ArrowDo
   ajuste: { titulo: "Ajuste con motivo", ruta: "/api/v1/movimientos/ajustes", icono: SlidersHorizontal, ayuda: "Positivo o negativo. Este movimiento no se puede editar ni borrar.",
     codigos: "Etiquetas de las puertas (opcional: las que salen o las que vuelven)" },
 };
-const campo = "h-10 w-full rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
+const campo = `w-full ${campoAlto}`;
 
 /** Etiquetas escritas una por línea o separadas por comas o espacios. */
 const leerCodigos = (texto: FormDataEntryValue | null) => String(texto ?? "").split(/[\s,;]+/).map((c) => c.trim().toUpperCase()).filter(Boolean);
@@ -73,7 +74,7 @@ export function AccionesMovimiento({ tipos, csrf, codigo, ubicaciones = [] }: { 
               <p className="font-display text-lg">{CONFIG[abierto].titulo}</p>
               <p className="text-xs text-tinta-tenue">{CONFIG[abierto].ayuda}</p>
             </div>
-            <button type="button" aria-label="Cerrar" onClick={() => setAbierto(null)} className="text-tinta-tenue hover:text-tinta"><X className="h-4 w-4" /></button>
+            <button type="button" aria-label="Cerrar" onClick={() => setAbierto(null)} className="grid h-9 w-9 place-items-center rounded text-tinta-tenue hover:bg-papel-hundido hover:text-tinta pointer-coarse:h-11 pointer-coarse:w-11"><X className="h-4 w-4" /></button>
           </div>
           <div className="grid grid-cols-[1fr_110px] gap-3">
             <label className="text-sm">Código<input name="codigo" required={abierto === "entrada"} defaultValue={codigo} className={`${campo} mt-1 font-mono uppercase`} /></label>

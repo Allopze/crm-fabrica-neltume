@@ -4,9 +4,11 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Boton } from "@/components/ui/base";
+import { campoAlto } from "@/components/ui/campos";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
-const campo = "h-10 w-full rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
+const campo = `w-full ${campoAlto}`;
 const CAMPOS: [string, string, boolean][] = [
   ["nombre", "Nombre o razón social", true], ["rut", "RUT", true], ["giro", "Giro", false], ["contacto", "Contacto", false],
   ["email", "Correo", false], ["telefono", "Teléfono", false], ["direccion", "Dirección", false], ["comuna", "Comuna", false],
@@ -17,7 +19,7 @@ const CAMPOS: [string, string, boolean][] = [
 export function NuevoCliente({ csrf }: { csrf: string }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [pendiente, iniciar] = useTransition();
   if (!abierto) return <Boton variante="primario" onClick={() => setAbierto(true)}><Plus className="h-4 w-4" /> Nuevo cliente</Boton>;
 
@@ -32,7 +34,7 @@ export function NuevoCliente({ csrf }: { csrf: string }) {
           setAbierto(false);
           router.refresh();
         } catch (err) {
-          setError((err as Error).message);
+          setError(err);
         }
       });
     }}>
@@ -47,7 +49,7 @@ export function NuevoCliente({ csrf }: { csrf: string }) {
       <div className="flex gap-2 sm:col-span-3">
         <Boton type="submit" variante="primario" disabled={pendiente}>{pendiente ? "Guardando…" : "Guardar cliente"}</Boton>
         <Boton type="button" variante="fantasma" onClick={() => setAbierto(false)}>Cancelar</Boton>
-        {error && <p role="alert" className="self-center text-sm text-error">{error}</p>}
+        {error ? <ErrorAccion error={error} className="self-center px-3 py-2" /> : null}
       </div>
     </form>
   );

@@ -17,7 +17,7 @@ test("Ajustes elige proveedor/modelo desde la UI y el worker usa la clave de ent
     await ingresar(page, ADMIN.email, ADMIN.clave);
     await page.goto("/administracion/ia");
     await expect(page.getByRole("heading", { name: "Ajustes de IA" })).toBeVisible();
-    await expect(page.getByText("GROQ_API_KEY=")).toBeVisible();
+    await expect(page.getByText("GROQ_API_KEY=")).toHaveCount(0);
     await expect(page.getByLabel("API key de Groq")).toHaveCount(0);
 
     await page.getByLabel("Proveedor").selectOption("groq");

@@ -1,26 +1,27 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCheck, Plus, TriangleAlert } from "lucide-react";
 import { Boton } from "@/components/ui/base";
+import { campoAlto as campo } from "@/components/ui/campos";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 import { numero } from "@/lib/formato";
 
-const campo = "h-10 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
-
 function useEnvio() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [pendiente, iniciar] = useTransition();
-  const enviar = (fn: () => Promise<unknown>, alTerminar?: () => void) => iniciar(async () => {
-    try { setError(null); await fn(); alTerminar?.(); router.refresh(); } catch (e) { setError((e as Error).message); }
+  const enviar = (fn: () => Promise<unknown>, alTerminar?: () => void, refrescar = true) => iniciar(async () => {
+    try { setError(null); await fn(); alTerminar?.(); if (refrescar) router.refresh(); } catch (e) { setError(e); }
   });
   return { enviar, pendiente, error };
 }
 
 export function NuevaOrden({ csrf }: { csrf: string }) {
+  const router = useRouter();
   const { enviar, pendiente, error } = useEnvio();
   const [abierto, setAbierto] = useState(false);
   if (!abierto) return <Boton variante="primario" onClick={() => setAbierto(true)}><Plus className="h-4 w-4" /> Nueva orden</Boton>;
@@ -28,14 +29,76 @@ export function NuevaOrden({ csrf }: { csrf: string }) {
     <form aria-label="Nueva orden" className="flex flex-wrap items-end gap-2 rounded-lg border border-linea-fuerte bg-lamina p-4" onSubmit={(e) => {
       e.preventDefault();
       const f = new FormData(e.currentTarget);
-      enviar(() => pedir("POST", "/api/v1/ordenes", { csrf, idempotente: true, cuerpo: { lineas: [{ codigo: String(f.get("codigo")), cantidad: Number(f.get("cantidad")) }] } }), () => setAbierto(false));
+      enviar(async () => {
+        const o = await pedir<{ id: string }>("POST", "/api/v1/ordenes", { csrf, idempotente: true, cuerpo: { lineas: [{ codigo: String(f.get("codigo")), cantidad: Number(f.get("cantidad")) }] } });
+        router.push(`/produccion?orden=${o.id}`);
+      }, () => setAbierto(false), false);
     }}>
       <label className="text-sm">Artículo<input name="codigo" required placeholder="NEL-R-4-B" className={`${campo} mt-1 block w-40 font-mono uppercase`} /></label>
       <label className="text-sm">Cantidad<input name="cantidad" required inputMode="numeric" className={`${campo} mt-1 block w-24`} /></label>
       <Boton type="submit" variante="primario" disabled={pendiente} className="h-10">{pendiente ? "Creando…" : "Crear orden"}</Boton>
       <Boton type="button" variante="fantasma" onClick={() => setAbierto(false)} className="h-10">Cancelar</Boton>
-      {error && <p role="alert" className="w-full text-sm text-error">{error}</p>}
+      {error ? <ErrorAccion error={error} className="basis-full px-3 py-2" /> : null}
     </form>
+  );
+}
+
+/** Anular una orden abierta no mueve stock; la orden queda en el historial como anulada. */
+export function AnularOrden({ id, numero: num, csrf }: { id: string; numero: number; csrf: string }) {
+  const router = useRouter();
+  const [confirmando, setConfirmando] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  const [pendiente, iniciar] = useTransition();
+  // El foco entra a la confirmación y vuelve al disparador al cerrarla (UX §2).
+  const disparador = useRef<HTMLButtonElement>(null);
+  const confirmarRef = useRef<HTMLButtonElement>(null);
+  const devolverFoco = useRef(false);
+
+  useEffect(() => {
+    if (confirmando) confirmarRef.current?.focus();
+    else if (devolverFoco.current) {
+      devolverFoco.current = false;
+      disparador.current?.focus();
+    }
+  }, [confirmando]);
+
+  const cerrar = () => {
+    devolverFoco.current = true;
+    setConfirmando(false);
+  };
+
+  const anular = () => iniciar(async () => {
+    try {
+      setError(null);
+      await pedir("POST", `/api/v1/ordenes/${id}/anular`, { csrf, idempotente: true, cuerpo: {} });
+      cerrar();
+      router.refresh();
+    } catch (e) {
+      setError(e);
+    }
+  });
+
+  if (!confirmando) {
+    return (
+      <button ref={disparador} type="button" onClick={() => setConfirmando(true)}
+        className="inline-flex min-h-9 items-center text-xs font-medium text-error hover:underline pointer-coarse:min-h-11">
+        Anular
+      </button>
+    );
+  }
+  return (
+    <div className="inline-flex flex-wrap items-center justify-end gap-1 text-xs">
+      <span>¿Anular N.º {num}?</span>
+      <button ref={confirmarRef} type="button" disabled={pendiente} onClick={anular}
+        className="inline-flex min-h-9 items-center rounded px-1.5 font-medium text-error hover:bg-error-velo disabled:opacity-60 pointer-coarse:min-h-11">
+        {pendiente ? "Anulando…" : "Sí"}
+      </button>
+      <button type="button" disabled={pendiente} onClick={cerrar}
+        className="inline-flex min-h-9 items-center rounded px-1.5 text-tinta-suave hover:bg-papel-hundido disabled:opacity-60 pointer-coarse:min-h-11">
+        No
+      </button>
+      {error ? <ErrorAccion error={error} className="basis-full px-2 py-1 text-xs" /> : null}
+    </div>
   );
 }
 
@@ -47,7 +110,7 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos
 }) {
   const router = useRouter();
   const [confirmando, setConfirmando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [pendiente, iniciar] = useTransition();
   const [manual, setManual] = useState<{ materiaPrimaId: string; cantidad: string }>({ materiaPrimaId: materias[0]?.id ?? "", cantidad: "" });
   const [ubicacion, setUbicacion] = useState("Fábrica");
@@ -67,7 +130,7 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos
       // Tras cerrar no se elige otra orden sola: el resultado queda a la vista y un segundo clic no cierra otra.
       router.push(`/produccion?cerrada=${num}`);
       router.refresh();
-    } catch (e) { setError((e as Error).message); setConfirmando(false); }
+    } catch (e) { setError(e); setConfirmando(false); }
   });
 
   return (
@@ -117,7 +180,7 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos
             <input value={ubicacion} onChange={(e) => setUbicacion(e.target.value)} maxLength={60} className={`${campo} mt-1 block w-full`} />
           </label>
           <div className="mt-3 flex gap-2">
-            <Boton variante="primario" className="h-10 flex-1" disabled={pendiente} onClick={cerrar}>
+            <Boton variante="primario" className="h-10 flex-1" disabled={pendiente} onClick={cerrar} autoFocus>
               <CheckCheck className="h-4 w-4" /> {pendiente ? "Cerrando orden…" : "Confirmar cierre"}
             </Boton>
             <Boton variante="fantasma" className="h-10" disabled={pendiente} onClick={() => setConfirmando(false)}>Volver</Boton>
@@ -125,7 +188,7 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos
         </div>
       )}
       <p className="mt-2 text-xs text-tinta-tenue">Todo o nada: si falta un insumo, no se mueve nada.{demo && " Usa un BOM de DEMOSTRACIÓN."}</p>
-      {error && <p role="alert" className="mt-2 text-sm text-error">{error}</p>}
+      {error ? <ErrorAccion error={error} className="mt-2" /> : null}
     </div>
   );
 }

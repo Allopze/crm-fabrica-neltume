@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Encabezado, Panel, Vacio } from "@/components/ui/base";
+import { campo } from "@/components/ui/campos";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -10,8 +11,6 @@ import { fecha } from "@/lib/formato";
 import { PestanasStock } from "../pestanas";
 
 export const metadata: Metadata = { title: "Despachos anteriores" };
-
-const campo = "h-9 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
 
 /** Despachos de la planilla de la fábrica anteriores a la app, de solo lectura (REQ-STK-10.2). */
 export default async function HistoricoPage({ searchParams }: PageProps<"/stock/historico">) {
@@ -25,7 +24,7 @@ export default async function HistoricoPage({ searchParams }: PageProps<"/stock/
 
   return (
     <>
-      <Encabezado titulo="Stock de puertas" descripcion="Lo que la fábrica despachó antes de usar la app, tal como quedó en su planilla. Es de solo lectura." />
+      <Encabezado titulo="Despachos anteriores" descripcion="Lo que la fábrica despachó antes de usar la app, tal como quedó en su planilla. Es de solo lectura." />
       <PestanasStock actual="historico" />
       <form className="mb-5 flex flex-wrap items-center gap-2" aria-label="Buscar despachos">
         <input type="search" name="q" defaultValue={q} placeholder={verClientes ? "Código, documento, modelo o cliente" : "Código, documento o modelo"} aria-label="Buscar" className={`${campo} w-full sm:w-72`} />
@@ -62,7 +61,11 @@ export default async function HistoricoPage({ searchParams }: PageProps<"/stock/
           </Tabla>
         )}
       </Panel>
-      {siguiente && <p className="mt-4 text-sm"><Link className="text-rauli hover:underline" href={`/stock/historico?${new URLSearchParams({ ...(q ? { q } : {}), desde: siguiente })}`}>Ver más →</Link></p>}
+      {siguiente && (
+        <p className="mt-4 text-sm">
+          <Link className="text-rauli hover:underline" href={`/stock/historico?${new URLSearchParams({ ...(q ? { q } : {}), desde: siguiente })}`} aria-label="Ver más despachos anteriores">Ver más</Link>
+        </p>
+      )}
     </>
   );
 }

@@ -15,8 +15,8 @@ const variantes: Record<Variante, string> = {
 const baseBoton =
   "inline-flex items-center justify-center gap-2 rounded-md px-3.5 h-9 pointer-coarse:h-11 text-sm font-medium transition-colors disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap";
 
-export function Boton({ variante = "secundario", className, ...p }: ComponentProps<"button"> & { variante?: Variante }) {
-  return <button className={cn(baseBoton, variantes[variante], className)} {...p} />;
+export function Boton({ variante = "secundario", className, type = "button", ...p }: ComponentProps<"button"> & { variante?: Variante }) {
+  return <button type={type} className={cn(baseBoton, variantes[variante], className)} {...p} />;
 }
 
 /** Enlace de descarga (archivos generados por la API): navegación completa, sin el router de Next. */
@@ -111,7 +111,7 @@ export function Cifra({ etiqueta, valor, nota, tono }: { etiqueta: string; valor
   return (
     <div className="min-w-0 border-l border-linea-fuerte pl-3 sm:pl-4">
       <p className="text-xs uppercase tracking-[0.12em] break-words text-tinta-tenue">{etiqueta}</p>
-      <p className={cn("mt-1 font-display text-3xl sm:text-4xl font-medium tabular-nums tracking-tight", tono === "rauli" && "text-rauli", tono === "ambar" && "text-ambar")}>
+      <p className={cn("mt-1 min-w-0 break-words font-display text-2xl sm:text-4xl font-medium tabular-nums tracking-tight", tono === "rauli" && "text-rauli", tono === "ambar" && "text-ambar")}>
         {valor}
       </p>
       {nota && <p className="mt-1 text-sm text-tinta-suave">{nota}</p>}
@@ -121,10 +121,10 @@ export function Cifra({ etiqueta, valor, nota, tono }: { etiqueta: string; valor
 
 export function Aviso({ tono = "ambar", titulo, children, accion }: { tono?: Tono; titulo: string; children?: ReactNode; accion?: ReactNode }) {
   return (
-    <div role="status" className={cn("flex items-start justify-between gap-4 rounded-md border px-4 py-3 text-sm", tonos[tono])}>
+    <div role={tono === "error" ? "alert" : "status"} className={cn("flex items-start justify-between gap-4 rounded-md border px-4 py-3 text-sm", tonos[tono])}>
       <div>
         <p className="font-semibold">{titulo}</p>
-        {children && <div className="mt-0.5 opacity-90">{children}</div>}
+        {children && <div className="mt-0.5">{children}</div>}
       </div>
       {accion}
     </div>

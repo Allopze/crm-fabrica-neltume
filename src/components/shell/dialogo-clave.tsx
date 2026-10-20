@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { KeyRound, X } from "lucide-react";
 import { Boton } from "@/components/ui/base";
+import { campoAlto } from "@/components/ui/campos";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { LARGO_MINIMO_CLAVE } from "@/domain/auth/reglas";
 import { pedir } from "@/lib/api-cliente";
 
-const campo = "mt-1 h-10 w-full rounded-md border border-linea-fuerte bg-lamina px-3 text-sm text-tinta focus:border-tinta focus:outline-none";
+const campo = `mt-1 w-full ${campoAlto}`;
 
 /**
  * Cambiar la contraseña propia (con la actual) o restablecer la de otro usuario (REQ-ADM-1.4, 2.5). Las otras
@@ -16,7 +18,7 @@ export function DialogoClave({ modo, usuario, csrf, abierto, alCerrar }: {
   modo: "propia" | "restablecer"; usuario?: { id: string; nombre: string }; csrf: string; abierto: boolean; alCerrar: () => void;
 }) {
   const dialogo = useRef<HTMLDialogElement>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [listo, setListo] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
@@ -40,7 +42,7 @@ export function DialogoClave({ modo, usuario, csrf, abierto, alCerrar }: {
       setListo(true);
       formulario.reset();
     } catch (err) {
-      setError((err as Error).message);
+      setError(err);
     } finally {
       setEnviando(false);
     }
@@ -53,7 +55,7 @@ export function DialogoClave({ modo, usuario, csrf, abierto, alCerrar }: {
       <div className="mb-4 flex items-center gap-2">
         <KeyRound className="h-4 w-4 text-tinta-suave" />
         <h2 className="flex-1 font-display text-lg">{titulo}</h2>
-        <button type="button" onClick={alCerrar} aria-label="Cerrar" className="grid h-8 w-8 place-items-center rounded text-tinta-suave hover:text-tinta"><X className="h-4 w-4" /></button>
+        <button type="button" onClick={alCerrar} aria-label="Cerrar" className="grid h-9 w-9 place-items-center rounded text-tinta-suave hover:bg-papel-hundido hover:text-tinta pointer-coarse:h-11 pointer-coarse:w-11"><X className="h-4 w-4" /></button>
       </div>
       {listo ? (
         <div className="space-y-4">
@@ -75,7 +77,7 @@ export function DialogoClave({ modo, usuario, csrf, abierto, alCerrar }: {
           <label className="block">Repite la contraseña nueva
             <input name="repetir" type="password" required minLength={LARGO_MINIMO_CLAVE} autoComplete="new-password" className={campo} />
           </label>
-          {error && <p role="alert" className="rounded-md border border-error/25 bg-error-velo px-3 py-2 text-error">{error}</p>}
+          {error ? <ErrorAccion error={error} className="px-3 py-2" /> : null}
           <div className="flex gap-2 pt-1">
             <Boton variante="primario" type="submit" disabled={enviando}>{enviando ? "Guardando…" : "Guardar"}</Boton>
             <Boton variante="fantasma" type="button" onClick={alCerrar}>Cancelar</Boton>

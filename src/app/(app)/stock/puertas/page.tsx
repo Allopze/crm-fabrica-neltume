@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Encabezado, Panel, Placa, Vacio } from "@/components/ui/base";
+import { campo } from "@/components/ui/campos";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -11,7 +12,6 @@ import { Calidad, EstadoPuerta, medidaPuerta } from "./presentacion";
 
 export const metadata: Metadata = { title: "Puertas" };
 
-const campo = "h-9 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
 const ESTADOS: Record<EstadoFiltro, string> = { stock: "En stock", disponibles: "Disponibles", apartadas: "Apartadas", fuera: "Despachadas o de baja", todas: "Todas" };
 
 /** Puerta por puerta: código de etiqueta, ubicación, calidad y estado (REQ-STK-8.6). */
@@ -31,7 +31,7 @@ export default async function PuertasPage({ searchParams }: PageProps<"/stock/pu
 
   return (
     <>
-      <Encabezado titulo="Stock de puertas" descripcion={filtro.articulo
+      <Encabezado titulo="Puertas en stock" descripcion={filtro.articulo
         ? <>Puertas del artículo <span className="font-mono">{filtro.articulo}</span>. <Link href="/stock/puertas" className="text-rauli hover:underline">Ver todas</Link></>
         : "Cada puerta con el código de su etiqueta. Busca por código, modelo u observación."} />
       <PestanasStock actual="puertas" />
@@ -82,7 +82,11 @@ export default async function PuertasPage({ searchParams }: PageProps<"/stock/pu
           </Tabla>
         )}
       </Panel>
-      {siguiente && <p className="mt-4 text-sm"><Link className="text-rauli hover:underline" href={`/stock/puertas?${params({ desde: siguiente })}`}>Ver más →</Link></p>}
+      {siguiente && (
+        <p className="mt-4 text-sm">
+          <Link className="text-rauli hover:underline" href={`/stock/puertas?${params({ desde: siguiente })}`} aria-label="Ver más puertas">Ver más</Link>
+        </p>
+      )}
     </>
   );
 }

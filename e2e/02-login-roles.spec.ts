@@ -7,7 +7,7 @@ test.describe.configure({ mode: "serial" });
 
 test("login con clave incorrecta muestra un error que no revela el motivo", async ({ page }) => {
   await ingresar(page, ADMIN.email, "clave-equivocada-123", false);
-  await expect(page.locator("form").getByRole("alert")).toHaveText("Correo o contraseña incorrectos.");
+  await expect(page.locator("form").getByRole("alert")).toContainText("Correo o contraseña incorrectos.");
   await expect(page).toHaveURL(/\/login$/);
 });
 

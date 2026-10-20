@@ -4,27 +4,37 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PackagePlus, Plus, SlidersHorizontal } from "lucide-react";
 import { Boton } from "@/components/ui/base";
+import { campoAlto } from "@/components/ui/campos";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
-const campo = "h-10 w-full rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
+const campo = `w-full ${campoAlto}`;
 const decimal = (v: FormDataEntryValue | null) => Number(String(v ?? "").replace(/\./g, "").replace(",", ".").replace("−", "-"));
 
 function useAccion() {
   const router = useRouter();
-  const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  const [exito, setExito] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [pendiente, iniciar] = useTransition();
   const ejecutar = (fn: () => Promise<unknown>, ok: string, form?: HTMLFormElement | null) =>
     iniciar(async () => {
       try {
         await fn();
-        setMsg({ ok: true, texto: ok });
+        setError(null);
+        setExito(ok);
         form?.reset();
         router.refresh();
       } catch (e) {
-        setMsg({ ok: false, texto: (e as Error).message });
+        setExito(null);
+        setError(e);
       }
     });
-  const aviso = msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-sm text-musgo" : "text-sm text-error"}>{msg.texto}</p>;
+  const aviso = (
+    <>
+      {exito && <p role="status" className="text-sm text-musgo">{exito}</p>}
+      {error ? <ErrorAccion error={error} /> : null}
+    </>
+  );
   return { ejecutar, pendiente, aviso };
 }
 

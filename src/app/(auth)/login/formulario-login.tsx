@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
 const campo = "mt-1.5 h-11 w-full rounded-md border border-linea-fuerte bg-lamina px-3 text-[15px] focus:border-tinta focus:outline-none";
 
 export function FormularioLogin() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [enviando, setEnviando] = useState(false);
 
   async function ingresar(e: React.FormEvent<HTMLFormElement>) {
@@ -22,7 +23,7 @@ export function FormularioLogin() {
       router.replace("/");
       router.refresh();
     } catch (err) {
-      setError((err as Error).message);
+      setError(err);
       setEnviando(false);
     }
   }
@@ -39,9 +40,7 @@ export function FormularioLogin() {
       <label className="mt-5 block text-sm font-medium" htmlFor="clave">Contraseña</label>
       <input id="clave" name="clave" type="password" autoComplete="current-password" required className={campo} />
 
-      {error && (
-        <p className="mt-3 rounded-md border border-error/25 bg-error-velo px-3 py-2 text-sm text-error" role="alert">{error}</p>
-      )}
+      {error ? <ErrorAccion error={error} className="mt-3 px-3 py-2" /> : null}
 
       <button type="submit" disabled={enviando}
         className="mt-7 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-rauli text-[15px] font-medium text-lamina shadow-[inset_0_-2px_0_rgb(0_0_0/0.2)] hover:bg-rauli-hondo disabled:opacity-60">

@@ -13,6 +13,14 @@ describe("formato chileno (REQ-STK-2.3, REQ-NFR-9)", () => {
     expect(fechaHora("2026-10-05T10:42:00")).toBe("05-10-2026 10:42");
   });
 
+  it("lee los timestamps con zona en America/Santiago, no en UTC", () => {
+    // Octubre: Chile está en UTC-3. Las 02:42 UTC son las 23:42 del día anterior.
+    expect(fechaHora("2026-10-05T02:42:00Z")).toBe("04-10-2026 23:42");
+    expect(fecha("2026-10-05T02:42:00Z")).toBe("04-10-2026");
+    expect(fechaHora("2026-10-05T02:42:00.000+00:00")).toBe("04-10-2026 23:42");
+    expect(fechaHora(new Date("2026-10-05T02:42:00Z"))).toBe("04-10-2026 23:42");
+  });
+
   it("formatea metros con dos decimales y coma", () => {
     expect(metros(2.1)).toBe("2,10");
     expect(metros(0.9)).toBe("0,90");

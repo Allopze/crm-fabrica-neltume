@@ -4,10 +4,9 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, TriangleAlert } from "lucide-react";
 import { Boton } from "@/components/ui/base";
+import { campoCompacto as campo } from "@/components/ui/campos";
 import { pedir } from "@/lib/api-cliente";
 import { cantidad, leerCantidad, usoPorPuerta } from "@/lib/formato";
-
-const campo = "h-9 rounded-md border border-linea-fuerte bg-lamina px-2 text-sm focus:border-tinta focus:outline-none disabled:opacity-60";
 const titulo = (s: string) => s.toLowerCase().replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase());
 
 export interface RecetaInicial {
@@ -106,7 +105,7 @@ export function EditorBom({ modelos, materias, csrf, maderaLista, inicial }: {
               {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre} ({m.unidad})</option>)}
             </select>
             <input aria-label={`Cantidad ${i + 1}`} required inputMode="decimal" value={l.cantidad} onChange={(e) => setLineas(lineas.map((x, j) => (j === i ? { ...x, cantidad: e.target.value } : x)))} className={`${campo} w-24 text-right tabular-nums`} />
-            <button type="button" aria-label={`Quitar línea ${i + 1}`} onClick={() => setLineas(lineas.filter((_, j) => j !== i))} className="grid h-9 w-9 place-items-center rounded-md text-tinta-tenue hover:bg-error-velo hover:text-error"><Trash2 className="h-4 w-4" /></button>
+            <button type="button" aria-label={`Quitar línea ${i + 1}`} onClick={() => setLineas(lineas.filter((_, j) => j !== i))} className="grid h-9 w-9 place-items-center rounded-md text-tinta-tenue hover:bg-error-velo hover:text-error pointer-coarse:h-11 pointer-coarse:w-11"><Trash2 className="h-4 w-4" /></button>
             {lectura && <span className="basis-full pl-1 text-xs text-tinta-tenue">{lectura}</span>}
           </div>
         );

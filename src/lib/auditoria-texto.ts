@@ -12,7 +12,7 @@ const RECURSOS: Record<string, string> = {
 const ACCIONES: Record<string, string> = {
   login: "Ingreso", logout: "Salida", crear: "Creación", actualizar: "Cambio", anular: "Anulación", aprobar: "Aprobación", cerrar: "Cierre",
   recalcular: "Recálculo con la lista vigente", interpretar: "Interpretación de la IA", "interpretar (encolar)": "Pedido enviado a la IA",
-  "crear manual": "Creación a mano", "quitar ítem": "Ítem quitado", "aplicar descuento": "Descuento", "definir bom": "Receta definida",
+  "crear manual": "Creación a mano", "agregar ítem por confirmar": "Ítem por confirmar agregado", "quitar ítem": "Ítem quitado", "aplicar descuento": "Descuento", "definir bom": "Receta definida",
   "asociar madera": "Madera asociada", "importar excel": "Importación del Excel", recepcion: "Recepción", ajuste: "Ajuste",
   consumo_produccion: "Consumo de producción", entrada_produccion: "Entrada de producción", salida_despacho: "Salida por despacho",
   reserva: "Reserva", liberacion: "Liberación de reserva", "crear pedido": "Nota de pedido creada", "cancelar pedido": "Cancelación",

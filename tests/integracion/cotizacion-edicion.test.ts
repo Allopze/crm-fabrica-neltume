@@ -64,6 +64,18 @@ describe("revisión y aprobación (REQ-COT-2.5, 3.2–3.4, 4.1, 4.5, 6.1, 6.2)",
     expect(Number(c.subtotal)).toBe(c.items.reduce((t: number, i: { totalLinea: number }) => t + Number(i.totalLinea), 0));
   });
 
+  it("agrega una línea libre por confirmar, sin precio y auditada", async () => {
+    const c = await ver();
+    const r = await llamar(rutaItems.POST, "POST", "/x", { ...s, cuerpo: { detalle: "2 puertas de roble con chapa", cantidad: 2, version: c.version } }, { id });
+    expect(r.estado).toBe(201);
+    const item = r.cuerpo.items.at(-1);
+    expect(item).toMatchObject({ estadoItem: "por_confirmar", cantidad: 2, descripcion: "Artículo fuera de catálogo", duda: "2 puertas de roble con chapa" });
+    expect(r.cuerpo.pendientes).toBe(1);
+    const d = await llamar(rutaItem.DELETE, "DELETE", `/x?version=${r.cuerpo.version}`, s, { id, itemId: item.id });
+    expect(d.estado).toBe(200);
+    expect(d.cuerpo.pendientes).toBe(0);
+  });
+
   it("una versión vieja → 409 VERSION_OBSOLETA", async () => {
     const c = await ver();
     const r = await llamar(rutaItems.POST, "POST", "/x", { ...s, cuerpo: { codigo: "FUY-O-2-A", cantidad: 1, version: c.version - 1 } }, { id });

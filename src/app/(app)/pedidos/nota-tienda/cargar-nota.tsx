@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { CircleAlert, FileUp, TriangleAlert } from "lucide-react";
 import { Boton, Placa } from "@/components/ui/base";
 import { CampoArchivo } from "@/components/ui/campo-archivo";
+import { campo as campoBase } from "@/components/ui/campos";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
-import { enviarIdempotente, huellaFormulario, SIN_CONFIRMAR } from "@/lib/api-cliente";
+import { enviarIdempotente, ErrorApi, huellaFormulario, SIN_CONFIRMAR } from "@/lib/api-cliente";
 import { clp, fecha } from "@/lib/formato";
 
 interface Linea { codigo: string; cantidad: number; medidaSolicitada: string | null; precioNota: number; articulo: { descripcion: string } | null; precioLista: number | null; aviso: string | null }
@@ -15,7 +17,7 @@ interface Previa {
   lineas: Linea[]; errores: string[]; duplicada: { id: string; numero: number } | null;
 }
 
-const campo = "mt-1 h-9 w-full rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
+const campo = `mt-1 w-full ${campoBase}`;
 
 async function enviar(url: string, form: FormData, csrf: string, idempotente = false) {
   const headers: Record<string, string> = { "x-csrf-token": csrf };
@@ -24,7 +26,7 @@ async function enviar(url: string, form: FormData, csrf: string, idempotente = f
     ? await enviarIdempotente(`POST ${url} ${huellaFormulario(form)}`, (clave) => fetch(url, { method: "POST", body: form, headers: { ...headers, "idempotency-key": clave } }))
     : await fetch(url, { method: "POST", body: form, headers }).catch(() => { throw new Error(SIN_CONFIRMAR); });
   const cuerpo = await r.json().catch(() => null);
-  if (!r.ok) throw new Error(cuerpo?.error?.mensaje ?? "No se pudo leer la nota.");
+  if (!r.ok) throw new ErrorApi(cuerpo?.error?.codigo ?? "INTERNO", cuerpo?.error?.mensaje ?? "No se pudo leer la nota.", cuerpo?.error?.correlacion_id);
   return cuerpo;
 }
 
@@ -34,8 +36,9 @@ export function CargarNota({ tiendas, csrf }: { tiendas: { id: string; nombre: s
   const archivo = useRef<HTMLInputElement>(null);
   const [clienteId, setClienteId] = useState(tiendas[0]?.id ?? "");
   const [previa, setPrevia] = useState<Previa | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  const [leyendo, setLeyendo] = useState(false);
+  const [creando, setCreando] = useState(false);
 
   const formulario = (extra: Record<string, string> = {}) => {
     const f = new FormData();
@@ -46,17 +49,17 @@ export function CargarNota({ tiendas, csrf }: { tiendas: { id: string; nombre: s
     return f;
   };
   const leer = async () => {
-    setError(null); setPrevia(null); setOcupado(true);
-    try { setPrevia(await enviar("/api/v1/pedidos/nota-tienda/vista-previa", formulario(), csrf)); } catch (e) { setError((e as Error).message); } finally { setOcupado(false); }
+    setError(null); setPrevia(null); setLeyendo(true);
+    try { setPrevia(await enviar("/api/v1/pedidos/nota-tienda/vista-previa", formulario(), csrf)); } catch (e) { setError(e); } finally { setLeyendo(false); }
   };
   const confirmar = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    setError(null); setOcupado(true);
+    setError(null); setCreando(true);
     try {
       const r = await enviar("/api/v1/pedidos/nota-tienda", formulario(Object.fromEntries([...f].map(([k, v]) => [k, String(v)]))), csrf, true);
       router.push(`/pedidos/${r.id}`);
-    } catch (err) { setError((err as Error).message); setOcupado(false); }
+    } catch (err) { setError(err); setCreando(false); }
   };
   const bloqueado = !previa || previa.errores.length > 0 || Boolean(previa.duplicada) || !clienteId;
 
@@ -71,9 +74,9 @@ export function CargarNota({ tiendas, csrf }: { tiendas: { id: string; nombre: s
         <label className="text-sm font-medium">PDF de la nota de pedido
           <CampoArchivo entrada={archivo} accept="application/pdf,.pdf" etiqueta="PDF de la nota" boton="Elegir PDF" onCambio={() => setPrevia(null)} />
         </label>
-        <Boton onClick={leer} disabled={ocupado}><FileUp className="h-4 w-4" /> Leer nota</Boton>
+        <Boton onClick={leer} disabled={leyendo || creando}><FileUp className="h-4 w-4" /> {leyendo ? "Leyendo nota…" : "Leer nota"}</Boton>
       </div>
-      {error && <p role="alert" className="rounded-md border border-error/25 bg-error-velo px-4 py-2 text-sm text-error">{error}</p>}
+      {error ? <ErrorAccion error={error} /> : null}
 
       {previa && (
         <section aria-label="Vista previa de la nota" className="space-y-4">
@@ -84,7 +87,7 @@ export function CargarNota({ tiendas, csrf }: { tiendas: { id: string; nombre: s
           </p>
           {previa.duplicada && <p role="alert" className="flex items-center gap-2 text-sm text-error"><CircleAlert className="h-4 w-4" /> Esta nota ya se cargó como la nota de pedido N.º {previa.duplicada.numero}.</p>}
           {[...previa.errores, ...previa.nota.avisos].map((a) => <p key={a} role="alert" className="flex items-center gap-2 text-sm text-error"><CircleAlert className="h-4 w-4" /> {a}</p>)}
-          <Tabla>
+          <Tabla etiqueta="Líneas de la nota de la tienda">
             <thead><tr><Th>Código</Th><Th>Descripción</Th><Th alinear="der">Cant.</Th><Th alinear="der">Precio nota</Th><Th alinear="der">Precio lista</Th></tr></thead>
             <tbody>
               {previa.lineas.map((l) => (
@@ -106,7 +109,7 @@ export function CargarNota({ tiendas, csrf }: { tiendas: { id: string; nombre: s
             <label className="text-sm text-tinta-tenue">Entrega comprometida<input type="date" name="entregaComprometida" defaultValue={previa.nota.despacho.entregaComprometida ?? ""} className={campo} /></label>
             <label className="text-sm text-tinta-tenue">Observaciones para la fábrica<input name="observaciones" maxLength={1000} className={campo} /></label>
             <p className="text-xs text-tinta-tenue sm:col-span-2">Se cobra el precio de venta de la lista vigente, sin recargo. No se guardan los datos del cliente final de la tienda.</p>
-            <div className="sm:col-span-2"><Boton type="submit" variante="primario" disabled={bloqueado || ocupado}>Crear nota de pedido y reservar</Boton></div>
+            <div className="sm:col-span-2"><Boton type="submit" variante="primario" disabled={bloqueado || leyendo || creando}>{creando ? "Creando nota…" : "Crear nota de pedido y reservar"}</Boton></div>
           </form>
         </section>
       )}

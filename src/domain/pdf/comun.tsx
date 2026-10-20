@@ -83,11 +83,12 @@ export function TablaItems({ columnas, filas, casilla }: { columnas: [string, st
   );
 }
 
-export function Totales({ lineas, total }: { lineas: [string, string][]; total: string }) {
+export function Totales({ lineas, total, despues = [] }: { lineas: [string, string][]; total: string; despues?: [string, string][] }) {
   return (
     <View style={e.totales} wrap={false}>
       {lineas.map(([t, v]) => <View key={t} style={e.lineaTotal}><Text style={{ color: TENUE }}>{t}</Text><Text>{v}</Text></View>)}
       <View style={e.total}><Text>Total</Text><Text>{total}</Text></View>
+      {despues.map(([t, v], i) => <View key={t} style={[e.lineaTotal, i === 0 ? { marginTop: 6 } : {}]}><Text style={{ color: TENUE }}>{t}</Text><Text>{v}</Text></View>)}
     </View>
   );
 }

@@ -4,10 +4,9 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Layers } from "lucide-react";
 import { Boton } from "@/components/ui/base";
+import { campoCompacto as campo } from "@/components/ui/campos";
 import { pedir } from "@/lib/api-cliente";
 import { leerCantidad, usoPorPuerta } from "@/lib/formato";
-
-const campo = "h-9 rounded-md border border-linea-fuerte bg-lamina px-2 text-sm focus:border-tinta focus:outline-none";
 const titulo = (s: string) => s.toLowerCase().replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase());
 type Op = "factor" | "insumo" | "quitar";
 interface Resultado { actualizados: string[]; sinReceta: string[]; sinCambio: string[] }
@@ -89,13 +88,13 @@ export function AplicarRecetas({ recetas, materias, csrf }: {
             <div className="mb-1 flex items-center justify-between text-xs text-tinta-suave">
               <span>{f === "puerta" ? "Puertas" : "Accesorios"}</span>
               <span className="space-x-2">
-                <button type="button" onClick={() => marcarGrupo(f, true)} className="underline-offset-2 hover:underline">todas</button>
-                <button type="button" onClick={() => marcarGrupo(f, false)} className="underline-offset-2 hover:underline">ninguna</button>
+                <button type="button" onClick={() => marcarGrupo(f, true)} className="inline-flex min-h-9 items-center px-1 underline-offset-2 hover:underline pointer-coarse:min-h-11">todas</button>
+                <button type="button" onClick={() => marcarGrupo(f, false)} className="inline-flex min-h-9 items-center px-1 underline-offset-2 hover:underline pointer-coarse:min-h-11">ninguna</button>
               </span>
             </div>
             <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-sm sm:grid-cols-3">
               {grupo(f).map((r) => (
-                <label key={r.modeloCodigo} className="flex items-center gap-2 truncate">
+                <label key={r.modeloCodigo} className="flex min-h-9 items-center gap-2 truncate py-0.5 pointer-coarse:min-h-11">
                   <input type="checkbox" checked={elegidos.has(r.modeloCodigo)} onChange={(e) => {
                     const s = new Set(elegidos);
                     if (e.target.checked) s.add(r.modeloCodigo); else s.delete(r.modeloCodigo);

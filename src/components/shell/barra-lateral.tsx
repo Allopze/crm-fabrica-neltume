@@ -6,43 +6,54 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays, ClipboardList, FileText, Gauge, Hammer, Layers, LayoutDashboard, Menu, Package, ScrollText, Settings2, Shield, Tag, Users, X,
+  type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
+import type { Permiso } from "@/domain/auth/permisos";
 import { cn } from "@/lib/formato";
 import { MARCA } from "@/lib/marca";
 
-const grupos = [
+type ItemNavegacion = { href: string; texto: string; icono: LucideIcon; permiso?: Permiso };
+
+const grupos: { nombre: string; items: ItemNavegacion[] }[] = [
   {
     nombre: "Ventas",
     items: [
       { href: "/", texto: "Panel", icono: LayoutDashboard },
-      { href: "/cotizaciones", texto: "Cotizaciones", icono: FileText },
-      { href: "/pedidos", texto: "Notas de pedido", icono: ClipboardList },
-      { href: "/clientes", texto: "Clientes", icono: Users },
+      { href: "/cotizaciones", texto: "Cotizaciones", icono: FileText, permiso: "cotizaciones.crear" },
+      { href: "/pedidos", texto: "Notas de pedido", icono: ClipboardList, permiso: "pedidos.gestionar" },
+      { href: "/clientes", texto: "Clientes", icono: Users, permiso: "clientes.ver" },
     ],
   },
   {
     nombre: "Taller",
     items: [
-      { href: "/stock", texto: "Stock de puertas", icono: Package },
-      { href: "/materias-primas", texto: "Materias primas", icono: Layers },
-      { href: "/produccion", texto: "Producción y BOM", icono: Hammer },
+      { href: "/stock", texto: "Stock de puertas", icono: Package, permiso: "stock.ver" },
+      { href: "/materias-primas", texto: "Materias primas", icono: Layers, permiso: "stock.ver" },
+      { href: "/produccion", texto: "Producción y BOM", icono: Hammer, permiso: "stock.ver" },
     ],
   },
   {
     nombre: "Configuración",
     items: [
-      { href: "/precios", texto: "Lista de precios", icono: Tag },
-      { href: "/administracion", texto: "Usuarios y permisos", icono: Shield },
-      { href: "/administracion/auditoria", texto: "Auditoría", icono: ScrollText },
-      { href: "/administracion/metricas", texto: "Métricas de IA", icono: Gauge },
-      { href: "/administracion/ia", texto: "Ajustes de IA", icono: Settings2 },
-      { href: "/administracion/feriados", texto: "Feriados", icono: CalendarDays },
+      { href: "/precios", texto: "Lista de precios", icono: Tag, permiso: "stock.ver" },
+      { href: "/administracion", texto: "Usuarios y permisos", icono: Shield, permiso: "usuarios.gestionar" },
+      { href: "/administracion/auditoria", texto: "Auditoría", icono: ScrollText, permiso: "auditoria.ver" },
+      { href: "/administracion/metricas", texto: "Métricas de IA", icono: Gauge, permiso: "auditoria.ver" },
+      { href: "/administracion/ia", texto: "Ajustes de IA", icono: Settings2, permiso: "config.editar" },
+      { href: "/administracion/feriados", texto: "Feriados", icono: CalendarDays, permiso: "config.editar" },
     ],
   },
 ];
 
-function Contenido({ pie, ruta }: { pie: ReactNode; ruta: string }) {
+/** La navegación solo muestra lo que la sesión puede abrir (UX §2); el backend sigue denegando por su cuenta. */
+function visibles(permisos: ReadonlySet<string>) {
+  return grupos
+    .map((g) => ({ ...g, items: g.items.filter((i) => !i.permiso || permisos.has(i.permiso)) }))
+    .filter((g) => g.items.length > 0);
+}
+
+function Contenido({ pie, ruta, permisos }: { pie: ReactNode; ruta: string; permisos: ReadonlySet<string> }) {
   const activo = (href: string) =>
     href === "/" ? ruta === "/" : ruta === href || (ruta.startsWith(href + "/") && !(href === "/administracion" && /^\/administracion\/(auditoria|metricas|ia|feriados)/.test(ruta)));
 
@@ -54,7 +65,7 @@ function Contenido({ pie, ruta }: { pie: ReactNode; ruta: string }) {
       </Link>
 
       <nav className="flex-1 space-y-7 overflow-y-auto px-3" aria-label="Principal">
-        {grupos.map((g) => (
+        {visibles(permisos).map((g) => (
           <div key={g.nombre}>
             <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-bosque-tinta/65">{g.nombre}</p>
             <ul className="space-y-0.5">
@@ -92,16 +103,16 @@ function Contenido({ pie, ruta }: { pie: ReactNode; ruta: string }) {
 }
 
 /** Barra lateral fija desde lg; bajo ese ancho, cajón que abre el botón de menú del encabezado (REQ-NFR-6). */
-export function BarraLateral({ pie }: { pie: ReactNode }) {
+export function BarraLateral({ pie, permisos }: { pie: ReactNode; permisos: readonly string[] }) {
   const ruta = usePathname();
   return (
     <aside aria-label="Navegación" className="veta sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col text-bosque-tinta lg:flex">
-      <Contenido pie={pie} ruta={ruta} />
+      <Contenido pie={pie} ruta={ruta} permisos={new Set(permisos)} />
     </aside>
   );
 }
 
-export function MenuMovil({ pie }: { pie: ReactNode }) {
+export function MenuMovil({ pie, permisos }: { pie: ReactNode; permisos: readonly string[] }) {
   const ruta = usePathname();
   const [abierto, setAbierto] = useState(false);
   const [rutaAbierta, setRutaAbierta] = useState(ruta);
@@ -116,10 +127,30 @@ export function MenuMovil({ pie }: { pie: ReactNode }) {
   useEffect(() => {
     if (!abierto) return;
     (cajon.current?.querySelector<HTMLElement>("a[aria-current=page]") ?? cajon.current?.querySelector<HTMLElement>("nav a"))?.focus();
-    const alTeclear = (e: KeyboardEvent) => { if (e.key === "Escape") { setAbierto(false); boton.current?.focus(); } };
+    const principal = document.getElementById("contenido");
+    principal?.setAttribute("inert", "");
+    const alTeclear = (e: KeyboardEvent) => {
+      // El diálogo de contraseña tiene su propio foco y su propio Escape.
+      if (document.querySelector("dialog[open]")) return;
+      if (e.key === "Escape") { setAbierto(false); boton.current?.focus(); return; }
+      if (e.key !== "Tab") return;
+      // El cajón se declara modal: el foco no puede escaparse al contenido de atrás.
+      const enfocables = cajon.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!enfocables?.length) return;
+      const primero = enfocables[0];
+      const ultimo = enfocables[enfocables.length - 1];
+      if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+      else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+    };
     document.addEventListener("keydown", alTeclear);
     document.body.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", alTeclear); document.body.style.overflow = ""; };
+    return () => {
+      document.removeEventListener("keydown", alTeclear);
+      document.body.style.overflow = "";
+      principal?.removeAttribute("inert");
+    };
   }, [abierto]);
 
   return (
@@ -139,7 +170,7 @@ export function MenuMovil({ pie }: { pie: ReactNode }) {
               className="absolute top-3 right-3 grid h-11 w-11 place-items-center rounded-md text-bosque-tinta/70 hover:text-white">
               <X className="h-5 w-5" />
             </button>
-            <Contenido pie={pie} ruta={ruta} />
+            <Contenido pie={pie} ruta={ruta} permisos={new Set(permisos)} />
           </div>
         </div>,
         document.body,

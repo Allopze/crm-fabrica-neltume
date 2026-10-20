@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { TriangleAlert } from "lucide-react";
-import { Cifra, Encabezado, Panel } from "@/components/ui/base";
+import { Cifra, Encabezado, Panel, Vacio } from "@/components/ui/base";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -42,8 +42,10 @@ export default async function MetricasPage() {
           </dl>
         </Panel>
         <Panel titulo="Llamadas al proveedor" sinRelleno>
-          {m.llamadas.length === 0 ? <p className="px-6 py-8 text-sm text-tinta-tenue">Aún no hay llamadas en los últimos 30 días.</p> : (
-            <Tabla>
+          {m.llamadas.length === 0 ? (
+            <Vacio titulo="Aún no hay llamadas">Las interpretaciones de los últimos 30 días aparecerán aquí.</Vacio>
+          ) : (
+            <Tabla etiqueta="Llamadas al proveedor">
               <thead><tr><Th>Resultado</Th><Th alinear="der">Llamadas</Th><Th alinear="der">Costo</Th></tr></thead>
               <tbody>{m.llamadas.map((l) => (
                 <Tr key={l.resultado}><Td>{NOMBRES[l.resultado] ?? l.resultado}</Td><Td alinear="der">{l.n}</Td><Td alinear="der">{usd(l.costoUsd, 4)}</Td></Tr>

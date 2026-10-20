@@ -3,9 +3,11 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Boton } from "@/components/ui/base";
+import { campo as campoBase } from "@/components/ui/campos";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
-const campo = "mt-1 h-9 w-full rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
+const campo = `mt-1 w-full ${campoBase}`;
 
 /** Datos de despacho, entrega comprometida y observaciones para la fábrica (editables hasta despachar). */
 export function FormularioDespacho({ id, inicial, csrf }: {
@@ -13,7 +15,8 @@ export function FormularioDespacho({ id, inicial, csrf }: {
   inicial: { direccionDespacho: string | null; medioTransporte: string | null; entregaComprometida: string | null; observaciones: string | null };
 }) {
   const router = useRouter();
-  const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  const [mensaje, setMensaje] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [pendiente, iniciar] = useTransition();
   return (
     <form aria-label="Despacho" className="space-y-3 text-sm" onSubmit={(e) => {
@@ -23,10 +26,12 @@ export function FormularioDespacho({ id, inicial, csrf }: {
       iniciar(async () => {
         try {
           await pedir("PATCH", `/api/v1/pedidos/${id}`, { csrf, cuerpo: { direccionDespacho: v("direccion"), medioTransporte: v("transporte"), entregaComprometida: v("entrega"), observaciones: v("observaciones") } });
-          setMsg({ ok: true, texto: "Despacho actualizado." });
+          setError(null);
+          setMensaje("Despacho actualizado.");
           router.refresh();
         } catch (err) {
-          setMsg({ ok: false, texto: (err as Error).message });
+          setMensaje(null);
+          setError(err);
         }
       });
     }}>
@@ -37,7 +42,8 @@ export function FormularioDespacho({ id, inicial, csrf }: {
         <textarea name="observaciones" defaultValue={inicial.observaciones ?? ""} maxLength={1000} rows={3} className="mt-1 w-full rounded-md border border-linea-fuerte bg-lamina px-3 py-2 text-sm focus:border-tinta focus:outline-none" />
       </label>
       <Boton type="submit" disabled={pendiente}>{pendiente ? "Guardando…" : "Guardar despacho"}</Boton>
-      {msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-musgo" : "text-error"}>{msg.texto}</p>}
+      {mensaje && <p role="status" className="text-musgo">{mensaje}</p>}
+      {error ? <ErrorAccion error={error} /> : null}
     </form>
   );
 }

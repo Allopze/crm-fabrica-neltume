@@ -2,9 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { campoCompacto as campo } from "@/components/ui/campos";
 import { pedir } from "@/lib/api-cliente";
-
-const campo = "h-9 rounded-md border border-linea-fuerte bg-lamina px-2 text-sm focus:border-tinta focus:outline-none disabled:opacity-60";
 
 /** Materia prima de la que se descuenta cada madera cuando un BOM usa la «madera de la puerta» (REQ-MP-3.5, ADR-0012). */
 export function MaderaInsumo({ maderas, materias, editable, csrf }: {
@@ -30,10 +29,10 @@ export function MaderaInsumo({ maderas, materias, editable, csrf }: {
     <div>
       <ul className="divide-y divide-linea/70">
         {maderas.map((m) => (
-          <li key={m.codigo} className="flex items-center justify-between gap-3 py-2 text-sm">
-            <span>{m.nombre}{guardada === m.codigo && <span role="status" className="ml-2 text-xs normal-case text-musgo">guardado</span>}</span>
+          <li key={m.codigo} className="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
+            <span className="min-w-0 flex-1">{m.nombre}{guardada === m.codigo && <span role="status" className="ml-2 text-xs normal-case text-musgo">guardado</span>}</span>
             <select aria-label={`Materia prima de ${m.nombre}`} disabled={!editable || pendiente} value={m.materiaPrimaId ?? ""}
-              onChange={(e) => guardar(m.codigo, e.target.value)} className={`${campo} w-64`}>
+              onChange={(e) => guardar(m.codigo, e.target.value)} className={`${campo} w-full sm:w-64`}>
               <option value="">— sin asociar —</option>
               {materias.map((x) => <option key={x.id} value={x.id}>{x.nombre} ({x.unidad})</option>)}
             </select>

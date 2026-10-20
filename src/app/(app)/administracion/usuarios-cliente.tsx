@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { Boton, Etiqueta } from "@/components/ui/base";
+import { campoAlto } from "@/components/ui/campos";
+import { ErrorAccion } from "@/components/ui/error-accion";
 import { LARGO_MINIMO_CLAVE } from "@/domain/auth/reglas";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { pedir } from "@/lib/api-cliente";
@@ -12,12 +14,12 @@ import { fechaHora } from "@/lib/formato";
 
 interface UsuarioFila { id: string; email: string; nombre: string; activo: boolean; rol: string; ultimoIngreso: string | null }
 interface Rol { id: string; nombre: string }
-const campo = "h-10 w-full rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
+const campo = `w-full ${campoAlto}`;
 
 export function UsuariosCliente({ usuarios, roles, csrf, yo }: { usuarios: UsuarioFila[]; roles: Rol[]; csrf: string; yo: string }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [pendiente, iniciar] = useTransition();
   const [restablecer, setRestablecer] = useState<UsuarioFila | null>(null);
 
@@ -29,7 +31,7 @@ export function UsuariosCliente({ usuarios, roles, csrf, yo }: { usuarios: Usuar
         setAbierto(false);
         router.refresh();
       } catch (e) {
-        setError((e as Error).message);
+        setError(e);
       }
     });
   }
@@ -42,7 +44,7 @@ export function UsuariosCliente({ usuarios, roles, csrf, yo }: { usuarios: Usuar
 
   return (
     <div>
-      {error && <p role="alert" className="mx-5 mt-4 rounded-md border border-error/25 bg-error-velo px-3 py-2 text-sm text-error">{error}</p>}
+      {error ? <ErrorAccion error={error} className="mx-5 mt-4 px-3 py-2" /> : null}
       {abierto ? (
         <form action={crear} className="grid gap-3 border-b border-linea p-5 md:grid-cols-2">
           <input name="nombre" required placeholder="Nombre" className={campo} aria-label="Nombre" />
@@ -61,7 +63,7 @@ export function UsuariosCliente({ usuarios, roles, csrf, yo }: { usuarios: Usuar
           <Boton variante="primario" onClick={() => setAbierto(true)}><Plus className="h-4 w-4" /> Nuevo usuario</Boton>
         </div>
       )}
-      <Tabla>
+      <Tabla etiqueta="Usuarios">
         <thead><tr><Th>Nombre</Th><Th>Correo</Th><Th>Rol</Th><Th>Último ingreso</Th><Th>Estado</Th><Th><span className="sr-only">Acciones</span></Th></tr></thead>
         <tbody>
           {usuarios.map((u) => (

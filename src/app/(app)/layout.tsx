@@ -9,28 +9,34 @@ import { MARCA } from "@/lib/marca";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const sesion = await requerirSesion();
+  const permisos = [...sesion.permisos];
   const pie = <UsuarioActual nombre={sesion.usuario.nombre} rol={sesion.usuario.rol} csrf={sesion.csrf} />;
   return (
     <div className="flex min-h-screen">
-      <BarraLateral pie={pie} />
+      <a href="#contenido" className="sr-only z-50 rounded-md bg-lamina px-4 py-2 text-sm font-medium text-tinta focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
+        Saltar al contenido
+      </a>
+      <BarraLateral pie={pie} permisos={permisos} />
       <div className="flex min-w-0 flex-1 flex-col">
         <AvisoConexion />
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-linea bg-papel/85 px-4 backdrop-blur sm:px-6 lg:px-8">
-          <MenuMovil pie={pie} />
+          <MenuMovil pie={pie} permisos={permisos} />
           <Link href="/" className="text-tinta lg:hidden"><Logo className="h-8 w-auto" titulo={`${MARCA.nombre} · inicio`} /></Link>
           {process.env.NODE_ENV !== "production" && (
             <span className="hidden items-center gap-2 rounded-full border border-dashed border-ambar/50 px-3 py-1 text-xs font-medium text-ambar md:inline-flex">
               Entorno de desarrollo
             </span>
           )}
-          <Link
-            href="/cotizaciones/nueva"
-            className="ml-auto inline-flex h-9 items-center gap-2 rounded-md bg-rauli px-3.5 text-sm font-medium text-lamina shadow-[inset_0_-2px_0_rgb(0_0_0/0.18)] hover:bg-rauli-hondo pointer-coarse:h-11"
-          >
-            <Plus className="h-4 w-4" /> Nueva cotización
-          </Link>
+          {sesion.permisos.has("cotizaciones.crear") && (
+            <Link
+              href="/cotizaciones/nueva"
+              className="ml-auto inline-flex h-9 items-center gap-2 rounded-md bg-rauli px-3.5 text-sm font-medium text-lamina shadow-[inset_0_-2px_0_rgb(0_0_0/0.18)] hover:bg-rauli-hondo pointer-coarse:h-11"
+            >
+              <Plus className="h-4 w-4" /> Nueva cotización
+            </Link>
+          )}
         </header>
-        <main className="mx-auto w-full max-w-[1320px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-10">{children}</main>
+        <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-[1320px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-10 focus:outline-none">{children}</main>
       </div>
     </div>
   );

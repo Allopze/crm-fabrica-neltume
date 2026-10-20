@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BotonLink, Encabezado, Panel } from "@/components/ui/base";
+import { BotonLink, Encabezado, Panel, Vacio } from "@/components/ui/base";
+import { campo } from "@/components/ui/campos";
 import { EstadoCotizacionEtiqueta } from "@/components/ui/estado-cotizacion";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
@@ -10,8 +11,6 @@ import { listarCotizaciones } from "@/domain/cotizaciones/consulta";
 import { clp, cn, fecha, fechaHora } from "@/lib/formato";
 
 export const metadata: Metadata = { title: "Cotizaciones" };
-
-const campo = "h-9 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none";
 
 const filtros = [
   { valor: "", texto: "Todas" }, { valor: "borrador", texto: "Borradores" }, { valor: "aprobada", texto: "Aprobadas" },
@@ -56,15 +55,18 @@ export default async function CotizacionesPage({ searchParams }: PageProps<"/cot
           placeholder={verCliente ? "N.º de cotización o cliente" : "N.º de cotización"} className={`${campo} w-64`} />
         <label className="flex items-center gap-1.5 text-sm text-tinta-suave">Desde <input type="date" name="desde" defaultValue={busqueda.desde} className={campo} /></label>
         <label className="flex items-center gap-1.5 text-sm text-tinta-suave">Hasta <input type="date" name="hasta" defaultValue={busqueda.hasta} className={campo} /></label>
-        <button className="h-9 rounded-md border border-linea-fuerte px-3 text-sm hover:border-tinta">Buscar</button>
+        <button className="h-9 rounded-md border border-linea-fuerte px-3 text-sm hover:border-tinta pointer-coarse:h-11">Buscar</button>
         {filtrando && <Link href={conFiltros({ q: "", desde: "", hasta: "" })} className="text-sm text-tinta-suave hover:text-tinta">Limpiar</Link>}
       </form>
 
       <Panel sinRelleno>
         {datos.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-tinta-tenue">No hay cotizaciones {filtrando || estado ? "con estos filtros" : "todavía"}. Empieza pegando el pedido de un cliente.</p>
+          <Vacio titulo={filtrando || estado ? "Sin resultados" : "Aún no hay cotizaciones"}
+            accion={!filtrando && !estado ? <BotonLink href="/cotizaciones/nueva" variante="primario">Nueva cotización</BotonLink> : undefined}>
+            {filtrando || estado ? "Prueba con otros filtros." : "Pega el pedido de un cliente para empezar."}
+          </Vacio>
         ) : (
-          <Tabla>
+          <Tabla etiqueta="Cotizaciones">
             <thead>
               <tr><Th>N.º</Th><Th>Cliente</Th><Th className="hidden md:table-cell">Creada</Th><Th className="hidden lg:table-cell">Origen</Th><Th>Estado</Th><Th className="hidden md:table-cell">Vigencia</Th><Th alinear="der">Total</Th></tr>
             </thead>
@@ -87,7 +89,11 @@ export default async function CotizacionesPage({ searchParams }: PageProps<"/cot
           </Tabla>
         )}
       </Panel>
-      {siguiente && <p className="mt-4 text-sm"><Link href={conFiltros({ antes: String(siguiente) })} className="text-rauli hover:underline">Ver más antiguas</Link></p>}
+      {siguiente && (
+        <p className="mt-4 text-sm">
+          <Link href={conFiltros({ antes: String(siguiente) })} aria-label="Ver más cotizaciones" className="text-rauli hover:underline">Ver más</Link>
+        </p>
+      )}
     </>
   );
 }

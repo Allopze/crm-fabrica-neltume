@@ -47,6 +47,20 @@ export async function agregarItem(tx: Tx, id: string, d: { codigo: string; canti
   await registrarAuditoria(tx, { actor, accion: "agregar ítem", recurso: "cotizacion", recursoId: id, despues: { item: item.id, codigo: d.codigo, cantidad: d.cantidad }, resultado: "ok", origen });
 }
 
+/** Línea libre escrita por una persona: queda por confirmar y sin precio, nunca se completa en silencio (REQ-COT-5.2). */
+export async function agregarItemLibre(tx: Tx, id: string, d: { detalle: string; cantidad: number }, version: number, actor: Actor & { id: string }, origen: Origen) {
+  const detalle = d.detalle.trim();
+  if (detalle.length < 2) throw new ErrorDominio("VALIDACION", "Escribe qué falta cotizar.");
+  await tomarBorrador(tx, id, version);
+  const [{ ultimo }] = await tx.select({ ultimo: max(cotizacionItem.orden) }).from(cotizacionItem).where(eq(cotizacionItem.cotizacionId, id));
+  const [item] = await tx.insert(cotizacionItem).values({
+    cotizacionId: id, orden: (ultimo ?? 0) + 1, cantidad: d.cantidad, estadoItem: "por_confirmar",
+    descripcion: "Artículo fuera de catálogo", duda: detalle, modificadoPor: actor.id, modificadoEn: sql`now()`,
+  }).returning();
+  await recalcularTotales(tx, id);
+  await registrarAuditoria(tx, { actor, accion: "agregar ítem por confirmar", recurso: "cotizacion", recursoId: id, despues: { item: item.id, detalle, cantidad: d.cantidad }, resultado: "ok", origen });
+}
+
 export interface CambioItem { codigo?: string; cantidad?: number; precioUnitario?: number }
 
 export async function cambiarItem(tx: Tx, id: string, itemId: string, cambio: CambioItem, version: number, actor: Actor & { id: string }, origen: Origen) {

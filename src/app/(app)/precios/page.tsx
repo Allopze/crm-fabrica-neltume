@@ -77,37 +77,42 @@ export default async function PreciosPage({ searchParams }: PageProps<"/precios"
           <Boton type="submit">Filtrar</Boton>
           {filtrando && <Link href="/precios" className="text-sm text-tinta-suave hover:text-tinta">Limpiar</Link>}
         </form>
-        <Tabla etiqueta="Precios vigentes">
-          <thead>
-            <tr>
-              <Th>Código</Th><Th>Modelo</Th><Th className="hidden md:table-cell">Madera</Th><Th className="hidden md:table-cell">Medida</Th><Th className="hidden lg:table-cell">Tipo</Th>
-              <Th alinear="der">{hayRecargo ? "Neto lista" : "Neto"}</Th>{hayRecargo && <Th alinear="der">Con recargo</Th>}<Th alinear="der">Con IVA</Th>
-              {verCostos && <><Th alinear="der" className="hidden lg:table-cell">Costo</Th><Th alinear="der" className="hidden lg:table-cell">Margen</Th></>}
-            </tr>
-          </thead>
-          <tbody>
-            {precios.datos.map((p) => (
-              <Tr key={p.codigo}>
-                <Td><Placa codigo={p.codigo} /></Td>
-                <Td className="font-medium capitalize">{p.modelo.toLowerCase()}</Td>
-                <Td className="hidden text-tinta-suave capitalize md:table-cell">{p.madera.toLowerCase()}</Td>
-                <Td className="hidden whitespace-nowrap text-tinta-suave md:table-cell">{p.ancho} × {metros(Number(p.altoM))}</Td>
-                <Td className="hidden text-tinta-suave capitalize lg:table-cell">{p.tipo?.toLowerCase() ?? "accesorio"}</Td>
-                <Td alinear="der">{puedeEditar ? <EditarPrecio codigo={p.codigo} precioNeto={Number(p.precioNeto)} csrf={sesion.csrf} /> : clp(Number(p.precioNeto))}</Td>
-                {hayRecargo && <Td alinear="der" className="font-medium">{clp(p.precioVenta)}</Td>}
-                <Td alinear="der" className="text-tinta-suave">{clp(p.precioVentaConIva)}</Td>
-                {verCostos && "costoTotal" in p && <>
-                  <Td alinear="der" className="hidden text-tinta-suave lg:table-cell">{p.costoTotal ? clp(Number(p.costoTotal)) : "—"}</Td>
-                  <Td alinear="der" className="hidden text-tinta-suave lg:table-cell">{p.margen !== null && p.margen !== undefined ? `${Math.round(Number(p.margen) * 100)} %` : "—"}</Td>
-                </>}
-              </Tr>
-            ))}
-          </tbody>
-        </Tabla>
-        {precios.datos.length === 0 && <Vacio titulo="Sin resultados">Ningún artículo coincide con los filtros.</Vacio>}
+        {precios.datos.length === 0 ? (
+          <Vacio titulo="Sin resultados">Ningún artículo coincide con los filtros.</Vacio>
+        ) : (
+          <Tabla etiqueta="Precios vigentes">
+            <thead>
+              <tr>
+                <Th>Código</Th><Th>Modelo</Th><Th className="hidden md:table-cell">Madera</Th><Th className="hidden md:table-cell">Medida</Th><Th className="hidden lg:table-cell">Tipo</Th>
+                <Th alinear="der">{hayRecargo ? "Neto lista" : "Neto"}</Th>{hayRecargo && <Th alinear="der">Con recargo</Th>}<Th alinear="der">Con IVA</Th>
+                {verCostos && <><Th alinear="der" className="hidden lg:table-cell">Costo</Th><Th alinear="der" className="hidden lg:table-cell">Margen</Th></>}
+              </tr>
+            </thead>
+            <tbody>
+              {precios.datos.map((p) => (
+                <Tr key={p.codigo}>
+                  <Td><Placa codigo={p.codigo} /></Td>
+                  <Td className="font-medium capitalize">{p.modelo.toLowerCase()}</Td>
+                  <Td className="hidden text-tinta-suave capitalize md:table-cell">{p.madera.toLowerCase()}</Td>
+                  <Td className="hidden whitespace-nowrap text-tinta-suave md:table-cell">{p.ancho} × {metros(Number(p.altoM))}</Td>
+                  <Td className="hidden text-tinta-suave capitalize lg:table-cell">{p.tipo?.toLowerCase() ?? "accesorio"}</Td>
+                  <Td alinear="der">{puedeEditar ? <EditarPrecio codigo={p.codigo} precioNeto={Number(p.precioNeto)} csrf={sesion.csrf} /> : clp(Number(p.precioNeto))}</Td>
+                  {hayRecargo && <Td alinear="der" className="font-medium">{clp(p.precioVenta)}</Td>}
+                  <Td alinear="der" className="text-tinta-suave">{clp(p.precioVentaConIva)}</Td>
+                  {verCostos && "costoTotal" in p && <>
+                    <Td alinear="der" className="hidden text-tinta-suave lg:table-cell">{p.costoTotal ? clp(Number(p.costoTotal)) : "—"}</Td>
+                    <Td alinear="der" className="hidden text-tinta-suave lg:table-cell">{p.margen !== null && p.margen !== undefined ? `${Math.round(Number(p.margen) * 100)} %` : "—"}</Td>
+                  </>}
+                </Tr>
+              ))}
+            </tbody>
+          </Tabla>
+        )}
       </Panel>
       {precios.siguiente && (
-        <p className="mt-4 text-sm"><Link className="text-rauli hover:underline" href={`/precios?${new URLSearchParams({ ...filtros, desde: precios.siguiente })}`}>Ver más →</Link></p>
+        <p className="mt-4 text-sm">
+          <Link className="text-rauli hover:underline" href={`/precios?${new URLSearchParams({ ...filtros, desde: precios.siguiente })}`} aria-label="Ver más precios">Ver más</Link>
+        </p>
       )}
       <div className="mt-10 grid items-start gap-8 [&>*]:min-w-0 lg:grid-cols-[1.4fr_1fr]">
         <Panel titulo="Versiones" sinRelleno>

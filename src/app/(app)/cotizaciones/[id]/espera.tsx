@@ -7,8 +7,8 @@ import { Boton, BotonLink } from "@/components/ui/base";
 
 const TOPE_S = 30;
 
-/** Mientras la IA interpreta: refresca cada segundo hasta 30 s; luego deja de consultar y ofrece seguir a mano (UX §3). */
-export function EsperaInterpretacion({ texto }: { texto: string }) {
+/** Mientras la IA interpreta: consulta un estado ligero cada 2 s hasta 30 s y solo recarga al terminar (UX §3). */
+export function EsperaInterpretacion({ id, texto }: { id: string; texto: string }) {
   const router = useRouter();
   const [segundos, setSegundos] = useState(0);
   const [copiado, setCopiado] = useState(false);
@@ -16,9 +16,20 @@ export function EsperaInterpretacion({ texto }: { texto: string }) {
 
   useEffect(() => {
     if (agotado) return;
-    const t = setTimeout(() => { setSegundos((s) => s + 1); router.refresh(); }, 1_000);
-    return () => clearTimeout(t);
-  }, [router, segundos, agotado]);
+    const control = new AbortController();
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/v1/cotizaciones/${id}/estado`, { signal: control.signal, cache: "no-store" });
+        if (!r.ok) throw new Error("sin estado");
+        const datos = await r.json() as { estado?: string };
+        if (datos.estado && datos.estado !== "interpretando") { router.refresh(); return; }
+      } catch {
+        // Un corte momentáneo se reintenta en el siguiente ciclo; el tope de 30 s sigue vigente.
+      }
+      if (!control.signal.aborted) setSegundos((s) => s + 1);
+    }, 2_000);
+    return () => { clearTimeout(t); control.abort(); };
+  }, [id, router, segundos, agotado]);
 
   async function copiar() {
     try {

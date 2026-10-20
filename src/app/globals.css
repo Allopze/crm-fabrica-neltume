@@ -7,7 +7,7 @@
   --lamina: #fbf8f2;
   --tinta: #1d2920;
   --tinta-suave: #4b544a;
-  --tinta-tenue: #666860; /* ≥ 4,5:1 sobre lámina, papel y velo ámbar (AA) */
+  --tinta-tenue: #62645c; /* ≥ 4,5:1 sobre lámina, papel, papel hundido y velo ámbar (AA) */
   --linea: #dcd2c1;
   --linea-fuerte: #c4b8a3;
 
@@ -84,6 +84,11 @@ body {
   outline: 2px solid var(--rauli);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Sobre la barra oscura el raulí no llega a 3:1; el foco usa la tinta clara del bosque. */
+.veta :focus-visible {
+  outline-color: var(--bosque-tinta);
 }
 
 /* Grano de papel: textura sutil en el lienzo. Va como fondo (no como capa fija con blend sobre la ventana)

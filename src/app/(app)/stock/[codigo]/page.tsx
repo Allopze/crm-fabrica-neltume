@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronRight, Lock } from "lucide-react";
 import { Cifra, Encabezado, Panel, Placa, Vacio } from "@/components/ui/base";
 import { maderas, type MaderaId } from "@/components/ui/maderas";
+import { nombreMovimiento } from "@/components/ui/movimientos";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -19,15 +20,10 @@ import { EditarMinimo } from "./editar-minimo";
 
 export const metadata: Metadata = { title: "Artículo" };
 
-const NOMBRE_TIPO: Record<string, string> = {
-  entrada_produccion: "Entrada de producción", recepcion: "Recepción", salida_despacho: "Salida por despacho", consumo_produccion: "Consumo de producción",
-  ajuste: "Ajuste", reserva: "Reserva", liberacion: "Liberación de reserva",
-};
-
 /** Referencia legible: el documento con su número y enlace; nunca un id interno. */
 function Referencia({ refTipo, refId, refNumero }: { refTipo: string | null; refId: string | null; refNumero: number | null }) {
   if (refTipo === "pedido" && refId && refNumero !== null) return <Link href={`/pedidos/${refId}`} className="text-rauli hover:underline">Nota de pedido N.º {refNumero}</Link>;
-  if (refTipo === "orden" && refNumero !== null) return <Link href="/produccion" className="text-rauli hover:underline">Orden N.º {refNumero}</Link>;
+  if (refTipo === "orden" && refNumero !== null) return <Link href={refId ? `/produccion?orden=${refId}` : "/produccion"} className="text-rauli hover:underline">Orden N.º {refNumero}</Link>;
   if (refTipo === "manual" && refId) return <>{refId}</>;
   return <>—</>;
 }
@@ -106,7 +102,7 @@ export default async function ArticuloPage({ params }: PageProps<"/stock/[codigo
                 {movimientos.map((m) => (
                   <Tr key={m.id}>
                     <Td className="whitespace-nowrap text-tinta-suave">{fechaHora(new Date(m.ocurridoEn).toISOString())}</Td>
-                    <Td>{NOMBRE_TIPO[m.tipo] ?? m.tipo}{m.motivo && <span className="block text-xs text-tinta-tenue">Motivo: {m.motivo}</span>}</Td>
+                    <Td>{nombreMovimiento(m.tipo)}{m.motivo && <span className="block text-xs text-tinta-tenue">Motivo: {m.motivo}</span>}</Td>
                     <Td className="hidden sm:table-cell">{m.puerta ? <Link href={`/stock/puertas/${encodeURIComponent(m.puerta)}`} className="font-mono text-[13px] text-rauli hover:underline">{m.puerta}</Link> : <span className="text-tinta-tenue">—</span>}</Td>
                     <Td className="text-tinta-suave"><Referencia refTipo={m.refTipo} refId={m.refId} refNumero={m.refNumero} /></Td>
                     <Td className="text-tinta-suave">{m.usuario}</Td>
