@@ -75,6 +75,8 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 | Login responde "Demasiados intentos" | 5 fallos en 15 min (por correo o IP) | Esperar 15 min; queda auditado |
 | La app no arranca en producción | `migrar` falló | `docker compose logs migrar` |
 | Un usuario quedó sin acceso | Desactivado o rol sin permisos | Otro administrador lo reactiva en Usuarios y permisos |
+| «Falta el abono» o «Falta pagar el saldo» bloquea producir o despachar | La nota exige pago (ADR-0020) | Registrar el pago en la ficha, o la excepción con motivo; el % de abono es el parámetro `abono_pct` (50): `UPDATE parametro SET valor = '40' WHERE clave = 'abono_pct'` |
+| Un pago se registró mal | Los pagos no se editan ni se borran | «Revertir» con motivo en la ficha y registrar el correcto |
 
 **Actualizaciones** (la app está expuesta sin Access): revisar mensualmente `npm audit --omit=dev` y los avisos de seguridad de Next.js; aplicar los parches de seguridad sin esperar al ciclo mensual. Al revisar un aviso, importa si el paquete va a producción y si el código vulnerable es alcanzable (p. ej., `uuid` dentro de `exceljs` no recibe `buf`); no apliques el «fix» que propone `npm audit` cuando es un downgrade mayor. En el mismo ciclo, renueva los digests de las imágenes de `docker-compose.yml` y la base del `Dockerfile` (`docker buildx imagetools inspect <imagen>`).
 

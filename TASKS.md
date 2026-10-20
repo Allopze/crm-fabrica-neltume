@@ -235,6 +235,20 @@ Toda la planilla `datos/INVENTARIO.xlsx` entra a la app y deja de usarse: cada p
 
 **Checkpoint F11:** `npm test` completo verde, lint y build; informe de la carga real simulada (conteos por destino y filas dudosas) revisado contigo; recorrido: buscar una puerta por código, moverla de ubicación, apartarla, despachar un pedido eligiendo puertas y ver la historia de una puerta despachada antes de la app. Espero tu OK.
 
+## Fase 12 — Pagos y seguimiento de la nota de pedido (aprobada el 14-10-2026; ADR-0020)
+
+El abono mínimo del 50 % habilita producir y el saldo pagado habilita despachar, con excepción auditada; el estado de pago se calcula a partir de pagos de solo inserción.
+
+- [x] T12.0 Decisiones en documentos: SPEC (REQ-COT-8.10–8.16, NC-14), DATA-MODEL, ADR-0020, API, SECURITY, UX y TESTING · ADR-0020 · — · —
+- [x] T12.1 (60) Migración: `pago_pedido` con trigger de solo inserción, `exige_pago` (false en las notas existentes), columnas de excepción, parámetro `abono_pct` y permiso `pagos.registrar` · DATA-MODEL · I `pedidos-pagos` (trigger) · T12.0
+- [x] T12.2 (75) Dominio: estado de pago puro, registrar pago y reverso, excepción, compuertas en `pasarAProduccion` y `despachar`, cancelación con pagos anotados · REQ-COT-8.10–8.14 · U `pagos.estado`, I `pedidos-pagos` · T12.1
+- [x] T12.3 (60) API: `/pagos`, `/pagos/:id/reverso`, `/excepcion-pago`, 409 `ABONO_PENDIENTE`/`SALDO_PENDIENTE`, filtros `estado` y `estadoPago`; 403 y auditoría por endpoint · API, SECURITY T2 · I `pedidos-pagos` · T12.2
+- [x] T12.4 (90) UI: recuadro Pagos, botones con motivo del bloqueo y excepción, etiqueta de pago, historial de estados, atraso, filtros y conteos en la lista, avisos en el panel · REQ-COT-8.12, 8.15, UX · E 18 · T12.3
+- [x] T12.5 (45) PDF: condición de pago en la cotización y pagado/saldo en la nota de pedido · REQ-COT-8.16 · U `pdf.contenido` · T12.2 · [P]
+- [x] T12.6 (45) E2E `18-pagos-pedido` (auditoría de pagos dentro de la suite, porque 14 corre antes) y 15 con excepción de saldo para la tienda · TESTING §3 · E 15, 18 · T12.4
+
+**Checkpoint F12:** `npm test` completo verde, lint y build; recorrido: producir bloqueado sin abono, abonar 50 %, producir, despachar bloqueado con saldo, pagar el saldo y despachar; excepción con motivo; pedido pagado completo de una vez; cancelación con abono anotado. Espero tu OK.
+
 ## Fase 14 — Auditoría UI/UX (aprobada el 20-10-2026)
 
 Correcciones de fidelidad, permisos y operabilidad detectadas en la auditoría de UI/UX; no cambia requisitos de negocio.

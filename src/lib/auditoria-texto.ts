@@ -44,8 +44,14 @@ const CAMPOS: Record<string, string> = {
   reservado: "Reservado", rut: "RUT", stockMinimo: "Mínimo", subtotal: "Subtotal", telefono: "Teléfono", tipo: "Tipo", total: "Total",
   unidades: "Unidades", unidadCodigo: "Unidad", vigenciaHasta: "Vigente hasta", actualizadas: "Actualizadas", aPedidoConfirmados: "A pedido confirmados",
   liberado: "Liberado", insumos: "Insumos", sinCambios: "Sin cambios", archivo: "Archivo",
+  monto: "Monto", pagado: "Pagado", saldo: "Saldo", estadoPago: "Estado de pago", medio: "Medio", referencia: "Comprobante", fecha: "Fecha",
+  faltaAbono: "Falta de abono", proveedor: "Proveedor", item: "Ítem", materiaPrima: "Materia prima", factor: "Factor", recibidas: "Recibidas",
+  porAsociar: "Por asociar", porRevisar: "Por revisar", ignoradas: "Ignoradas", leidas: "Leídas", nuevas: "Nuevas", lineasRecibidas: "Líneas recibidas",
+  xmlPendientes: "XML pendientes", avisos: "Avisos", errores: "Errores", desde: "Desde", resultado: "Resultado", folio: "Folio",
 };
-const MONTOS = new Set(["total", "subtotal", "iva", "neto", "descuento"]);
+const MONTOS = new Set(["total", "subtotal", "iva", "neto", "descuento", "monto", "pagado", "saldo", "faltaAbono"]);
+// Valores de código que se leen mejor en palabras (estado de pago, ADR-0020).
+const VALORES: Record<string, string> = { sin_control: "sin control de pago", sin_abono: "sin abono", abonado: "abonado", pagado: "pagado" };
 // Ids internos y huellas no le dicen nada a quien lee el registro: se omiten del detalle.
 const OCULTOS = new Set(["id", "hash", "movimiento", "materiaPrimaId", "rolId", "ref", "creadoEn", "actualizadoEn", "bom", "item", "cotizacion"]);
 
@@ -58,12 +64,14 @@ const ERRORES: Record<string, string> = {
   ULTIMO_ADMIN: "es el último usuario que administra", YA_IMPORTADA: "la nota ya se había cargado", LIMITE_IA: "límite de uso de la IA",
   VERSION_OBSOLETA: "otra persona la cambió antes", NOTA_ILEGIBLE: "no se pudo leer la nota", TEXTO_DEMASIADO_LARGO: "texto demasiado largo",
   CAMPO_NO_PERMITIDO: "campo no permitido", IDEMPOTENCIA_CONFLICTO: "envío repetido con otros datos", IDEMPOTENCIA_REQUERIDA: "falta la clave de envío",
-  INTERNO: "error interno",
+  ABONO_PENDIENTE: "falta el abono", SALDO_PENDIENTE: "falta pagar el saldo", SOBREPAGO: "el pago supera el saldo",
+  YA_REVERTIDO: "el pago ya se había revertido", INTERNO: "error interno",
 };
 
 function valor(clave: string, v: unknown): string {
   if (v === null || v === undefined || v === "") return "—";
   if (typeof v === "string" && /^[A-Z]+(_[A-Z]+)*$/.test(v) && ERRORES[v]) return ERRORES[v];
+  if (clave === "estadoPago" && typeof v === "string" && VALORES[v]) return VALORES[v];
   if (typeof v === "boolean") return v ? "sí" : "no";
   const n = typeof v === "number" ? v : typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : null;
   if (n !== null) return MONTOS.has(clave) ? clp(n) : numero(n);

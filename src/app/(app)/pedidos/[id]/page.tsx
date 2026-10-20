@@ -3,19 +3,32 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Download, Hammer } from "lucide-react";
 import { BotonDescarga, Encabezado, Etiqueta, Panel, Placa } from "@/components/ui/base";
-import { estadoPedido } from "@/components/ui/estado-pedido";
+import { estadoPago, estadoPedido, MEDIOS } from "@/components/ui/estado-pedido";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { bd } from "@/db/conexion";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { ErrorDominio } from "@/domain/errores";
 import { obtenerPedido } from "@/domain/pedidos/consulta";
+import { hoySantiago } from "@/domain/precios/dias-habiles";
 import { opcionesDeDespacho } from "@/domain/puertas/consulta";
-import { clp, fecha } from "@/lib/formato";
+import { textoAccion } from "@/lib/auditoria-texto";
+import { clp, fecha, fechaHora } from "@/lib/formato";
 import { AccionesCiclo } from "./acciones-ciclo";
 import { CancelarPedido } from "./cancelar-pedido";
 import { FormularioDespacho } from "./despacho";
+import { Pagos } from "./pagos";
 
 export const metadata: Metadata = { title: "Nota de pedido" };
+
+/** Detalle breve de cada paso del historial (REQ-COT-8.15), desde lo que guardó la auditoría. */
+function detallePaso(accion: string, d: Record<string, unknown> | null): string | null {
+  if (!d) return null;
+  if (accion === "pedido en produccion") return d.orden ? `Orden N.º ${d.orden}` : null;
+  if (accion === "registrar pago") return `${clp(Number(d.monto))} · ${MEDIOS[String(d.medio)] ?? d.medio}`;
+  if (accion === "revertir pago" || accion === "cancelar pedido") return d.motivo ? String(d.motivo) : null;
+  if (accion === "excepcion de pago") return `${d.tipo === "abono" ? "Producir sin abono" : "Despachar con saldo"}: ${d.motivo}`;
+  return null;
+}
 
 export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">) {
   const sesion = await requerirSesion();
@@ -23,10 +36,18 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
   const { id } = await params;
   const p = await obtenerPedido(bd(), id, sesion.permisos.has("clientes.ver")).catch((e) => { if (e instanceof ErrorDominio) notFound(); throw e; });
   const e = estadoPedido(p.estado);
+  const ep = estadoPago(p.pago.estado);
+  const puedePagos = sesion.permisos.has("pagos.registrar");
+  // Compuertas de pago (REQ-COT-8.13): lo que falta para producir o despachar, salvo excepción.
+  const bloqueo = {
+    abono: p.exigePago && !p.excepcionAbonoEn && p.pago.estado === "sin_abono" ? p.pago.faltaAbono : null,
+    saldo: p.exigePago && !p.excepcionSaldoEn && p.pago.saldo > 0 ? p.pago.saldo : null,
+  };
   const cancelada = p.estado === "cancelada";
   const abierta = !cancelada && p.estado !== "despachada";
   const faltanteCatalogo = p.items.filter((i) => i.codigo).reduce((t, i) => t + i.faltante, 0);
   const itemsAPedido = p.items.filter((i) => !i.codigo).length;
+  const reservas = p.items.reduce((t, i) => t + i.reservado, 0);
   // Al despachar se eligen las puertas de cada artículo (REQ-STK-8.3).
   const deCatalogo = p.items.filter((i) => i.articuloId);
   const opciones = p.estado === "lista" ? await opcionesDeDespacho(bd(), [...new Set(deCatalogo.map((i) => i.articuloId!))]) : new Map();
@@ -48,6 +69,8 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
         acciones={
           <>
             <Etiqueta tono={e.tono}>{e.texto}</Etiqueta>
+            {!(cancelada && p.pago.pagado === 0) && <Etiqueta tono={ep.tono}>{ep.texto}</Etiqueta>}
+            {p.atrasoDias > 0 && <Etiqueta tono="error">Atrasada {p.atrasoDias === 1 ? "1 día" : `${p.atrasoDias} días`}</Etiqueta>}
             {sesion.permisos.has("clientes.ver") && <BotonDescarga href={`/api/v1/pedidos/${p.id}/pdf`}><Download className="h-4 w-4" /> PDF</BotonDescarga>}
           </>
         }
@@ -55,6 +78,7 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
       {cancelada && (
         <p role="status" className="mb-6 rounded-lg border border-error/25 bg-error-velo px-5 py-3 text-sm text-error">
           Cancelada el {fecha(new Date(p.canceladaEn!).toISOString())}: {p.motivoCancelacion}. Las reservas se liberaron.
+          {p.pago.pagado > 0 && <> Pagado {clp(p.pago.pagado)}; sin devolución registrada.</>}
         </p>
       )}
 
@@ -66,10 +90,11 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
       {abierta && (
         <Panel titulo="Avance" className="mb-8">
           <AccionesCiclo id={p.id} estado={p.estado} faltanteCatalogo={faltanteCatalogo} itemsAPedido={itemsAPedido}
-            puedeProducir={sesion.permisos.has("produccion.gestionar")} grupos={p.estado === "lista" ? grupos : []} csrf={sesion.csrf} />
+            puedeProducir={sesion.permisos.has("produccion.gestionar")} grupos={p.estado === "lista" ? grupos : []} csrf={sesion.csrf}
+            bloqueo={bloqueo} puedeExcepcion={puedePagos} />
           <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-linea pt-4">
             <p className="text-sm text-tinta-tenue">¿El cliente desistió? Cancelar libera las reservas.</p>
-            <CancelarPedido id={p.id} csrf={sesion.csrf} />
+            <CancelarPedido id={p.id} csrf={sesion.csrf} reservas={reservas} pagado={p.pago.pagado} />
           </div>
         </Panel>
       )}
@@ -97,7 +122,7 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
                 {abierta && i.faltante > 0 && (
                   <p className="mt-2 flex items-center justify-between text-sm text-pizarra">
                     <span>{i.faltante === 1 ? "Falta 1" : `Faltan ${i.faltante}`} por fabricar</span>
-                    {i.codigo && <Link href="/produccion" className="-my-2 inline-flex items-center gap-1 py-2 hover:underline"><Hammer className="h-3.5 w-3.5" /> Ir a producción</Link>}
+                    {i.codigo && <Link href={`/produccion?vista=ordenes`} className="-my-2 inline-flex items-center gap-1 py-2 hover:underline"><Hammer className="h-3.5 w-3.5" /> Ir a producción</Link>}
                   </p>
                 )}
               </li>
@@ -106,6 +131,16 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
         </Panel>
 
         <div className="space-y-8">
+          <Panel titulo="Pagos">
+            <Pagos id={p.id} csrf={sesion.csrf} resumen={p.pago} pagos={p.pagos}
+              puedeRegistrar={puedePagos} cancelada={cancelada} hoy={hoySantiago()} />
+            {(p.excepcionAbonoEn || p.excepcionSaldoEn) && (
+              <ul className="mt-4 space-y-1 border-t border-linea pt-3 text-xs text-tinta-suave">
+                {p.excepcionAbonoEn && <li>Excepción: producir sin abono — {p.excepcionAbonoMotivo} ({fecha(new Date(p.excepcionAbonoEn).toISOString())})</li>}
+                {p.excepcionSaldoEn && <li>Excepción: despachar con saldo — {p.excepcionSaldoMotivo} ({fecha(new Date(p.excepcionSaldoEn).toISOString())})</li>}
+              </ul>
+            )}
+          </Panel>
           <Panel titulo="Despacho">
             {abierta ? (
               <FormularioDespacho id={p.id} csrf={sesion.csrf} inicial={{ direccionDespacho: p.direccionDespacho, medioTransporte: p.medioTransporte, entregaComprometida: p.entregaComprometida, observaciones: p.observaciones }} />
@@ -123,9 +158,25 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
             <Panel titulo="Órdenes de producción">
               <ul className="space-y-2 text-sm">
                 {p.ordenes.map((o) => (
-                  <li key={o.id} className="flex items-center justify-between"><Link href="/produccion" className="text-rauli hover:underline">Orden N.º {o.numero}</Link><Etiqueta tono={o.estado === "abierta" ? "pizarra" : o.estado === "cerrada" ? "musgo" : "neutro"}>{o.estado.charAt(0).toUpperCase() + o.estado.slice(1)}</Etiqueta></li>
+                  <li key={o.id} className="flex items-center justify-between"><Link href={`/produccion?orden=${o.id}`} className="text-rauli hover:underline">Orden N.º {o.numero}</Link><Etiqueta tono={o.estado === "abierta" ? "pizarra" : o.estado === "cerrada" ? "musgo" : "neutro"}>{o.estado.charAt(0).toUpperCase() + o.estado.slice(1)}</Etiqueta></li>
                 ))}
               </ul>
+            </Panel>
+          )}
+          {p.historial.length > 0 && (
+            <Panel titulo="Historial">
+              <ol className="space-y-3 text-sm">
+                {p.historial.map((h, k) => {
+                  const d = detallePaso(h.accion, h.detalle as Record<string, unknown> | null);
+                  return (
+                    <li key={k} className="grid grid-cols-[auto_1fr] gap-x-3">
+                      <span className="mt-1.5 h-2 w-2 rounded-full bg-linea-fuerte" aria-hidden />
+                      <span><span className="font-medium">{textoAccion(h.accion)}</span>{d && <span className="text-tinta-suave"> · {d}</span>}
+                        <span className="block text-xs text-tinta-tenue">{fechaHora(new Date(h.en).toISOString())} · {h.actor}</span></span>
+                    </li>
+                  );
+                })}
+              </ol>
             </Panel>
           )}
         </div>

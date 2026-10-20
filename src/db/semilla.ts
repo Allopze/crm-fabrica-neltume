@@ -40,7 +40,7 @@ export async function sembrar(cliente: Client): Promise<void> {
     for (const [codigo, nombre] of [["un", "unidad"], ["m", "metro"], ["m2", "metro cuadrado"], ["m3", "metro cúbico"], ["pulg", "pulgada maderera"], ["kg", "kilogramo"], ["lt", "litro"]]) {
       await cliente.query("INSERT INTO unidad (codigo, nombre) VALUES ($1, $2) ON CONFLICT DO NOTHING", [codigo, nombre]);
     }
-    await cliente.query(`INSERT INTO parametro (clave, valor) VALUES ('vigencia_dias_habiles', '10'), ('iva', '0.19') ON CONFLICT DO NOTHING`);
+    await cliente.query(`INSERT INTO parametro (clave, valor) VALUES ('vigencia_dias_habiles', '10'), ('iva', '0.19'), ('abono_pct', '50') ON CONFLICT DO NOTHING`);
     for (const a of ALIAS_INICIALES) {
       await cliente.query("INSERT INTO alias_modelo (alias, modelo, tipo) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", [compacto(a.alias), a.modelo, a.tipo]);
     }

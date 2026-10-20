@@ -254,6 +254,15 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-COT-8.8: IF la nota ya se cargó (mismo archivo o mismo número para la misma tienda), tiene códigos inexistentes, no es un PDF legible o está anulada THEN THE SYSTEM SHALL rechazarla sin crear el pedido.
 - REQ-COT-8.9: THE SYSTEM SHALL no guardar los datos personales del cliente final que aparecen en la nota de la tienda (nombre, RUT, giro, dirección, teléfono); solo la dirección de despacho, el transporte y el proyecto.
 
+*Pagos y seguimiento (aprobado el 14-10-2026, ADR-0020):*
+- REQ-COT-8.10: WHEN un usuario con permiso de pagos registra un pago (monto, fecha, medio y comprobante opcional) THE SYSTEM SHALL guardarlo como registro de solo inserción y auditarlo; pagado = suma de pagos y saldo = total con IVA − pagado. Un error se corrige con un reverso con motivo.
+- REQ-COT-8.11: IF el pago supera el saldo, la nota está cancelada o el usuario no tiene permiso THEN THE SYSTEM SHALL rechazarlo (y registrar el intento si es por permiso).
+- REQ-COT-8.12: THE SYSTEM SHALL mostrar el estado de pago calculado: sin abono, abonado (al menos el % de abono configurado, 50 % por defecto) o pagado; el total se puede pagar de una vez.
+- REQ-COT-8.13: IF una nota sin abono pasa a producción o una con saldo se despacha THEN THE SYSTEM SHALL rechazarlo, salvo una excepción registrada en esa nota con motivo y auditada.
+- REQ-COT-8.14: WHEN se cancela una nota con pagos THE SYSTEM SHALL conservarlos y anotar el monto pagado en la cancelación y la auditoría; las devoluciones no se registran en la app.
+- REQ-COT-8.15: THE SYSTEM SHALL mostrar en la nota el historial de estados (fecha y usuario de cada paso, tomado de la auditoría) y marcarla atrasada cuando hoy supera la entrega comprometida y sigue abierta.
+- REQ-COT-8.16: THE SYSTEM SHALL indicar en el PDF de la cotización la condición de pago y en el de la nota de pedido lo pagado y el saldo.
+
 **H9 Clientes (P1).** Como usuario, quiero registrar clientes con datos mínimos.
 - REQ-COT-9.1: WHEN un usuario crea o edita un cliente (nombre, RUT, giro, dirección, comuna, contacto, correo, teléfono) THE SYSTEM SHALL validar el RUT y guardar el cambio con auditoría.
 - REQ-COT-9.2: THE SYSTEM SHALL pedir solo los datos necesarios para cotizar y despachar, y tratar los datos del cliente como personales.

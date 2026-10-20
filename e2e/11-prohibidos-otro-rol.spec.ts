@@ -13,6 +13,15 @@ test("toma el id de la cotización A con el administrador", async ({ page }) => 
   idA = await cotizacionId(page, "estado=aceptada&q=Alerces");
 });
 
+test("el administrador ve la ficha del cliente con su historial", async ({ page }) => {
+  await ingresar(page, ADMIN.email, ADMIN.clave);
+  await ir(page, "/clientes?q=Alerces");
+  await page.getByRole("link", { name: /Alerces/ }).first().click();
+  await expect(page.getByRole("heading", { name: /Alerces/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cotizaciones recientes" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Notas de pedido" })).toBeVisible();
+});
+
 test("cada acción prohibida responde 403 y el stock no cambia", async ({ page }) => {
   await ingresar(page, CONSULTA.email, CONSULTA.clave);
   const antes = (await api(page, "GET", "/api/v1/stock/NEL-R-4-B")).cuerpo;

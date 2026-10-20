@@ -6,6 +6,7 @@ import { articulo } from "@/db/esquema/catalogo";
 import { MARCA } from "@/lib/marca";
 import { obtenerCotizacion } from "../cotizaciones/consulta";
 import { ErrorDominio } from "../errores";
+import { abonoPct } from "../pedidos/pagos";
 import { Datos, e, Membrete, Pie, TablaItems, Totales } from "./comun";
 import { type CotizacionPdf, contenidoCotizacion } from "./contenido";
 
@@ -38,6 +39,7 @@ export async function pdfCotizacion(tx: Tx, id: string): Promise<{ numero: numbe
     cliente: c.cliente && { nombre: c.cliente.nombre, rut: c.cliente.rut ?? null, comuna: c.cliente.comuna ?? null, contacto: c.cliente.contacto ?? null },
     items: c.items.map((i) => ({ codigo: i.articuloId ? codigos.get(i.articuloId) ?? null : null, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, cantidad: i.cantidad, precioUnitario: Number(i.precioUnitario), totalLinea: Number(i.totalLinea) })),
     subtotal: Number(c.subtotal), descuento: Number(c.descuento), descuentoMotivo: c.descuentoMotivo, iva: Number(c.iva), total: Number(c.total),
+    abonoPct: await abonoPct(tx),
   };
   return { numero: c.numero, pdf: await renderizarCotizacion(datos) };
 }

@@ -15,6 +15,7 @@ export const PERMISOS = {
   "cotizaciones.aprobar": "Aprobar cotizaciones y descargar su PDF",
   "descuentos.aplicar": "Aplicar descuentos con motivo",
   "pedidos.gestionar": "Crear, cancelar y despachar notas de pedido",
+  "pagos.registrar": "Registrar pagos, reversos y excepciones de abono o saldo de las notas de pedido",
   "clientes.ver": "Ver clientes",
   "clientes.editar": "Crear y editar clientes",
   "config.editar": "Editar parámetros: mínimos, vigencia, recargos y proveedor de IA",

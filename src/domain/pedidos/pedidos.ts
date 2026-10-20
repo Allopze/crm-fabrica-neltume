@@ -7,6 +7,7 @@ import { type Actor, type Origen, registrarAuditoria } from "../auditoria";
 import { ErrorDominio } from "../errores";
 import { hoySantiago } from "../precios/dias-habiles";
 import { registrarMovimientos, saldo } from "../stock";
+import { pagadoDe } from "./pagos";
 import { repartirReserva } from "./reserva";
 
 export interface DatosPedido { cotizacionId: string; direccionDespacho?: string | null; medioTransporte?: string | null }
@@ -72,9 +73,11 @@ export async function cancelarPedido(tx: Tx, id: string, motivo: string, actor: 
   const liberaciones = items.flatMap((i) => (i.articuloId && i.reservado > 0
     ? [{ articuloId: i.articuloId, tipo: "liberacion" as const, cantidad: -i.reservado, motivo: "cancelación del pedido", refTipo: "pedido", refId: id }] : []));
   if (liberaciones.length) await registrarMovimientos(tx, liberaciones, actor, origen);
+  // Con pagos, la cancelación los conserva y deja anotado lo pagado; las devoluciones no se registran (REQ-COT-8.14).
+  const pagado = await pagadoDe(tx, id);
   await tx.update(notaPedido).set({ estado: "cancelada", canceladaPor: actor.id, canceladaEn: sql`now()`, motivoCancelacion: motivo.trim() }).where(eq(notaPedido.id, id));
   await registrarAuditoria(tx, {
     actor, accion: "cancelar pedido", recurso: "nota_pedido", recursoId: id, resultado: "ok", origen,
-    antes: { estado: p.estado }, despues: { estado: "cancelada", motivo: motivo.trim(), liberado: liberaciones.reduce((t, l) => t - l.cantidad, 0) },
+    antes: { estado: p.estado }, despues: { estado: "cancelada", motivo: motivo.trim(), liberado: liberaciones.reduce((t, l) => t - l.cantidad, 0), ...(pagado > 0 ? { pagado } : {}) },
   });
 }

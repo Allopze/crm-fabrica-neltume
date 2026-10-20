@@ -1,6 +1,6 @@
 // Clientes (datos personales: SECURITY §4), cotizaciones y pedidos (DATA-MODEL §2; REQ-COT).
 import { sql } from "drizzle-orm";
-import { bigint, check, date, index, integer, jsonb, numeric, pgTable, serial, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { type AnyPgColumn, bigint, boolean, check, date, index, integer, jsonb, numeric, pgTable, serial, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { articulo, listaPrecio } from "./catalogo";
 import { usuario } from "./seguridad";
 
@@ -145,12 +145,22 @@ export const notaPedido = pgTable("nota_pedido", {
   listaEn: timestamp({ withTimezone: true }),
   despachadaEn: timestamp({ withTimezone: true }),
   despachadaPor: uuid().references(() => usuario.id),
+  // Pagos (ADR-0020): las notas anteriores a la migración no exigen pago; las excepciones van con motivo, quién y cuándo.
+  exigePago: boolean().notNull().default(true),
+  excepcionAbonoMotivo: text(),
+  excepcionAbonoPor: uuid().references(() => usuario.id),
+  excepcionAbonoEn: timestamp({ withTimezone: true }),
+  excepcionSaldoMotivo: text(),
+  excepcionSaldoPor: uuid().references(() => usuario.id),
+  excepcionSaldoEn: timestamp({ withTimezone: true }),
 }, (t) => [
   check("pedido_estado", sql`${t.estado} in ('pendiente', 'en_produccion', 'lista', 'despachada', 'cancelada')`),
   check("pedido_origen", sql`(${t.origen} = 'cotizacion' AND ${t.cotizacionId} IS NOT NULL) OR (${t.origen} = 'nota_tienda' AND ${t.refExterna} IS NOT NULL AND ${t.archivoHash} IS NOT NULL)`),
   unique("pedido_nota_tienda_unica").on(t.clienteId, t.refExterna),
   unique("pedido_archivo_unico").on(t.archivoHash),
   check("pedido_cancelacion", sql`${t.estado} <> 'cancelada' OR length(trim(coalesce(${t.motivoCancelacion}, ''))) > 0`),
+  check("pedido_excepcion_abono", sql`(${t.excepcionAbonoEn} IS NULL) = (${t.excepcionAbonoMotivo} IS NULL) AND (${t.excepcionAbonoEn} IS NULL) = (${t.excepcionAbonoPor} IS NULL) AND length(trim(coalesce(${t.excepcionAbonoMotivo}, 'x'))) > 0`),
+  check("pedido_excepcion_saldo", sql`(${t.excepcionSaldoEn} IS NULL) = (${t.excepcionSaldoMotivo} IS NULL) AND (${t.excepcionSaldoEn} IS NULL) = (${t.excepcionSaldoPor} IS NULL) AND length(trim(coalesce(${t.excepcionSaldoMotivo}, 'x'))) > 0`),
   index("pedido_estado_idx").on(t.estado, t.creadoEn),
 ]);
 
@@ -169,4 +179,24 @@ export const pedidoItem = pgTable("pedido_item", {
 }, (t) => [
   check("pedido_item_cantidades", sql`${t.cantidad} > 0 AND ${t.reservado} >= 0 AND ${t.faltante} >= 0 AND ${t.reservado} + ${t.faltante} = ${t.cantidad}`),
   index("pedido_item_pedido_idx").on(t.notaPedidoId, t.orden),
+]);
+
+// --- Pagos de la nota de pedido (ADR-0020, REQ-COT-8.10–8.14). Solo inserción (trigger); el estado de pago se calcula. ---
+export const MEDIOS_PAGO = ["transferencia", "efectivo", "cheque", "tarjeta", "otro"] as const;
+
+export const pagoPedido = pgTable("pago_pedido", {
+  id: uuid().primaryKey().defaultRandom(),
+  notaPedidoId: uuid().notNull().references(() => notaPedido.id),
+  monto: pesos().notNull(), // positivo; negativo solo en un reverso (= −monto del pago anulado)
+  fecha: date({ mode: "string" }).notNull(), // la del comprobante
+  medio: text().notNull(),
+  referencia: text(), // N.º de transferencia o comprobante; nunca números de tarjeta o cuenta
+  revierteId: uuid().unique().references((): AnyPgColumn => pagoPedido.id),
+  motivo: text(),
+  registradoPor: uuid().notNull().references(() => usuario.id),
+  creadoEn: ahora(),
+}, (t) => [
+  check("pago_medio", sql`${t.medio} in ('transferencia', 'efectivo', 'cheque', 'tarjeta', 'otro')`),
+  check("pago_signo", sql`(${t.revierteId} IS NULL AND ${t.monto} > 0) OR (${t.revierteId} IS NOT NULL AND ${t.monto} < 0 AND length(trim(coalesce(${t.motivo}, ''))) > 0)`),
+  index("pago_pedido_nota_idx").on(t.notaPedidoId, t.creadoEn),
 ]);

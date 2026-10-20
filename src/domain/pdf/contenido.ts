@@ -9,6 +9,11 @@ export function lineasEmpresa(d: DatosEmpresa): string[] {
 }
 export const NOTA_FLETE = "Valores puestos en fábrica, flete aparte.";
 
+/** Condición de pago impresa en la cotización (REQ-COT-8.16, ADR-0020). */
+export const condicionPago = (abonoPct: number) => abonoPct > 0 && abonoPct < 100
+  ? `Condición de pago: ${abonoPct} % de abono al confirmar y saldo antes del despacho o retiro.`
+  : "Condición de pago: total antes del despacho o retiro.";
+
 export interface CotizacionPdf {
   numero: number;
   aprobadaEn: Date;
@@ -17,6 +22,7 @@ export interface CotizacionPdf {
   cliente: { nombre: string; rut: string | null; comuna: string | null; contacto: string | null } | null;
   items: { codigo: string | null; descripcion: string; medidaSolicitada?: string | null; cantidad: number; precioUnitario: number; totalLinea: number }[];
   subtotal: number; descuento: number; descuentoMotivo: string | null; iva: number; total: number;
+  abonoPct: number;
 }
 
 /** Fecha calendario en Santiago (dd-mm-aaaa), independiente de la zona del servidor. */
@@ -44,6 +50,7 @@ export function contenidoCotizacion(c: CotizacionPdf, empresa: DatosEmpresa = da
     pie: [
       `${NOTA_FLETE} Precios de la lista v${c.listaVersion ?? "—"}, congelados al aprobar.`,
       `Las medidas especiales se fabrican a pedido. Consultas: ${empresa.correo}`,
+      condicionPago(c.abonoPct),
     ],
   };
 }
@@ -54,6 +61,8 @@ export interface PedidoPdf {
   direccionDespacho: string | null; medioTransporte: string | null; entregaComprometida: string | null; observaciones: string | null;
   items: { codigo: string | null; descripcion: string; medidaSolicitada: string | null; cantidad: number; faltante: number; totalLinea: number }[];
   subtotal: number; descuento: number; iva: number; total: number;
+  /** Lo pagado y el saldo (REQ-COT-8.16); nulo en notas sin control de pago y sin pagos. */
+  pago: { pagado: number; saldo: number } | null;
 }
 
 export function contenidoPedido(p: PedidoPdf) {
@@ -74,6 +83,7 @@ export function contenidoPedido(p: PedidoPdf) {
       ["IVA 19 %", clp(p.iva)],
     ] as [string, string][],
     total: clp(p.total),
+    pago: p.pago ? [["Pagado", clp(p.pago.pagado)], ["Saldo", clp(p.pago.saldo)]] as [string, string][] : [],
     pie: [`${NOTA_FLETE} ${p.cotizacionNumero ? `Precios congelados de la cotización N.º ${p.cotizacionNumero}.` : "Precios de venta de la lista vigente al confirmar el pedido."}`, "\"Por fabricar\": unidades sin stock al confirmar el pedido."],
   };
 }

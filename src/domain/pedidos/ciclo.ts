@@ -1,4 +1,5 @@
 // Ciclo de la nota de pedido (REQ-COT-8.5, REQ-STK-4.4): pendiente → en producción → lista → despachada.
+// Producir exige el abono y despachar el pago total, salvo excepción con motivo (REQ-COT-8.13, ADR-0020).
 // Despachar libera la reserva y descuenta el stock en la misma transacción (salida_despacho), nunca editando saldos.
 import { and, eq, gt, isNotNull, type SQL, sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
@@ -9,6 +10,7 @@ import { ErrorDominio } from "../errores";
 import { crearOrden } from "../ordenes";
 import { porArticulo, registrarMovimientos } from "../stock";
 import { ESTADOS_ABIERTOS } from "./completar";
+import { exigirAbono, exigirPagoTotal } from "./pagos";
 
 type Usuario = Actor & { id: string };
 
@@ -28,6 +30,7 @@ async function cambiarEstado(tx: Tx, p: { id: string; numero: number; estado: st
 /** Pasa a producción y crea la orden de producción por lo que falta de artículos de catálogo (si falta algo). */
 export async function pasarAProduccion(tx: Tx, id: string, actor: Usuario, origen: Origen) {
   const p = await tomar(tx, id, ["pendiente"]);
+  await exigirAbono(tx, p);
   const faltan = await tx.select({ codigo: articulo.codigo, faltante: pedidoItem.faltante }).from(pedidoItem)
     .innerJoin(articulo, eq(articulo.id, pedidoItem.articuloId)).where(and(eq(pedidoItem.notaPedidoId, id), gt(pedidoItem.faltante, 0)));
   const porCodigo = new Map<string, number>();
@@ -71,6 +74,7 @@ async function repartirPuertas(tx: Tx, items: { id: string; articuloId: string |
 /** Despacho: libera lo reservado y descuenta la existencia (salida_despacho) puerta por puerta, todo o nada. */
 export async function despachar(tx: Tx, id: string, actor: Usuario, origen: Origen, puertas: string[] = []) {
   const p = await tomar(tx, id, ["lista"]);
+  await exigirPagoTotal(tx, p);
   const items = await tx.select().from(pedidoItem).where(and(eq(pedidoItem.notaPedidoId, id), isNotNull(pedidoItem.articuloId)));
   const reparto = await repartirPuertas(tx, items, puertas);
   const movs = items.flatMap((i) => [

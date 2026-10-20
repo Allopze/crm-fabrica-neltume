@@ -9,12 +9,12 @@ const app = poolApp();
 afterAll(async () => { await app.end(); await cerrarBd(); });
 
 describe("semilla de permisos y rol (REQ-ADM-2.2)", () => {
-  it("siembra los 18 permisos y el rol administrador con todos", async () => {
+  it("siembra los 19 permisos y el rol administrador con todos", async () => {
     const { rows } = await app.query(
       "SELECT p.codigo FROM rol r JOIN rol_permiso rp ON rp.rol_id = r.id JOIN permiso p ON p.codigo = rp.permiso_codigo WHERE r.nombre = 'administrador' ORDER BY 1",
     );
     expect(rows.map((r) => r.codigo)).toEqual([...CODIGOS_PERMISO].sort());
-    expect(CODIGOS_PERMISO).toHaveLength(18);
+    expect(CODIGOS_PERMISO).toHaveLength(19);
   });
 });
 

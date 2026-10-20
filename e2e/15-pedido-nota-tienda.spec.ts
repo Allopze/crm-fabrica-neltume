@@ -64,7 +64,12 @@ test("con stock nuevo se completa la reserva, se marca lista y se despacha", asy
   await expect(page.getByRole("status").filter({ hasText: "Reserva actualizada" })).toBeVisible();
   await expect(page.getByRole("main")).toContainText("3 de 3 reservadas");
   await page.getByRole("button", { name: "Marcar lista" }).click();
-  await expect(page.getByRole("button", { name: "Registrar despacho" })).toBeVisible();
+  // La tienda no pagó: se despacha con saldo por excepción con motivo (ADR-0020, REQ-COT-8.13).
+  await expect(page.getByRole("button", { name: "Registrar despacho" })).toBeDisabled();
+  await page.getByRole("button", { name: "Despachar con saldo (excepción)" }).click();
+  await page.getByLabel("Motivo de la excepción").fill("Crédito a la tienda");
+  await page.getByRole("button", { name: "Registrar excepción" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Excepción registrada" })).toBeVisible();
   await page.getByRole("button", { name: "Registrar despacho" }).click();
   // Se eligen las puertas que salen (vienen marcadas las más antiguas); el marco sale por cantidad (REQ-STK-8.3).
   const fuy = page.getByRole("group", { name: "Puertas de FUY-O-2-A" });

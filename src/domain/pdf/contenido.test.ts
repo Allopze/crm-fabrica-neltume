@@ -9,7 +9,7 @@ const base = {
     { codigo: "NEL-R-4-B", descripcion: "Neltume · Raulí · 0,90 a 0,95 × 2,10 m", cantidad: 3, precioUnitario: 277760, totalLinea: 833280 },
     { codigo: null, descripcion: "Toltén · Raulí · 0,87 × 2,15 m", cantidad: 2, precioUnitario: 400000, totalLinea: 800000 },
   ],
-  subtotal: 1633280, descuento: 0, descuentoMotivo: null, iva: 310323, total: 1943603,
+  subtotal: 1633280, descuento: 0, descuentoMotivo: null, iva: 310323, total: 1943603, abonoPct: 50,
 };
 
 describe("pdf.contenido (REQ-COT-4.2)", () => {
@@ -25,6 +25,8 @@ describe("pdf.contenido (REQ-COT-4.2)", () => {
     expect(k.total).toBe("$1.943.603");
     expect(k.pie[0]).toContain("Valores puestos en fábrica, flete aparte.");
     expect(k.pie[0]).toContain("lista v3");
+    expect(k.pie[2]).toBe("Condición de pago: 50 % de abono al confirmar y saldo antes del despacho o retiro.");
+    expect(contenidoCotizacion({ ...base, abonoPct: 100 }).pie[2]).toBe("Condición de pago: total antes del despacho o retiro.");
   });
 
   it("muestra el descuento con su motivo solo si existe", () => {
@@ -37,14 +39,14 @@ describe("pdf.contenido (REQ-COT-4.2)", () => {
   });
 });
 
-describe("pdf.contenido de la nota de pedido (REQ-COT-8.1)", () => {
+describe("pdf.contenido de la nota de pedido (REQ-COT-8.1, 8.16)", () => {
   it("muestra despacho, faltante por fabricar y totales congelados", () => {
     const k = contenidoPedido({
       numero: 7, creadoEn: new Date("2026-10-06T15:00:00Z"), estado: "pendiente", cotizacionNumero: 124, notaTienda: null,
       cliente: { nombre: "Ferretería Puyehue", rut: "11.111.111-1", contacto: null, telefono: null },
       direccionDespacho: null, medioTransporte: "Camión propio", entregaComprometida: "2026-11-20", observaciones: "Llamar antes",
       items: [{ codigo: "FUY-O-2-A", descripcion: "Fuy", medidaSolicitada: null, cantidad: 3, faltante: 1, totalLinea: 300000 }, { codigo: null, descripcion: "Toltén", medidaSolicitada: "870 × 2150 mm (vano)", cantidad: 1, faltante: 1, totalLinea: 1000 }],
-      subtotal: 301000, descuento: 0, iva: 57190, total: 358190,
+      subtotal: 301000, descuento: 0, iva: 57190, total: 358190, pago: { pagado: 179095, saldo: 179095 },
     });
     expect(k.titulo).toBe("Nota de pedido N.º 7");
     expect(k.fechas).toBe("Fecha 06-10-2026 · Cotización N.º 124");
@@ -53,6 +55,7 @@ describe("pdf.contenido de la nota de pedido (REQ-COT-8.1)", () => {
     expect(k.datos).toContainEqual(["Entrega", "20-11-2026"]);
     expect(k.observaciones).toBe("Llamar antes");
     expect(k.total).toBe("$358.190");
+    expect(k.pago).toEqual([["Pagado", "$179.095"], ["Saldo", "$179.095"]]);
     expect(k.pie[0]).toContain("flete aparte");
   });
 });

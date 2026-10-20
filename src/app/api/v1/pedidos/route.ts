@@ -7,6 +7,7 @@ import { crearPedido } from "@/domain/pedidos/pedidos";
 
 const Filtro = z.object({
   estado: z.enum(["pendiente", "en_produccion", "lista", "despachada", "cancelada"]).optional(),
+  estadoPago: z.enum(["sin_control", "sin_abono", "abonado", "pagado"]).optional(),
   antesDe: z.coerce.number().int().positive().optional(), limite: z.coerce.number().int().min(1).max(200).optional(),
 });
 const Nuevo = z.strictObject({
@@ -15,7 +16,7 @@ const Nuevo = z.strictObject({
   medioTransporte: z.string().trim().max(120).nullable().optional(),
 });
 
-// GET /api/v1/pedidos — reservado y total por nota (REQ-COT-8.1)
+// GET /api/v1/pedidos — reservado, total, pagado y estado de pago por nota; filtra por estado y estado de pago (REQ-COT-8.1, 8.12)
 export const GET = conPermiso("pedidos.gestionar", async ({ req, sesion }) =>
   NextResponse.json(await listarPedidos(bd(), Filtro.parse(Object.fromEntries(req.nextUrl.searchParams)), sesion.permisos.has("clientes.ver"))));
 

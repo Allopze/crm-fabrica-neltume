@@ -14,6 +14,7 @@ import * as rutaEntradas from "@/app/api/v1/movimientos/entradas/route";
 import * as rutaCompletar from "@/app/api/v1/pedidos/[id]/completar-reserva/route";
 import * as rutaDespachar from "@/app/api/v1/pedidos/[id]/despachar/route";
 import * as rutaLista from "@/app/api/v1/pedidos/[id]/lista/route";
+import * as rutaPagos from "@/app/api/v1/pedidos/[id]/pagos/route";
 import * as rutaProduccion from "@/app/api/v1/pedidos/[id]/produccion/route";
 import * as rutaPedido from "@/app/api/v1/pedidos/[id]/route";
 import * as rutaPedidos from "@/app/api/v1/pedidos/route";
@@ -25,6 +26,7 @@ import { crearMateriaPrima, registrarRecepcion } from "@/domain/materias-primas"
 import { cerrarOrden } from "@/domain/ordenes";
 import { crearRol } from "@/domain/roles";
 import { articuloPorCodigo, saldo } from "@/domain/stock";
+import { hoySantiago } from "@/domain/precios/dias-habiles";
 import { crearUsuario } from "@/domain/usuarios";
 
 const app = poolApp();
@@ -45,6 +47,9 @@ const accion = (ruta: { POST: typeof rutaLista.POST }, cuerpo: object = {}, sesi
   llamar(ruta.POST, "POST", `/api/v1/pedidos/${pedido}/x`, { ...sesion, cabeceras: idem(), cuerpo }, { id: pedido });
 const ver = async () => (await llamar(rutaPedido.GET, "GET", "/x", s, { id: pedido })).cuerpo;
 const stockFuy = () => saldo(bd(), { articuloId: fuy });
+/** El cliente paga el total al confirmar: así el ciclo no se detiene en las compuertas de pago (ADR-0020). */
+const pagarTotal = async () => llamar(rutaPagos.POST, "POST", "/x",
+  { ...s, cabeceras: idem(), cuerpo: { monto: (await ver()).pago.saldo, fecha: hoySantiago(), medio: "transferencia" } }, { id: pedido });
 
 /** Cotización aprobada con 3 FUY-O-2-A (de catálogo) y 2 Toltén a pedido con precio fijado. */
 async function cotizacionMixta() {
@@ -66,6 +71,7 @@ beforeAll(async () => {
   fuy = (await articuloPorCodigo(bd(), "FUY-O-2-A")).id;
   await llamar(rutaEntradas.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { codigo: "FUY-O-2-A", cantidad: 2 } });
   pedido = (await llamar(rutaPedidos.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { cotizacionId: await cotizacionMixta() } })).cuerpo.id;
+  expect((await pagarTotal()).estado).toBe(201);
 });
 afterAll(async () => { await app.end(); await cerrarBd(); });
 
@@ -117,6 +123,7 @@ describe("ciclo de la nota de pedido (REQ-COT-8.5, REQ-STK-4.4, 7.5)", () => {
 
   it("completar la reserva a mano toma el stock que entró después", async () => {
     pedido = (await llamar(rutaPedidos.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { cotizacionId: await cotizacionMixta() } })).cuerpo.id;
+    await pagarTotal();
     expect((await ver()).items[1]).toMatchObject({ reservado: 0, faltante: 3 });
     await llamar(rutaEntradas.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { codigo: "FUY-O-2-A", cantidad: 2 } });
     expect((await accion(rutaCompletar)).cuerpo).toMatchObject({ reservado: 2 });

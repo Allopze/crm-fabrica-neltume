@@ -14,7 +14,7 @@ function DocumentoPedido({ p }: { p: PedidoPdf }) {
         <Membrete titulo={k.titulo} fechas={k.fechas} />
         <Datos pares={k.datos} />
         <TablaItems columnas={["Código", "Descripción", "Cant.", "Por fabricar", "Total"]} filas={k.filas} casilla />
-        <Totales lineas={k.totales} total={k.total} />
+        <Totales lineas={k.totales} total={k.total} despues={k.pago} />
         <View style={e.observaciones} wrap={false}>
           <Text style={{ fontSize: 7, letterSpacing: 1, textTransform: "uppercase", color: TENUE }}>Observaciones para la fábrica</Text>
           <Text style={{ marginTop: 4 }}>{k.observaciones ?? ""}</Text>
@@ -36,6 +36,7 @@ export async function pdfPedido(tx: Tx, id: string): Promise<{ numero: number; p
     direccionDespacho: p.direccionDespacho, medioTransporte: p.medioTransporte, entregaComprometida: p.entregaComprometida, observaciones: p.observaciones,
     items: p.items.map((i) => ({ codigo: i.codigo, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, cantidad: i.cantidad, faltante: i.faltante, totalLinea: Number(i.totalLinea) })),
     ...p.totales,
+    pago: p.pago.estado === "sin_control" ? null : { pagado: p.pago.pagado, saldo: p.pago.saldo },
   };
   return { numero: p.numero, pdf: await renderizarPedido(datos) };
 }

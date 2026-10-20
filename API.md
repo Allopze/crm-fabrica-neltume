@@ -8,7 +8,7 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 - **Paginación:** `?limite=` (por defecto 50, máximo 200) y `?cursor=` (opaco). Respuesta: `{ "datos": [...], "siguiente": "<cursor>|null" }`.
 - **Idempotencia:** la cabecera `Idempotency-Key` (UUID) es **obligatoria** donde dice *Idem*. Una repetición con el mismo cuerpo devuelve la respuesta original; mientras la primera sigue en curso, 409 `IDEMPOTENCIA_EN_CURSO` (reintentar con la misma clave); con otro cuerpo u otra ruta, 422 `IDEMPOTENCIA_CONFLICTO` (DESIGN §5).
 - **Concurrencia:** las ediciones de cotización llevan `version`; si no coincide, 409 `VERSION_OBSOLETA`.
-- **Entrada:** Zod estricto. Cualquier campo no esperado da 400. Los campos de importe (`precio*`, `total`, `iva`, `subtotal`) **nunca** se aceptan, salvo `precio_unitario` al fijar un ítem `a_pedido` (SECURITY T2).
+- **Entrada:** Zod estricto. Cualquier campo no esperado da 400. Los campos de importe (`precio*`, `total`, `iva`, `subtotal`) **nunca** se aceptan, salvo `precio_unitario` al fijar un ítem `a_pedido` y el `monto` de un pago (ADR-0020) de la nota de pedido, que solo suma al pagado (SECURITY T2).
 
 ## 2. Errores
 
@@ -105,6 +105,10 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | POST `/pedidos/:id/completar-reserva` | `pedidos.gestionar` | ✔ | Reserva el faltante con el stock disponible (REQ-STK-7.5) |
 | POST `/pedidos/:id/lista` (`confirmarAPedido`) | `pedidos.gestionar` | ✔ | 409 `STOCK_INSUFICIENTE` si falta reservar; los ítems a pedido se confirman |
 | POST `/pedidos/:id/despachar` (`puertas?`) | `pedidos.gestionar` | ✔ | Libera la reserva y descuenta el stock puerta por puerta; las `puertas` elegidas de un artículo deben ser exactamente las de sus ítems, y sin ellas salen las más antiguas. Responde `puertasDespachadas` (REQ-STK-4.4, 8.3) |
+| POST `/pedidos/:id/pagos` (`monto, fecha, medio, referencia?`) | `pagos.registrar` | ✔ | Pago de solo inserción; 409 `SOBREPAGO` si supera el saldo, `NO_EDITABLE` si está cancelada (REQ-COT-8.10, 8.11) |
+| POST `/pedidos/:id/pagos/:pagoId/reverso` (`motivo`) | `pagos.registrar` | ✔ | Anula un pago con un registro de monto opuesto; 409 `YA_REVERTIDO` |
+| POST `/pedidos/:id/excepcion-pago` (`tipo`: `abono`/`saldo`, `motivo`) | `pagos.registrar` + `pedidos.gestionar` | ✔ | Habilita producir sin abono o despachar con saldo en esa nota (REQ-COT-8.13) |
+| Pagos en `/produccion`, `/despachar` y las consultas (ADR-0020) | — | | 409 `ABONO_PENDIENTE` y `SALDO_PENDIENTE` sin la excepción; `GET /pedidos/:id` suma pagos, pagado, saldo, estado de pago e historial; `GET /pedidos` filtra por `estado` y `estadoPago` |
 | POST `/pedidos/nota-tienda/vista-previa` (multipart: `archivo` PDF ≤ 5 MB, `clienteId?`) | `pedidos.gestionar` | | Lee y valida la nota de la tienda sin escribir; 422 `NOTA_ILEGIBLE` (ADR-0008) |
 | POST `/pedidos/nota-tienda` (multipart: `archivo`, `clienteId` de tipo tienda, `direccionDespacho?`, `medioTransporte?`, `entregaComprometida?`, `observaciones?`) | `pedidos.gestionar` | ✔ | El servidor vuelve a leer el PDF; 409 `YA_IMPORTADA`; precio de lista sin recargo (REQ-COT-8.6–8.9) |
 
