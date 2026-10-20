@@ -17,7 +17,7 @@ src/app/     páginas y rutas API (guard por endpoint)
 src/domain/  lógica pura: inventario, precios, cotizaciones, pedidos, producción
 src/ai/      único módulo que habla con el LLM (interfaz agnóstica + doble determinista)
 src/db/      esquema y migraciones
-scripts/     importar-excel: hojas Precio y Categorias de datos/Cotizador Puertas Neltume.Co-rev-4F.xlsx → BD
+scripts/     importar-excel: hojas Precio y Categorias de datos/Cotizador Puertas Neltume.Co-rev-4E.xlsx → BD
 e2e/ · tests/integracion/ · eval/   E2E secuenciales (con fixtures) · integración · evaluación IA
 docs/adr/    ADR-NNNN-titulo.md
 ```

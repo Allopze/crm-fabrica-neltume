@@ -138,13 +138,13 @@ Disponible = existencia − reservado. Se calcula con la vista `v_stock` (suma p
 
 ## 5. Importación del Excel (REQ-STK-1.x, REQ-COT-1.1)
 
-Fuente: `datos/Cotizador Puertas Neltume.Co-rev-4F.xlsx` (fuente de verdad desde el 06-10-2026; hojas `Precio` y `Categorias` idénticas a la anterior COTIZADOR_2026.xlsx) (fuera de git), hojas `Categorias` y `Precio`.
+Fuente: `datos/Cotizador Puertas Neltume.Co-rev-4E.xlsx` (fuente de verdad desde el 13-10-2026; frente a la anterior rev-4F tiene los mismos 8.772 códigos, atributos y hoja `Categorias`, pero otros precios) (fuera de git), hojas `Categorias` y `Precio`.
 
 | Paso | Hoja / columnas | Destino | Validación |
 |---|---|---|---|
 | 1 | `Categorias` C:D (modelos y código) | `modelo` | 38 filas; las 5 últimas son accesorios |
 | 2 | `Categorias` G (maderas), R:S (anchos → código), U:V (altos y largos → letra) | `madera`, `rango_ancho`, `alto` | Normaliza "RAULÍ" y "RAULI" (DESIGN C3) |
-| 3 | `Precio` fila 4 en adelante: A código, B modelo, C tipo, D ancho, E espesor, F alto, G madera, H pulgadas | `tipo_puerta`, `articulo` | El código recompuesto `MOD-MADERA-ANCHO-ALTO` debe coincidir con A. Si no coincide, se corrige cuando exactamente una hipótesis es consistente: A) el código está mal (el esperado no lo usa otra fila) o B) los atributos están mal (los del código lo reconstruyen y nadie más lo usa); si no, se rechaza como ambigua (REQ-STK-1.6). En el Excel real: 29 correcciones (LLAG-O-2-A → LLAG-O-2-C y 28 marcos de raulí con largo 2) |
+| 3 | `Precio` fila 4 en adelante: A código, B modelo, C tipo, D ancho, E espesor, F alto, G madera, H pulgadas | `tipo_puerta`, `articulo` | El código recompuesto `MOD-MADERA-ANCHO-ALTO` debe coincidir con A. Si no coincide, se corrige cuando exactamente una hipótesis es consistente: A) el código está mal (el esperado no lo usa otra fila) o B) los atributos están mal (los del código lo reconstruyen y nadie más lo usa); si no, se rechaza como ambigua (REQ-STK-1.6). En el Excel real: 29 correcciones (LLAG-O-2-A → LLAG-O-2-C y 28 marcos de raulí con largo 2) y 80 filas rechazadas: un bloque final (filas 8776–8855) que repite códigos de Toltén y Yelcho en raulí con un precio que no cuadra con su costo y margen; el Excel tampoco lo usa, porque BUSCARV toma la primera aparición |
 | 4 | `Precio` I–L costos, M costo total, N margen, O precio neto (P con IVA se ignora y se recalcula) | `lista_precio` + `precio` | Números positivos; O ≈ M × (1 + N) con tolerancia de $1 o se reporta |
 | 5 | — | `recargo_tipo` (0 %) | Solo en la primera carga |
 

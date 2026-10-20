@@ -117,7 +117,7 @@ Objetivos: pérdida máxima de 24 h y restauración en menos de 2 h (REQ-NFR-4).
 
 ## 7. Importación del Excel
 
-`scripts/importar-excel.ts` (también accesible desde la UI con `catalogo.editar` y `precios.editar`) lee las hojas `Precio` y `Categorias` de `datos/Cotizador Puertas Neltume.Co-rev-4F.xlsx` (fuente de verdad). Mapeo y validaciones en DATA-MODEL.md §5. Es idempotente por hash del archivo y por fila (REQ-STK-1.3).
+`scripts/importar-excel.ts` (también accesible desde la UI con `catalogo.editar` y `precios.editar`) lee las hojas `Precio` y `Categorias` de `datos/Cotizador Puertas Neltume.Co-rev-4E.xlsx` (fuente de verdad). Mapeo y validaciones en DATA-MODEL.md §5. Es idempotente por hash del archivo y por fila (REQ-STK-1.3).
 
 ## 8. Conflictos detectados con AGENTS.md y SPEC.md
 

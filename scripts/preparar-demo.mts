@@ -1,5 +1,5 @@
 // `npm run demo:preparar [ruta.xlsx]`: deja el entorno de DEMOSTRACIÓN listo para el guion (RUNBOOK §6, SPEC §2).
-// Importa el Excel real (por defecto datos/Cotizador Puertas Neltume.Co-rev-4F.xlsx), crea 3 clientes ficticios, materias primas y BOM de
+// Importa el Excel real (por defecto datos/Cotizador Puertas Neltume.Co-rev-4E.xlsx), crea 3 clientes ficticios, materias primas y BOM de
 // ejemplo (origen=demo), recepciones y un stock inicial de puertas. Idempotente. No usar en producción real.
 // No imprime precios, costos ni márgenes del Excel.
 import { readFileSync } from "node:fs";
@@ -44,7 +44,7 @@ try {
   paso("Lista de precios");
   if (await listaVigente()) console.log("· ya hay una lista vigente: no se re-importa");
   else {
-    const ruta = process.argv[2] ?? "datos/Cotizador Puertas Neltume.Co-rev-4F.xlsx";
+    const ruta = process.argv[2] ?? "datos/Cotizador Puertas Neltume.Co-rev-4E.xlsx";
     const b = readFileSync(ruta);
     const inf = await importarExcel(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer, ruta.split("/").at(-1)!, actor);
     console.log(`✓ ${ruta}: lista v${inf.listaVersion ?? "—"}, ${inf.creadas} artículos nuevos, ${inf.rechazadas} filas rechazadas (detalle en /precios/importar)`);

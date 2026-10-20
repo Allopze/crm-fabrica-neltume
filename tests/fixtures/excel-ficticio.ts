@@ -1,4 +1,4 @@
-// Excel con la MISMA estructura que el cotizador real (rev-4F) (hojas Precio y Categorias) pero con modelos y costos
+// Excel con la MISMA estructura que el cotizador real (rev-4E) (hojas Precio y Categorias) pero con modelos y costos
 // ficticios y redondos. Nunca usa datos de datos/ (AGENTS.md). Lo usan scripts/generar-fixtures.mts y la prueba de volumen.
 import ExcelJS from "exceljs";
 

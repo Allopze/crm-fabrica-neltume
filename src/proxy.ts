@@ -18,8 +18,8 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      // Páginas: no la API (JSON y PDF), los estáticos ni el favicon.
-      source: "/((?!api|_next/static|_next/image|favicon.ico).*)",
+      // Páginas: no la API (JSON y PDF), los estáticos ni los íconos del navegador.
+      source: "/((?!api|_next/static|_next/image|icon.svg|apple-icon.png).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

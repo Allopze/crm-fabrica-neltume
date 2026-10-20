@@ -43,13 +43,13 @@ El cotizador transforma texto libre de pedidos en una propuesta de ítems para r
 
 ## Brand Commitments
 
-El nombre de la fábrica es Neltume. El repositorio incluye el logo oficial en `public/marca/logo-neltume.svg`, usado por la app y los PDF (REQ-COT-4.2; TASKS.md T5.2). La comunicación operativa es en español y usa la terminología de fábrica: puerta, madera, medida, materia prima, receta/BOM, cotización, nota de pedido, reserva y despacho.
+El nombre de la fábrica es Neltume. El repositorio incluye el logo oficial «Puertas Neltume» (entregado el 13-10-2026) en `public/marca/logo-neltume.svg`, usado por la app y los PDF (REQ-COT-4.2; TASKS.md T5.2), y su ícono para el navegador en `src/app/icon.svg` y `src/app/apple-icon.png`. La comunicación operativa es en español y usa la terminología de fábrica: puerta, madera, medida, materia prima, receta/BOM, cotización, nota de pedido, reserva y despacho.
 
 ## Evidence on Hand
 
 - `SPEC.md`, `UX.md` y `TASKS.md`: requisitos, flujos y alcance por fases.
-- `public/marca/logo-neltume.svg`: marca oficial ya incorporada.
-- `datos/Cotizador Puertas Neltume.Co-rev-4F.xlsx`: fuente operativa de catálogo y precios, fuera de git y de solo lectura; sus costos y márgenes no deben copiarse a documentación, ejemplos ni registros.
+- `public/marca/logo-neltume.svg`: marca oficial ya incorporada; tras cambiarla, `npx tsx scripts/generar-logo.mts` regenera los trazos de la web y los PDF.
+- `datos/Cotizador Puertas Neltume.Co-rev-4E.xlsx`: fuente operativa de catálogo y precios, fuera de git y de solo lectura; sus costos y márgenes no deben copiarse a documentación, ejemplos ni registros.
 - La cifra de 50–200 cotizaciones al mes y la línea base de 5–15 minutos por cotización figuran en SPEC.md §1; no se presentan como mediciones verificadas de la app.
 
 ## Product Principles

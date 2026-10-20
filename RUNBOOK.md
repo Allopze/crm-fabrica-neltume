@@ -82,7 +82,7 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 
 **Preparar** (una vez, en el entorno de demo; idempotente):
 1. `npm run crear-admin` si la base está vacía.
-2. `npm run demo:preparar`: migra, importa `datos/Cotizador Puertas Neltume.Co-rev-4F.xlsx` (lista v1), crea 3 clientes ficticios, materias primas y BOM de ejemplo (NEL, MOL, ANC, marcados *demo*), recepciones y stock inicial: 2 NEL-R-4-B, 4 LIC-L-4-B, 6 ANC-O-3-A y 1 MOL-L-4-B. No imprime precios ni costos.
+2. `npm run demo:preparar`: migra, importa `datos/Cotizador Puertas Neltume.Co-rev-4E.xlsx` (lista v1), crea 3 clientes ficticios, materias primas y BOM de ejemplo (NEL, MOL, ANC, marcados *demo*), recepciones y stock inicial: 2 NEL-R-4-B, 4 LIC-L-4-B, 6 ANC-O-3-A y 1 MOL-L-4-B. No imprime precios ni costos.
 3. Ajustes de IA: activa el proveedor elegido; para pruebas deterministas sin un proveedor activo, usa `LLM_PROVEEDOR=doble` (reconoce los textos de `tests/fixtures/ia-respuestas.json`).
 4. `npm run dev` y abre `http://localhost:3000`.
 

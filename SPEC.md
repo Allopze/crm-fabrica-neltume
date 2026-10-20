@@ -25,7 +25,7 @@ Sin marcas [NEEDS CLARIFICATION] abiertas: las decisiones de la Fase 3 están en
 
 **Supuestos.**
 - S1: una sola bodega lógica "Fábrica", con zonas de materias primas y de producto terminado; el modelo admite más bodegas después. Cada puerta lleva su ubicación (Galpón arriba, Galpón atrás, Fábrica, Tienda…) como dato propio, no como bodega (ADR-0018).
-- S2: la lista de precios inicial es la hoja "Precio" del cotizador real `Cotizador Puertas Neltume.Co-rev-4F.xlsx` (fuente de verdad; reemplaza a COTIZADOR_2026.xlsx, con precios y categorías idénticos), que también es la referencia de formato de la cotización (8.772 filas: 33 modelos × 4 maderas × 9 rangos de ancho × 7 alturas, más accesorios).
+- S2: la lista de precios inicial es la hoja "Precio" del cotizador real `Cotizador Puertas Neltume.Co-rev-4E.xlsx` (fuente de verdad desde el 13-10-2026; reemplaza a la rev-4F, con los mismos códigos, categorías y hoja Cotización, pero otros precios), que también es la referencia de formato de la cotización (8.772 filas: 33 modelos × 4 maderas × 9 rangos de ancho × 7 alturas, más accesorios).
 - S3: vigencia por defecto de la cotización = 10 días hábiles (tomada del Excel), configurable.
 - S4: sin stock suficiente se cotiza igual, con aviso visible.
 - S5: el vendedor descarga el PDF y lo envía por su cuenta.
@@ -300,9 +300,9 @@ Facturación electrónica · portal de clientes · ventas de la tienda · envío
 | NC-5 | Redondeo al peso del precio unitario; línea = cantidad × unitario (REQ-COT-1.2) |
 | NC-6 | Descuento sin tope, con motivo obligatorio y auditado (REQ-COT-7.2) |
 | NC-7 | Borrador en ≤ 15 s (p90); costo de IA ≤ US$ 0,10 por cotización (REQ-NFR-1, 2) |
-| NC-8 | Precios: re-importar el Excel y editar en pantalla, ambos versionados; referencia `Cotizador Puertas Neltume.Co-rev-4F.xlsx` (REQ-COT-1.1) |
+| NC-8 | Precios: re-importar el Excel y editar en pantalla, ambos versionados; referencia `Cotizador Puertas Neltume.Co-rev-4E.xlsx` (REQ-COT-1.1) |
 | NC-9 | Flete fuera de alcance; el PDF dice "flete aparte" (REQ-COT-4.2) |
-| NC-10 | Cotizador rev-4F como fuente de verdad (06-10-2026): su calculadora de flete (1.500 × km) **no** se incorpora y el flete sigue fuera de alcance; su % por línea con signo se cubre con el recargo por tipo y el descuento global con motivo; se mantienen la vigencia de 10 días hábiles y la nota "valores puestos en fábrica" aunque la rev-4F ya no las imprima |
+| NC-10 | Cotizador real como fuente de verdad (rev-4F el 06-10-2026; rev-4E desde el 13-10-2026, misma hoja Cotización): su calculadora de flete (1.500 × km) **no** se incorpora y el flete sigue fuera de alcance; su % por línea con signo se cubre con el recargo por tipo y el descuento global con motivo; se mantienen la vigencia de 10 días hábiles y la nota "valores puestos en fábrica" aunque el cotizador real ya no las imprima |
 | NC-11 | Sin entrada por correo ni mensajería: la empresa no usa Google Workspace (ADR-0007 rechazado; sigue ADR-0003) |
 | NC-12 | A la tienda se le vende al precio de venta de la lista vigente, sin recargo: su cotizador le suma su propio porcentaje (Fase 5) |
 | NC-13 | Feriados legales calculados por ley (portado del cotizador de la tienda), sin sincronizar con fuentes externas; los únicos se cargan a mano (REQ-COT-6.6) |

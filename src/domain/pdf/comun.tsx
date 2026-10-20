@@ -34,15 +34,15 @@ export const e = StyleSheet.create({
   pie: { position: "absolute", left: 52, right: 52, bottom: 40, borderTopWidth: 0.5, borderTopColor: "#ddd", paddingTop: 8, fontSize: 8, color: TENUE, lineHeight: 1.5 },
 });
 
-/** Logo oficial (public/marca/logo-neltume.svg) y datos de la empresa configurados. */
+/** Logo oficial «Puertas Neltume» (public/marca/logo-neltume.svg) y datos de la empresa configurados. */
 export function Membrete({ titulo, fechas }: { titulo: string; fechas: string }) {
   const [nombre, ...resto] = lineasEmpresa(datosEmpresa());
   return (
     <>
       <View style={e.cabecera}>
         <View style={e.marca}>
-          <Svg width={58} height={65} viewBox={LOGO.viewBox}>
-            {LOGO.trazos.map((d, i) => <Path key={i} d={d} fill={TINTA} />)}
+          <Svg width={68} height={64} viewBox={LOGO.viewBox}>
+            {LOGO.trazos.map((d, i) => <Path key={i} d={d} fill={TINTA} fillRule={LOGO.relleno} />)}
             {LOGO.rects.map(([x, y, w, h], i) => <Rect key={`r${i}`} x={x} y={y} width={w} height={h} fill={TINTA} />)}
           </Svg>
           <View style={e.empresa}>

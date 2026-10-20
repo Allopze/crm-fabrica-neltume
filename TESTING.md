@@ -56,7 +56,7 @@ Cada suite parte del estado que dejó la anterior. Nunca se ejecuta una suite su
 | Elemento | Detalle |
 |---|---|
 | BD de test | PostgreSQL local: `neltume_test` (integración) y `neltume_e2e` (E2E), recreadas desde las migraciones al inicio de cada capa. En integración, `neltume_test` es plantilla: cada archivo crea su copia (`CREATE DATABASE … TEMPLATE`) y la borra al terminar, sin depender del orden. La app de E2E corre con `next dev` contra `neltume_e2e` y `LLM_PROVEEDOR=doble` |
-| `e2e/fixtures/cotizador-mini.xlsx` | Misma estructura que el cotizador real (rev-4F): 70 filas (7 modelos × 4 maderas en algunas medidas + 1 marco), costos ficticios redondos y 1 fila inconsistente a propósito (código que no coincide con su alto, como LLAG-O-2-A en el Excel real), que el importador corrige a NEL-O-3-C. Se regenera con `npx tsx scripts/generar-fixtures.mts`. Versionado en git; **nunca** contiene costos reales |
+| `e2e/fixtures/cotizador-mini.xlsx` | Misma estructura que el cotizador real (rev-4E): 70 filas (7 modelos × 4 maderas en algunas medidas + 1 marco), costos ficticios redondos y 1 fila inconsistente a propósito (código que no coincide con su alto, como LLAG-O-2-A en el Excel real), que el importador corrige a NEL-O-3-C. Se regenera con `npx tsx scripts/generar-fixtures.mts`. Versionado en git; **nunca** contiene costos reales |
 | `e2e/fixtures/cotizador-mini-v2.xlsx` | Igual, con +10 % en los precios (suite 10) |
 | `e2e/fixtures/nota-tienda-*.pdf` · `tests/fixtures/nota-tienda-ejemplo.pdf` | Notas de pedido de la tienda: sintéticas con códigos del mini (`node scripts/generar-nota-tienda.mjs`) y el ejemplo real del cotizador de la tienda (datos de ejemplo) |
 | `tests/fixtures/ia-respuestas.json` | Salidas del doble por texto |
