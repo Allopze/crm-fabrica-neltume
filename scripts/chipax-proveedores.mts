@@ -27,11 +27,17 @@ const desde = new Date(Date.parse(`${hasta}T12:00:00Z`) - dias * 86_400_000).toI
 const cliente = clienteChipax({ appId, secretKey, base: process.env.CHIPAX_API_URL || undefined });
 try {
   const emisores = new Map<string, { razon: string; facturas: number; ultima: string }>();
-  for await (const c of cliente.compras(desde, hasta)) {
-    const e = emisores.get(c.rutEmisor) ?? { razon: c.razonSocial, facturas: 0, ultima: "" };
-    e.facturas++;
-    if (c.fechaEmision > e.ultima) e.ultima = c.fechaEmision;
-    emisores.set(c.rutEmisor, e);
+  // Por tramos de 90 días: el cliente corta en 50 páginas y Chipax entrega primero lo más antiguo, así que una ventana
+  // de varios años dejaría fuera las facturas recientes.
+  const dia = (iso: string, n: number) => new Date(Date.parse(`${iso}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+  for (let ini = desde; ini <= hasta; ini = dia(ini, 90)) {
+    const fin = dia(ini, 89) < hasta ? dia(ini, 89) : hasta;
+    for await (const c of cliente.compras(ini, fin)) {
+      const e = emisores.get(c.rutEmisor) ?? { razon: c.razonSocial, facturas: 0, ultima: "" };
+      e.facturas++;
+      if (c.fechaEmision > e.ultima) e.ultima = c.fechaEmision;
+      emisores.set(c.rutEmisor, e);
+    }
   }
   console.log(`Emisores con facturas de compra en los últimos ${dias} días: ${emisores.size}.`);
   const fila = (rut: string, e: { razon: string; facturas: number; ultima: string }) =>
