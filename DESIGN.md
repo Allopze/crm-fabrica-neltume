@@ -80,7 +80,9 @@ Días hábiles: lunes a viernes, descontando los feriados legales de Chile (calc
 | `db` | `postgres:18` fijada por digest (como todas las imágenes y la base del Dockerfile) | `datos` (internal) | `127.0.0.1:5432` solo con `docker-compose.admin.yml` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `pg_data` |
 | `backup` | `postgres` + cron | `datos` | ninguno | `PGPASSWORD`, `BACKUP_RETENCION_DIAS`, `BACKUP_DESTINO_EXTERNO` | `backups` |
 
-- `datos` y `backend` son `internal: true`. Solo `borde` (tunnel) y `salida` (worker) tienen egreso.
+| `compras` (ADR-0021; perfil `chipax`) | build `.` (target `compras`) | `datos`, `salida` | ninguno | `DATABASE_URL_COMPRAS` (rol `neltume_compras`), `CHIPAX_APP_ID`, `CHIPAX_SECRET_KEY` | — |
+
+- `datos` y `backend` son `internal: true`. Solo `borde` (tunnel) y `salida` (worker y compras) tienen egreso.
 - Las API keys de proveedor solo se inyectan en `worker`; `app` y el navegador no las reciben.
 - `.env.example` lista estos nombres con una descripción y sin valores.
 - Compose es solo de producción. Dev y test usan el PostgreSQL local: `npm run dev` aplica migraciones y semilla y levanta la app; `npm test` recrea las BD de test (TESTING.md §4).
@@ -137,3 +139,16 @@ Objetivos: pérdida máxima de 24 h y restauración en menos de 2 h (REQ-NFR-4).
 Ajustes guarda proveedor, modelo y confirmación ZDR de Groq; no recibe ni persiste nuevas API keys. GET, respuestas, logs y auditoría nunca incluyen secretos. Cada trabajo captura proveedor/modelo al tomarlo y el worker usa la clave de entorno de ese proveedor; cambiar proveedor/modelo rige desde el siguiente trabajo. Command Code usa Chat Completions con `x-cmd-zdr: 1`; Groq usa `/openai/v1/chat/completions` y herramienta forzada. Preview y modelos sin chat/herramienta no se activan. La evaluación queda disponible como referencia, sin bloquear la selección inmediata.
 
 **Modo de razonamiento (REQ-COT-2.17, ADR-0015):** `src/ai/razonamiento.ts` resuelve el control de esfuerzo antes de llamar al LLM. En Groq Qwen 3.6/3.8 usa `none`, GPT-OSS 20B/120B usa `low` y Llama 3.1/3.3 no recibe esfuerzo. En Command Code, GPT-6 Luna usa `low`. Cuando un proveedor no admite un control comprobado, se omite el parámetro y se conserva la compatibilidad normal del catálogo; Qwen 3.7 Flash sigue seleccionable. Ajustes muestra el modo efectivo. El worker y `npm run eval:ia` aplican la misma política; la evaluación real sigue siendo informativa.
+
+## 10. Compras desde Chipax (ADR-0021)
+
+`src/compras/` es el único módulo que habla con Chipax: `chipax.ts` (login, `/compras` paginado con espera por el límite y `Retry-After`, descarga del XML solo desde `https` y `*.chipax.com`), `dte.ts` (parser con `saxes`, sin DTD), `corrida.ts` y `servicio.ts` (bucle que sondea cada 15 s). La decisión de cada línea es pura (`src/domain/compras/mapeo.ts`) y la usan la corrida y «Asociar y recibir» (`src/domain/compras/lineas.ts`). La corrida hace esto, en orden:
+
+1. Toma la petición pendiente de `sincronizacion_chipax` o espera el intervalo.
+2. Lista las compras de la ventana (sin `conXml`, que en la API real devuelve 0; la API responde en camelCase).
+3. Filtra por RUT habilitado y fecha de habilitación.
+4. Inserta cada compra y sus líneas, una transacción por factura.
+5. Recibe las líneas con mapeo exacto con `registrarRecepcion` y la clave de idempotencia de la línea.
+6. Deja el resto por asociar o por revisar.
+
+Si una factura falla (XML aún no disponible, `410`, error de formato), se registra en los conteos y se reintenta en la corrida siguiente. Las demás facturas siguen. En `npm test` el cliente apunta a un Chipax simulado local (como el Groq simulado de E2E 17).

@@ -1,7 +1,9 @@
 // `npm run dev`: migra la BD local y levanta Next.js (decisión del usuario: todo con un comando).
 import { spawn } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { parseEnv } from "node:util";
 import { migrar } from "../src/db/migrar";
-import { urlWorker } from "../src/db/urls";
+import { urlCompras, urlWorker } from "../src/db/urls";
 
 const owner = process.env.DATABASE_URL_OWNER;
 const app = process.env.DATABASE_URL;
@@ -27,5 +29,15 @@ const entornoWorker: NodeJS.ProcessEnv = { ...process.env, DATABASE_URL: urlWork
 for (const clave of ["CMD_API_KEY", "GROQ_API_KEY", "CMD_API_BASE_URL", "GROQ_API_BASE_URL"]) delete entornoWorker[clave];
 const worker = spawn("npx", ["tsx", "--env-file-if-exists=.env.worker.local", "src/ai/worker.ts"], { stdio: "inherit", env: entornoWorker });
 const procesos = [next, worker];
+// Compras desde Chipax (ADR-0021): solo con credenciales completas en .env.compras.local (sin ellas el servicio
+// termina y detendría la app); usa su propio rol de BD. Las credenciales no pasan por este proceso.
+const chipax = existsSync(".env.compras.local") ? parseEnv(readFileSync(".env.compras.local", "utf8")) : {};
+if (chipax.CHIPAX_APP_ID && chipax.CHIPAX_SECRET_KEY) {
+  const entornoCompras: NodeJS.ProcessEnv = { ...process.env, DATABASE_URL_COMPRAS: urlCompras(app) };
+  for (const clave of ["CMD_API_KEY", "GROQ_API_KEY", "CHIPAX_APP_ID", "CHIPAX_SECRET_KEY"]) delete entornoCompras[clave];
+  procesos.push(spawn("npx", ["tsx", "--env-file-if-exists=.env.compras.local", "src/compras/servicio.ts"], { stdio: "inherit", env: entornoCompras }));
+} else {
+  console.log("· Compras desde Chipax: sin credenciales en .env.compras.local, el servicio no se inicia (RUNBOOK §7).");
+}
 for (const senal of ["SIGINT", "SIGTERM"] as const) process.on(senal, () => procesos.forEach((p) => p.kill(senal)));
 for (const p of procesos) p.on("exit", (codigo) => { procesos.forEach((q) => q.kill("SIGTERM")); process.exit(codigo ?? 0); });

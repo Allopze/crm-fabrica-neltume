@@ -249,6 +249,21 @@ El abono mínimo del 50 % habilita producir y el saldo pagado habilita despachar
 
 **Checkpoint F12:** `npm test` completo verde, lint y build; recorrido: producir bloqueado sin abono, abonar 50 %, producir, despachar bloqueado con saldo, pagar el saldo y despachar; excepción con motivo; pedido pagado completo de una vez; cancelación con abono anotado. Espero tu OK.
 
+## Fase 13 — Compras desde Chipax (aprobada el 14-10-2026; ADR-0021)
+
+Las facturas de compra de los proveedores habilitados registran solas la recepción de materias primas. Solo entran las líneas con mapeo exacto; lo demás queda por asociar o por revisar.
+
+- [x] T13.0 Decisiones en documentos: SPEC (REQ-MP-7.x, NC-15), DATA-MODEL, ADR-0021, API, SECURITY (T10), DESIGN §4 y §10, UX y TESTING · ADR-0021 · — · —
+- [x] T13.1 (60) Migración: `proveedor_compra`, `mapeo_item_compra`, `compra`, `compra_linea`, `sincronizacion_chipax`, parámetros y rol `neltume_compras` con trigger «solo recepciones de materias primas» · DATA-MODEL · I `compras-chipax` (rol) · T13.0
+- [x] T13.2 (75) `src/compras/`: parser del DTE (U) y cliente de Chipax con límite, `Retry-After`, `410` y `xml_not_available`; Chipax simulado para pruebas · REQ-MP-7.1, 7.7 · U `compras.dte`, I `compras-chipax` · T13.1
+- [x] T13.3 (90) Corrida: filtro por proveedor y habilitación, compra y líneas por factura, recepción por mapeo exacto con idempotencia, por asociar o por revisar, aviso de rechazada o anulada · REQ-MP-7.2–7.6 · U `compras.mapeo`, I `compras-chipax` · T13.2
+- [x] T13.4 (60) Servicio `compras` (Compose, perfil `chipax`) y arranque en `npm run dev` si hay credenciales en `.env.compras.local`; `npm run compras:probar` para validar credenciales sin imprimir datos · REQ-MP-7.8 · I `compose` (credenciales solo en `compras`) · T13.3
+- [x] T13.5 (60) API: compras, asociar o ignorar, proveedores, mapeos y sincronizar; 403 y auditoría por endpoint · REQ-MP-7.3, 7.9, 7.10 · I `compras-chipax` · T13.3
+- [x] T13.6 (90) UI: pestaña Compras (Chipax) en Materias primas y aviso en Recepción · UX · E 19 · T13.5
+- [x] T13.7 (30) RUNBOOK: credenciales de Chipax, perfil `chipax`, diagnóstico de corridas · — · — · T13.4
+
+**Checkpoint F13:** `npm test` completo verde, lint y build; prueba con credenciales reales de Chipax en desarrollo (`npm run compras:probar` y una corrida sobre un proveedor de prueba) revisada contigo antes de habilitar proveedores reales. Espero tu OK.
+
 ## Fase 14 — Auditoría UI/UX (aprobada el 20-10-2026)
 
 Correcciones de fidelidad, permisos y operabilidad detectadas en la auditoría de UI/UX; no cambia requisitos de negocio.

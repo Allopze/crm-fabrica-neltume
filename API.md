@@ -75,6 +75,10 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | GET `/materias-primas` · POST · PATCH `/:id` (`activo`) | `stock.ver` / `mp.editar` | | |
 | PATCH `/materias-primas/:id/minimo` (`stockMinimo`) | `config.editar` | | Mínimo de reposición (REQ-MP-6.2) |
 | GET `/materias-primas/alertas` | `stock.ver` | | Bajo su mínimo, con `faltan`; las más urgentes (proporcionalmente) primero (REQ-MP-6.1) |
+| GET `/compras` · GET `/compras/:id` (ADR-0021) | `stock.ver` | | Por asociar, por revisar, facturas recientes y última sincronización; una factura con sus líneas; `precioUnitario` solo con `costos.ver` (REQ-MP-7.10) |
+| POST `/compras/lineas/:id/asociar` (`materiaPrimaId`, `factor`) · POST `/compras/lineas/:id/ignorar` | `mp.mover` (+ `mp.editar` para guardar el mapeo) | ✔ | Crea la recepción y el mapeo, o recuerda «no es materia prima»; 409 `NO_EDITABLE` si la línea no está por asociar (REQ-MP-7.3) |
+| GET · POST `/proveedores-compra` (`rut`, `nombre`) · PATCH `/proveedores-compra/:rut` (`activo`) · GET `/mapeos-compra` · PATCH `/mapeos-compra/:id` (`materiaPrimaId?`, `factor?`, `ignorar?`) | `stock.ver` / `mp.editar` | ✔ (POST) | Proveedores habilitados (RUT validado; `habilitado_desde` = hoy, también al reactivar) y mapeos; editar un mapeo vale para las facturas que vengan (REQ-MP-7.1, 7.2) |
+| POST `/compras/sincronizar` · GET `/compras/sincronizacion` | `mp.mover` / `stock.ver` | ✔ | 202: encola una corrida (una a la vez: si hay una pendiente o en curso, devuelve esa) y muestra la última: inicio, fin, resultado y conteos (REQ-MP-7.7) |
 | POST `/recepciones` (`materia_prima, cantidad, referencia`) | `mp.mover` | ✔ | |
 | GET `/bom?modelo` · PUT `/bom/:modelo` (`lineas[], origen`) | `stock.ver` / `mp.editar` | | Crea una nueva vigencia. Cada línea es `{materiaPrimaId, cantidad}` o `{maderaPuerta: true, cantidad}` (factor sobre las pulgadas del artículo, una vez por BOM; ADR-0012) |
 | PUT `/maderas/:codigo/insumo` (`materiaPrimaId` o null) | `mp.editar` | | Materia prima de la que se descuenta esa madera (REQ-MP-3.5); 204; auditado |

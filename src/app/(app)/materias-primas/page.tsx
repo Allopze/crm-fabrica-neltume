@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Boton, Encabezado, Etiqueta, Panel, Vacio } from "@/components/ui/base";
+import { Boton, BotonLink, Encabezado, Etiqueta, Panel, Vacio } from "@/components/ui/base";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
 import { materiasParaReponer } from "@/domain/alertas";
 import { requerirSesion } from "@/domain/auth/servidor";
+import { materiasDesdeChipax } from "@/domain/compras/consulta";
 import { listarMateriasPrimas, listarUnidades } from "@/domain/materias-primas";
 import { cn, fecha, numero } from "@/lib/formato";
 import { ConteoExistencias } from "./conteo";
@@ -24,7 +25,7 @@ export default async function MateriasPrimasPage({ searchParams }: PageProps<"/m
   const q = typeof sp.q === "string" ? sp.q.trim().slice(0, 80) : "";
   const soloBajo = sp.bajoMinimo === "1";
   const recibir = typeof sp.recibir === "string" ? sp.recibir : undefined;
-  const [todas, unidades, reponer] = await Promise.all([listarMateriasPrimas(bd()), listarUnidades(bd()), materiasParaReponer(bd())]);
+  const [todas, unidades, reponer, desdeChipax] = await Promise.all([listarMateriasPrimas(bd()), listarUnidades(bd()), materiasParaReponer(bd()), materiasDesdeChipax(bd())]);
   const faltan = new Map(reponer.map((m) => [m.id, m.faltan]));
   const materias = todas.filter((m) => (!q || sinTildes(m.nombre).includes(sinTildes(q))) && (!soloBajo || faltan.has(m.id)));
   const recibe = sesion.permisos.has("mp.mover");
@@ -37,7 +38,10 @@ export default async function MateriasPrimasPage({ searchParams }: PageProps<"/m
       <Encabezado
         titulo="Materias primas"
         descripcion="Madera, tableros, colas y barnices. Las recepciones suman stock y el cierre de cada orden de producción lo descuenta según el BOM."
-        acciones={sesion.permisos.has("mp.editar") && <FormularioNuevaMp unidades={unidades} csrf={sesion.csrf} />}
+        acciones={<>
+          <BotonLink href="/materias-primas/compras">Compras (Chipax)</BotonLink>
+          {sesion.permisos.has("mp.editar") && <FormularioNuevaMp unidades={unidades} csrf={sesion.csrf} />}
+        </>}
       />
       {activas.length > 0 && (sesion.permisos.has("stock.ajustar") || editaMinimo) && (
         <ConteoExistencias csrf={sesion.csrf} puedeAjustar={sesion.permisos.has("stock.ajustar")} puedeMinimo={editaMinimo}
@@ -93,7 +97,7 @@ export default async function MateriasPrimasPage({ searchParams }: PageProps<"/m
           {recibe && activas.length > 0 && (
             <div id="recepcion" className="scroll-mt-20">
               <Panel titulo="Registrar recepción">
-                <FormularioRecepcion key={recibir} materias={opciones} inicial={recibir} csrf={sesion.csrf} />
+                <FormularioRecepcion key={recibir} materias={opciones} inicial={recibir} csrf={sesion.csrf} desdeChipax={desdeChipax} />
               </Panel>
             </div>
           )}

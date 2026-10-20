@@ -50,3 +50,20 @@ export function urlWorker(urlApp = requerirEnv("DATABASE_URL")): string {
   u.password = createHash("sha256").update(`neltume-worker:${decodeURIComponent(u.password)}`).digest("hex").slice(0, 32);
   return u.toString();
 }
+
+/** Usuario de BD del servicio de compras desde Chipax (ADR-0021). */
+export const USUARIO_COMPRAS = "neltume_compras";
+
+/**
+ * URL del rol de BD del servicio de compras (ADR-0021): solo lee proveedores, mapeos y materias primas, e inserta
+ * compras, sus líneas y recepciones de materias primas. Igual que el worker: explícita (`DATABASE_URL_COMPRAS`) o
+ * derivada de la de la app con una clave que es un hash de la clave de la app.
+ */
+export function urlCompras(urlApp = requerirEnv("DATABASE_URL")): string {
+  const explicita = process.env.DATABASE_URL_COMPRAS;
+  if (explicita) return explicita;
+  const u = new URL(urlApp);
+  u.username = USUARIO_COMPRAS;
+  u.password = createHash("sha256").update(`neltume-compras:${decodeURIComponent(u.password)}`).digest("hex").slice(0, 32);
+  return u.toString();
+}

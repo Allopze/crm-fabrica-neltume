@@ -39,7 +39,11 @@ function useAccion() {
 }
 
 /** Recepción de compras (REQ-MP-2). Idempotente: un doble clic no duplica. */
-export function FormularioRecepcion({ materias, csrf, inicial }: { materias: { id: string; nombre: string; unidad: string }[]; csrf: string; inicial?: string }) {
+export function FormularioRecepcion({ materias, csrf, inicial, desdeChipax = {} }: {
+  materias: { id: string; nombre: string; unidad: string }[]; csrf: string; inicial?: string;
+  /** Materias primas que ya entran solas con las facturas de Chipax, con su proveedor (ADR-0021). */
+  desdeChipax?: Record<string, string>;
+}) {
   const { ejecutar, pendiente, aviso } = useAccion();
   const [mpId, setMpId] = useState(materias.some((m) => m.id === inicial) ? inicial! : materias[0]?.id ?? "");
   const unidad = materias.find((m) => m.id === mpId)?.unidad ?? "";
@@ -57,6 +61,11 @@ export function FormularioRecepcion({ materias, csrf, inicial }: { materias: { i
           {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </select>
       </label>
+      {desdeChipax[mpId] && (
+        <p role="note" className="rounded-md border border-ambar/30 bg-ambar-velo px-3 py-2 text-xs text-ambar">
+          Esta materia prima entra sola con las facturas de {desdeChipax[mpId]} (Chipax). Regístrala a mano solo si no viene en una factura.
+        </p>
+      )}
       <div className="grid grid-cols-[1fr_70px] gap-2">
         <label className="text-sm font-medium">Cantidad<input name="cantidad" required inputMode="decimal" placeholder="0" autoFocus={Boolean(inicial)} className={`${campo} mt-1.5 tabular-nums`} /></label>
         <p className="self-end pb-2.5 font-mono text-xs text-tinta-tenue">{unidad}</p>

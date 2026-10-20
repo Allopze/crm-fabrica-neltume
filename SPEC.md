@@ -184,6 +184,18 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-MP-6.1: WHEN la existencia de una materia prima queda bajo su mínimo THE SYSTEM SHALL mostrarla en una lista de reposición.
 - REQ-MP-6.2: IF un usuario sin permiso de configuración intenta cambiar un mínimo THEN THE SYSTEM SHALL denegarlo y registrar el intento.
 
+**H7 Compras desde Chipax (P2; aprobado el 14-10-2026, ADR-0021).** Como usuario, quiero que las facturas de compra de ciertos proveedores registren solas la recepción de materias primas.
+- REQ-MP-7.1: WHEN corre la sincronización (cada 30 min o con «Sincronizar ahora») THE SYSTEM SHALL leer de Chipax las facturas de compra de los proveedores habilitados, emitidas desde su habilitación y en los últimos 45 días, con su XML y respetando el límite de peticiones.
+- REQ-MP-7.2: WHEN una línea de una factura (tipo 33 o 34) coincide exactamente con un mapeo del proveedor (código del ítem o, sin código, nombre normalizado) THE SYSTEM SHALL crear una recepción inmutable de la materia prima mapeada por cantidad × factor, auditada.
+- REQ-MP-7.3: IF una línea no tiene mapeo THEN THE SYSTEM SHALL dejarla «por asociar», visible y sin movimientos; WHEN un usuario con permiso la asocia THE SYSTEM SHALL crear su recepción y guardar el mapeo para las facturas siguientes, o recordarla como «no es materia prima».
+- REQ-MP-7.4: IF la unidad facturada difiere de la del mapeo, la cantidad no es positiva o el documento es una nota de crédito o débito THEN THE SYSTEM SHALL dejar la línea «por revisar», sin movimientos.
+- REQ-MP-7.5: IF la misma factura o línea se procesa otra vez THEN THE SYSTEM SHALL no repetir la compra ni la recepción.
+- REQ-MP-7.6: IF Chipax marca como rechazada o anulada una factura ya recibida THEN THE SYSTEM SHALL avisarlo en la compra sin borrar movimientos; la corrección es un ajuste con motivo.
+- REQ-MP-7.7: IF Chipax no responde, limita las peticiones o el XML aún no está THEN THE SYSTEM SHALL reintentarlo en la corrida siguiente sin perder ni duplicar nada, y mostrar el estado de la última corrida.
+- REQ-MP-7.8: THE SYSTEM SHALL guardar las credenciales de Chipax solo en el servicio de sincronización y no enviarlas nunca a la app, al navegador, a los logs ni a la auditoría.
+- REQ-MP-7.9: IF un usuario sin permiso intenta editar proveedores o mapeos, asociar o ignorar líneas, o pedir una sincronización THEN THE SYSTEM SHALL denegarlo y registrar el intento.
+- REQ-MP-7.10: THE SYSTEM SHALL mostrar el precio de compra de cada línea solo a quien tenga `costos.ver`.
+
 ### 4.4 Cotizador (REQ-COT)
 
 **H1 Lista de precios versionada (P1).** Como usuario, quiero mantener la lista de precios con historial.
@@ -315,6 +327,8 @@ Facturación electrónica · portal de clientes · ventas de la tienda · envío
 | NC-11 | Sin entrada por correo ni mensajería: la empresa no usa Google Workspace (ADR-0007 rechazado; sigue ADR-0003) |
 | NC-12 | A la tienda se le vende al precio de venta de la lista vigente, sin recargo: su cotizador le suma su propio porcentaje (Fase 5) |
 | NC-13 | Feriados legales calculados por ley (portado del cotizador de la tienda), sin sincronizar con fuentes externas; los únicos se cargan a mano (REQ-COT-6.6) |
+| NC-14 | Pago (aprobado el 14-10-2026, ADR-0020): abono mínimo del 50 % (configurable) para producir y saldo antes de despachar o retirar; se puede pagar el total de una vez; si se cancela con abono, solo se anota. Si la tienda también abona está por confirmar (REQ-COT-8.10–8.14) |
+| NC-15 | Compras desde Chipax (aprobado el 14-10-2026, ADR-0021): las facturas de compra de proveedores habilitados suben el stock de materias primas; solo líneas con mapeo exacto, lo demás «por asociar» o «por revisar»; sin histórico previo a la habilitación. Qué proveedores, por definir; el desfase entre factura y llegada se acepta (REQ-MP-7.x) |
 | — | Nombre del cliente: nunca se envía a la IA (REQ-COT-2.9) |
 
 ## 10. Ajustes de IA (ADR-0009, 06-10-2026)

@@ -27,6 +27,7 @@ services:
       DATABASE_URL_OWNER: ${DATABASE_URL_OWNER}
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_URL_WORKER: ${DATABASE_URL_WORKER}
+      DATABASE_URL_COMPRAS: ${DATABASE_URL_COMPRAS:-}
     networks: [datos]
     depends_on:
       db: { condition: service_healthy }
@@ -74,6 +75,20 @@ services:
       LLM_TOPE_DIARIO_LLAMADAS: ${LLM_TOPE_DIARIO_LLAMADAS:-}
       IA_TRABAJO_COLGADO_S: ${IA_TRABAJO_COLGADO_S:-}
       LLM_PRESUPUESTO_MENSUAL_USD: ${LLM_PRESUPUESTO_MENSUAL_USD}
+    networks: [datos, salida]
+    depends_on:
+      migrar: { condition: service_completed_successfully }
+
+  # Compras desde Chipax (ADR-0021): `COMPOSE_PROFILES=ia,chipax`. Solo este servicio recibe las credenciales de Chipax.
+  compras:
+    profiles: [chipax]
+    build: { context: ., target: compras }
+    restart: unless-stopped
+    environment:
+      # Rol de BD propio: solo inserta recepciones de materias primas, compras y sus líneas.
+      DATABASE_URL_COMPRAS: ${DATABASE_URL_COMPRAS:-}
+      CHIPAX_APP_ID: ${CHIPAX_APP_ID:-}
+      CHIPAX_SECRET_KEY: ${CHIPAX_SECRET_KEY:-}
     networks: [datos, salida]
     depends_on:
       migrar: { condition: service_completed_successfully }

@@ -35,6 +35,16 @@ describe("docker-compose.yml de producción (SECURITY §6, T8)", () => {
     expect(compose.services.worker.environment).toHaveProperty("GROQ_API_KEY");
   });
 
+  it("las credenciales de Chipax solo llegan al servicio de compras, que no está en la red de la app (ADR-0021)", () => {
+    for (const [nombre, s] of Object.entries(compose.services)) {
+      if (nombre === "compras") continue;
+      expect(Object.keys(s.environment ?? {}).filter((k) => k.startsWith("CHIPAX_")), `servicio ${nombre}`).toEqual([]);
+    }
+    expect(compose.services.compras.environment).toHaveProperty("CHIPAX_APP_ID");
+    expect(compose.services.compras.environment).toHaveProperty("CHIPAX_SECRET_KEY");
+    expect(compose.services.compras.networks).toEqual(["datos", "salida"]);
+  });
+
   it("la app recibe los datos de la empresa que imprimen los PDF", () => {
     const ejemplo = readFileSync(".env.example", "utf8").match(/^NELTUME_EMPRESA_[A-Z]+(?==)/gm) ?? [];
     expect(ejemplo.length).toBeGreaterThan(0);

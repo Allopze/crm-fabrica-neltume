@@ -29,3 +29,7 @@ CMD ["sh", "-c", "npm run db:setup && npm run db:migrar"]
 
 FROM herramientas AS worker
 CMD ["npx", "tsx", "src/ai/worker.ts"]
+
+# Compras desde Chipax (ADR-0021): mismo entorno de herramientas que el worker.
+FROM herramientas AS compras
+CMD ["npx", "tsx", "src/compras/servicio.ts"]

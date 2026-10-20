@@ -4,12 +4,12 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Client } from "pg";
 import { sembrar } from "./semilla";
-import { ident, partesUrl, urlWorker } from "./urls";
+import { ident, partesUrl, urlCompras, urlWorker } from "./urls";
 
 const CARPETA = path.join(process.cwd(), "src/db/migraciones");
 
 /** Tablas donde el rol de la app solo puede insertar y leer (SECURITY §2, ADR-0002). */
-export const TABLAS_SOLO_INSERCION = ["audit_log", "movimiento", "precio", "llamada_ia", "despacho_historico"];
+export const TABLAS_SOLO_INSERCION = ["audit_log", "movimiento", "precio", "llamada_ia", "despacho_historico", "pago_pedido"];
 
 /**
  * Aplica las migraciones con el dueño del esquema, ajusta los permisos del rol de la app y siembra
@@ -25,6 +25,7 @@ export async function migrar(urlOwner: string, urlApp: string): Promise<void> {
     }
     await aplicarPermisos(cliente, partesUrl(urlApp).usuario);
     await aplicarPermisosWorker(cliente, partesUrl(urlWorker(urlApp)).usuario);
+    await aplicarPermisosCompras(cliente, partesUrl(urlCompras(urlApp)).usuario);
     await sembrar(cliente);
   } finally {
     await cliente.end();
@@ -61,3 +62,33 @@ async function aplicarPermisosWorker(cliente: Client, rolWorker: string): Promis
   await cliente.query(`GRANT UPDATE ON cotizacion, trabajo_ia, parametro TO ${w}`);
   await cliente.query(`GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ${w}`);
 }
+
+/**
+ * Permisos mínimos del servicio de compras desde Chipax (ADR-0021): lee proveedores, mapeos y materias primas, e
+ * inserta compras, sus líneas, recepciones y auditoría. Lee `movimiento` porque el trigger de saldo no negativo corre
+ * con sus permisos. Un trigger le impide cualquier movimiento que no sea una recepción de materia prima.
+ */
+async function aplicarPermisosCompras(cliente: Client, rolCompras: string): Promise<void> {
+  if (!(await cliente.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [rolCompras])).rowCount) {
+    process.stderr.write(`Aviso: no existe el rol ${rolCompras} del servicio de compras; ejecuta \`npm run db:setup\` (ADR-0021).\n`);
+    return;
+  }
+  const c = ident(rolCompras);
+  await cliente.query(`REVOKE ALL ON ALL TABLES IN SCHEMA public FROM ${c}`);
+  await cliente.query(`GRANT USAGE ON SCHEMA public TO ${c}`);
+  await cliente.query(`GRANT SELECT ON proveedor_compra, mapeo_item_compra, materia_prima, unidad, parametro, bodega, compra, compra_linea, sincronizacion_chipax, movimiento, v_stock TO ${c}`);
+  await cliente.query(`GRANT INSERT ON compra, compra_linea, movimiento, audit_log, sincronizacion_chipax TO ${c}`);
+  await cliente.query(`GRANT UPDATE ON compra, sincronizacion_chipax TO ${c}`);
+  await cliente.query(`GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ${c}`);
+  // El nombre del rol va como literal escapado por el servidor (format %L), nunca concatenado.
+  const { rows } = await cliente.query("SELECT format('%L', $1::text) AS rol", [rolCompras]);
+  await cliente.query(`CREATE OR REPLACE FUNCTION movimiento_rol_compras() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF current_user = ${rows[0].rol} AND (NEW.tipo <> 'recepcion' OR NEW.materia_prima_id IS NULL) THEN
+    RAISE EXCEPTION 'El servicio de compras solo registra recepciones de materias primas' USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  RETURN NEW;
+END;
+$$`);
+}
+

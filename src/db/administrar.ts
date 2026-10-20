@@ -1,15 +1,16 @@
 import { Client } from "pg";
-import { conBase, ident, partesUrl, urlWorker } from "./urls";
+import { conBase, ident, partesUrl, urlCompras, urlWorker } from "./urls";
 
 /** Crea (o actualiza) los roles dueño, app y worker (ADR-0017). Requiere una conexión de superusuario. */
-export async function asegurarRoles(urlAdmin: string, urlOwner: string, urlApp: string, urlDelWorker = urlWorker(urlApp)): Promise<void> {
+export async function asegurarRoles(urlAdmin: string, urlOwner: string, urlApp: string, urlDelWorker = urlWorker(urlApp), urlDeCompras = urlCompras(urlApp)): Promise<void> {
   const owner = partesUrl(urlOwner);
   const app = partesUrl(urlApp);
   const worker = partesUrl(urlDelWorker);
+  const compras = partesUrl(urlDeCompras);
   const cliente = new Client({ connectionString: urlAdmin });
   await cliente.connect();
   try {
-    for (const [rol, extra] of [[owner, "CREATEDB"], [app, ""], [worker, ""]] as const) {
+    for (const [rol, extra] of [[owner, "CREATEDB"], [app, ""], [worker, ""], [compras, ""]] as const) {
       const existe = (await cliente.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [rol.usuario])).rowCount;
       const verbo = existe ? "ALTER" : "CREATE";
       // La clave va como literal escapado por el servidor (format %L), nunca concatenada.
@@ -23,11 +24,12 @@ export async function asegurarRoles(urlAdmin: string, urlOwner: string, urlApp: 
   }
 }
 
-/** Crea la base si no existe, con el dueño correcto y CONNECT solo para dueño, app y worker. */
+/** Crea la base si no existe, con el dueño correcto y CONNECT solo para dueño, app, worker y compras. */
 export async function asegurarBase(urlConexion: string, urlOwner: string, urlApp: string, base: string, recrear = false): Promise<void> {
   const owner = partesUrl(urlOwner).usuario;
   const app = partesUrl(urlApp).usuario;
   const worker = partesUrl(urlWorker(urlApp)).usuario;
+  const compras = partesUrl(urlCompras(urlApp)).usuario;
   const cliente = new Client({ connectionString: conBase(urlConexion, "postgres") });
   await cliente.connect();
   try {
@@ -36,9 +38,11 @@ export async function asegurarBase(urlConexion: string, urlOwner: string, urlApp
     if (!existe) await cliente.query(`CREATE DATABASE ${ident(base)} OWNER ${ident(owner)}`);
     await cliente.query(`REVOKE CONNECT ON DATABASE ${ident(base)} FROM PUBLIC`);
     await cliente.query(`GRANT CONNECT ON DATABASE ${ident(base)} TO ${ident(app)}`);
-    // El rol del worker lo crea `db:setup` (superusuario); sin él, la base sigue usable por la app.
-    if ((await cliente.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [worker])).rowCount) {
-      await cliente.query(`GRANT CONNECT ON DATABASE ${ident(base)} TO ${ident(worker)}`);
+    // Los roles del worker y de compras los crea `db:setup` (superusuario); sin ellos, la base sigue usable por la app.
+    for (const rol of [worker, compras]) {
+      if ((await cliente.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [rol])).rowCount) {
+        await cliente.query(`GRANT CONNECT ON DATABASE ${ident(base)} TO ${ident(rol)}`);
+      }
     }
   } finally {
     await cliente.end();

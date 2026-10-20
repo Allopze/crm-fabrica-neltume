@@ -67,7 +67,7 @@ erDiagram
 | `articulo` | `codigo` único (`NEL-R-4-B`), `modelo_id`, `madera_id`, `ancho_codigo` (1–9 en puertas; `2X4`, `6X1`… en accesorios), `ancho_etiqueta`, `alto_codigo`, `alto_m` (alto o largo), `espesor`, `pulgadas`, `tipo_puerta_id` null, `stock_minimo` null, `fuera_catalogo`, `activo` | Único por (modelo, madera, ancho_codigo, alto_codigo). `rango_ancho` y `alto` quedan como referencia de puertas para el mapeo exacto. Fuera de catálogo: ancho y alto en mm (`MOL-O-780X2066`), sin precio; el cotizador y la IA no los ven (REQ-STK-8.7) |
 | `bodega` | `nombre` ("Fábrica"), `zona` | Una sola en v1 (supuesto S1) |
 | `feriado` | `fecha` PK, `nombre` | Solo feriados **adicionales** (elecciones, leyes puntuales); los legales se calculan en `src/domain/precios/feriados.ts` (REQ-COT-6.6) |
-| `parametro` | `clave`, `valor` jsonb | `vigencia_dias_habiles`=10, `iva`=0.19, topes de IA |
+| `parametro` | `clave`, `valor` jsonb | `vigencia_dias_habiles`=10, `iva`=0.19, `abono_pct`=50 (ADR-0020), `chipax_intervalo_min`=30 y `chipax_ventana_dias`=45 (ADR-0021), topes de IA |
 
 ### Precios versionados (REQ-COT-1)
 | Tabla | Columnas clave | Reglas |
@@ -92,6 +92,11 @@ Una edición en pantalla copia la versión vigente, aplica el cambio y crea `ver
 | `madera_insumo` | `madera_id` (PK), `materia_prima_id`, `actualizado_en` | De qué materia prima se descuenta cada madera al cerrar una orden (REQ-MP-3.5) |
 | `orden_produccion` | `numero`, `estado` (`abierta`/`cerrada`/`anulada`), `nota_pedido_id` null, `cerrada_en` | Cerrar es idempotente (REQ-MP-4.4) |
 | `orden_linea` | `orden_id`, `articulo_id`, `cantidad` | |
+| `proveedor_compra` (ADR-0021) | `rut` PK (normalizado), `nombre`, `activo`, `habilitado_desde` (fecha), `habilitado_por` | Solo sus facturas se leen de Chipax, y solo las emitidas desde `habilitado_desde` (REQ-MP-7.1). Las recepciones automáticas quedan a nombre de `habilitado_por` (`movimiento.usuario_id` es obligatorio) |
+| `mapeo_item_compra` | `proveedor_rut`, `clave` (`C:<código>` o `N:<nombre normalizado>`), `descripcion`, `materia_prima_id` null, `factor` > 0, `unidad_facturada` (normalizada), `ignorar` (bool), `creado_por` | Único (`proveedor_rut`, `clave`). Con `ignorar`, la línea es «no es materia prima» (REQ-MP-7.2, 7.3) |
+| `compra` | `chipax_id`, `rut_emisor`, `razon_social`, `tipo` (33/34/56/61), `folio`, `fecha_emision`, `estado_chipax`, `anulada`, `xml_pendiente` (se reintenta), `aviso`, `sincronizada_en` | Único (`rut_emisor`, `tipo`, `folio`). Sin montos de la factura ni URL firmada (REQ-MP-7.5, 7.6) |
+| `compra_linea` | `compra_id`, `nro_linea`, `codigo_item` null, `nombre_item`, `clave`, `cantidad`, `unidad`, `precio_unitario` (neto, solo `costos.ver`), `estado` (`recibida`/`por_asociar`/`por_revisar`/`ignorada`), `motivo_revision`, `materia_prima_id`, `cantidad_recibida`, `movimiento_id`, `resuelta_por`, `resuelta_en` | Único (`compra_id`, `nro_linea`); `recibida` exige `movimiento_id` (REQ-MP-7.2–7.4, 7.10) |
+| `sincronizacion_chipax` | `solicitada_en`, `solicitada_por` null, `inicio`, `fin`, `resultado` (`ok`/`parcial`/`error`), `conteos` jsonb, `error` | Cola de «Sincronizar ahora» y registro de corridas, sin datos de las facturas (REQ-MP-7.7) |
 
 **Tipos de `movimiento` y su efecto:**
 

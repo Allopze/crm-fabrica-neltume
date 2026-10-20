@@ -4,6 +4,7 @@
 .env.*
 !.env.example
 !.env.worker.example
+!.env.compras.example
 /node_modules
 /.next/
 /out/

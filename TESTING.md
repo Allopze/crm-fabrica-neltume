@@ -49,7 +49,10 @@ Cada suite parte del estado que dejó la anterior. Nunca se ejecuta una suite su
 | 14 | `14-auditoria` | Verifica en `audit_log` una fila por cada acción de 01–13 (incluidas denegaciones), que no existen UPDATE/DELETE y el filtro por actor | — |
 | 15 | `15-pedido-nota-tienda` | Registra la tienda, sube `nota-tienda-mini.pdf`, revisa la vista previa (medida solicitada y aviso de precio), crea el pedido, rechaza la misma nota otra vez y, con stock nuevo, completa la reserva, marca lista y, sin pago, despacha con la excepción de saldo «Crédito a la tienda» (ADR-0020) eligiendo las puertas (el marco sale por cantidad) | Pedido de la tienda despachado |
 | 16 | `16-alias-accesorios` | Agrega el alias «fui» en pantalla y cotiza «2 Fui oregón 70x200 con su marco 2x4 de 2,10» con el doble: la puerta resuelve por alias y el marco por escuadría y largo, sin ítems por confirmar | Cotización D en borrador |
-| 17 | `17-ajustes-ia` | Elige proveedor y modelo en Ajustes de IA contra un Groq simulado local: catálogo y límites con fecha, confirmación ZDR obligatoria, la API no devuelve claves y el siguiente trabajo usa la configuración nueva | — |
+| 17 | `17-ajustes-ia` | Elige proveedor y modelo en Ajustes de IA contra un Groq simulado local: catálogo y límites con fecha, confirmación de retención cero, la UI no muestra nombres de archivos ni claves, la API no devuelve claves y el siguiente trabajo usa la configuración nueva | — |
+| 18 | `18-pagos-pedido` | Sobre un pedido nuevo: «Producir» bloqueado sin abono; registra 50 % → abonado y produce; despachar bloqueado con saldo; registra el saldo → pagado y despacha; revierte un pago con motivo y ve el saldo resultante; otro pedido pagado completo de una vez; cancelar uno con abono deja el monto anotado | Pedido pagado y despachado |
+| 19 | `19-compras-chipax` | Con un Chipax simulado local y el servicio de compras real: habilita un proveedor, sincroniza, una línea con mapeo entra sola y otra queda por asociar; la asocia con su factor y sube el stock; marca un flete como «no es materia prima»; repetir la sincronización no duplica | Recepciones desde Chipax |
+| 20 | `20-movil` | Recorre `/`, `/cotizaciones`, `/pedidos`, `/stock`, `/materias-primas`, `/precios`, `/produccion` y `/clientes` en un contexto de celular (390×844, táctil, `isMobile`): ninguna pantalla tiene scroll horizontal de página y, con `pointer: coarse`, «Nueva cotización» y un control de `/stock` miden al menos 44 px de alto (sin puntero grueso, ese chequeo queda omitido) | — |
 
 ## 4. Datos semilla y entorno
 
@@ -59,6 +62,7 @@ Cada suite parte del estado que dejó la anterior. Nunca se ejecuta una suite su
 | `e2e/fixtures/cotizador-mini.xlsx` | Misma estructura que el cotizador real (rev-4E): 70 filas (7 modelos × 4 maderas en algunas medidas + 1 marco), costos ficticios redondos y 1 fila inconsistente a propósito (código que no coincide con su alto, como LLAG-O-2-A en el Excel real), que el importador corrige a NEL-O-3-C. Se regenera con `npx tsx scripts/generar-fixtures.mts`. Versionado en git; **nunca** contiene costos reales |
 | `e2e/fixtures/cotizador-mini-v2.xlsx` | Igual, con +10 % en los precios (suite 10) |
 | `e2e/fixtures/nota-tienda-*.pdf` · `tests/fixtures/nota-tienda-ejemplo.pdf` | Notas de pedido de la tienda: sintéticas con códigos del mini (`node scripts/generar-nota-tienda.mjs`) y el ejemplo real del cotizador de la tienda (datos de ejemplo) |
+| `tests/fixtures/chipax/` | DTE sintéticos (`dte.ts`: factura con código de ítem y sin él, nota de crédito, `EnvioDTE`, ISO-8859-1) con RUT y montos ficticios, y el Chipax simulado (`simulado.ts`: login, `/v2/compras` paginado con `429`, XML por URL firmada con `404`/`410`), que también usa `e2e/chipax-mock.mts`. Nunca facturas reales de `datos/` |
 | `tests/fixtures/ia-respuestas.json` | Salidas del doble por texto |
 | Reloj | `APP_FECHA_FIJA` en test para la vigencia y los feriados deterministas |
 | Reinicio | Al inicio de `npm test` la BD se recrea desde las migraciones. Las suites no limpian entre sí |
@@ -106,6 +110,8 @@ U = unit, I = integración, E = E2E (número de suite). Todo REQ P1 tiene al men
 | COT-6.1, 6.2, 6.3, 6.4, 6.5 | P1 | U `vigencia.dias-habiles`; I `cotizacion.inmutable`; E 08, 10, 11 |
 | COT-7.1, 7.2, 7.3 | P2 | I `descuento`; E 12 (7.3) |
 | COT-8.1, 8.2, 8.3, 8.4 | P1 | I `pedidos`; E 09, 11 |
+| COT-8.10–8.16 (ADR-0020) | P1 | U `pagos.estado` (abono redondeado hacia arriba, abonado/pagado, total de una vez); I `pedidos-pagos` (trigger de solo inserción, sobrepago, reverso único, compuertas de producción y despacho, excepción con motivo, cancelación con pagos, notas anteriores sin control, 403 y fila en `audit_log` por endpoint); E 18 |
+| MP-7.1–7.10 (ADR-0021) | P2 | U `compras.dte` (DTE suelto y `EnvioDTE`, ISO-8859-1, sin DTD ni entidades, tope de tamaño), U `compras.mapeo` (clave por código o nombre, factor, unidad distinta); I `compras-chipax` (login, paginación, `429` con `Retry-After`, `xml_not_available`, `410`, solo RUT habilitados y desde su habilitación, idempotencia, nota de crédito y rechazada por revisar, rol `neltume_compras`, 403 y auditoría, precio solo con `costos.ver`); E 19 |
 | COT-9.1, 9.2, 9.3 | P1 | U `rut`; I `clientes`; E 08, 11 |
 | COT-10.1, 10.2 | P2 | I `cotizaciones.lista`, IDOR |
 | NFR-1, NFR-2 | — | `eval:ia` (p90 y costo); I tope de costo y límite 429 |

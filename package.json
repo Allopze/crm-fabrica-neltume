@@ -20,7 +20,9 @@
     "eval:ia": "tsx --env-file-if-exists=.env.local scripts/eval-ia.mts",
     "demo:preparar": "npm run db:migrar && tsx --env-file-if-exists=.env.local scripts/preparar-demo.mts",
     "typecheck": "next typegen && tsc --noEmit",
-    "worker": "tsx --env-file-if-exists=.env.worker.local src/ai/worker.ts"
+    "worker": "tsx --env-file-if-exists=.env.worker.local src/ai/worker.ts",
+    "compras": "tsx --env-file-if-exists=.env.compras.local src/compras/servicio.ts",
+    "compras:probar": "tsx --env-file-if-exists=.env.compras.local scripts/chipax-probar.mts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.1",
@@ -33,6 +35,7 @@
     "pg": "^8.23.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "saxes": "5.0.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {

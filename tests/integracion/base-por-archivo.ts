@@ -3,7 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { Client } from "pg";
 import { afterAll } from "vitest";
-import { cargarEnvLocal, conBase, ident, partesUrl, requerirEnv, urlWorker } from "@/db/urls";
+import { cargarEnvLocal, conBase, ident, partesUrl, requerirEnv, urlCompras, urlWorker } from "@/db/urls";
 
 cargarEnvLocal();
 const owner = requerirEnv("DATABASE_URL_OWNER");
@@ -15,6 +15,7 @@ await admin.connect();
 await admin.query(`CREATE DATABASE ${ident(base)} TEMPLATE neltume_test OWNER ${ident(partesUrl(owner).usuario)}`);
 await admin.query(`GRANT CONNECT ON DATABASE ${ident(base)} TO ${ident(partesUrl(app).usuario)}`);
 await admin.query(`GRANT CONNECT ON DATABASE ${ident(base)} TO ${ident(partesUrl(urlWorker(app)).usuario)}`);
+await admin.query(`GRANT CONNECT ON DATABASE ${ident(base)} TO ${ident(partesUrl(urlCompras(app)).usuario)}`);
 await admin.end();
 
 process.env.DATABASE_URL = conBase(app, base);

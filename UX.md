@@ -17,7 +17,7 @@ Documentos con un solo formato de número, igual en pantalla y en PDF: «Cotizac
 | Stock | Pestañas: Artículos (consulta con filtros; detalle con sus puertas en stock y movimientos) · Puertas (código, ubicación, calidad, estado; filtros) · Despachos anteriores (planilla, solo lectura) | `stock.ver` | REQ-STK-2, 8.6, 10.2 |
 | Stock | Ficha de una puerta: datos editables, apartar, liberar, salida con documento, dar de baja o devolver, historia completa | `stock.mover`, `stock.ajustar` | REQ-STK-8 |
 | Stock | Registrar entrada / salida / ajuste, con etiquetas opcionales y ubicación de lo que entra | `stock.mover`, `stock.ajustar` | REQ-STK-3..5, 8.2–8.3 |
-| Materias primas | Lista con búsqueda y filtro «bajo el mínimo» · Recepción (también desde «Recibir» en la fila) · Ajuste · Conteo | `mp.*`, `stock.ajustar` | REQ-MP |
+| Materias primas | Lista con búsqueda y filtro «bajo el mínimo» · Recepción (también desde «Recibir» en la fila) · Ajuste · Conteo · Compras (Chipax) | `mp.*`, `stock.ajustar` | REQ-MP |
 | Producción | Pestañas: Órdenes (crear y cerrar) · Recetas (BOM) · Madera de la puerta | `produccion.gestionar`, `mp.editar` | REQ-MP |
 | Precios | Precios vigentes con filtros (código o modelo, madera, tipo, alto) · Versiones · Recargos · Editar (nueva versión) · Importar Excel con informe | `precios.editar`, `catalogo.editar` | REQ-COT-1, REQ-STK-1 |
 | Clientes | Lista · Ficha (datos, cotizaciones y notas) | `clientes.*` | REQ-COT-9 |
@@ -73,6 +73,20 @@ Navegación lateral fija desde 1024 px; en pantallas más angostas se abre como 
 - **Auditoría:** acciones, recursos y resultados en español; el detalle muestra pares campo–valor (antes y después) con montos, cifras y fechas en formato chileno, sin ids internos; los códigos de error se leen en palabras. Las filas de una misma operación (misma transacción) se agrupan bajo la primera.
 - **Selector de archivo:** botón y texto en español («Elegir PDF», «Ningún archivo elegido»), no el control nativo del navegador.
 - **Nota de pedido:** «Cancelar pedido» va al pie del panel de avance, lejos del PDF. Despachada, cada ítem dice cuántas se despacharon (sin «reservadas»).
+- **Compras (Chipax)** (ADR-0021): página `/materias-primas/compras`, con enlace desde Materias primas.
+  - Arriba, la última sincronización (hora, resultado, facturas leídas, líneas recibidas, por asociar y por revisar) y «Sincronizar ahora».
+  - Luego **Por asociar**: cada línea con proveedor, folio, ítem tal como lo escribió el proveedor, cantidad y unidad. Se elige la materia prima y el factor (con una vista previa: «12 m³ × 424 = 5.088 pulg»), y se elige «Asociar y recibir» o «No es materia prima».
+  - **Por revisar**, con el motivo (unidad distinta, nota de crédito, rechazada en Chipax) y un enlace a Ajuste.
+  - El historial de facturas con su estado y, con `costos.ver`, el precio de compra.
+  - La lista de **proveedores habilitados**: RUT, nombre, «desde» y activar o desactivar.
+  - En Recepción, al elegir una materia prima que ya entra desde Chipax: «Esta materia prima entra sola con las facturas de <proveedor>; regístrala a mano solo si no viene en una factura».
+- **Pagos y seguimiento** (ADR-0020):
+  - En la ficha, un recuadro «Pagos» con total, abono requerido, pagado y saldo; la lista de pagos (fecha, medio, comprobante, quién) con «Revertir» y motivo; y «Registrar pago» con el monto sugerido (el abono que falta o el saldo, editable).
+  - «Producir faltante» sin abono y «Despachar» con saldo se muestran deshabilitados con el motivo en texto («Falta el abono: $X») y un enlace «Producir igual (excepción)» que pide motivo.
+  - Etiqueta de pago con color y texto: *Sin abono* (ámbar), *Abonado* (pizarra), *Pagado* (musgo). Las notas anteriores dicen «sin control de pago».
+  - Historial de estados en la ficha (fecha, usuario y orden de producción si la hubo) y «Atrasada N días» cuando pasó la entrega comprometida.
+  - En la lista de pedidos: filtros por estado y por estado de pago, con el conteo de cada uno. En el panel: notas sin abono y atrasadas.
+  - Si una nota en producción ya tiene todo reservado, se muestra el aviso «Lista para marcar»; el cambio de estado lo hace siempre una persona.
 - **Ajuste:** el motivo es obligatorio; se confirma con "Este movimiento no se puede editar ni borrar".
 - **Importar Excel:** se elige el archivo y se ve un informe (creadas, actualizadas y rechazadas, con fila y motivo) que se puede descargar.
 - **Cierre de producción:** vista previa de los consumos por BOM y de los faltantes antes de confirmar; si un BOM es de ejemplo, aparece la etiqueta "DEMO". Si el BOM usa la madera de la puerta y una madera no tiene materia prima asociada, el cierre muestra qué falta y queda bloqueado; el panel «Madera de la puerta» permite asociarla (ADR-0012).

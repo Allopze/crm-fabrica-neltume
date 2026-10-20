@@ -3,3 +3,5 @@ export const ADMIN = { email: "admin@e2e.neltume.cl", nombre: "Admin E2E", clave
 export const CONSULTA = { email: "consulta@e2e.neltume.cl", nombre: "Consulta E2E", clave: "clave-e2e-solo-pruebas-2" };
 export const CLIENTE_A = { nombre: "Constructora Los Alerces", rut: "12.345.678-5", despacho: "Camino a Neltume km 3, Panguipulli" };
 export const TEXTO_A = "3 puertas Neltume en raulí de 90x210 y 2 de roble con chapa";
+// Proveedor del Chipax simulado (E2E 19, ADR-0021): RUT válido y ficticio.
+export const PROVEEDOR_CHIPAX = { rut: "76.543.210-3", nombre: "Maderas Ñuble SpA" };

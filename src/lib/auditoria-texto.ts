@@ -7,6 +7,8 @@ const RECURSOS: Record<string, string> = {
   configuracion: "Configuración", cotizacion: "Cotización", feriado: "Feriado", importacion: "Importación del Excel",
   lista_precio: "Lista de precios", madera_insumo: "Madera de la puerta", materia_prima: "Materia prima", nota_pedido: "Nota de pedido",
   orden_produccion: "Orden de producción", rol: "Rol", sesion: "Sesión", usuario: "Usuario",
+  compra: "Factura de compra (Chipax)", proveedor_compra: "Proveedor (Chipax)", mapeo_item_compra: "Ítem de proveedor",
+  sincronizacion_chipax: "Sincronización con Chipax",
 };
 
 const ACCIONES: Record<string, string> = {
@@ -17,6 +19,11 @@ const ACCIONES: Record<string, string> = {
   consumo_produccion: "Consumo de producción", entrada_produccion: "Entrada de producción", salida_despacho: "Salida por despacho",
   reserva: "Reserva", liberacion: "Liberación de reserva", "crear pedido": "Nota de pedido creada", "cancelar pedido": "Cancelación",
   "pedido en produccion": "Pasó a producción", "pedido lista": "Lista para despacho", "pedido despachada": "Despacho",
+  "completar reserva": "Reserva completada", "registrar pago": "Pago registrado", "revertir pago": "Pago revertido",
+  "excepcion de pago": "Excepción de pago", "editar despacho": "Despacho editado",
+  "leer factura chipax": "Factura leída de Chipax", "sincronizar chipax": "Sincronización con Chipax", "asociar item compra": "Ítem asociado",
+  "ignorar item compra": "Ítem marcado «no es materia prima»", "habilitar proveedor": "Proveedor habilitado", "desactivar proveedor": "Proveedor desactivado",
+  "editar mapeo compra": "Ítem de proveedor editado", "solicitar sincronizacion": "Sincronización pedida",
 };
 
 const METODOS: Record<string, string> = { GET: "Consultar", POST: "Registrar", PATCH: "Modificar", PUT: "Reemplazar", DELETE: "Eliminar" };

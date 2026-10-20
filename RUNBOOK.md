@@ -16,7 +16,7 @@ Requisitos: Node 24 (`.nvmrc`) y PostgreSQL local (Postgres.app en `localhost:54
    - `CMD_API_KEY`: API key de Command Code.
    - `GROQ_API_KEY`: API key de Groq.
    Puedes configurar una o ambas. No las pongas en `.env.local`; el worker y `eval:ia` leen `.env.worker.local`.
-4. `npm run db:setup`: crea los roles (dueño, app y `neltume_worker`, el rol con permisos mínimos del worker de IA, ADR-0017) y las bases `neltume_dev`, `neltume_test` y `neltume_e2e`. Es idempotente; vuelve a correrlo si actualizas desde una versión sin el rol del worker. En desarrollo la clave del worker se deriva de `DATABASE_URL` si no defines `DATABASE_URL_WORKER`.
+4. `npm run db:setup`: crea los roles (dueño, app, `neltume_worker`, el rol con permisos mínimos del worker de IA, ADR-0017, y `neltume_compras`, el del servicio de compras desde Chipax, ADR-0021) y las bases `neltume_dev`, `neltume_test` y `neltume_e2e`. Es idempotente; vuelve a correrlo si actualizas desde una versión sin el rol del worker. En desarrollo la clave del worker se deriva de `DATABASE_URL` si no defines `DATABASE_URL_WORKER`.
 5. `npm run crear-admin`: primer usuario. La contraseña se pide por consola.
 6. `npm run dev`: migra la BD y levanta la app en `http://localhost:3000`. El worker carga las claves y actualiza los catálogos. Si agregas o cambias claves en `.env.worker.local` después de iniciarlo, reinicia `npm run dev` para que el worker las vuelva a cargar.
 7. En **Ajustes de IA**, elige proveedor y modelo; para Groq confirma ZDR en Console.
@@ -106,3 +106,41 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 | 12 | Auditoría | Filtrar por actor y por resultado | Quién hizo qué y cuándo, con antes/después (REQ-ADM-3) |
 
 Si la IA no responde, el borrador queda en «IA no disponible» con el texto guardado y el botón «Cotizar a mano» (REQ-COT-2.7). Con el doble determinista, el texto «simular IA caída» lo provoca.
+
+## 7. Compras desde Chipax (ADR-0021)
+
+Las facturas de compra de los proveedores habilitados suben el stock de materias primas. El servicio `compras` es el único que tiene las credenciales de Chipax y se conecta con el rol `neltume_compras`, que solo puede registrar recepciones de materias primas.
+
+**Credenciales:** en Chipax, con la cuenta de la empresa, ir a Ajustes → Credenciales API (`app.chipax.com/secret_keys`) y copiar `app_id` y `secret_key`. Nunca van en el repositorio, en `.env.local` ni en la app.
+
+**Desarrollo:**
+1. `npm run db:setup` (una vez): crea el rol `neltume_compras`.
+2. `cp .env.compras.example .env.compras.local` y completa `CHIPAX_APP_ID` y `CHIPAX_SECRET_KEY`.
+3. `npm run compras:probar [días]`: valida las credenciales y que se pueden leer facturas y su XML. Solo imprime conteos (facturas por tipo, líneas de detalle), nunca RUT, montos ni el token.
+4. `npm run dev`: con `.env.compras.local` presente, también arranca el servicio (`npm run compras` lo arranca solo).
+
+**Producción:**
+1. En el `.env` del servidor, completa:
+   - `DATABASE_URL_COMPRAS` (`postgres://neltume_compras:<clave>@db:5432/neltume`, obligatoria en Compose);
+   - `CHIPAX_APP_ID` y `CHIPAX_SECRET_KEY`;
+   - `chipax` en `COMPOSE_PROFILES` (por ejemplo, `ia,chipax`).
+2. `docker compose up -d` (el servicio `migrar` crea el rol y sus permisos) y revisa `docker compose logs compras`.
+
+**Operación** (Materias primas → Compras (Chipax)):
+- **Proveedores:** habilita por RUT a cada uno. Solo se leen sus facturas emitidas desde ese día; lo anterior se recibió a mano.
+- **Primeras facturas:** cada ítem nuevo queda «por asociar». Elige la materia prima y el factor («Asociar y recibir»), o «No es materia prima». Desde ahí, ese ítem entra solo.
+- **Por revisar:** notas de crédito, una unidad distinta a la asociada o una materia prima inactiva. Si cambia el stock, se corrige con un ajuste con motivo.
+
+**Diagnóstico:**
+
+| Síntoma | Causa probable | Acción |
+|---|---|---|
+| «Sincronizar ahora» sigue pendiente varios minutos | El servicio `compras` no corre | `docker compose ps compras` y `docker compose logs compras`; revisa el perfil `chipax` |
+| «Chipax rechazó las credenciales» | `app_id` o `secret_key` mal copiados o revocados | Generarlas de nuevo en Chipax y reiniciar `compras` |
+| Facturas «XML pendiente» | Chipax aún no tiene el XML de esa factura (responde `xml_not_available`) | Normal por unos días: se reintenta en cada corrida. Si dura semanas, revisar en Chipax la sincronización de documentos recibidos (el 14-10-2026 las facturas de jul–sep 2026 no tenían XML) |
+| Factura con aviso «Rechazada en Chipax después de recibirla» | El proveedor o el SII la rechazó | Revisar y, si no llegó el insumo, ajuste con motivo |
+
+**Parámetros:**
+- El intervalo de 30 min y la ventana de 45 días están en `parametro`. Por ejemplo: `UPDATE parametro SET valor = '15' WHERE clave = 'chipax_intervalo_min'`.
+- Chipax permite un GET con filtros cada 5 s; el servicio espera entre páginas y respeta `Retry-After`.
+

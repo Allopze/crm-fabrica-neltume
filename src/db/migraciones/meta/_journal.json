@@ -148,6 +148,13 @@
       "when": 1791948729755,
       "tag": "0020_pagos_pedido",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791986450367,
+      "tag": "0021_compras_chipax",
+      "breakpoints": true
     }
   ]
 }
