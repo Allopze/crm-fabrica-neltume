@@ -48,7 +48,10 @@ export async function insertarPedido(
   const disponible = new Map(await Promise.all(articulos.map(async (a) => [a, (await saldo(tx, { articuloId: a })).disponible] as const)));
   const reparto = repartirReserva(d.lineas.map((i) => ({ articuloId: i.articuloId, cantidad: i.cantidad })), disponible);
 
-  const [p] = await tx.insert(notaPedido).values({ ...d.cabecera, creadoPor: actor.id }).returning({ id: notaPedido.id, numero: notaPedido.numero });
+  // A la tienda no se le exige abono ni saldo; sus pagos se registran igual si llegan (REQ-COT-8.17).
+  const [cli] = d.cabecera.clienteId ? await tx.select({ tipo: cliente.tipo }).from(cliente).where(eq(cliente.id, d.cabecera.clienteId)) : [];
+  const exigePago = d.cabecera.exigePago ?? cli?.tipo !== "tienda";
+  const [p] = await tx.insert(notaPedido).values({ ...d.cabecera, exigePago, creadoPor: actor.id }).returning({ id: notaPedido.id, numero: notaPedido.numero });
   await tx.insert(pedidoItem).values(d.lineas.map((i, k) => ({ notaPedidoId: p.id, orden: k + 1, ...i, ...reparto[k] })));
 
   const reservas = d.lineas.flatMap((i, k) => (reparto[k].reservado > 0
@@ -58,7 +61,7 @@ export async function insertarPedido(
   const faltante = reparto.reduce((t, r) => t + r.faltante, 0);
   await registrarAuditoria(tx, {
     actor, accion: "crear pedido", recurso: "nota_pedido", recursoId: p.id, resultado: "ok", origen,
-    despues: { numero: p.numero, origen: d.cabecera.origen, ...auditoria, reservado: reparto.reduce((t, r) => t + r.reservado, 0), faltante },
+    despues: { numero: p.numero, origen: d.cabecera.origen, exigePago, ...auditoria, reservado: reparto.reduce((t, r) => t + r.reservado, 0), faltante },
   });
   return { ...p, faltante };
 }

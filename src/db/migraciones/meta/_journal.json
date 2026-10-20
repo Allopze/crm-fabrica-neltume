@@ -155,6 +155,13 @@
       "when": 1791986450367,
       "tag": "0021_compras_chipax",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792536956563,
+      "tag": "0022_tienda_sin_exigencia_pago",
+      "breakpoints": true
     }
   ]
 }

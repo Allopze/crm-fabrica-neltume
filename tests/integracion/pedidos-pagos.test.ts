@@ -39,8 +39,8 @@ async function sesionDe(email: string, clave: string, ip: string): Promise<S> {
   const r = await llamar(rutaSesion.POST, "POST", "/api/v1/sesion", { cuerpo: { email, clave }, ip });
   return { token: tokenDeCookie(r.res)!, csrf: r.cuerpo.csrf };
 }
-async function nuevoPedido(cantidad: number) {
-  const id = (await llamar(rutaCots.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { clienteId, items: [{ codigo: "FUY-O-2-A", cantidad }] } })).cuerpo.id;
+async function nuevoPedido(cantidad: number, cliente = clienteId) {
+  const id = (await llamar(rutaCots.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { clienteId: cliente, items: [{ codigo: "FUY-O-2-A", cantidad }] } })).cuerpo.id;
   await llamar(rutaAprobar.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { version: 1 } }, { id });
   return (await llamar(rutaPedidos.POST, "POST", "/x", { ...s, cabeceras: idem(), cuerpo: { cotizacionId: id } })).cuerpo.id as string;
 }
@@ -188,5 +188,18 @@ describe("pagos de la nota de pedido (REQ-COT-8.10–8.14, ADR-0020)", () => {
     expect(d.n).toBe(3);
     const { rows } = await app.query("SELECT accion, count(*)::int AS n FROM audit_log WHERE resultado = 'ok' AND accion IN ('registrar pago', 'revertir pago', 'excepcion de pago') GROUP BY accion ORDER BY accion");
     expect(rows).toEqual([{ accion: "excepcion de pago", n: 2 }, { accion: "registrar pago", n: 6 }, { accion: "revertir pago", n: 1 }]);
+  });
+});
+
+describe("la tienda no exige abono ni saldo (REQ-COT-8.17)", () => {
+  it("su nota se produce sin abono y registra los pagos que lleguen", async () => {
+    const tienda = (await bd().transaction((tx) => crearCliente(tx, { nombre: "Tienda de prueba", rut: "22.222.222-2", tipo: "tienda" }, sistema, "consola"))).id;
+    const id = await nuevoPedido(1, tienda);
+    const { pago } = await ver(id);
+    expect(pago.estado).toBe("sin_control");
+    expect((await accion(rutaProduccion, id)).estado).toBe(200);
+    expect((await pagar(id, pago.total)).cuerpo.estado).toBe("pagado");
+    const { rows } = await app.query("SELECT despues FROM audit_log WHERE recurso = 'nota_pedido' AND recurso_id = $1 AND accion = 'crear pedido'", [id]);
+    expect(rows[0].despues.exigePago).toBe(false);
   });
 });

@@ -26,7 +26,7 @@ Sin marcas [NEEDS CLARIFICATION] abiertas: las decisiones de la Fase 3 están en
 **Supuestos.**
 - S1: una sola bodega lógica "Fábrica", con zonas de materias primas y de producto terminado; el modelo admite más bodegas después. Cada puerta lleva su ubicación (Galpón arriba, Galpón atrás, Fábrica, Tienda…) como dato propio, no como bodega (ADR-0018).
 - S2: la lista de precios inicial es la hoja "Precio" del cotizador real `Cotizador Puertas Neltume.Co-rev-4E.xlsx` (fuente de verdad desde el 13-10-2026; reemplaza a la rev-4F, con los mismos códigos, categorías y hoja Cotización, pero otros precios), que también es la referencia de formato de la cotización (8.772 filas: 33 modelos × 4 maderas × 9 rangos de ancho × 7 alturas, más accesorios).
-- S3: vigencia por defecto de la cotización = 10 días hábiles (tomada del Excel), configurable.
+- S3: vigencia por defecto de la cotización = 10 días hábiles (tomada del Excel, confirmada el 20-10-2026), configurable.
 - S4: sin stock suficiente se cotiza igual, con aviso visible.
 - S5: el vendedor descarga el PDF y lo envía por su cuenta.
 
@@ -277,6 +277,7 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-COT-8.14: WHEN se cancela una nota con pagos THE SYSTEM SHALL conservarlos y anotar el monto pagado en la cancelación y la auditoría; las devoluciones no se registran en la app.
 - REQ-COT-8.15: THE SYSTEM SHALL mostrar en la nota el historial de estados (fecha y usuario de cada paso, tomado de la auditoría) y marcarla atrasada cuando hoy supera la entrega comprometida y sigue abierta.
 - REQ-COT-8.16: THE SYSTEM SHALL indicar en el PDF de la cotización la condición de pago y en el de la nota de pedido lo pagado y el saldo.
+- REQ-COT-8.17 (20-10-2026): WHEN se crea una nota de pedido para un cliente de tipo tienda THE SYSTEM SHALL no exigirle abono para producir ni saldo para despachar, registrar igual los pagos que lleguen y no imprimir la condición de pago en su cotización.
 
 **H9 Clientes (P1).** Como usuario, quiero registrar clientes con datos mínimos.
 - REQ-COT-9.1: WHEN un usuario crea o edita un cliente (nombre, RUT, giro, dirección, comuna, contacto, correo, teléfono) THE SYSTEM SHALL validar el RUT y guardar el cambio con auditoría.
@@ -330,8 +331,8 @@ Facturación electrónica · portal de clientes · ventas de la tienda · envío
 | NC-11 | Sin entrada por correo ni mensajería: la empresa no usa Google Workspace (ADR-0007 rechazado; sigue ADR-0003) |
 | NC-12 | A la tienda se le vende al precio de venta de la lista vigente, sin recargo: su cotizador le suma su propio porcentaje (Fase 5) |
 | NC-13 | Feriados legales calculados por ley (portado del cotizador de la tienda), sin sincronizar con fuentes externas; los únicos se cargan a mano (REQ-COT-6.6) |
-| NC-14 | Pago (aprobado el 14-10-2026, ADR-0020): abono mínimo del 50 % (configurable) para producir y saldo antes de despachar o retirar; se puede pagar el total de una vez; si se cancela con abono, solo se anota. Si la tienda también abona está por confirmar (REQ-COT-8.10–8.14) |
-| NC-15 | Compras desde Chipax (aprobado el 14-10-2026, ADR-0021): las facturas de compra de proveedores habilitados suben el stock de materias primas; solo líneas con mapeo exacto, lo demás «por asociar» o «por revisar»; sin histórico previo a la habilitación. Qué proveedores, por definir; el desfase entre factura y llegada se acepta (REQ-MP-7.x) |
+| NC-14 | Pago (aprobado el 14-10-2026, ADR-0020): abono mínimo del 50 % (configurable) para producir y saldo antes de despachar o retirar; se puede pagar el total de una vez; si se cancela con abono, solo se anota. a la tienda no se le exige abono ni saldo: sus pagos son opcionales (20-10-2026, REQ-COT-8.17) (REQ-COT-8.10–8.14) |
+| NC-15 | Compras desde Chipax (aprobado el 14-10-2026, ADR-0021): las facturas de compra de proveedores habilitados suben el stock de materias primas; solo líneas con mapeo exacto, lo demás «por asociar» o «por revisar»; sin histórico previo a la habilitación. Proveedores definidos el 20-10-2026 (lista en ADR-0021); el desfase entre factura y llegada se acepta (REQ-MP-7.x) |
 | — | Nombre del cliente: nunca se envía a la IA (REQ-COT-2.9) |
 
 ## 10. Ajustes de IA (ADR-0009, 06-10-2026)

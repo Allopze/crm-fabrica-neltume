@@ -109,7 +109,7 @@ export async function registrarExcepcion(tx: Tx, id: string, tipo: "abono" | "sa
   if (!motivo.trim()) throw new ErrorDominio("VALIDACION", "Indica el motivo de la excepción.");
   const p = await tomarNota(tx, id);
   if (!(ESTADOS_ABIERTOS as readonly string[]).includes(p.estado)) throw new ErrorDominio("NO_EDITABLE", `La nota de pedido ${p.numero} está ${p.estado}.`);
-  if (!p.exigePago) throw new ErrorDominio("VALIDACION", "Esta nota es anterior al control de pagos: no necesita excepción.");
+  if (!p.exigePago) throw new ErrorDominio("VALIDACION", "Esta nota no exige pago (tienda o anterior al control de pagos): no necesita excepción.");
   const r = await resumenPago(tx, p);
   if (tipo === "abono") {
     if (p.excepcionAbonoEn) throw new ErrorDominio("VALIDACION", "La nota ya tiene una excepción de abono.");

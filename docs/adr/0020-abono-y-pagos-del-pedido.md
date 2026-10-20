@@ -29,11 +29,11 @@ La nota de pedido ya tiene su ciclo (`pendiente → en_produccion → lista → 
 4. **Permiso nuevo `pagos.registrar`** para registrar pagos, reversos y excepciones (regla 6). Cada endpoint tiene su prueba de 403 y su fila en `audit_log` (regla 7).
 5. **Importe aceptado solo aquí.** El `monto` del pago es la única excepción nueva a SECURITY T2. Nunca entra en precios, descuentos ni totales de la cotización o del pedido: solo suma al pagado.
 6. **Cancelación con pagos.** Se permite. Los pagos se conservan y el monto pagado queda escrito en la ficha cancelada y en la auditoría («pagado $X; sin devolución registrada»). No se registran pagos nuevos en una nota cancelada.
-7. **Notas existentes.** Una columna `exige_pago` vale `false` en las notas creadas antes de esta migración y `true` en las nuevas. Así los pedidos en curso no quedan bloqueados y se ven como «sin control de pago».
+7. **Notas existentes.** Una columna `exige_pago` vale `false` en las notas creadas antes de esta migración y `true` en las nuevas. Así los pedidos en curso no quedan bloqueados y se ven como «no exige pago».
 8. **Documentos.**
    - El PDF de la cotización suma la línea «Condición de pago: N % de abono al confirmar y saldo antes del despacho o retiro», con N tomado del parámetro.
    - El PDF de la nota de pedido muestra lo pagado y el saldo.
-9. **Tienda: por confirmar.** Se le aplica la misma regla. Si la tienda trabaja a crédito, se usa la excepción por pedido. Si se confirma que nunca abona, se agrega una marca por cliente en otra versión.
+9. **Tienda: abono opcional (decidido el 20-10-2026, REQ-COT-8.17).** A un cliente de tipo `tienda` no se le exige abono para producir ni saldo para despachar: su nota se crea con `exige_pago = false` y los pagos que lleguen se registran igual. La migración 0022 aplica lo mismo a sus notas abiertas, con auditoría. Su cotización en PDF no imprime la condición de pago.
 
 ## Alternativas descartadas
 

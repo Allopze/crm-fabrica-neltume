@@ -1,6 +1,6 @@
 # ADR-0019 — Fábrica y tienda en una sola app
 
-**Estado:** propuesto (pendiente de aprobación del usuario) · **Fecha:** 08-10-2026 · **Refs:** ADR-0002, ADR-0005, ADR-0008, ADR-0017, ADR-0018, NC-12, REQ-COT-8.5–8.9, AGENTS reglas 5, 6, 7, 8, 9 y 11 · **Reemplazaría:** ADR-0008, después del corte.
+**Estado:** rechazado (20-10-2026): el usuario descartó unir fábrica y tienda en una sola app; la tienda sigue en su propia app y se conecta por la nota de pedido en PDF (sigue vigente ADR-0008) · **Fecha:** 08-10-2026 · **Refs:** ADR-0002, ADR-0005, ADR-0008, ADR-0017, ADR-0018, NC-12, REQ-COT-8.5–8.9, AGENTS reglas 5, 6, 7, 8, 9 y 11 · **Reemplazaría:** ADR-0008, después del corte.
 
 ## Contexto
 

@@ -12,7 +12,7 @@ export const estadoPedido = (e: string) => estadosPedido[e as keyof typeof estad
 
 /** Estado de pago calculado (ADR-0020): color y texto, nunca solo color. */
 export const estadosPago = {
-  sin_control: { texto: "Sin control de pago", tono: "neutro" },
+  sin_control: { texto: "No exige pago", tono: "neutro" },
   sin_abono: { texto: "Sin abono", tono: "ambar" },
   abonado: { texto: "Abonado", tono: "pizarra" },
   pagado: { texto: "Pagado", tono: "musgo" },

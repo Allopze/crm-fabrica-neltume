@@ -58,7 +58,7 @@ const CAMPOS: Record<string, string> = {
 };
 const MONTOS = new Set(["total", "subtotal", "iva", "neto", "descuento", "monto", "pagado", "saldo", "faltaAbono"]);
 // Valores de código que se leen mejor en palabras (estado de pago, ADR-0020).
-const VALORES: Record<string, string> = { sin_control: "sin control de pago", sin_abono: "sin abono", abonado: "abonado", pagado: "pagado" };
+const VALORES: Record<string, string> = { sin_control: "no exige pago", sin_abono: "sin abono", abonado: "abonado", pagado: "pagado" };
 // Ids internos y huellas no le dicen nada a quien lee el registro: se omiten del detalle.
 const OCULTOS = new Set(["id", "hash", "movimiento", "materiaPrimaId", "rolId", "ref", "creadoEn", "actualizadoEn", "bom", "item", "cotizacion"]);
 

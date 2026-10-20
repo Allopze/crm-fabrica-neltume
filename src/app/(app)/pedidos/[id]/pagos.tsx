@@ -57,7 +57,7 @@ export function Pagos({ id, csrf, resumen, pagos, puedeRegistrar, cancelada, hoy
         <div><dt className="text-tinta-tenue">Pagado</dt><dd className="mt-0.5 tabular-nums">{clp(resumen.pagado)}</dd></div>
         <div><dt className="text-tinta-tenue">Saldo</dt><dd className={cn("mt-0.5 font-display text-xl tabular-nums", resumen.saldo > 0 && resumen.estado !== "sin_control" && "text-ambar")}>{clp(resumen.saldo)}</dd></div>
       </dl>
-      {resumen.estado === "sin_control" && <p className="text-tinta-tenue">Nota anterior al control de pagos: no exige abono ni pago total.</p>}
+      {resumen.estado === "sin_control" && <p className="text-tinta-tenue">Esta nota no exige abono ni pago total (tienda o nota anterior al control de pagos). Los pagos que lleguen se registran igual.</p>}
 
       {pagos.length > 0 && (
         <ul className="divide-y divide-linea border-y border-linea" aria-label="Pagos registrados">

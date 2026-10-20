@@ -61,7 +61,7 @@ Lo que ofrece la API v2 de Chipax (revisado en su OpenAPI publicado en `api.chip
 
 ## Respuestas del usuario (14-10-2026) y lo que falta verificar
 
-- **Proveedores:** por definir; se cargan por RUT en la pantalla cuando se decidan.
+- **Proveedores (definidos el 20-10-2026):** Slipnaxos, Flor del Lago, Madesa, Ferretería Jaramillo, Ferretería Don Jorge, Agrícola Villarrica, Portal Huincha, Forestal Rucanahuel y la Cooperativa de Servicios para Pequeños Industriales y Artesanos de Villarrica. Se habilitan por RUT en Materias primas → Compras (Chipax); `npm run compras:proveedores -- "nombre"…` busca el RUT de cada uno entre los emisores de las facturas de Chipax, sin escribir nada. Agrícola Villarrica no tenía facturas en los últimos 365 días al buscarlo.
 - **Factura y llegada:** si la factura llega antes que el insumo, se acepta; el stock real se igualará cuando llegue.
 - **Credenciales:** las genera el usuario desde la cuenta Chipax de la empresa y se cargan solo en el entorno del servicio, nunca en el repositorio.
 - **Verificado con credenciales reales (14-10-2026, `npm run compras:probar`):**

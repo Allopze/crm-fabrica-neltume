@@ -127,7 +127,7 @@ Las facturas de compra de los proveedores habilitados suben el stock de materias
 2. `docker compose up -d` (el servicio `migrar` crea el rol y sus permisos) y revisa `docker compose logs compras`.
 
 **Operación** (Materias primas → Compras (Chipax)):
-- **Proveedores:** habilita por RUT a cada uno. Solo se leen sus facturas emitidas desde ese día; lo anterior se recibió a mano.
+- **Proveedores:** habilita por RUT a cada uno (la lista está en ADR-0021). Para encontrar el RUT, `npm run compras:proveedores -- "Ferretería Jaramillo" …` lo busca entre los emisores de las facturas de Chipax del último año (`--dias N` cambia la ventana); solo lee. Solo se leen sus facturas emitidas desde ese día; lo anterior se recibió a mano.
 - **Primeras facturas:** cada ítem nuevo queda «por asociar». Elige la materia prima y el factor («Asociar y recibir»), o «No es materia prima». Desde ahí, ese ítem entra solo.
 - **Por revisar:** notas de crédito, una unidad distinta a la asociada o una materia prima inactiva. Si cambia el stock, se corrige con un ajuste con motivo.
 

@@ -27,6 +27,8 @@ describe("pdf.contenido (REQ-COT-4.2)", () => {
     expect(k.pie[0]).toContain("lista v3");
     expect(k.pie[2]).toBe("Condición de pago: 50 % de abono al confirmar y saldo antes del despacho o retiro.");
     expect(contenidoCotizacion({ ...base, abonoPct: 100 }).pie[2]).toBe("Condición de pago: total antes del despacho o retiro.");
+    // A la tienda no se le exige pago: sin condición impresa (REQ-COT-8.17).
+    expect(contenidoCotizacion({ ...base, abonoPct: null }).pie).toHaveLength(2);
   });
 
   it("muestra el descuento con su motivo solo si existe", () => {

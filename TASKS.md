@@ -294,3 +294,13 @@ Sugerencias sin IA sobre el texto original del borrador; ninguna se aplica sin u
 - [x] T15.3 (45) Plazo pedido leído sin IA, en la revisión y al convertir en pedido; nunca fija la entrega comprometida · REQ-COT-2.20 · U `plazo`, I `cotizacion-pistas` · T15.0
 
 **Checkpoint F15:** `npm test` completo verde, lint y build; recorrido: pegar un pedido con RUT y «para el viernes», asignar el cliente sugerido, repetir el pedido y ver el aviso. Espero tu OK.
+
+## Fase 16 — Decisiones del 20-10-2026
+
+- [x] T16.0 Vigencia de 10 días hábiles confirmada (AGENTS regla 4, SPEC S3) · REQ-COT-6.x
+- [x] T16.1 ADR-0019 (fábrica y tienda en una sola app) rechazado; sigue ADR-0008
+- [x] T16.2 La tienda no exige abono ni saldo: `exige_pago = false` para clientes tipo tienda, migración 0022 para sus notas abiertas, sin condición de pago en su PDF · REQ-COT-8.17, ADR-0020 §9 · U `pdf.contenido`, I `pedidos-pagos`, E 15
+- [x] T16.3 Proveedores de Chipax definidos (ADR-0021) y `npm run compras:proveedores` para encontrar su RUT · REQ-MP-7.1
+- [ ] T16.4 Habilitar los proveedores por RUT en el entorno real tras tu confirmación; falta ubicar a Agrícola Villarrica en Chipax · REQ-MP-7.1
+
+**Checkpoint F16:** `npm test` completo verde, lint y build; una nota de la tienda se produce y despacha sin pagos. Espero tu OK.

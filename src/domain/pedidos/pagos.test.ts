@@ -18,7 +18,7 @@ describe("pagos.estado (REQ-COT-8.10, 8.12; ADR-0020)", () => {
     expect(calcularPago({ ...base, abonoPct: 0, pagado: 0 })).toMatchObject({ abonoRequerido: 0, estado: "abonado" });
   });
 
-  it("una nota anterior al control de pagos y sin pagos queda «sin control»; con pagos, se calcula igual", () => {
+  it("una nota que no exige pago (tienda o anterior al control) y sin pagos queda «sin control»; con pagos, se calcula igual", () => {
     expect(calcularPago({ ...base, exigePago: false, pagado: 0 }).estado).toBe("sin_control");
     expect(calcularPago({ ...base, exigePago: false, pagado: 358_191 }).estado).toBe("pagado");
   });

@@ -84,7 +84,7 @@ Navegación lateral fija desde 1024 px; en pantallas más angostas se abre como 
 - **Pagos y seguimiento** (ADR-0020):
   - En la ficha, un recuadro «Pagos» con total, abono requerido, pagado y saldo; la lista de pagos (fecha, medio, comprobante, quién) con «Revertir» y motivo; y «Registrar pago» con el monto sugerido (el abono que falta o el saldo, editable).
   - «Producir faltante» sin abono y «Despachar» con saldo se muestran deshabilitados con el motivo en texto («Falta el abono: $X») y un enlace «Producir igual (excepción)» que pide motivo.
-  - Etiqueta de pago con color y texto: *Sin abono* (ámbar), *Abonado* (pizarra), *Pagado* (musgo). Las notas anteriores dicen «sin control de pago».
+  - Etiqueta de pago con color y texto: *Sin abono* (ámbar), *Abonado* (pizarra), *Pagado* (musgo). Las notas anteriores al control de pagos y las de la tienda dicen *No exige pago* (neutro).
   - Historial de estados en la ficha (fecha, usuario y orden de producción si la hubo) y «Atrasada N días» cuando pasó la entrega comprometida.
   - En la lista de pedidos: filtros por estado y por estado de pago, con el conteo de cada uno. En el panel: notas sin abono y atrasadas.
   - Si una nota en producción ya tiene todo reservado, se muestra el aviso «Lista para marcar»; el cambio de estado lo hace siempre una persona.

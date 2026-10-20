@@ -22,7 +22,8 @@ export interface CotizacionPdf {
   cliente: { nombre: string; rut: string | null; comuna: string | null; contacto: string | null } | null;
   items: { codigo: string | null; descripcion: string; medidaSolicitada?: string | null; cantidad: number; precioUnitario: number; totalLinea: number }[];
   subtotal: number; descuento: number; descuentoMotivo: string | null; iva: number; total: number;
-  abonoPct: number;
+  /** Nulo para la tienda, a la que no se le exige abono ni saldo (REQ-COT-8.17): no se imprime la condición. */
+  abonoPct: number | null;
 }
 
 /** Fecha calendario en Santiago (dd-mm-aaaa), independiente de la zona del servidor. */
@@ -50,7 +51,7 @@ export function contenidoCotizacion(c: CotizacionPdf, empresa: DatosEmpresa = da
     pie: [
       `${NOTA_FLETE} Precios de la lista v${c.listaVersion ?? "—"}, congelados al aprobar.`,
       `Las medidas especiales se fabrican a pedido. Consultas: ${empresa.correo}`,
-      condicionPago(c.abonoPct),
+      ...(c.abonoPct === null ? [] : [condicionPago(c.abonoPct)]),
     ],
   };
 }
@@ -61,7 +62,7 @@ export interface PedidoPdf {
   direccionDespacho: string | null; medioTransporte: string | null; entregaComprometida: string | null; observaciones: string | null;
   items: { codigo: string | null; descripcion: string; medidaSolicitada: string | null; cantidad: number; faltante: number; totalLinea: number }[];
   subtotal: number; descuento: number; iva: number; total: number;
-  /** Lo pagado y el saldo (REQ-COT-8.16); nulo en notas sin control de pago y sin pagos. */
+  /** Lo pagado y el saldo (REQ-COT-8.16); nulo en notas que no exigen pago y no tienen pagos. */
   pago: { pagado: number; saldo: number } | null;
 }
 
