@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Boton } from "@/components/ui/base";
 import { campo } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ConfirmarAccion } from "@/components/ui/confirmar-accion";
 import { pedir } from "@/lib/api-cliente";
 
@@ -25,10 +26,10 @@ export function NuevoAlias({ modelos, csrf }: { modelos: string[]; csrf: string 
       });
     }}>
       <input name="alias" required minLength={3} maxLength={60} placeholder="Como lo dicen (p. ej. coscos)" aria-label="Alias" className={`${campo} w-56`} />
-      <select name="modelo" aria-label="Modelo" className={campo}>{modelos.map((m) => <option key={m} value={m}>{m}</option>)}</select>
-      <select name="tipo" aria-label="Tipo de alias" className={campo} defaultValue="seguro">
+      <Dropdown name="modelo" aria-label="Modelo">{modelos.map((m) => <option key={m} value={m}>{m}</option>)}</Dropdown>
+      <Dropdown name="tipo" aria-label="Tipo de alias" defaultValue="seguro">
         <option value="seguro">Seguro (se aplica)</option><option value="posible">Dudoso (se pregunta)</option>
-      </select>
+      </Dropdown>
       <Boton type="submit" disabled={pendiente}><Plus className="h-4 w-4" /> {pendiente ? "Agregando…" : "Agregar"}</Boton>
       {error && <p role="alert" className="w-full text-sm text-error">{error}</p>}
     </form>

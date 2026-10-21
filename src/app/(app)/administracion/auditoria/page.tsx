@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Lock } from "lucide-react";
 import { Boton, Encabezado, Etiqueta, Panel, Vacio } from "@/components/ui/base";
 import { campo } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -62,18 +63,18 @@ export default async function AuditoriaPage({ searchParams }: PageProps<"/admini
         acciones={<span className="inline-flex items-center gap-1.5 text-sm text-tinta-tenue"><Lock className="h-4 w-4" /> solo lectura</span>}
       />
       <form method="get" className="mb-5 flex flex-wrap gap-2" aria-label="Filtros">
-        <select name="actor" defaultValue={filtro.actor ?? ""} className={campo} aria-label="Actor">
+        <Dropdown name="actor" defaultValue={filtro.actor ?? ""} aria-label="Actor">
           <option value="">Todos los actores</option>
           {actores.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
-        </select>
-        <select name="recurso" defaultValue={filtro.recurso ?? ""} className={campo} aria-label="Recurso">
+        </Dropdown>
+        <Dropdown name="recurso" defaultValue={filtro.recurso ?? ""} aria-label="Recurso">
           <option value="">Todos los recursos</option>
           {recursos.map((r) => <option key={r} value={r}>{textoRecurso(r)}</option>)}
-        </select>
+        </Dropdown>
         <input name="accion" defaultValue={filtro.accion ?? ""} placeholder="Acción contiene…" className={campo} aria-label="Acción" maxLength={80} />
-        <select name="resultado" defaultValue={filtro.resultado ?? ""} className={campo} aria-label="Resultado">
+        <Dropdown name="resultado" defaultValue={filtro.resultado ?? ""} aria-label="Resultado">
           <option value="">Todo resultado</option><option value="ok">Hecho</option><option value="denegado">Denegado</option><option value="error">Error</option>
-        </select>
+        </Dropdown>
         <input type="date" name="desde" defaultValue={filtro.desde ?? ""} className={campo} aria-label="Desde" />
         <input type="date" name="hasta" defaultValue={filtro.hasta ?? ""} className={campo} aria-label="Hasta" />
         <Boton type="submit">Filtrar</Boton>

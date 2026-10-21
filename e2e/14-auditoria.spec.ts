@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { api, ingresar, ir } from "./ayudas";
+import { api, elegirDropdown, ingresar, ir } from "./ayudas";
 import { bdE2e } from "./bd";
 import { ADMIN, CONSULTA } from "./datos";
 
@@ -25,8 +25,8 @@ test("cada acción de las suites anteriores quedó registrada", async ({ page })
 test("filtrar por actor en la pantalla muestra solo sus registros, con los denegados", async ({ page }) => {
   await ingresar(page, ADMIN.email, ADMIN.clave);
   await ir(page, "/administracion/auditoria");
-  await page.getByLabel("Actor").selectOption({ label: CONSULTA.nombre });
-  await page.getByLabel("Resultado").selectOption("denegado");
+  await elegirDropdown(page.getByLabel("Actor"), { label: CONSULTA.nombre });
+  await elegirDropdown(page.getByLabel("Resultado"), "denegado");
   await page.getByRole("button", { name: "Filtrar" }).click();
   await expect(page).toHaveURL(/resultado=denegado/);
   const filas = page.getByRole("row").filter({ hasText: "denegado" });

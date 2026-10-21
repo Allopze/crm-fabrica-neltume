@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { csrf, ingresar, ir } from "./ayudas";
+import { csrf, elegirDropdown, ingresar, ir } from "./ayudas";
 import { ADMIN } from "./datos";
 
 // Suite 05 (TESTING §3): entrada, salida sin stock, ajuste con motivo, movimientos inmutables.
@@ -63,7 +63,7 @@ test("un ajuste de materia prima exige motivo y queda registrado (REQ-MP-5)", as
   await ingresar(page, ADMIN.email, ADMIN.clave);
   await ir(page, "/materias-primas");
   const form = page.getByRole("form", { name: "Ajuste de materia prima" });
-  await form.getByLabel("Materia prima").selectOption({ label: "Tabla raulí 1\"" });
+  await elegirDropdown(form.getByLabel("Materia prima"), { label: "Tabla raulí 1\"" });
   await form.getByLabel("Cantidad (+ suma, − resta)").fill("-1,5");
   await form.getByRole("button", { name: "Registrar ajuste" }).click();
   expect(await form.getByLabel("Motivo").evaluate((e) => (e as HTMLInputElement).validity.valueMissing)).toBe(true);
@@ -102,7 +102,7 @@ test("las puertas y los despachos anteriores tienen su pestaña en Stock", async
   await ingresar(page, ADMIN.email, ADMIN.clave);
   await ir(page, "/stock");
   await page.getByRole("navigation", { name: "Secciones de stock" }).getByRole("link", { name: "Puertas" }).click();
-  await page.getByLabel("Ubicación").selectOption("Galpón arriba");
+  await elegirDropdown(page.getByLabel("Ubicación"), "Galpón arriba");
   await page.getByRole("button", { name: "Filtrar" }).click();
   await expect(page.getByRole("region", { name: "Puertas" }).getByRole("row")).toHaveCount(2);
   await page.getByRole("navigation", { name: "Secciones de stock" }).getByRole("link", { name: "Despachos anteriores" }).click();

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { api, cotizacionId, ingresar, ir } from "./ayudas";
+import { api, cotizacionId, elegirDropdown, ingresar, ir } from "./ayudas";
 import { ADMIN, CLIENTE_A } from "./datos";
 
 // Suite 09 (TESTING §3): A pasa a nota de pedido, reserva 2 NEL-R-4-B y marca 1 por fabricar;
@@ -39,7 +39,7 @@ test("una cotización manual pasa a pedido, se cancela con motivo y libera la re
   await ir(page, "/cotizaciones/manual");
   await page.getByLabel("Buscar artículo por código o modelo").fill("ANC-O-3-A");
   await page.getByRole("option", { name: /ANC-O-3-A/ }).click();
-  await page.getByLabel("Cliente", { exact: true }).selectOption({ label: CLIENTE_A.nombre });
+  await elegirDropdown(page.getByLabel("Cliente", { exact: true }), { label: CLIENTE_A.nombre });
   await page.getByRole("button", { name: "Crear borrador" }).click();
   await expect(page).toHaveURL(/\/cotizaciones\/[0-9a-f-]{36}$/);
   await page.getByRole("button", { name: "Aprobar cotización" }).click();

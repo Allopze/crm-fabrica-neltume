@@ -6,6 +6,7 @@ import { CircleAlert, FileUp, TriangleAlert } from "lucide-react";
 import { Boton, Placa } from "@/components/ui/base";
 import { CampoArchivo } from "@/components/ui/campo-archivo";
 import { campo as campoBase } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { enviarIdempotente, ErrorApi, huellaFormulario, SIN_CONFIRMAR } from "@/lib/api-cliente";
@@ -66,11 +67,11 @@ export function CargarNota({ tiendas, csrf }: { tiendas: { id: string; nombre: s
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-3">
-        <label className="text-sm font-medium">Tienda
-          <select value={clienteId} onChange={(e) => { setClienteId(e.target.value); setPrevia(null); }} className={`${campo} w-64`} aria-label="Tienda">
+        <div className="text-sm font-medium">Tienda
+          <Dropdown value={clienteId} onChange={(id) => { setClienteId(id); setPrevia(null); }} className="w-64" aria-label="Tienda">
             {tiendas.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-          </select>
-        </label>
+          </Dropdown>
+        </div>
         <label className="text-sm font-medium">PDF de la nota de pedido
           <CampoArchivo entrada={archivo} accept="application/pdf,.pdf" etiqueta="PDF de la nota" boton="Elegir PDF" onCambio={() => setPrevia(null)} />
         </label>

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ingresar, ir } from "./ayudas";
+import { elegirDropdown, ingresar, ir } from "./ayudas";
 import { ADMIN } from "./datos";
 
 // Suite 16 (TESTING §3): un alias creado en pantalla se aplica al cotizar y el marco «con su marco» se mapea por
@@ -12,7 +12,7 @@ test("agrega el alias «fui» para el modelo Fuy", async ({ page }) => {
   await expect(page.getByRole("cell", { name: "COSCOS", exact: true })).toBeVisible(); // semilla de la tienda
   const form = page.getByRole("form", { name: "Nuevo alias" });
   await form.getByLabel("Alias", { exact: true }).fill("fui");
-  await form.getByLabel("Modelo").selectOption("FUY");
+  await elegirDropdown(form.getByLabel("Modelo"), "FUY");
   await form.getByRole("button", { name: "Agregar" }).click();
   await expect(page.getByRole("cell", { name: "FUI", exact: true })).toBeVisible();
 });

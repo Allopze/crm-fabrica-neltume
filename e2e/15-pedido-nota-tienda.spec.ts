@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { api, ingresar, ir } from "./ayudas";
+import { api, elegirDropdown, ingresar, ir } from "./ayudas";
 import { ADMIN } from "./datos";
 
 // Suite 15 (TESTING §3; ADR-0008): la tienda envía su nota en PDF → pedido directo → completar reserva → lista →
@@ -15,7 +15,7 @@ test("registra la tienda como cliente de tipo tienda", async ({ page }) => {
   const form = page.getByRole("form", { name: "Nuevo cliente" });
   await form.getByLabel("Nombre o razón social").fill(TIENDA);
   await form.getByLabel("RUT").fill("76.059.066-5");
-  await form.getByLabel("Tipo").selectOption("tienda");
+  await elegirDropdown(form.getByLabel("Tipo"), "tienda");
   await form.getByRole("button", { name: "Guardar cliente" }).click();
   await expect(page.getByRole("main")).toContainText(TIENDA);
 });
@@ -25,7 +25,7 @@ test("sube el PDF de la nota, revisa la vista previa y crea el pedido al precio 
   await ir(page, "/pedidos");
   await page.getByRole("link", { name: "Desde nota de la tienda" }).click();
   await page.waitForLoadState("networkidle");
-  await page.getByLabel("Tienda").selectOption({ label: TIENDA });
+  await elegirDropdown(page.getByLabel("Tienda"), { label: TIENDA });
   await page.getByLabel("PDF de la nota").setInputFiles("e2e/fixtures/nota-tienda-mini.pdf");
   await page.getByRole("button", { name: "Leer nota" }).click();
   const previa = page.getByRole("region", { name: "Vista previa de la nota" });
@@ -45,7 +45,7 @@ test("sube el PDF de la nota, revisa la vista previa y crea el pedido al precio 
 test("la misma nota no se puede cargar dos veces", async ({ page }) => {
   await ingresar(page, ADMIN.email, ADMIN.clave);
   await ir(page, "/pedidos/nota-tienda");
-  await page.getByLabel("Tienda").selectOption({ label: TIENDA });
+  await elegirDropdown(page.getByLabel("Tienda"), { label: TIENDA });
   await page.getByLabel("PDF de la nota").setInputFiles("e2e/fixtures/nota-tienda-mini.pdf");
   await page.getByRole("button", { name: "Leer nota" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "ya se cargó" })).toBeVisible();

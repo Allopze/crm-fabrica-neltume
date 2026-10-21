@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Boton } from "@/components/ui/base";
 import { campoAlto } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
@@ -45,9 +46,9 @@ export function NuevoCliente({ csrf, rutInicial }: { csrf: string; rutInicial?: 
             defaultValue={k === "rut" ? rutInicial : undefined} />
         </label>
       ))}
-      <label className="text-sm">Tipo
-        <select name="tipo" defaultValue="directo" className={`${campo} mt-1`}><option value="directo">Directo</option><option value="tienda">Tienda</option></select>
-      </label>
+      <div className="text-sm">Tipo
+        <Dropdown name="tipo" aria-label="Tipo de cliente" defaultValue="directo" className="mt-1"><option value="directo">Directo</option><option value="tienda">Tienda</option></Dropdown>
+      </div>
       <div className="flex gap-2 sm:col-span-3">
         <Boton type="submit" variante="primario" disabled={pendiente}>{pendiente ? "Guardando…" : "Guardar cliente"}</Boton>
         <Boton type="button" variante="fantasma" onClick={() => setAbierto(false)}>Cancelar</Boton>

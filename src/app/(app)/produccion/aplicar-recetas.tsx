@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Layers } from "lucide-react";
 import { Boton } from "@/components/ui/base";
 import { campoCompacto as campo } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { pedir } from "@/lib/api-cliente";
 import { leerCantidad, usoPorPuerta } from "@/lib/formato";
 const titulo = (s: string) => s.toLowerCase().replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase());
@@ -59,19 +60,19 @@ export function AplicarRecetas({ recetas, materias, csrf }: {
   return (
     <form aria-label="Aplicar a varias recetas" className="w-full space-y-4 rounded-lg border border-linea-fuerte bg-lamina p-4" onSubmit={(e) => { e.preventDefault(); aplicar(); }}>
       <div className="flex flex-wrap items-end gap-3">
-        <label className="text-sm">Cambio
-          <select value={op} onChange={(e) => { setOp(e.target.value as Op); setResultado(null); }} className={`${campo} mt-1 block`}>
+        <div className="text-sm">Cambio
+          <Dropdown aria-label="Cambio" value={op} onChange={(v) => { setOp(v as Op); setResultado(null); }} className="mt-1">
             <option value="factor">Factor de la madera (merma)</option>
             <option value="insumo">Agregar o cambiar un insumo</option>
             <option value="quitar">Quitar un insumo</option>
-          </select>
-        </label>
+          </Dropdown>
+        </div>
         {op !== "factor" && (
-          <label className="min-w-0 flex-1 text-sm">Insumo
-            <select value={mpId} onChange={(e) => setMpId(e.target.value)} className={`${campo} mt-1 block w-full`}>
+          <div className="min-w-0 flex-1 text-sm">Insumo
+            <Dropdown aria-label="Insumo" value={mpId} onChange={setMpId} className="mt-1 w-full">
               {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre} ({m.unidad})</option>)}
-            </select>
-          </label>
+            </Dropdown>
+          </div>
         )}
         {op !== "quitar" && (
           <label className="text-sm">{op === "factor" ? "Factor" : "Por puerta"}

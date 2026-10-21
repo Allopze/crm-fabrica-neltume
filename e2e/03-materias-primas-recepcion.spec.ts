@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { csrf, ingresar, ir } from "./ayudas";
+import { csrf, elegirDropdown, ingresar, ir } from "./ayudas";
 import { ADMIN } from "./datos";
 
 // Suite 03 (TESTING §3): alta de 3 materias primas y recepción idempotente. Deja stock de MP para la suite 04.
@@ -15,7 +15,7 @@ test("crea 3 materias primas con su unidad", async ({ page }) => {
     if (await abrir.isVisible()) await abrir.click(); // el formulario queda abierto para cargar varias seguidas
     const form = page.getByRole("form", { name: "Nueva materia prima" });
     await form.getByLabel("Nombre").fill(nombre);
-    await form.getByLabel("Unidad").selectOption(unidad);
+    await elegirDropdown(form.getByLabel("Unidad"), unidad);
     if (minimo) await form.getByLabel("Mínimo").fill(minimo);
     await form.getByRole("button", { name: "Crear" }).click();
     await expect(page.getByRole("cell", { name: nombre, exact: true })).toBeVisible();
@@ -26,7 +26,7 @@ test("registra una recepción desde la UI", async ({ page }) => {
   await ingresar(page, ADMIN.email, ADMIN.clave);
   await ir(page, "/materias-primas");
   const form = page.getByRole("form", { name: "Registrar recepción" });
-  await form.getByLabel("Materia prima").selectOption({ label: "Tabla raulí 1\"" });
+  await elegirDropdown(form.getByLabel("Materia prima"), { label: "Tabla raulí 1\"" });
   await form.getByLabel("Cantidad").fill("400");
   await form.getByLabel("Guía o factura").fill("Guía 18.442");
   await form.getByRole("button", { name: "Registrar recepción" }).click();

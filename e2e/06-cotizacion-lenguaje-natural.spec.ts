@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ingresar, ir } from "./ayudas";
+import { elegirDropdown, ingresar, ir } from "./ayudas";
 import { ADMIN, CLIENTE_A, TEXTO_A } from "./datos";
 
 // Suite 06 (TESTING §3): del texto del cliente a un borrador con avisos de stock e ítems por confirmar.
@@ -22,7 +22,7 @@ test("pega el pedido y obtiene un borrador con aviso de stock y un ítem por con
   await ingresar(page, ADMIN.email, ADMIN.clave);
   await ir(page, "/cotizaciones/nueva");
   await page.getByLabel("Texto del cliente").fill(TEXTO_A);
-  await page.getByLabel("Cliente", { exact: true }).selectOption({ label: CLIENTE_A.nombre });
+  await elegirDropdown(page.getByLabel("Cliente", { exact: true }), { label: CLIENTE_A.nombre });
   await page.getByRole("button", { name: "Interpretar pedido" }).click();
   await expect(page).toHaveURL(/\/cotizaciones\/[0-9a-f-]{36}$/);
 

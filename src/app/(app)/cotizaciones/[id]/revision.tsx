@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, ClipboardList, Download, Eye, Lock, PencilLine, Plus, RotateCcw, ShieldAlert, Truck } from "lucide-react";
 import { Boton, BotonDescarga, BotonLink } from "@/components/ui/base";
 import { campo } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 import { clp, cn, fecha, fechaHora } from "@/lib/formato";
@@ -163,15 +164,14 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, puedeCre
                 <span className="text-tinta-suave">Cliente</span><span className="font-medium">{c.cliente?.nombre ?? "—"}</span>
               </div>
             ) : clientes && (
-              <label className="flex items-center justify-between gap-3 border-b border-linea px-5 py-3 text-sm">
+              <div className="flex items-center justify-between gap-3 border-b border-linea px-5 py-3 text-sm">
                 <span className="text-tinta-suave">Cliente</span>
-                <select disabled={aprobada || pendiente} value={c.clienteId ?? ""} aria-label="Cliente"
-                  onChange={(e) => accion(() => pedir("PATCH", base, { csrf, cuerpo: { clienteId: e.target.value || null, version: c.version } }))}
-                  className="h-9 max-w-xs rounded-md border border-linea-fuerte bg-lamina px-2 text-sm">
+                <Dropdown disabled={aprobada || pendiente} value={c.clienteId ?? ""} aria-label="Cliente" className="max-w-xs"
+                  onChange={(clienteId) => accion(() => pedir("PATCH", base, { csrf, cuerpo: { clienteId: clienteId || null, version: c.version } }))}>
                   <option value="">Elegir cliente…</option>
                   {clientes.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
-                </select>
-              </label>
+                </Dropdown>
+              </div>
             )}
             <dl className="divide-y divide-linea/70 text-sm">
               <div className="flex justify-between px-5 py-2.5"><dt className="text-tinta-suave">Subtotal neto</dt><dd className="tabular-nums">{clp(Number(c.subtotal))}</dd></div>

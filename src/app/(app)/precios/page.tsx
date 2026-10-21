@@ -3,6 +3,7 @@ import Link from "next/link";
 import { desc } from "drizzle-orm";
 import { FileSpreadsheet, Upload } from "lucide-react";
 import { Boton, BotonLink, Encabezado, Etiqueta, Panel, Placa, Vacio } from "@/components/ui/base";
+import { Dropdown } from "@/components/ui/dropdown";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -61,19 +62,19 @@ export default async function PreciosPage({ searchParams }: PageProps<"/precios"
       <Panel titulo={<>Precios vigentes <span className="text-tinta-tenue">· v{vigente.version}</span></>} sinRelleno>
         <form method="get" role="search" aria-label="Filtrar precios" className="flex flex-wrap items-center gap-2 border-b border-linea px-5 py-3">
           <input type="search" name="q" defaultValue={q} maxLength={60} placeholder="Código o modelo" aria-label="Buscar precio" className={`${campo} w-full max-w-56`} />
-          <select name="madera" defaultValue={maderaF ?? ""} aria-label="Madera" className={campo}>
+          <Dropdown name="madera" defaultValue={maderaF ?? ""} aria-label="Madera">
             <option value="">Todas las maderas</option>
             {opciones.maderas.map((m) => <option key={m.codigo} value={m.codigo}>{capital(m.nombre)}</option>)}
-          </select>
-          <select name="tipo" defaultValue={tipoF ?? ""} aria-label="Tipo" className={campo}>
+          </Dropdown>
+          <Dropdown name="tipo" defaultValue={tipoF ?? ""} aria-label="Tipo">
             <option value="">Todos los tipos</option>
             {opciones.tipos.map((t) => <option key={t} value={t}>{capital(t)}</option>)}
             <option value="ACCESORIO">Accesorios</option>
-          </select>
-          <select name="alto" defaultValue={altoF ? String(altoF) : ""} aria-label="Alto o largo" className={campo}>
+          </Dropdown>
+          <Dropdown name="alto" defaultValue={altoF ? String(altoF) : ""} aria-label="Alto o largo">
             <option value="">Todo alto o largo</option>
             {opciones.altos.map((a) => <option key={a} value={a}>{metros(a)} m</option>)}
-          </select>
+          </Dropdown>
           <Boton type="submit">Filtrar</Boton>
           {filtrando && <Link href="/precios" className="text-sm text-tinta-suave hover:text-tinta">Limpiar</Link>}
         </form>

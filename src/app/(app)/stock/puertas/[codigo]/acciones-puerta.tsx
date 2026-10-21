@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Boton } from "@/components/ui/base";
 import { campoAlto } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
@@ -43,9 +44,9 @@ export function EditarPuerta({ codigo, ubicacion, calidad, observacion, ubicacio
         <input name="ubicacion" required defaultValue={ubicacion} list="ubicaciones-puerta" maxLength={60} className={`${campo} mt-1`} />
         <datalist id="ubicaciones-puerta">{ubicaciones.map((u) => <option key={u} value={u} />)}</datalist>
       </label>
-      <label className="block text-sm">Calidad
-        <select name="calidad" defaultValue={calidad} className={`${campo} mt-1`}><option value="primera">Primera</option><option value="segunda">De segunda</option></select>
-      </label>
+      <div className="block text-sm">Calidad
+        <Dropdown name="calidad" aria-label="Calidad" defaultValue={calidad} className="mt-1"><option value="primera">Primera</option><option value="segunda">De segunda</option></Dropdown>
+      </div>
       <label className="block text-sm">Observación
         <input name="observacion" defaultValue={observacion ?? ""} maxLength={300} className={`${campo} mt-1`} placeholder="Manchada, pintada, sin film…" />
       </label>

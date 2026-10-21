@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CircleHelp, Plus, Trash2 } from "lucide-react";
 import { Boton, Panel, Placa } from "@/components/ui/base";
 import { campoAlto as campo } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 import { clp } from "@/lib/formato";
@@ -90,10 +91,10 @@ export function FormularioManual({ csrf, version, clientes }: { csrf: string; ve
         {clientes && (
           <>
             <label className="text-sm font-medium" htmlFor="cli">Cliente</label>
-            <select id="cli" value={clienteId} onChange={(e) => setClienteId(e.target.value)} className={`${campo} mt-1.5 w-full`}>
+            <Dropdown id="cli" value={clienteId} onChange={setClienteId} className="mt-1.5 w-full">
               <option value="">Elegir después</option>
               {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-            </select>
+            </Dropdown>
           </>
         )}
         <dl className="mt-5 text-sm tabular-nums">

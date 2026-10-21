@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { api, ingresar, ir } from "./ayudas";
+import { api, elegirDropdown, ingresar, ir } from "./ayudas";
 import { ADMIN, CLIENTE_A } from "./datos";
 
 // Suite 13 (TESTING §3): si la IA no responde o falla, el texto queda guardado y se cotiza a mano.
@@ -29,7 +29,7 @@ test("la cotización con IA caída se completa a mano y se aprueba (cotización 
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Ítems · 1" })).toBeVisible();
-  await page.getByLabel("Cliente", { exact: true }).selectOption({ label: CLIENTE_A.nombre });
+  await elegirDropdown(page.getByLabel("Cliente", { exact: true }), { label: CLIENTE_A.nombre });
   await expect(page.getByRole("button", { name: "Aprobar cotización" })).toBeEnabled();
   await page.getByRole("button", { name: "Aprobar cotización" }).click();
   await page.getByRole("button", { name: "Confirmar aprobación" }).click();

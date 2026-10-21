@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Undo2, Wallet } from "lucide-react";
 import { Boton } from "@/components/ui/base";
 import { campo as campoBase } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { MEDIOS } from "@/components/ui/estado-pedido";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
@@ -116,11 +117,11 @@ export function Pagos({ id, csrf, resumen, pagos, puedeRegistrar, cancelada, hoy
           </p>
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-tinta-tenue">Fecha<input type="date" name="fecha" defaultValue={hoy} max={hoy} required className={campo} /></label>
-            <label className="block text-tinta-tenue">Medio de pago
-              <select name="medio" defaultValue="transferencia" aria-label="Medio de pago" className={campo}>
+            <div className="block text-tinta-tenue">Medio de pago
+              <Dropdown name="medio" defaultValue="transferencia" aria-label="Medio de pago">
                 {Object.entries(MEDIOS).map(([v, t]) => <option key={v} value={v}>{t}</option>)}
-              </select>
-            </label>
+              </Dropdown>
+            </div>
           </div>
           <label className="block text-tinta-tenue">N.º de comprobante (opcional)
             <input name="referencia" maxLength={60} placeholder="Transferencia o boleta; nunca el número de tarjeta" className={campo} />

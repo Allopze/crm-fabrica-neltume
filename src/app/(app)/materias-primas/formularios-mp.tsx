@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { PackagePlus, Plus, SlidersHorizontal } from "lucide-react";
 import { Boton } from "@/components/ui/base";
 import { campoAlto } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
@@ -56,11 +57,11 @@ export function FormularioRecepcion({ materias, csrf, inicial, desdeChipax = {} 
         csrf, idempotente: true, cuerpo: { materiaPrimaId: mpId, cantidad: decimal(f.get("cantidad")), ...(f.get("referencia") ? { referencia: f.get("referencia") } : {}) },
       }), "Recepción registrada.", form);
     }}>
-      <label className="block text-sm font-medium">Materia prima
-        <select value={mpId} onChange={(e) => setMpId(e.target.value)} className={`${campo} mt-1.5`}>
+      <div className="block text-sm font-medium">Materia prima
+        <Dropdown aria-label="Materia prima" value={mpId} onChange={setMpId} className="mt-1.5">
           {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-        </select>
-      </label>
+        </Dropdown>
+      </div>
       {desdeChipax[mpId] && (
         <p role="note" className="rounded-md border border-ambar/30 bg-ambar-velo px-3 py-2 text-xs text-ambar">
           Esta materia prima entra sola con las facturas de {desdeChipax[mpId]} (Chipax). Regístrala a mano solo si no viene en una factura.
@@ -93,7 +94,7 @@ export function FormularioNuevaMp({ unidades, csrf }: { unidades: { codigo: stri
       }), "Materia prima creada.", form);
     }}>
       <input name="nombre" required minLength={2} placeholder="Nombre" aria-label="Nombre" className={campo} />
-      <select name="unidad" aria-label="Unidad" className={campo}>{unidades.map((u) => <option key={u.codigo} value={u.codigo}>{u.codigo} · {u.nombre}</option>)}</select>
+      <Dropdown name="unidad" aria-label="Unidad">{unidades.map((u) => <option key={u.codigo} value={u.codigo}>{u.codigo} · {u.nombre}</option>)}</Dropdown>
       <input name="minimo" inputMode="decimal" placeholder="Mínimo" aria-label="Mínimo" className={campo} />
       <Boton variante="primario" type="submit" disabled={pendiente} className="h-10">{pendiente ? "Creando…" : "Crear"}</Boton>
       <div className="sm:col-span-4">{aviso}</div>
@@ -115,11 +116,11 @@ export function FormularioAjusteMp({ materias, csrf }: { materias: { id: string;
         csrf, idempotente: true, cuerpo: { materiaPrimaId: mpId, cantidad: decimal(f.get("cantidad")), motivo: String(f.get("motivo") ?? "") },
       }), "Ajuste registrado.", form);
     }}>
-      <label className="block text-sm font-medium">Materia prima
-        <select value={mpId} onChange={(e) => setMpId(e.target.value)} className={`${campo} mt-1.5`}>
+      <div className="block text-sm font-medium">Materia prima
+        <Dropdown aria-label="Materia prima" value={mpId} onChange={setMpId} className="mt-1.5">
           {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-        </select>
-      </label>
+        </Dropdown>
+      </div>
       <div className="grid grid-cols-[1fr_70px] gap-2">
         <label className="text-sm font-medium">Cantidad (+ suma, − resta)<input name="cantidad" required inputMode="decimal" placeholder="-2,5" className={`${campo} mt-1.5 tabular-nums`} /></label>
         <p className="self-end pb-2.5 font-mono text-xs text-tinta-tenue">{unidad}</p>

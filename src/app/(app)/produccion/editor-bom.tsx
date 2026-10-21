@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Trash2, TriangleAlert } from "lucide-react";
 import { Boton } from "@/components/ui/base";
 import { campoCompacto as campo } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { pedir } from "@/lib/api-cliente";
 import { cantidad, leerCantidad, usoPorPuerta } from "@/lib/formato";
 const titulo = (s: string) => s.toLowerCase().replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase());
@@ -72,17 +73,17 @@ export function EditorBom({ modelos, materias, csrf, maderaLista, inicial }: {
     <form aria-label={nombreForm} className="w-full space-y-3 rounded-lg border border-linea-fuerte bg-lamina p-4" onSubmit={(e) => { e.preventDefault(); guardar(); }}>
       <div className="flex flex-wrap items-end gap-2">
         {editando ? <p className="mr-auto font-display text-lg font-medium">{nombreForm}</p> : (
-          <label className="text-sm">Modelo
-            <select value={modelo} onChange={(e) => setModelo(e.target.value)} className={`${campo} mt-1 block w-56`}>
+          <div className="text-sm">Modelo
+            <Dropdown aria-label="Modelo" value={modelo} onChange={setModelo} className="mt-1 w-56">
               {modelos.map((m) => <option key={m.codigo} value={m.codigo}>{titulo(m.nombre)} ({m.codigo})</option>)}
-            </select>
-          </label>
+            </Dropdown>
+          </div>
         )}
-        <label className="text-sm">Origen
-          <select value={origen} onChange={(e) => setOrigen(e.target.value as "real" | "demo")} className={`${campo} mt-1 block`}>
+        <div className="text-sm">Origen
+          <Dropdown aria-label="Origen" value={origen} onChange={(v) => setOrigen(v as "real" | "demo")} className="mt-1">
             <option value="real">Real (de Producción)</option><option value="demo">Demostración</option>
-          </select>
-        </label>
+          </Dropdown>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-rauli-velo/40 px-3 py-2 text-sm">
@@ -101,9 +102,9 @@ export function EditorBom({ modelos, materias, csrf, maderaLista, inicial }: {
         const lectura = Number.isFinite(valor) ? usoPorPuerta(valor) : null;
         return (
           <div key={i} className="flex flex-wrap items-center gap-2">
-            <select aria-label={`Materia prima ${i + 1}`} value={l.materiaPrimaId} onChange={(e) => setLineas(lineas.map((x, j) => (j === i ? { ...x, materiaPrimaId: e.target.value } : x)))} className={`${campo} min-w-0 flex-1`}>
+            <Dropdown aria-label={`Materia prima ${i + 1}`} value={l.materiaPrimaId} onChange={(materiaPrimaId) => setLineas(lineas.map((x, j) => (j === i ? { ...x, materiaPrimaId } : x)))} className="min-w-0 flex-1">
               {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre} ({m.unidad})</option>)}
-            </select>
+            </Dropdown>
             <input aria-label={`Cantidad ${i + 1}`} required inputMode="decimal" value={l.cantidad} onChange={(e) => setLineas(lineas.map((x, j) => (j === i ? { ...x, cantidad: e.target.value } : x)))} className={`${campo} w-24 text-right tabular-nums`} />
             <button type="button" aria-label={`Quitar línea ${i + 1}`} onClick={() => setLineas(lineas.filter((_, j) => j !== i))} className="grid h-9 w-9 place-items-center rounded-md text-tinta-tenue hover:bg-error-velo hover:text-error pointer-coarse:h-11 pointer-coarse:w-11"><Trash2 className="h-4 w-4" /></button>
             {lectura && <span className="basis-full pl-1 text-xs text-tinta-tenue">{lectura}</span>}

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { api, ingresar } from "./ayudas";
+import { api, elegirDropdown, ingresar } from "./ayudas";
 import { bdE2e } from "./bd";
 import { ADMIN } from "./datos";
 
@@ -20,8 +20,17 @@ test("Ajustes elige proveedor/modelo desde la UI y el worker usa la clave de ent
     await expect(page.getByText("GROQ_API_KEY=")).toHaveCount(0);
     await expect(page.getByLabel("API key de Groq")).toHaveCount(0);
 
-    await page.getByLabel("Proveedor").selectOption("groq");
-    await page.getByLabel("Modelo").selectOption("openai/gpt-oss-120b");
+    const proveedor = page.getByRole("combobox", { name: "Proveedor" });
+    await proveedor.focus();
+    await proveedor.press("ArrowDown");
+    await expect(proveedor).toHaveAttribute("aria-expanded", "true");
+    await proveedor.press("Escape");
+    await expect(proveedor).toHaveAttribute("aria-expanded", "false");
+    await proveedor.press("ArrowDown");
+    await proveedor.press("ArrowDown");
+    await proveedor.press("Enter");
+    await expect(proveedor).toContainText("Groq");
+    await elegirDropdown(page.getByLabel("Modelo"), "openai/gpt-oss-120b");
     await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Activar proveedor y modelo" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Configuración activa" })).toBeVisible();

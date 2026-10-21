@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 const vigiladas = new WeakSet<Page>();
 
@@ -43,4 +43,18 @@ export async function cotizacionId(page: Page, filtro: string): Promise<string> 
   const r = await api(page, "GET", `/api/v1/cotizaciones?${filtro}`);
   expect(r.cuerpo.datos.length, `sin cotización para ${filtro}`).toBeGreaterThan(0);
   return r.cuerpo.datos[0].id;
+}
+
+/** Selecciona una opción del menú propio de la plataforma. `valor` permite conservar llamadas por value del HTML. */
+export async function elegirDropdown(control: Locator, objetivo: string | { label: string }) {
+  await control.click();
+  const opciones = control.locator("xpath=..");
+  let opcion: Locator;
+  if (typeof objetivo === "string") {
+    const valor = objetivo.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+    opcion = opciones.locator(`[role="option"][data-value="${valor}"]`);
+  } else {
+    opcion = opciones.getByRole("option", { name: objetivo.label, exact: true });
+  }
+  await opcion.click();
 }

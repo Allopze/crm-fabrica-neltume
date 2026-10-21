@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Encabezado, Panel, Placa, Vacio } from "@/components/ui/base";
 import { campo } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -38,15 +39,15 @@ export default async function PuertasPage({ searchParams }: PageProps<"/stock/pu
       <form className="mb-5 flex flex-wrap items-center gap-2" aria-label="Filtros">
         <input type="search" name="q" defaultValue={filtro.q} placeholder="Código, modelo u observación" aria-label="Buscar" className={`${campo} w-full sm:w-64`} />
         {filtro.articulo && <input type="hidden" name="articulo" value={filtro.articulo} />}
-        <select name="estado" defaultValue={estado} className={campo} aria-label="Estado">
+        <Dropdown name="estado" defaultValue={estado} aria-label="Estado">
           {ESTADOS_FILTRO.map((e) => <option key={e} value={e}>{ESTADOS[e]}</option>)}
-        </select>
-        <select name="ubicacion" defaultValue={filtro.ubicacion ?? ""} className={campo} aria-label="Ubicación">
+        </Dropdown>
+        <Dropdown name="ubicacion" defaultValue={filtro.ubicacion ?? ""} aria-label="Ubicación">
           <option value="">Todas las ubicaciones</option>{lugares.map((u) => <option key={u} value={u}>{u}</option>)}
-        </select>
-        <select name="calidad" defaultValue={calidad ?? ""} className={campo} aria-label="Calidad">
+        </Dropdown>
+        <Dropdown name="calidad" defaultValue={calidad ?? ""} aria-label="Calidad">
           <option value="">Primera y segunda</option><option value="primera">Primera</option><option value="segunda">De segunda</option>
-        </select>
+        </Dropdown>
         <label className="inline-flex items-center gap-2 px-2 text-sm text-tinta-suave">
           <input type="checkbox" name="fuera" value="1" defaultChecked={filtro.fueraCatalogo} className="accent-[var(--rauli)]" /> Solo fuera de catálogo
         </label>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Ban, PackagePlus, Plus, RefreshCw } from "lucide-react";
 import { Boton } from "@/components/ui/base";
 import { campo } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 import { cantidad as fmtCantidad, cn } from "@/lib/formato";
@@ -64,12 +65,12 @@ export function AsociarLinea({ id, item, cantidad, unidad, materias, csrf }: {
   return (
     <div className="mt-3 space-y-2">
       <div className="flex flex-wrap items-end gap-2">
-        <label className="text-xs text-tinta-tenue">Materia prima
-          <select value={mpId} onChange={(e) => setMpId(e.target.value)} aria-label={`Materia prima para ${item}`} className={cn(campo, "mt-1 block w-56")}>
+        <div className="text-xs text-tinta-tenue">Materia prima
+          <Dropdown value={mpId} onChange={setMpId} aria-label={`Materia prima para ${item}`} className="mt-1 w-56">
             <option value="">Elige…</option>
             {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre} ({m.unidad})</option>)}
-          </select>
-        </label>
+          </Dropdown>
+        </div>
         <label className="text-xs text-tinta-tenue">{mp ? `${mp.unidad} por ${unidad ?? "unidad"}` : "Factor"}
           <input value={factor} onChange={(e) => setFactor(e.target.value)} inputMode="decimal" aria-label={`Factor para ${item}`} className={cn(campo, "mt-1 block w-24 tabular-nums")} />
         </label>

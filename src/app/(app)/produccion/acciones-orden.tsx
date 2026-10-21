@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CheckCheck, Plus, TriangleAlert } from "lucide-react";
 import { Boton } from "@/components/ui/base";
 import { campoAlto as campo } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 import { numero } from "@/lib/formato";
@@ -146,9 +147,9 @@ export function CierreOrden({ ordenId, numero: num, insumos, sinBom, incompletos
         <div className="mb-4 rounded-md border border-ambar/30 bg-ambar-velo p-3 text-sm text-ambar">
           <p className="font-medium">Sin BOM: {sinBom.join(", ")}. Registra el consumo a mano:</p>
           <div className="mt-2 flex gap-2">
-            <select aria-label="Materia prima consumida" value={manual.materiaPrimaId} onChange={(e) => setManual({ ...manual, materiaPrimaId: e.target.value })} className={`${campo} h-9 flex-1`}>
+            <Dropdown aria-label="Materia prima consumida" value={manual.materiaPrimaId} onChange={(materiaPrimaId) => setManual({ ...manual, materiaPrimaId })} className="min-w-0 flex-1">
               {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre} ({m.unidad})</option>)}
-            </select>
+            </Dropdown>
             <input aria-label="Cantidad consumida" inputMode="decimal" value={manual.cantidad} onChange={(e) => setManual({ ...manual, cantidad: e.target.value })} className={`${campo} h-9 w-24`} />
           </div>
         </div>

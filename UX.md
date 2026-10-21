@@ -25,6 +25,8 @@ Documentos con un solo formato de número, igual en pantalla y en PDF: «Cotizac
 
 Navegación lateral fija desde 1024 px; en pantallas más angostas se abre como cajón con el botón de menú (Esc lo cierra). Para quien puede cotizar, la entrada «desde texto» está siempre visible arriba; las listas solo agregan «Cotizar a mano». En celular las tablas ocultan las columnas secundarias y conservan número, cliente o artículo, estado y total o disponible. Sin buscador global: cada lista tiene su propio filtro. Las tablas anchas se desplazan dentro de su marco (también con teclado) y la página nunca se desplaza hacia el costado; en pantallas táctiles los controles miden al menos 44 px.
 
+Los selectores usan el campo de la plataforma y abren un menú integrado con las opciones. Se operan con flechas, Inicio/Fin, búsqueda por letra, Enter o Espacio y se cierran con Esc; muestran foco visible y conservan su valor al enviar o reiniciar un formulario (REQ-NFR-6).
+
 ## 2. Estados comunes (toda pantalla)
 
 | Estado | Comportamiento |

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, PencilLine, ShieldCheck, Sparkles } from "lucide-react";
 import { Boton, BotonLink } from "@/components/ui/base";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
@@ -89,11 +90,10 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
         {clientes && (
           <div>
             <label htmlFor="cliente" className="text-sm font-medium">Cliente</label>
-            <select id="cliente" value={clienteId} onChange={(e) => setClienteId(e.target.value)} disabled={enviando}
-              className="mt-1.5 h-10 w-full rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none">
+            <Dropdown id="cliente" value={clienteId} onChange={setClienteId} disabled={enviando} className="mt-1.5 w-full">
               <option value="">Elegir después</option>
               {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-            </select>
+            </Dropdown>
             <p className="mt-1.5 text-xs text-tinta-tenue">El cliente nunca se envía a la IA.</p>
           </div>
         )}

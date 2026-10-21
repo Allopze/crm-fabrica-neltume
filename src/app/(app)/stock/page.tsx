@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Encabezado, Panel, Placa, Vacio } from "@/components/ui/base";
 import { campo } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { maderas, type MaderaId } from "@/components/ui/maderas";
 import { NivelStock } from "@/components/ui/nivel-stock";
 import { SinPermiso } from "@/components/ui/sin-permiso";
@@ -47,12 +48,12 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
 
       <form className="mb-5 flex flex-wrap items-center gap-2" aria-label="Filtros">
         <input type="search" name="q" defaultValue={filtro.q} placeholder="Código o modelo" aria-label="Buscar" className={`${campo} w-full sm:w-56`} />
-        <select name="madera" defaultValue={filtro.madera ?? ""} className={campo} aria-label="Madera">
+        <Dropdown name="madera" defaultValue={filtro.madera ?? ""} aria-label="Madera">
           <option value="">Todas las maderas</option>{Object.entries(maderas).map(([c, m]) => <option key={c} value={c}>{m.nombre}</option>)}
-        </select>
-        <select name="tipo" defaultValue={filtro.tipo ?? ""} className={campo} aria-label="Tipo">
+        </Dropdown>
+        <Dropdown name="tipo" defaultValue={filtro.tipo ?? ""} aria-label="Tipo">
           <option value="">Todos los tipos</option><option value="BLOQUE">Bloque</option><option value="PANEL">Panel</option><option value="ESPECIAL">Especial</option>
-        </select>
+        </Dropdown>
         <label className="inline-flex items-center gap-2 px-2 text-sm text-tinta-suave">
           <input type="checkbox" name="bajoMinimo" value="1" defaultChecked={filtro.bajoMinimo} className="accent-[var(--rauli)]" /> Solo bajo mínimo
         </label>

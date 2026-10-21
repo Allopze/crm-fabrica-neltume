@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { api, ingresar, ir } from "./ayudas";
+import { api, elegirDropdown, ingresar, ir } from "./ayudas";
 import { ADMIN, CLIENTE_A } from "./datos";
 
 // Suite 18 (TESTING §3; ADR-0020): sin abono no se produce y con saldo no se despacha; los pagos se registran en la
@@ -50,7 +50,7 @@ test("con saldo no se despacha; pagado el saldo, sí", async ({ page }) => {
 
   await page.getByRole("button", { name: "Registrar pago" }).click();
   await page.getByRole("button", { name: /^Saldo completo/ }).click();
-  await page.getByLabel("Medio de pago").selectOption("efectivo");
+  await elegirDropdown(page.getByLabel("Medio de pago"), "efectivo");
   await page.getByRole("button", { name: /^Registrar \$/ }).click();
   await expect(etiquetaPago(page, "Pagado")).toBeVisible();
 

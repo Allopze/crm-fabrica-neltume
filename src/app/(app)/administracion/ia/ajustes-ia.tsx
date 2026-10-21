@@ -3,13 +3,12 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { Check, RefreshCw } from "lucide-react";
 import { Aviso, Boton, Etiqueta, Panel } from "@/components/ui/base";
-import { campoAlto } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import type { EstadoAjustesIA, ModeloIA, ProveedorConfigurado } from "@/ai/ajustes";
 import { pedir } from "@/lib/api-cliente";
 import { fechaHora } from "@/lib/formato";
 
-const campo = `w-full ${campoAlto}`;
 const fecha = (iso: string | null) => iso ? fechaHora(iso) : "aún no consultado";
 const precios = (m: ModeloIA) => m.precioEntradaUsdMTok === undefined ? "tarifa no disponible" : `US$ ${m.precioEntradaUsdMTok} entrada / US$ ${m.precioSalidaUsdMTok} salida por millón`;
 const NOMBRE_PROVEEDOR: Record<string, string> = { commandcode: "Command Code", groq: "Groq" };
@@ -63,19 +62,19 @@ export function AjustesIA({ csrf }: { csrf: string }) {
     <div className="grid grid-cols-1 gap-6 [&>*]:min-w-0 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
       <Panel titulo="Proveedor y modelo">
         <div className="space-y-5">
-          <label className="block space-y-1.5 text-sm font-medium">Proveedor
-            <select className={campo} value={proveedor} onChange={(e) => { setProveedor(e.target.value as ProveedorConfigurado); setModelo(""); }}>
+          <div className="block space-y-1.5 text-sm font-medium">Proveedor
+            <Dropdown aria-label="Proveedor" className="w-full" value={proveedor} onChange={(v) => { setProveedor(v as ProveedorConfigurado); setModelo(""); }}>
               <option value="commandcode">Command Code</option><option value="groq">Groq</option>
-            </select>
-          </label>
-          <label className="block space-y-1.5 text-sm font-medium">Modelo
-            <select className={campo} value={modelo} onChange={(e) => setModelo(e.target.value)}>
+            </Dropdown>
+          </div>
+          <div className="block space-y-1.5 text-sm font-medium">Modelo
+            <Dropdown aria-label="Modelo" className="w-full" value={modelo} onChange={setModelo}>
               <option value="">Selecciona un modelo</option>
               {modelos.map((m) => <option key={m.id} value={m.id} disabled={!m.compatible || m.preview}>
                 {m.nombre} · {proveedor === "commandcode" ? precios(m) : limites(m)}{m.motivo ? ` · ${m.motivo}` : ""}
               </option>)}
-            </select>
-          </label>
+            </Dropdown>
+          </div>
           {modelos.length === 0 && <Aviso titulo="Aún no hay modelos de este proveedor">Falta su clave en el servidor. Pídesela a quien administra el sistema: al reiniciar, el catálogo se carga solo.</Aviso>}
           {modeloElegido && <div className="rounded-md border border-linea bg-papel px-4 py-3 text-sm">
             <div className="flex items-center gap-2"><span className="font-medium">{modeloElegido.nombre}</span>{modeloElegido.preview && <Etiqueta tono="ambar">Preview</Etiqueta>}{modeloElegido.compatible && <Etiqueta tono="musgo">Compatible</Etiqueta>}</div>

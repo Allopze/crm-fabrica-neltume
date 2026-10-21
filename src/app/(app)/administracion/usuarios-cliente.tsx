@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { Boton, Etiqueta } from "@/components/ui/base";
 import { campoAlto } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { LARGO_MINIMO_CLAVE } from "@/domain/auth/reglas";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
@@ -50,9 +51,9 @@ export function UsuariosCliente({ usuarios, roles, csrf, yo }: { usuarios: Usuar
           <input name="nombre" required placeholder="Nombre" className={campo} aria-label="Nombre" />
           <input name="email" type="email" required placeholder="correo@neltume.cl" className={campo} aria-label="Correo" />
           <input name="clave" type="password" required minLength={LARGO_MINIMO_CLAVE} placeholder={`Contraseña inicial (mín. ${LARGO_MINIMO_CLAVE})`} className={campo} aria-label="Contraseña inicial" autoComplete="new-password" />
-          <select name="rolId" className={campo} aria-label="Rol" defaultValue={roles.find((r) => r.nombre === "administrador")?.id}>
+          <Dropdown name="rolId" className="w-full" aria-label="Rol" defaultValue={roles.find((r) => r.nombre === "administrador")?.id}>
             {roles.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-          </select>
+          </Dropdown>
           <div className="flex gap-2 md:col-span-2">
             <Boton variante="primario" disabled={pendiente} type="submit">{pendiente ? "Creando…" : "Crear usuario"}</Boton>
             <Boton type="button" variante="fantasma" onClick={() => setAbierto(false)}><X className="h-4 w-4" /> Cancelar</Boton>

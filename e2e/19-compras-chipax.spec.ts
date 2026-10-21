@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { api, ingresar, ir } from "./ayudas";
+import { api, elegirDropdown, ingresar, ir } from "./ayudas";
 import { ADMIN, PROVEEDOR_CHIPAX } from "./datos";
 
 // Suite 19 (TESTING §3; ADR-0021): con un Chipax simulado y el servicio de compras real, se habilita un proveedor,
@@ -42,7 +42,7 @@ test("habilitar un proveedor y asociar sus ítems sube el stock; el flete queda 
   expect(await existencia(page)).toBe(0);
 
   const tablon = page.getByRole("listitem").filter({ hasText: "Tablón pino oregón 2x8" });
-  await tablon.getByLabel("Materia prima para Tablón pino oregón 2x8").selectOption({ label: `${MATERIA} (pulg)` });
+  await elegirDropdown(tablon.getByLabel("Materia prima para Tablón pino oregón 2x8"), { label: `${MATERIA} (pulg)` });
   await tablon.getByLabel("Factor para Tablón pino oregón 2x8").fill("424");
   await expect(tablon).toContainText("2 M3 × 424 = 848 pulg");
   await tablon.getByRole("button", { name: "Asociar y recibir" }).click();

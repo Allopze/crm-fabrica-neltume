@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { csrf, ingresar, ir } from "./ayudas";
+import { csrf, elegirDropdown, ingresar, ir } from "./ayudas";
 import { ADMIN } from "./datos";
 
 // Suite 04 (TESTING §3): BOM demo de Neltume, orden de 2 NEL-R-4-B, cierre, y los tres rechazos del cierre.
@@ -16,12 +16,12 @@ test("define el BOM de demostración de Neltume", async ({ page }) => {
   await ir(page, "/produccion?vista=recetas");
   await page.getByRole("button", { name: "Definir BOM" }).click();
   const form = page.getByRole("form", { name: "Definir BOM" });
-  await form.getByLabel("Modelo").selectOption("NEL");
-  await form.getByLabel("Origen").selectOption("demo");
+  await elegirDropdown(form.getByLabel("Modelo"), "NEL");
+  await elegirDropdown(form.getByLabel("Origen"), "demo");
   const insumos: [string, string][] = [["Tabla raulí 1\"", "6"], ["Cola vinílica D3", "0,4"], ["Lija grano 120", "3"]];
   for (const [i, [mp, cant]] of insumos.entries()) {
     if (i > 0) await form.getByRole("button", { name: "Agregar insumo" }).click();
-    await form.getByLabel(`Materia prima ${i + 1}`).selectOption({ label: `${mp} (${mp.startsWith("Tabla") ? "pulg" : mp.startsWith("Cola") ? "lt" : "un"})` });
+    await elegirDropdown(form.getByLabel(`Materia prima ${i + 1}`), { label: `${mp} (${mp.startsWith("Tabla") ? "pulg" : mp.startsWith("Cola") ? "lt" : "un"})` });
     await form.getByLabel(`Cantidad ${i + 1}`).fill(cant);
   }
   await form.getByRole("button", { name: "Guardar BOM" }).click();

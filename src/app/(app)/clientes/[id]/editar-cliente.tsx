@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { PencilLine } from "lucide-react";
 import { Boton } from "@/components/ui/base";
 import { campoAlto } from "@/components/ui/campos";
+import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
@@ -53,9 +54,9 @@ export function EditarCliente({ cliente, csrf }: { cliente: ClienteEditable; csr
           <input name={k} required={req} defaultValue={String(cliente[k as keyof ClienteEditable] ?? "")} className={`${campo} ${k === "rut" ? "font-mono" : ""}`} placeholder={k === "rut" ? "12.345.678-5" : undefined} />
         </label>
       ))}
-      <label className="text-sm">Tipo
-        <select name="tipo" defaultValue={cliente.tipo} className={campo}><option value="directo">Directo</option><option value="tienda">Tienda</option></select>
-      </label>
+      <div className="text-sm">Tipo
+        <Dropdown name="tipo" aria-label="Tipo de cliente" defaultValue={cliente.tipo}><option value="directo">Directo</option><option value="tienda">Tienda</option></Dropdown>
+      </div>
       <div className="flex flex-wrap items-center gap-2 sm:col-span-3">
         <Boton type="submit" variante="primario" disabled={pendiente}>{pendiente ? "Guardando…" : "Guardar cambios"}</Boton>
         <Boton type="button" variante="fantasma" onClick={() => { setAbierto(false); setError(null); }}>Cancelar</Boton>
