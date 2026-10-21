@@ -5,7 +5,7 @@
 # y `next build` lo copiaría a .next/standalone.
 set -euo pipefail
 
-HOST="${DEPLOY_HOST:-debian}"
+HOST="${DEPLOY_HOST:-server}"
 DIR="${DEPLOY_DIR:-/server/crm_fabrica_puertas}"
 ENV_FILE="${DEPLOY_ENV_FILE:-$HOME/.config/neltume/produccion.env}"
 cd "$(dirname "$0")/.."
