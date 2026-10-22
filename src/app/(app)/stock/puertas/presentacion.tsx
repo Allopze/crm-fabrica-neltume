@@ -1,12 +1,16 @@
 import { Etiqueta } from "@/components/ui/base";
 import type { PuertaListada } from "@/domain/puertas/consulta";
-import { metros } from "@/lib/formato";
+import { metros, metrosDesdeMm, nombrePropio } from "@/lib/formato";
 
-const mm3 = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 3 });
+/** «Apartada para MIREYA OBANDO» → «Apartada para Mireya Obando»: la planilla trae los nombres en mayúsculas. */
+export const textoApartada = (texto: string) => texto.replace(/^(apartada )?(para )(.+)$/i, (_, a = "", para: string, nombre: string) => a + para + nombrePropio(nombre));
 
-/** Medida exacta de la puerta (ancho en cm × alto en m, como la anota la fábrica) o, si no se conoce, la de su artículo. */
+/**
+ * Medida exacta de la puerta en metros, como el resto del catálogo («0,90 × 2,00»), o, si no se conoce, la de su
+ * artículo. La planilla la anota en cm × m («90 × 2»); mezclar unidades en una misma cifra confunde.
+ */
 export function medidaPuerta(p: Pick<PuertaListada, "anchoMm" | "altoMm" | "ancho" | "altoM">): string {
-  if (p.anchoMm && p.altoMm) return `${mm3.format(p.anchoMm / 10)} × ${mm3.format(p.altoMm / 1000)}`;
+  if (p.anchoMm && p.altoMm) return `${metrosDesdeMm(p.anchoMm)} × ${metrosDesdeMm(p.altoMm)}`;
   return `${p.ancho} × ${metros(Number(p.altoM))}`;
 }
 

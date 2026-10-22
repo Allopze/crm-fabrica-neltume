@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Layers } from "lucide-react";
-import { Boton } from "@/components/ui/base";
+import { Boton, Hecho } from "@/components/ui/base";
 import { campoCompacto as campo } from "@/components/ui/campos";
 import { Dropdown } from "@/components/ui/dropdown";
 import { pedir } from "@/lib/api-cliente";
@@ -116,11 +116,11 @@ export function AplicarRecetas({ recetas, materias, csrf }: {
         <span className="text-xs text-tinta-tenue">Crea una versión nueva de cada receta ({descripcion}); las anteriores quedan en el historial.</span>
       </div>
       {resultado && (
-        <p role="status" className="rounded-md bg-musgo-velo px-3 py-2 text-sm text-musgo">
-          Listo: {resultado.actualizados.length} {resultado.actualizados.length === 1 ? "receta actualizada" : "recetas actualizadas"}
+        <Hecho>
+          {resultado.actualizados.length} {resultado.actualizados.length === 1 ? "receta actualizada" : "recetas actualizadas"}
           {resultado.sinCambio.length > 0 && ` · ${resultado.sinCambio.length} ya estaban así`}
           {resultado.sinReceta.length > 0 && ` · sin receta: ${resultado.sinReceta.join(", ")}`}.
-        </p>
+        </Hecho>
       )}
       {error && <p role="alert" className="text-sm text-error">{error}</p>}
     </form>

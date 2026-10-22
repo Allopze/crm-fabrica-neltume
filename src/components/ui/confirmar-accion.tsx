@@ -5,10 +5,11 @@ import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/formato";
 import { ErrorAccion } from "./error-accion";
 
-/** Acción destructiva en línea: primero pregunta, nunca borra al primer clic. */
-export function ConfirmarAccion({ etiqueta, titulo = "¿Quitar?", onConfirmar, className }: {
+/** Acción destructiva en línea: primero pregunta, nunca borra al primer clic. Con `texto`, el disparador lo muestra junto al ícono. */
+export function ConfirmarAccion({ etiqueta, titulo = "¿Quitar?", texto, onConfirmar, className }: {
   etiqueta: string;
   titulo?: string;
+  texto?: string;
   onConfirmar: () => Promise<unknown>;
   className?: string;
 }) {
@@ -48,8 +49,10 @@ export function ConfirmarAccion({ etiqueta, titulo = "¿Quitar?", onConfirmar, c
   if (!abierto) {
     return (
       <button ref={disparador} type="button" aria-label={etiqueta} title={etiqueta} onClick={() => { setError(null); setAbierto(true); }}
-        className={cn("grid h-9 w-9 place-items-center rounded text-tinta-tenue hover:bg-error-velo hover:text-error pointer-coarse:h-11 pointer-coarse:w-11", className)}>
-        <Trash2 className="h-4 w-4" />
+        className={cn(texto
+          ? "inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium text-tinta-suave hover:bg-error-velo hover:text-error pointer-coarse:h-11"
+          : "grid h-9 w-9 place-items-center rounded text-tinta-tenue hover:bg-error-velo hover:text-error pointer-coarse:h-11 pointer-coarse:w-11", className)}>
+        <Trash2 className="h-4 w-4" />{texto}
       </button>
     );
   }

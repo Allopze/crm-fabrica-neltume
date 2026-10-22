@@ -49,6 +49,12 @@ export async function preciosDeLista(version: number, f: FiltroPrecios, verCosto
   if (f.tipo === "ACCESORIO") condiciones.push(isNull(articulo.tipoPuertaId));
   else if (f.tipo) condiciones.push(eq(tipoPuerta.nombre, f.tipo.toUpperCase()));
   if (f.alto) condiciones.push(eq(articulo.altoM, f.alto));
+  const [{ total }] = await bd().select({ total: sql<number>`count(*)::int` }).from(precio)
+    .innerJoin(articulo, eq(articulo.id, precio.articuloId))
+    .innerJoin(modelo, eq(modelo.id, articulo.modeloId))
+    .innerJoin(madera, eq(madera.id, articulo.maderaId))
+    .leftJoin(tipoPuerta, eq(tipoPuerta.id, articulo.tipoPuertaId))
+    .where(and(...condiciones));
   if (f.cursor) condiciones.push(gt(articulo.codigo, f.cursor));
 
   const filas = await bd()
@@ -70,7 +76,7 @@ export async function preciosDeLista(version: number, f: FiltroPrecios, verCosto
     const { precioUnitario } = calcularLinea({ precioNetoLista: Number(x.precioNeto), recargoPct: recargo, cantidad: 1 });
     return { ...x, recargo, precioVenta: precioUnitario, precioVentaConIva: conIva(precioUnitario), ...(verCostos ? { costoTotal, margen } : {}) };
   });
-  return { lista: { version: lista.version, vigente: lista.vigente }, recargos, datos, siguiente: filas.length > limite ? datos.at(-1)!.codigo : null };
+  return { lista: { version: lista.version, vigente: lista.vigente }, recargos, datos, total, siguiente: filas.length > limite ? datos.at(-1)!.codigo : null };
 }
 
 export interface EdicionLista { cambios?: { codigo: string; precioNeto: number }[]; recargos?: { tipo: TipoRecargo; porcentaje: number }[] }

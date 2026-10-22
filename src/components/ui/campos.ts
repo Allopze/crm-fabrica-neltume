@@ -13,3 +13,6 @@ export const campoCompacto = `h-9 px-2 ${base} pointer-coarse:h-11`;
 
 /** Campo numérico alineado a la derecha. */
 export const campoNumero = `${campoCompacto} text-right tabular-nums`;
+
+/** Texto largo que crece con lo escrito (sin la manija nativa de redimensionar). */
+export const areaTexto = `w-full min-h-20 resize-none px-3 py-2 field-sizing-content ${base}`;

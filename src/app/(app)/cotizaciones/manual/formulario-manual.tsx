@@ -8,7 +8,7 @@ import { campoAlto as campo } from "@/components/ui/campos";
 import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
-import { clp } from "@/lib/formato";
+import { clp, metros, nombreMadera, titulo } from "@/lib/formato";
 import { type Opcion, SelectorArticulo } from "../[id]/selector-articulo";
 
 type LineaNueva = { cantidad: number } & ({ codigo: string; opcion: Opcion } | { detalle: string });
@@ -61,7 +61,7 @@ export function FormularioManual({ csrf, version, clientes }: { csrf: string; ve
           <form className="mt-4 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); if (detalle.trim()) { agregar({ detalle: detalle.trim(), cantidad: 1 }); setDetalle(""); } }}>
             <input value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={200} placeholder="¿No está en el catálogo? Descríbelo (queda por confirmar)"
               aria-label="Artículo fuera de catálogo" className={`${campo} min-w-60 flex-1`} />
-            <Boton type="submit" disabled={!detalle.trim()}><Plus className="h-4 w-4" /> Línea por confirmar</Boton>
+            <Boton type="submit" disabled={!detalle.trim()} className="max-sm:w-full"><Plus className="h-4 w-4" /> Agregar por confirmar</Boton>
           </form>
         </Panel>
 
@@ -71,7 +71,7 @@ export function FormularioManual({ csrf, version, clientes }: { csrf: string; ve
               {lineas.map((l) => (
                 <li key={l.clave} className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
                   {"opcion" in l ? (
-                    <span className="min-w-0 flex-1"><Placa codigo={l.codigo} /> <span className="ml-2 capitalize text-tinta-suave">{l.opcion.modelo.toLowerCase()} · {l.opcion.madera.toLowerCase()}</span></span>
+                    <span className="min-w-0 flex-1"><Placa codigo={l.codigo} /> <span className="ml-2 text-tinta-suave">{titulo(l.opcion.modelo)} · {nombreMadera(l.opcion.madera)} · <span className="whitespace-nowrap">{l.opcion.ancho} × {metros(Number(l.opcion.altoM))} m</span></span></span>
                   ) : (
                     <span className="min-w-0 flex-1 text-ambar"><CircleHelp className="mr-1 inline h-3.5 w-3.5" />{l.detalle}</span>
                   )}

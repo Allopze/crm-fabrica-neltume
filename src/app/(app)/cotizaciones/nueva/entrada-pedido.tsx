@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, PencilLine, ShieldCheck, Sparkles } from "lucide-react";
 import { Boton, BotonLink } from "@/components/ui/base";
@@ -9,6 +9,9 @@ import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
 const LIMITE = 4000;
+const sinSuscripcion = () => () => {};
+/** En Mac el atajo se escribe con ⌘; el servidor no lo sabe, así que parte diciendo Ctrl. */
+const esMac = () => /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
 export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id: string; nombre: string }[] | null }) {
   const router = useRouter();
@@ -17,6 +20,7 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [copiado, setCopiado] = useState(false);
+  const mac = useSyncExternalStore(sinSuscripcion, esMac, () => false);
 
   const guardarTexto = () => {
     try { if (texto.trim()) sessionStorage.setItem("neltume:texto-pedido", texto); } catch { /* sin almacenamiento: no se pierde el texto visible */ }
@@ -82,7 +86,7 @@ export function EntradaPedido({ csrf, clientes }: { csrf: string; clientes: { id
             {enviando ? "Enviando a interpretar…" : "Interpretar pedido"}
           </Boton>
           <BotonLink href="/cotizaciones/manual" variante="fantasma" onClick={guardarTexto}><PencilLine className="h-4 w-4" /> Prefiero cotizar a mano</BotonLink>
-          <p id="atajo-interpretar" className="text-xs text-tinta-tenue">Atajo: <kbd className="rounded border border-linea-fuerte px-1 font-sans">Ctrl</kbd> + <kbd className="rounded border border-linea-fuerte px-1 font-sans">Enter</kbd></p>
+          <p id="atajo-interpretar" className="text-xs text-tinta-tenue">Atajo: <kbd className="rounded border border-linea-fuerte px-1 font-sans">{mac ? "⌘" : "Ctrl"}</kbd> + <kbd className="rounded border border-linea-fuerte px-1 font-sans">Enter</kbd></p>
         </div>
       </div>
 

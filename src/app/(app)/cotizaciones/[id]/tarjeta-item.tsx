@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CircleHelp, Minus, Package, Plus, Ruler, Trash2, TriangleAlert } from "lucide-react";
+import { Check, CircleHelp, Minus, Package, Plus, Ruler, TriangleAlert } from "lucide-react";
 import { Boton, Placa } from "@/components/ui/base";
+import { ConfirmarAccion } from "@/components/ui/confirmar-accion";
 import { clp, cn } from "@/lib/formato";
 import { SelectorArticulo } from "./selector-articulo";
 import type { ItemDetalle } from "./tipos";
@@ -54,13 +55,16 @@ export function TarjetaItem({ item, n, activo, bloqueado, soloLectura, listaVers
     <article onMouseEnter={() => onActivar(item.id)} onMouseLeave={() => onActivar(null)}
       onFocus={() => onActivar(item.id)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) onActivar(null); }} aria-label={`Ítem ${n}`}
       className={cn("relative rounded-md border bg-lamina p-4 transition-shadow", borde[item.estadoItem], activo && "shadow-[0_0_0_2px_var(--tinta)]")}>
-      <div className="flex items-start gap-3">
+      {/* En el celular la descripción va a lo ancho y la cantidad y el precio pasan a una fila debajo. */}
+      <div className="flex flex-wrap items-start gap-3 sm:flex-nowrap">
         <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-tinta font-mono text-[11px] font-semibold text-lamina">{n}</span>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-[calc(100%-2.25rem)] sm:basis-auto">
           {item.estadoItem === "por_confirmar" && <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-ambar"><CircleHelp className="h-3.5 w-3.5" /> Por confirmar</span>}
           {item.estadoItem === "a_pedido" && <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-pizarra"><Ruler className="h-3.5 w-3.5" /> A pedido</span>}
           {item.estadoItem === "ok" && item.fijadoPor && <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-pizarra"><Ruler className="h-3.5 w-3.5" /> A pedido · precio fijado</span>}
-          <p className="mt-1 font-medium">{item.descripcion}</p>
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
+            {item.codigo && item.estadoItem === "ok" && <Placa codigo={item.codigo} />}<span className="text-pretty">{item.descripcion}</span>
+          </p>
           {item.medidaSolicitada && <p className="text-xs text-tinta-tenue">Medida solicitada: {item.medidaSolicitada}</p>}
           {item.estadoItem !== "ok" && item.textoFuente && <p className="mt-0.5 text-sm text-tinta-tenue">Pedido: «{item.textoFuente}»</p>}
           {item.duda && item.estadoItem !== "ok" && <p className="mt-1 text-sm text-tinta-suave">{item.duda}</p>}
@@ -74,7 +78,7 @@ export function TarjetaItem({ item, n, activo, bloqueado, soloLectura, listaVers
           {item.estadoItem === "por_confirmar" && !bloqueado && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <SelectorArticulo version={listaVersion} onElegir={acciones.resolver} etiqueta={`Elegir artículo para el ítem ${n}`} />
-              <Boton variante="fantasma" onClick={acciones.quitar}><Trash2 className="h-4 w-4" /> Quitar</Boton>
+              <ConfirmarAccion etiqueta="Quitar" texto="Quitar" titulo="¿Quitar este ítem?" onConfirmar={async () => acciones.quitar()} />
             </div>
           )}
 
@@ -94,27 +98,29 @@ export function TarjetaItem({ item, n, activo, bloqueado, soloLectura, listaVers
           )}
         </div>
 
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          {soloLectura ? (
-            <p className="text-sm text-tinta-suave">Cantidad <strong className="font-mono text-tinta tabular-nums" aria-label={`Cantidad del ítem ${n}`}>{item.cantidad}</strong></p>
-          ) : (
-            <div className="flex items-center rounded-md border border-linea">
-              <button type="button" aria-label={`Restar uno al ítem ${n}`} disabled={bloqueado || item.cantidad <= 1} onClick={() => acciones.cantidad(item.cantidad - 1)}
-                className="grid h-9 w-9 place-items-center pointer-coarse:h-11 pointer-coarse:w-11 text-tinta-suave hover:text-tinta disabled:opacity-30"><Minus className="h-3.5 w-3.5" /></button>
-              <CampoCantidad valor={item.cantidad} n={n} deshabilitado={bloqueado} onCambiar={acciones.cantidad} />
-              <button type="button" aria-label={`Sumar uno al ítem ${n}`} disabled={bloqueado || item.cantidad >= CANTIDAD_MAX} onClick={() => acciones.cantidad(item.cantidad + 1)}
-                className="grid h-9 w-9 place-items-center pointer-coarse:h-11 pointer-coarse:w-11 text-tinta-suave hover:text-tinta disabled:opacity-30"><Plus className="h-3.5 w-3.5" /></button>
-            </div>
-          )}
+        <div className="flex w-full shrink-0 items-center justify-between gap-1.5 pl-9 sm:w-auto sm:flex-col sm:items-end sm:pl-0">
+          <div className="flex items-center gap-1">
+            {soloLectura ? (
+              <p className="text-sm text-tinta-suave">Cantidad <strong className="font-mono text-tinta tabular-nums" aria-label={`Cantidad del ítem ${n}`}>{item.cantidad}</strong></p>
+            ) : (
+              <div className="flex items-center rounded-md border border-linea">
+                <button type="button" aria-label={`Restar uno al ítem ${n}`} disabled={bloqueado || item.cantidad <= 1} onClick={() => acciones.cantidad(item.cantidad - 1)}
+                  className="grid h-9 w-9 place-items-center pointer-coarse:h-11 pointer-coarse:w-11 text-tinta-suave hover:text-tinta disabled:opacity-30"><Minus className="h-3.5 w-3.5" /></button>
+                <CampoCantidad valor={item.cantidad} n={n} deshabilitado={bloqueado} onCambiar={acciones.cantidad} />
+                <button type="button" aria-label={`Sumar uno al ítem ${n}`} disabled={bloqueado || item.cantidad >= CANTIDAD_MAX} onClick={() => acciones.cantidad(item.cantidad + 1)}
+                  className="grid h-9 w-9 place-items-center pointer-coarse:h-11 pointer-coarse:w-11 text-tinta-suave hover:text-tinta disabled:opacity-30"><Plus className="h-3.5 w-3.5" /></button>
+              </div>
+            )}
+            {item.estadoItem === "ok" && !bloqueado && (
+              <ConfirmarAccion etiqueta={`Quitar ítem ${n}`} onConfirmar={async () => acciones.quitar()} className="-mr-2" />
+            )}
+          </div>
           {item.precioUnitario !== null ? (
             <div className="text-right tabular-nums">
               <p className="text-xs text-tinta-tenue">{clp(Number(item.precioUnitario))} c/u</p>
               <p className="font-display text-lg font-medium">{clp(Number(item.totalLinea))}</p>
             </div>
           ) : <p className="text-sm text-tinta-tenue">sin precio</p>}
-          {item.estadoItem === "ok" && !bloqueado && (
-            <button type="button" onClick={acciones.quitar} aria-label={`Quitar ítem ${n}`} className="-mr-2 grid h-9 w-9 place-items-center rounded-md text-tinta-tenue hover:bg-error-velo hover:text-error pointer-coarse:h-11 pointer-coarse:w-11"><Trash2 className="h-4 w-4" /></button>
-          )}
         </div>
       </div>
     </article>

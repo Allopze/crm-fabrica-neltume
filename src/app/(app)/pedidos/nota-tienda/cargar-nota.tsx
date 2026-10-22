@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CircleAlert, FileUp, TriangleAlert } from "lucide-react";
 import { Boton, Placa } from "@/components/ui/base";
 import { CampoArchivo } from "@/components/ui/campo-archivo";
+import { CampoFecha } from "@/components/ui/campo-fecha";
 import { campo as campoBase } from "@/components/ui/campos";
 import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
@@ -27,7 +28,7 @@ async function enviar(url: string, form: FormData, csrf: string, idempotente = f
     ? await enviarIdempotente(`POST ${url} ${huellaFormulario(form)}`, (clave) => fetch(url, { method: "POST", body: form, headers: { ...headers, "idempotency-key": clave } }))
     : await fetch(url, { method: "POST", body: form, headers }).catch(() => { throw new Error(SIN_CONFIRMAR); });
   const cuerpo = await r.json().catch(() => null);
-  if (!r.ok) throw new ErrorApi(cuerpo?.error?.codigo ?? "INTERNO", cuerpo?.error?.mensaje ?? "No se pudo leer la nota.", cuerpo?.error?.correlacion_id);
+  if (!r.ok) throw new ErrorApi(cuerpo?.error?.codigo ?? "INTERNO", cuerpo?.error?.mensaje ?? "No se pudo leer la nota.", cuerpo?.error?.correlacion_id, r.status);
   return cuerpo;
 }
 
@@ -107,7 +108,7 @@ export function CargarNota({ tiendas, csrf }: { tiendas: { id: string; nombre: s
           <form aria-label="Confirmar pedido de la tienda" onSubmit={confirmar} className="grid gap-3 rounded-lg border border-linea bg-lamina p-5 sm:grid-cols-2">
             <label className="text-sm text-tinta-tenue">Dirección de despacho<input name="direccionDespacho" defaultValue={previa.nota.despacho.direccion ?? ""} maxLength={300} className={campo} /></label>
             <label className="text-sm text-tinta-tenue">Medio de transporte<input name="medioTransporte" defaultValue={previa.nota.despacho.transporte ?? ""} maxLength={120} className={campo} /></label>
-            <label className="text-sm text-tinta-tenue">Entrega comprometida<input type="date" name="entregaComprometida" defaultValue={previa.nota.despacho.entregaComprometida ?? ""} className={campo} /></label>
+            <div className="text-sm text-tinta-tenue">Entrega comprometida<CampoFecha name="entregaComprometida" defaultValue={previa.nota.despacho.entregaComprometida ?? ""} aria-label="Entrega comprometida" className="mt-1 w-full" /></div>
             <label className="text-sm text-tinta-tenue">Observaciones para la fábrica<input name="observaciones" maxLength={1000} className={campo} /></label>
             <p className="text-xs text-tinta-tenue sm:col-span-2">Se cobra el precio de venta de la lista vigente, sin recargo. No se guardan los datos del cliente final de la tienda.</p>
             <div className="sm:col-span-2"><Boton type="submit" variante="primario" disabled={bloqueado || leyendo || creando}>{creando ? "Creando nota…" : "Crear nota de pedido y reservar"}</Boton></div>

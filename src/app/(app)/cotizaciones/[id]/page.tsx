@@ -1,19 +1,28 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { eq } from "drizzle-orm";
 import { ChevronRight } from "lucide-react";
 import { Encabezado, Etiqueta } from "@/components/ui/base";
 import { EstadoCotizacionEtiqueta } from "@/components/ui/estado-cotizacion";
 import { bd } from "@/db/conexion";
+import { cotizacion } from "@/db/esquema/comercial";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { buscarClientes } from "@/domain/clientes";
 import { obtenerCotizacion } from "@/domain/cotizaciones/consulta";
 import { ErrorDominio } from "@/domain/errores";
-import { fechaHora } from "@/lib/formato";
+import { fechaHora, puntoFinal } from "@/lib/formato";
 import { EsperaInterpretacion } from "./espera";
 import { Revision } from "./revision";
 
-export const metadata: Metadata = { title: "Revisión de cotización" };
+/** La pestaña dice qué cotización es; sin permiso, como si no existiera (REQ-COT-10.2). */
+export async function generateMetadata({ params }: PageProps<"/cotizaciones/[id]">): Promise<Metadata> {
+  const sesion = await requerirSesion();
+  const { id } = await params;
+  if (!sesion.permisos.has("cotizaciones.crear") || !/^[0-9a-f-]{36}$/i.test(id)) return { title: "Cotización" };
+  const [c] = await bd().select({ numero: cotizacion.numero }).from(cotizacion).where(eq(cotizacion.id, id));
+  return { title: c ? `Cotización N.º ${c.numero}` : "Cotización" };
+}
 
 export default async function CotizacionPage({ params }: PageProps<"/cotizaciones/[id]">) {
   const sesion = await requerirSesion();
@@ -32,8 +41,8 @@ export default async function CotizacionPage({ params }: PageProps<"/cotizacione
       </nav>
       <Encabezado
         titulo={<>Cotización <span className="text-rauli">N.º {c.numero}</span></>}
-        meta={`Creada el ${fechaHora(new Date(c.creadoEn).toISOString())} · ${c.origen === "ia" ? "desde el texto del cliente" : "a mano"}`}
-        descripcion={<>{c.cliente ? <>Para <strong className="text-tinta">{c.cliente.nombre}</strong>. </> : null}{c.estado === "ia_fallida" ? "La IA no pudo interpretar el pedido: arma los ítems a mano." : c.origen === "ia" && !aprobada ? "Revisa lo que entendió la IA: nada se envía sin tu aprobación." : !aprobada ? "Revisa los ítems: nada se envía sin tu aprobación." : null}</>}
+        meta={`Creada el ${fechaHora(new Date(c.creadoEn).toISOString())} · ${c.origen === "ia" ? "desde texto" : "a mano"}`}
+        descripcion={<>{c.cliente ? <>Para <strong className="text-tinta">{c.cliente.nombre}</strong>{puntoFinal(c.cliente.nombre)} </> : null}{c.estado === "ia_fallida" ? "La IA no pudo interpretar el pedido: arma los ítems a mano." : c.origen === "ia" && !aprobada ? "Revisa lo que entendió la IA: nada se envía sin tu aprobación." : !aprobada ? "Revisa los ítems: nada se envía sin tu aprobación." : null}</>}
         acciones={
           <div className="flex items-center gap-2">
             {c.vencida ? <Etiqueta>Vencida</Etiqueta> : <EstadoCotizacionEtiqueta estado={c.estado as never} pedidoEstado={c.pedido?.estado} />}

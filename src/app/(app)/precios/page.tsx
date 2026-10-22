@@ -2,18 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { desc } from "drizzle-orm";
 import { FileSpreadsheet, Upload } from "lucide-react";
-import { Boton, BotonLink, Encabezado, Etiqueta, Panel, Placa, Vacio } from "@/components/ui/base";
+import { BotonLink, Encabezado, Etiqueta, Panel, Placa, Vacio } from "@/components/ui/base";
+import { campo } from "@/components/ui/campos";
 import { Dropdown } from "@/components/ui/dropdown";
+import { Filtros } from "@/components/ui/filtros";
+import { Paginacion } from "@/components/ui/paginacion";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
 import { importacion } from "@/db/esquema/catalogo";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { listarVersiones, listaVigente, opcionesFiltroPrecios, preciosDeLista, recargosDe } from "@/domain/precios/listas";
-import { clp, fechaHora, metros } from "@/lib/formato";
-
-const campo = "h-9 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none pointer-coarse:h-11";
-const capital = (t: string) => t.charAt(0) + t.slice(1).toLowerCase();
+import { clp, fechaHora, metros, nombreMadera, titulo } from "@/lib/formato";
 import { EditarPrecio } from "./editar-precio";
 import { EditorRecargos } from "./editor-recargos";
 
@@ -60,31 +60,30 @@ export default async function PreciosPage({ searchParams }: PageProps<"/precios"
     <>
       {encabezado}
       <Panel titulo={<>Precios vigentes <span className="text-tinta-tenue">· v{vigente.version}</span></>} sinRelleno>
-        <form method="get" role="search" aria-label="Filtrar precios" className="flex flex-wrap items-center gap-2 border-b border-linea px-5 py-3">
+        <Filtros etiqueta="Filtrar precios" className="border-b border-linea px-5 py-3">
           <input type="search" name="q" defaultValue={q} maxLength={60} placeholder="Código o modelo" aria-label="Buscar precio" className={`${campo} w-full max-w-56`} />
           <Dropdown name="madera" defaultValue={maderaF ?? ""} aria-label="Madera">
             <option value="">Todas las maderas</option>
-            {opciones.maderas.map((m) => <option key={m.codigo} value={m.codigo}>{capital(m.nombre)}</option>)}
+            {opciones.maderas.map((m) => <option key={m.codigo} value={m.codigo}>{nombreMadera(m.nombre)}</option>)}
           </Dropdown>
           <Dropdown name="tipo" defaultValue={tipoF ?? ""} aria-label="Tipo">
             <option value="">Todos los tipos</option>
-            {opciones.tipos.map((t) => <option key={t} value={t}>{capital(t)}</option>)}
+            {opciones.tipos.map((t) => <option key={t} value={t}>{titulo(t)}</option>)}
             <option value="ACCESORIO">Accesorios</option>
           </Dropdown>
           <Dropdown name="alto" defaultValue={altoF ? String(altoF) : ""} aria-label="Alto o largo">
             <option value="">Todo alto o largo</option>
             {opciones.altos.map((a) => <option key={a} value={a}>{metros(a)} m</option>)}
           </Dropdown>
-          <Boton type="submit">Filtrar</Boton>
           {filtrando && <Link href="/precios" className="text-sm text-tinta-suave hover:text-tinta">Limpiar</Link>}
-        </form>
+        </Filtros>
         {precios.datos.length === 0 ? (
           <Vacio titulo="Sin resultados">Ningún artículo coincide con los filtros.</Vacio>
         ) : (
-          <Tabla etiqueta="Precios vigentes">
+          <Tabla etiqueta="Precios vigentes" fija>
             <thead>
               <tr>
-                <Th>Código</Th><Th>Modelo</Th><Th className="hidden md:table-cell">Madera</Th><Th className="hidden md:table-cell">Medida</Th><Th className="hidden lg:table-cell">Tipo</Th>
+                <Th>Código</Th><Th>Modelo</Th><Th className="hidden md:table-cell">Madera</Th><Th className="hidden md:table-cell">Medida (m)</Th><Th className="hidden lg:table-cell">Tipo</Th>
                 <Th alinear="der">{hayRecargo ? "Neto lista" : "Neto"}</Th>{hayRecargo && <Th alinear="der">Con recargo</Th>}<Th alinear="der">Con IVA</Th>
                 {verCostos && <><Th alinear="der" className="hidden lg:table-cell">Costo</Th><Th alinear="der" className="hidden lg:table-cell">Margen</Th></>}
               </tr>
@@ -93,10 +92,10 @@ export default async function PreciosPage({ searchParams }: PageProps<"/precios"
               {precios.datos.map((p) => (
                 <Tr key={p.codigo}>
                   <Td><Placa codigo={p.codigo} /></Td>
-                  <Td className="font-medium capitalize">{p.modelo.toLowerCase()}</Td>
-                  <Td className="hidden text-tinta-suave capitalize md:table-cell">{p.madera.toLowerCase()}</Td>
-                  <Td className="hidden whitespace-nowrap text-tinta-suave md:table-cell">{p.ancho} × {metros(Number(p.altoM))}</Td>
-                  <Td className="hidden text-tinta-suave capitalize lg:table-cell">{p.tipo?.toLowerCase() ?? "accesorio"}</Td>
+                  <Td className="font-medium">{titulo(p.modelo)}</Td>
+                  <Td className="hidden whitespace-nowrap text-tinta-suave md:table-cell">{nombreMadera(p.madera)}</Td>
+                  <Td className="hidden whitespace-nowrap text-tinta-suave tabular-nums md:table-cell">{p.ancho} × {metros(Number(p.altoM))}</Td>
+                  <Td className="hidden text-tinta-suave lg:table-cell">{p.tipo ? titulo(p.tipo) : "Accesorio"}</Td>
                   <Td alinear="der">{puedeEditar ? <EditarPrecio codigo={p.codigo} precioNeto={Number(p.precioNeto)} csrf={sesion.csrf} /> : clp(Number(p.precioNeto))}</Td>
                   {hayRecargo && <Td alinear="der" className="font-medium">{clp(p.precioVenta)}</Td>}
                   <Td alinear="der" className="text-tinta-suave">{clp(p.precioVentaConIva)}</Td>
@@ -110,11 +109,9 @@ export default async function PreciosPage({ searchParams }: PageProps<"/precios"
           </Tabla>
         )}
       </Panel>
-      {precios.siguiente && (
-        <p className="mt-4 text-sm">
-          <Link className="text-rauli hover:underline" href={`/precios?${new URLSearchParams({ ...filtros, desde: precios.siguiente })}`} aria-label="Ver más precios">Ver más</Link>
-        </p>
-      )}
+      <Paginacion total={precios.total} singular="precio" plural="precios"
+        inicio={cursor ? `/precios${filtrando ? `?${new URLSearchParams(filtros)}` : ""}` : undefined}
+        siguiente={precios.siguiente ? `/precios?${new URLSearchParams({ ...filtros, desde: precios.siguiente })}` : null} />
       <div className="mt-10 grid items-start gap-8 [&>*]:min-w-0 lg:grid-cols-[1.4fr_1fr]">
         <Panel titulo="Versiones" sinRelleno>
           <ol>
@@ -131,7 +128,7 @@ export default async function PreciosPage({ searchParams }: PageProps<"/precios"
                     {l.origen === "excel" ? "Excel" : "Edición"} · {l.autor ?? "—"} · {fechaHora(new Date(l.creadoEn).toISOString())} · {l.articulos.toLocaleString("es-CL")} artículos
                   </p>
                 </div>
-                {l.vigente && <Etiqueta tono="rauli" className="self-start">vigente</Etiqueta>}
+                {l.vigente && <Etiqueta tono="rauli" className="self-start">Vigente</Etiqueta>}
               </li>
             ))}
           </ol>

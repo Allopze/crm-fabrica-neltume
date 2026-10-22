@@ -19,7 +19,9 @@ test("con un ítem por confirmar no se puede aprobar, ni en la UI ni por la API"
 test("quitar el ítem de roble deja A lista para aprobar", async ({ page }) => {
   await ingresar(page, ADMIN.email, ADMIN.clave);
   await ir(page, `/cotizaciones/${await cotizacionId(page, "estado=borrador&q=Alerces")}`);
-  await page.getByRole("article", { name: "Ítem 2" }).getByRole("button", { name: "Quitar" }).click();
+  const item = page.getByRole("article", { name: "Ítem 2" });
+  await item.getByRole("button", { name: "Quitar" }).click();
+  await item.getByRole("button", { name: "Sí, quitar" }).click(); // quitar pide confirmación en línea
   await expect(page.getByRole("heading", { name: "Ítems · 1" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Aprobar cotización" })).toBeEnabled();
 });

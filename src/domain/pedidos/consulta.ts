@@ -65,6 +65,10 @@ export interface FiltroPedidos { estado?: string; estadoPago?: EstadoPago; clien
 export async function listarPedidos(tx: Tx, f: FiltroPedidos, verCliente: boolean) {
   const limite = Math.min(Math.max(f.limite ?? 50, 1), 200);
   const pct = await abonoPct(tx);
+  const filtros = [f.estado ? eq(notaPedido.estado, f.estado) : undefined, f.estadoPago ? sql`${estadoPagoNota(pct)} = ${f.estadoPago}` : undefined,
+    f.clienteId ? eq(notaPedido.clienteId, f.clienteId) : undefined];
+  const [{ total }] = await tx.select({ total: sql<number>`count(*)::int` }).from(notaPedido).leftJoin(cotizacion, eq(cotizacion.id, notaPedido.cotizacionId))
+    .where(and(...filtros));
   const filas = await tx.select({
     id: notaPedido.id, numero: notaPedido.numero, estado: notaPedido.estado, creadoEn: notaPedido.creadoEn, cliente: cliente.nombre,
     cotizacion: cotizacion.numero, origen: notaPedido.origen, refExterna: notaPedido.refExterna, entregaComprometida: notaPedido.entregaComprometida,
@@ -72,14 +76,12 @@ export async function listarPedidos(tx: Tx, f: FiltroPedidos, verCliente: boolea
     cantidad: sql<number>`(SELECT coalesce(sum(cantidad), 0)::int FROM ${pedidoItem} WHERE ${pedidoItem.notaPedidoId} = ${notaPedido.id})`,
     reservado: sql<number>`(SELECT coalesce(sum(reservado), 0)::int FROM ${pedidoItem} WHERE ${pedidoItem.notaPedidoId} = ${notaPedido.id})`,
   }).from(notaPedido).leftJoin(cotizacion, eq(cotizacion.id, notaPedido.cotizacionId)).innerJoin(cliente, eq(cliente.id, notaPedido.clienteId))
-    .where(and(f.estado ? eq(notaPedido.estado, f.estado) : undefined, f.estadoPago ? sql`${estadoPagoNota(pct)} = ${f.estadoPago}` : undefined,
-      f.clienteId ? eq(notaPedido.clienteId, f.clienteId) : undefined,
-      f.antesDe ? lt(notaPedido.numero, f.antesDe) : undefined))
+    .where(and(...filtros, f.antesDe ? lt(notaPedido.numero, f.antesDe) : undefined))
     .orderBy(desc(notaPedido.numero)).limit(limite + 1);
   const hoy = hoySantiago();
   const datos = filas.slice(0, limite).map((x) => ({ ...x, total: Number(x.total), pagado: Number(x.pagado), cliente: verCliente ? x.cliente : "(oculto)",
     atrasoDias: diasAtraso(x.entregaComprometida, x.estado, hoy) }));
-  return { datos, siguiente: filas.length > limite ? datos.at(-1)!.numero : null };
+  return { datos, total, siguiente: filas.length > limite ? datos.at(-1)!.numero : null };
 }
 
 /** Conteo de notas por estado y por estado de pago, para los filtros de la lista. */

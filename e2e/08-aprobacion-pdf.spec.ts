@@ -32,7 +32,7 @@ test("el PDF de A se descarga; un borrador no tiene PDF", async ({ page }) => {
   const id = await cotizacionId(page, "estado=aprobada&q=Alerces");
   await ir(page, `/cotizaciones/${id}`);
   const [descarga] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "PDF" }).click()]);
-  expect(descarga.suggestedFilename()).toMatch(/^cotizacion-\d+\.pdf$/);
+  expect(descarga.suggestedFilename()).toMatch(/^Neltume - Cotización N\.º \d+\.pdf$/);
   const pdf = await api(page, "GET", `/api/v1/cotizaciones/${id}/pdf`);
   expect(pdf.res.headers()["content-type"]).toBe("application/pdf");
   expect((await pdf.res.body()).subarray(0, 5).toString()).toBe("%PDF-");

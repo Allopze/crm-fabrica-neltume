@@ -1,15 +1,18 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/formato";
 import { maderas, type MaderaId } from "./maderas";
 
-type Variante = "primario" | "secundario" | "fantasma" | "peligro";
+type Variante = "primario" | "secundario" | "fantasma" | "peligro" | "peligroSuave";
 
 const variantes: Record<Variante, string> = {
   primario: "bg-rauli text-lamina hover:bg-rauli-hondo shadow-[inset_0_-2px_0_rgb(0_0_0/0.18)]",
   secundario: "bg-lamina text-tinta border border-linea-fuerte hover:border-tinta hover:bg-papel",
   fantasma: "text-tinta-suave hover:text-tinta hover:bg-papel-hundido",
   peligro: "bg-lamina text-error border border-error/40 hover:bg-error-velo",
+  /** Acción destructiva dentro de una fila (desactivar): roja, sin el peso de un botón con borde. */
+  peligroSuave: "text-error hover:bg-error-velo",
 };
 
 const baseBoton =
@@ -40,18 +43,29 @@ const tonos: Record<Tono, string> = {
 
 export function Etiqueta({ tono = "neutro", children, className }: { tono?: Tono; children: ReactNode; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium", tonos[tono], className)}>
+    <span className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium", tonos[tono], className)}>
       {children}
     </span>
   );
 }
 
-/** Código de artículo como placa grabada: el elemento tipográfico del catálogo. */
-export function Placa({ codigo, className }: { codigo: string; className?: string }) {
+/** Confirmación de lo que se guardó: el mismo aspecto en toda la app (UX §2). `enLinea` para usarla dentro de una fila. */
+export function Hecho({ children, className, enLinea }: { children: ReactNode; className?: string; enLinea?: boolean }) {
+  const Etiqueta = enLinea ? "span" : "p";
+  return (
+    <Etiqueta role="status" className={cn(enLinea ? "inline-flex" : "flex", "items-start gap-1.5 text-sm text-musgo", className)}>
+      <Check aria-hidden className="mt-0.5 h-4 w-4 shrink-0" /><span>{children}</span>
+    </Etiqueta>
+  );
+}
+
+/** Código de artículo como placa grabada: el elemento tipográfico del catálogo. `partible` deja cortar un código largo en el celular. */
+export function Placa({ codigo, className, partible }: { codigo: string; className?: string; partible?: boolean }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center whitespace-nowrap rounded-[3px] border border-linea-fuerte bg-lamina px-1.5 py-px font-mono text-[12px] font-medium tracking-wide text-tinta shadow-[0_1px_0_var(--linea)]",
+        "inline-flex max-w-full items-center rounded-[3px] border border-linea-fuerte bg-lamina px-1.5 py-px font-mono text-[12px] font-medium tracking-wide text-tinta shadow-[0_1px_0_var(--linea)]",
+        partible ? "break-all sm:whitespace-nowrap sm:break-normal" : "whitespace-nowrap",
         className,
       )}
     >

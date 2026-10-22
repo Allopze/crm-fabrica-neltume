@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCheck, Factory, PackageCheck, Truck } from "lucide-react";
-import { Boton } from "@/components/ui/base";
+import { Boton, Hecho } from "@/components/ui/base";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 import { clp } from "@/lib/formato";
@@ -121,7 +121,7 @@ export function AccionesCiclo({ id, estado, faltanteCatalogo, itemsAPedido, pued
         <p role="status" className="text-sm text-musgo">Todo lo de catálogo está reservado: ya se puede marcar lista.</p>
       )}
       {faltanteCatalogo > 0 && estado !== "lista" && <p className="text-xs text-tinta-tenue">Para marcarla lista, todo lo de catálogo debe estar reservado.</p>}
-      {mensaje && <p role="status" className="text-sm text-musgo">{mensaje}</p>}
+      {mensaje && <Hecho>{mensaje}</Hecho>}
       {error ? <ErrorAccion error={error} /> : null}
     </div>
   );

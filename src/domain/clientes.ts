@@ -58,10 +58,11 @@ export async function buscarClientes(tx: Tx, f: { q?: string; cursor?: string; l
   const limite = Math.min(Math.max(f.limite ?? 50, 1), 200);
   const condiciones = [];
   if (f.q) condiciones.push(or(ilike(cliente.nombre, `%${f.q}%`), ilike(cliente.rut, `%${f.q.replace(/\./g, "")}%`), ilike(cliente.comuna, `%${f.q}%`)));
+  const [{ total }] = await tx.select({ total: sql<number>`count(*)::int` }).from(cliente).where(condiciones.length ? sql.join(condiciones, sql` AND `) : undefined);
   if (f.cursor) condiciones.push(gt(cliente.nombre, f.cursor));
   const filas = await tx.select().from(cliente).where(condiciones.length ? sql.join(condiciones, sql` AND `) : undefined).orderBy(asc(cliente.nombre)).limit(limite + 1);
   const datos = filas.slice(0, limite);
-  return { datos, siguiente: filas.length > limite ? datos.at(-1)!.nombre : null };
+  return { datos, total, siguiente: filas.length > limite ? datos.at(-1)!.nombre : null };
 }
 
 export async function obtenerCliente(tx: Tx, id: string) {

@@ -19,7 +19,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Neltume · Fábrica", template: "%s · Neltume Fábrica" },
+  title: { default: "Neltume Fábrica", template: "%s · Neltume Fábrica" },
   description: "Stock, materias primas y cotizador de la fábrica de puertas Neltume.",
 };
 

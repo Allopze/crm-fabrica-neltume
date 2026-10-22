@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileSpreadsheet, Upload } from "lucide-react";
 import { Boton, Etiqueta } from "@/components/ui/base";
-import { CampoArchivo } from "@/components/ui/campo-archivo";
+import { CampoArchivo, ZonaArchivo } from "@/components/ui/campo-archivo";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { enviarIdempotente, ErrorApi, huellaFormulario } from "@/lib/api-cliente";
@@ -36,7 +36,7 @@ export function SubirExcel({ csrf }: { csrf: string }) {
         method: "POST", body: form, headers: { "x-csrf-token": csrf, "idempotency-key": clave },
       }));
       const datos = await r.json();
-      if (!r.ok) throw new ErrorApi(datos?.error?.codigo ?? "INTERNO", datos?.error?.mensaje ?? "No se pudo importar", datos?.error?.correlacion_id);
+      if (!r.ok) throw new ErrorApi(datos?.error?.codigo ?? "INTERNO", datos?.error?.mensaje ?? "No se pudo importar", datos?.error?.correlacion_id, r.status);
       setInforme(datos);
       router.refresh();
     } catch (e) {
@@ -48,16 +48,16 @@ export function SubirExcel({ csrf }: { csrf: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-4 rounded-lg border border-dashed border-linea-fuerte bg-lamina p-6">
+      <ZonaArchivo accept=".xlsx" className="flex flex-wrap items-center gap-4 p-6">
         <FileSpreadsheet className="h-10 w-10 text-musgo" strokeWidth={1.3} />
         <label className="min-w-0 flex-1 text-sm">
           <span className="block font-medium">Excel del cotizador (.xlsx, hojas Precio y Categorias)</span>
-          <CampoArchivo entrada={entrada} accept=".xlsx" etiqueta="Archivo Excel" boton="Elegir Excel" onCambio={() => { setInforme(null); setError(null); }} />
+          <CampoArchivo entrada={entrada} accept=".xlsx" etiqueta="Archivo Excel" boton="Elegir Excel" arrastrable onCambio={() => { setInforme(null); setError(null); }} />
         </label>
         <Boton variante="primario" disabled={estado === "subiendo"} onClick={subir}>
           <Upload className="h-4 w-4" /> {estado === "subiendo" ? "Importando…" : "Importar"}
         </Boton>
-      </div>
+      </ZonaArchivo>
 
       {error ? <ErrorAccion error={error} /> : null}
 

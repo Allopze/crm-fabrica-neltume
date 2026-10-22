@@ -47,7 +47,9 @@ test("el usuario solo-consulta no ve la administración y el backend lo rechaza"
 
 test("cerrar sesión revoca el acceso", async ({ page }) => {
   await ingresar(page, ADMIN.email, ADMIN.clave);
-  await page.getByRole("button", { name: "Cerrar sesión" }).click();
+  // Cambiar la contraseña y cerrar sesión viven en el menú de la persona, al pie de la barra lateral.
+  await page.getByRole("button", { name: ADMIN.nombre }).click();
+  await page.getByRole("menuitem", { name: "Cerrar sesión" }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);

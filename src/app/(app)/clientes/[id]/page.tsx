@@ -5,7 +5,8 @@ import { ChevronRight } from "lucide-react";
 import { Encabezado, Etiqueta, Panel, Vacio } from "@/components/ui/base";
 import { EstadoCotizacionEtiqueta } from "@/components/ui/estado-cotizacion";
 import { estadoPago, estadoPedido } from "@/components/ui/estado-pedido";
-import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
+import { FilaEnlazada } from "@/components/ui/fila-enlazada";
+import { Tabla, Td, Th } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { obtenerCliente } from "@/domain/clientes";
@@ -37,12 +38,12 @@ export default async function ClientePage({ params }: PageProps<"/clientes/[id]"
       </nav>
       <Encabezado
         titulo={c.nombre}
-        meta={`${formatearRut(c.rut)} · ${c.tipo === "tienda" ? "Tienda" : "Cliente directo"} · cliente desde ${fecha(new Date(c.creadoEn).toISOString())}`}
+        meta={`${formatearRut(c.rut)} · ${c.tipo === "tienda" ? "Tienda" : "Cliente directo"} · desde el ${fecha(new Date(c.creadoEn).toISOString())}`}
         descripcion={c.giro ?? undefined}
         acciones={sesion.permisos.has("clientes.editar") ? <EditarCliente cliente={c} csrf={sesion.csrf} /> : undefined}
       />
 
-      <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 items-start gap-8 [&>*]:min-w-0 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-8">
           <Panel titulo="Cotizaciones recientes" sinRelleno
             accion={<Link href={`/cotizaciones?q=${encodeURIComponent(c.nombre)}`} className="-my-2 py-2 text-sm text-rauli hover:underline">Ver todas</Link>}>
@@ -51,12 +52,12 @@ export default async function ClientePage({ params }: PageProps<"/clientes/[id]"
                 <thead><tr><Th>N.º</Th><Th>Creada</Th><Th>Estado</Th><Th alinear="der">Total</Th></tr></thead>
                 <tbody>
                   {cotizaciones.datos.map((x) => (
-                    <Tr key={x.id}>
+                    <FilaEnlazada key={x.id} href={`/cotizaciones/${x.id}`}>
                       <Td><Link href={`/cotizaciones/${x.id}`} className="font-medium tabular-nums text-rauli hover:underline">N.º {x.numero}</Link></Td>
                       <Td className="text-tinta-suave">{fecha(new Date(x.creadoEn).toISOString())}</Td>
                       <Td><EstadoCotizacionEtiqueta estado={(x.vencida ? "vencida" : x.estado) as never} pedidoEstado={x.pedidoEstado} /></Td>
                       <Td alinear="der">{x.total !== null && Number(x.total) > 0 ? clp(Number(x.total)) : "—"}</Td>
-                    </Tr>
+                    </FilaEnlazada>
                   ))}
                 </tbody>
               </Tabla>
@@ -73,13 +74,13 @@ export default async function ClientePage({ params }: PageProps<"/clientes/[id]"
                     const ep = estadoPago(x.estadoPago);
                     const ee = estadoPedido(x.estado);
                     return (
-                      <Tr key={x.id}>
+                      <FilaEnlazada key={x.id} href={`/pedidos/${x.id}`}>
                         <Td><Link href={`/pedidos/${x.id}`} className="font-medium tabular-nums text-rauli hover:underline">N.º {x.numero}</Link></Td>
                         <Td className="text-tinta-suave">{fecha(new Date(x.creadoEn).toISOString())}</Td>
                         <Td><Etiqueta tono={ee.tono}>{ee.texto}</Etiqueta></Td>
                         <Td><Etiqueta tono={ep.tono}>{ep.texto}</Etiqueta></Td>
                         <Td alinear="der">{clp(x.total)}{x.pagado > 0 && x.pagado < x.total && <span className="block text-xs font-normal text-tinta-tenue">pagado {clp(x.pagado)}</span>}</Td>
-                      </Tr>
+                      </FilaEnlazada>
                     );
                   })}
                 </tbody>

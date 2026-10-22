@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Boton } from "@/components/ui/base";
-import { campo as campoBase } from "@/components/ui/campos";
+import { Boton, Hecho } from "@/components/ui/base";
+import { CampoFecha } from "@/components/ui/campo-fecha";
+import { areaTexto, campo as campoBase } from "@/components/ui/campos";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
 
@@ -37,12 +38,14 @@ export function FormularioDespacho({ id, inicial, csrf }: {
     }}>
       <label className="block text-tinta-tenue">Dirección de despacho<input name="direccion" defaultValue={inicial.direccionDespacho ?? ""} placeholder="Vacío = retira en fábrica" maxLength={300} className={campo} /></label>
       <label className="block text-tinta-tenue">Medio de transporte<input name="transporte" defaultValue={inicial.medioTransporte ?? ""} maxLength={120} className={campo} /></label>
-      <label className="block text-tinta-tenue">Entrega comprometida<input type="date" name="entrega" defaultValue={inicial.entregaComprometida ?? ""} className={campo} /></label>
+      <div className="block text-tinta-tenue">Entrega comprometida
+        <CampoFecha name="entrega" defaultValue={inicial.entregaComprometida ?? ""} aria-label="Entrega comprometida" className="mt-1 w-full" />
+      </div>
       <label className="block text-tinta-tenue">Observaciones para la fábrica
-        <textarea name="observaciones" defaultValue={inicial.observaciones ?? ""} maxLength={1000} rows={3} className="mt-1 w-full rounded-md border border-linea-fuerte bg-lamina px-3 py-2 text-sm focus:border-tinta focus:outline-none" />
+        <textarea name="observaciones" defaultValue={inicial.observaciones ?? ""} maxLength={1000} rows={3} className={`mt-1 ${areaTexto}`} />
       </label>
       <Boton type="submit" disabled={pendiente}>{pendiente ? "Guardando…" : "Guardar despacho"}</Boton>
-      {mensaje && <p role="status" className="text-musgo">{mensaje}</p>}
+      {mensaje && <Hecho>{mensaje}</Hecho>}
       {error ? <ErrorAccion error={error} /> : null}
     </form>
   );

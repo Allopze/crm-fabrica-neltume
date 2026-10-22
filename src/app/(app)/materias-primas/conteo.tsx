@@ -2,8 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList } from "lucide-react";
-import { Boton } from "@/components/ui/base";
+import { Boton, Hecho } from "@/components/ui/base";
 import { campoNumero } from "@/components/ui/campos";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { hoySantiago } from "@/domain/precios/dias-habiles";
@@ -16,17 +15,14 @@ const campo = `w-28 ${campoNumero}`;
 /**
  * Conteo de existencias (stock inicial o inventario físico): se anota lo contado y el mínimo de cada materia prima
  * en una sola tabla. Cada diferencia se registra como ajuste con motivo (REQ-MP-5; los movimientos no se editan) y
- * cada mínimo cambiado se guarda (REQ-MP-6.2).
+ * cada mínimo cambiado se guarda (REQ-MP-6.2). Se abre desde el encabezado (`?conteo=1`) y se cierra volviendo a la lista.
  */
 export function ConteoExistencias({ filas, puedeAjustar, puedeMinimo, csrf }: { filas: Fila[]; puedeAjustar: boolean; puedeMinimo: boolean; csrf: string }) {
   const router = useRouter();
-  const [abierto, setAbierto] = useState(false);
   const [contado, setContado] = useState<Record<string, string>>({});
   const [minimos, setMinimos] = useState<Record<string, string>>(() => Object.fromEntries(filas.map((f) => [f.id, f.minimo === null ? "" : cantidad(f.minimo)])));
   const [informe, setInforme] = useState<{ ok: number; errores: string[] } | null>(null);
   const [pendiente, iniciar] = useTransition();
-
-  if (!abierto) return <Boton variante="secundario" onClick={() => setAbierto(true)}><ClipboardList className="h-4 w-4" /> Conteo de existencias</Boton>;
 
   const motivo = `Conteo de existencias ${fecha(hoySantiago())}`;
   const cambios = filas.flatMap((f) => {
@@ -91,12 +87,14 @@ export function ConteoExistencias({ filas, puedeAjustar, puedeMinimo, csrf }: { 
         <Boton type="submit" variante="primario" disabled={pendiente || cambios.length === 0 || invalidas.length > 0}>
           {pendiente ? "Guardando…" : cambios.length ? `Guardar ${cambios.length} ${cambios.length === 1 ? "cambio" : "cambios"}` : "Sin cambios"}
         </Boton>
-        <Boton type="button" variante="fantasma" onClick={() => { setAbierto(false); setInforme(null); }}>Cerrar</Boton>
+        <Boton type="button" variante="fantasma" onClick={() => router.replace("/materias-primas", { scroll: false })}>Cerrar</Boton>
         {invalidas.length > 0 && <span role="alert" className="text-sm text-error">Revisa: {invalidas.map((f) => f.nombre).join(", ")} (números ≥ 0).</span>}
         {informe && (
-          <span role="status" className={`text-sm ${informe.errores.length ? "text-error" : "text-musgo"}`}>
-            {informe.ok} {informe.ok === 1 ? "materia prima actualizada" : "materias primas actualizadas"}{informe.errores.length > 0 && `; con error: ${informe.errores.join(" · ")}`}
-          </span>
+          informe.errores.length ? (
+            <span role="status" className="text-sm text-error">
+              {informe.ok} {informe.ok === 1 ? "materia prima actualizada" : "materias primas actualizadas"}; con error: {informe.errores.join(" · ")}
+            </span>
+          ) : <Hecho enLinea>{informe.ok} {informe.ok === 1 ? "materia prima actualizada" : "materias primas actualizadas"}</Hecho>
         )}
       </div>
     </form>

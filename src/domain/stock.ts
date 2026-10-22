@@ -183,21 +183,40 @@ export async function articuloPorCodigo(tx: Tx, codigo: string) {
   return a;
 }
 
-export interface FiltroStock { q?: string; madera?: string; tipo?: string; bajoMinimo?: boolean; cursor?: string; limite?: number }
+export const ORDENES_STOCK = ["codigo", "modelo", "existencia", "reservado", "disponible"] as const;
+export type OrdenStock = (typeof ORDENES_STOCK)[number];
+export interface FiltroStock {
+  q?: string; madera?: string; tipo?: string; bajoMinimo?: boolean; cursor?: string; limite?: number;
+  /** Orden por columna (REQ-STK-2.2): fuera del código, la lista se pagina por número de página. */
+  orden?: OrdenStock; dir?: "asc" | "desc"; pagina?: number;
+}
 
-/** Artículos con movimientos o mínimo definido (o todos si se busca), con su saldo. */
+/** Artículos con movimientos o mínimo definido (o todos si se busca), con su saldo y el total con los filtros. */
 export async function listarStock(tx: Tx, f: FiltroStock) {
   const limite = Math.min(Math.max(f.limite ?? 50, 1), 200);
   const s = sql`(SELECT articulo_id, sum(existencia) AS existencia, sum(reservado) AS reservado FROM v_stock WHERE articulo_id IS NOT NULL GROUP BY articulo_id)`;
   const existencia = sql<number>`coalesce(s.existencia, 0)::int`;
   const reservado = sql<number>`coalesce(s.reservado, 0)::int`;
-  const condiciones = [];
-  if (f.q) condiciones.push(or(ilike(articulo.codigo, `%${f.q}%`), ilike(modelo.nombre, `%${f.q}%`)));
-  else condiciones.push(or(sql`s.articulo_id IS NOT NULL`, isNotNull(articulo.stockMinimo)));
+  const condiciones = [eq(articulo.activo, true)];
+  if (f.q) condiciones.push(or(ilike(articulo.codigo, `%${f.q}%`), ilike(modelo.nombre, `%${f.q}%`))!);
+  else condiciones.push(or(sql`s.articulo_id IS NOT NULL`, isNotNull(articulo.stockMinimo))!);
   if (f.madera) condiciones.push(eq(madera.codigo, f.madera.toUpperCase()));
   if (f.tipo) condiciones.push(eq(tipoPuerta.nombre, f.tipo.toUpperCase()));
   if (f.bajoMinimo) condiciones.push(sql`${articulo.stockMinimo} IS NOT NULL AND coalesce(s.existencia, 0) - coalesce(s.reservado, 0) < ${articulo.stockMinimo}`);
-  if (f.cursor) condiciones.push(gt(articulo.codigo, f.cursor));
+
+  const base = () => tx.select({ total: sql<number>`count(*)::int` }).from(articulo)
+    .innerJoin(modelo, eq(modelo.id, articulo.modeloId))
+    .innerJoin(madera, eq(madera.id, articulo.maderaId))
+    .leftJoin(tipoPuerta, eq(tipoPuerta.id, articulo.tipoPuertaId))
+    .leftJoin(sql`${s} AS s`, sql`s.articulo_id = ${articulo.id}`);
+  const [{ total }] = await base().where(and(...condiciones));
+
+  const orden = f.orden ?? "codigo";
+  const desc = f.dir === "desc";
+  const porCodigo = orden === "codigo" && !desc;
+  if (porCodigo && f.cursor) condiciones.push(gt(articulo.codigo, f.cursor));
+  const columna = { codigo: sql`${articulo.codigo}`, modelo: sql`${modelo.nombre}`, existencia, reservado, disponible: sql`${existencia} - ${reservado}` }[orden];
+  const pagina = porCodigo ? 1 : Math.max(f.pagina ?? 1, 1);
 
   const filas = await tx
     .select({
@@ -209,11 +228,13 @@ export async function listarStock(tx: Tx, f: FiltroStock) {
     .innerJoin(madera, eq(madera.id, articulo.maderaId))
     .leftJoin(tipoPuerta, eq(tipoPuerta.id, articulo.tipoPuertaId))
     .leftJoin(sql`${s} AS s`, sql`s.articulo_id = ${articulo.id}`)
-    .where(and(eq(articulo.activo, true), ...condiciones))
-    .orderBy(asc(articulo.codigo))
-    .limit(limite + 1);
+    .where(and(...condiciones))
+    .orderBy(desc ? sql`${columna} DESC` : sql`${columna} ASC`, asc(articulo.codigo))
+    .limit(limite + 1)
+    .offset((pagina - 1) * limite);
   const datos = filas.slice(0, limite).map((x) => ({ ...x, disponible: x.existencia - x.reservado }));
-  return { datos, siguiente: filas.length > limite ? datos.at(-1)!.codigo : null };
+  const hayMas = filas.length > limite;
+  return { datos, total, siguiente: porCodigo && hayMas ? datos.at(-1)!.codigo : null, paginaSiguiente: !porCodigo && hayMas ? pagina + 1 : null };
 }
 
 /** Movimientos de un artículo, con el número del documento de referencia (nota de pedido u orden) para mostrarlo en vez del id. */

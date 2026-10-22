@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { cn, clp } from "@/lib/formato";
+import { cn, clp, metros, nombreMadera, titulo } from "@/lib/formato";
 
 export interface Opcion { codigo: string; modelo: string; madera: string; ancho: string; altoM: number; precioVenta: number }
+
+/** Resultados que se muestran; si la búsqueda trae más, se pide seguir escribiendo en vez de cortar sin aviso. */
+const MOSTRADOS = 8;
 
 /**
  * Busca artículos en la lista vigente (código o modelo) y devuelve el código elegido.
@@ -22,6 +25,7 @@ export function SelectorArticulo({ version, onElegir, etiqueta = "Buscar artícu
   const [buscando, setBuscando] = useState(false);
   const [consultado, setConsultado] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hayMas, setHayMas] = useState(false);
   const [reintento, setReintento] = useState(0);
   const entrada = useRef<HTMLInputElement>(null);
   const listaId = useId();
@@ -34,12 +38,14 @@ export function SelectorArticulo({ version, onElegir, etiqueta = "Buscar artícu
     const control = new AbortController();
     const t = setTimeout(async () => {
       try {
-        const r = await fetch(`/api/v1/listas-precio/${version}?${new URLSearchParams({ q: texto, limite: "8" })}`, { signal: control.signal });
+        const r = await fetch(`/api/v1/listas-precio/${version}?${new URLSearchParams({ q: texto, limite: String(MOSTRADOS + 1) })}`, { signal: control.signal });
         if (!r.ok) throw new Error("No se pudo buscar en el catálogo.");
         const datos = await r.json() as { datos?: Opcion[] };
         if (control.signal.aborted) return;
-        setOpciones(datos.datos ?? []);
-        setActivo(datos.datos?.length ? 0 : -1);
+        const encontrados = datos.datos ?? [];
+        setOpciones(encontrados.slice(0, MOSTRADOS));
+        setHayMas(encontrados.length > MOSTRADOS);
+        setActivo(encontrados.length ? 0 : -1);
         setAbierto(true);
         setConsultado(true);
       } catch (e) {
@@ -119,7 +125,9 @@ export function SelectorArticulo({ version, onElegir, etiqueta = "Buscar artícu
       />
 
       <p id={estadoId} role="status" aria-live="polite" className={cn("mt-1 text-xs", error ? "text-error" : "text-tinta-tenue", !mostrarEstado && "sr-only")}>
-        {buscando ? "Buscando…" : error ? error : consultado && opciones.length === 0 ? `Sin resultados para «${q.trim()}».` : opciones.length > 0 ? `${opciones.length} ${opciones.length === 1 ? "resultado" : "resultados"}.` : ""}
+        {buscando ? "Buscando…" : error ? error : consultado && opciones.length === 0 ? `Sin resultados para «${q.trim()}».`
+          : hayMas ? `Primeros ${opciones.length} resultados: sigue con el código para acotar (p. ej. «NEL-R-4»).`
+          : opciones.length > 0 ? `${opciones.length} ${opciones.length === 1 ? "resultado" : "resultados"}.` : ""}
       </p>
       {error && (
         <button type="button" onClick={() => { setBuscando(true); setError(null); setReintento((n) => n + 1); }}
@@ -137,8 +145,12 @@ export function SelectorArticulo({ version, onElegir, etiqueta = "Buscar artícu
               onMouseEnter={() => setActivo(i)}
               onClick={() => elegir(o)}
               className={cn("flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left text-sm", i === activo ? "bg-papel-hundido" : "hover:bg-papel")}>
-              <span><span className="font-mono">{o.codigo}</span> <span className="capitalize text-tinta-suave">{o.modelo.toLowerCase()} · {o.madera.toLowerCase()}</span></span>
-              <span className="tabular-nums text-tinta-tenue">{clp(o.precioVenta)}</span>
+              <span className="min-w-0">
+                <span className="font-mono">{o.codigo}</span>{" "}
+                <span className="text-tinta-suave">{titulo(o.modelo)} · {nombreMadera(o.madera)}</span>
+                <span className="block text-xs text-tinta-tenue tabular-nums">{o.ancho} × {metros(Number(o.altoM))} m</span>
+              </span>
+              <span className="shrink-0 tabular-nums text-tinta-tenue">{clp(o.precioVenta)}</span>
             </li>
           ))}
         </ul>

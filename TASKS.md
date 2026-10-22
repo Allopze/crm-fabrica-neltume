@@ -304,3 +304,20 @@ Sugerencias sin IA sobre el texto original del borrador; ninguna se aplica sin u
 - [ ] T16.4 Habilitar los 9 proveedores por RUT (Agrícola Villarrica = Maderas Villarica SpA): hecho en desarrollo el 20-10-2026 con `scripts/habilitar-proveedores.mts`; falta producción, que necesita desplegar las fases 12–16 y las credenciales de Chipax en su `.env` · REQ-MP-7.1
 
 **Checkpoint F16:** `npm test` completo verde, lint y build; una nota de la tienda se produce y despacha sin pagos. Espero tu OK.
+
+## Fase 17 — Pulido de detalles (pedida el 21-10-2026; revisión de pantallas y PDF)
+
+Terminación de la interfaz y del PDF detectada al recorrer las 34 pantallas en 1440 y 390 px; no cambia reglas de negocio.
+
+- [x] T17.0 Decisiones en UX.md: cotización manual con resumen lateral, campo de fecha propio, código de soporte solo en errores inesperados, «En nota de pedido», movimientos de stock en panel lateral, filtros que se aplican solos, paginación con total · — · — · —
+- [x] T17.1 (90) Componentes compartidos: confirmación «hecho» única, panel lateral, campo de fecha dd-mm-aaaa con calendario, selector con búsqueda y menú que no tapa, tablas con fila enlazada, sombra de desplazamiento y encabezado fijo, esqueleto de tabla, barras de desplazamiento y casillas con la paleta · REQ-NFR-6, REQ-NFR-9, UX §1–2 · U `fecha-campo` · T17.0
+- [x] T17.2 (90) Revisión de cotización: resumen lateral fijo en la manual, tarjetas compactas con código, buscador con medida y aviso de más resultados, quitar con confirmación, total «—» sin ítems · REQ-COT-3.1, 3.2, UX §3 · E 07, 13 · T17.1
+- [x] T17.3 (90) Stock: columnas que caben en 1440 px, orden por columna, filas compactas en celular, movimientos a ancho completo, ubicación y medida sin cortes, formulario de movimientos en panel lateral · REQ-STK-2.1–2.3, 8.6, REQ-NFR-6 · E 05, 20 · T17.1
+- [x] T17.4 (60) PDF con las fuentes de la marca, RUT con puntos, número de página y nombre de archivo con la marca · REQ-COT-4.2, REQ-NFR-9 · U `pdf.contenido`, E 08 · —
+- [x] T17.5 (60) Textos y formatos: maderas y modelos sin `capitalize`, mayúsculas importadas, US$ con coma, un solo vocabulario de origen y estado, punto final, tildes y rutas en auditoría, pagos de notas sin control · REQ-NFR-9, REQ-ADM-3.2, UX §2, §4 · U `formato.cl`, `auditoria-texto` · —
+- [x] T17.6 (90) Listas: fila completa enlazada, filtros que se aplican solos, total y vuelta al inicio en la paginación, sincronizaciones sin cambios agrupadas en auditoría · REQ-COT-10.1, REQ-STK-2.2, REQ-ADM-3.2 · E 05, 14, 20 · T17.1
+- [x] T17.7 (60) Estados y shell: esqueletos de tabla por ruta, código de soporte solo en errores inesperados, títulos de pestaña con el documento, atajo ⌘ en Mac, menú de usuario sin nombre cortado, 404 con la marca · UX §2 · E 02 · T17.1
+- [x] T17.8 (45) Jerarquía y formularios: «Nueva cotización» del encabezado como acceso secundario, paneles que no se estiran, acciones destructivas con estilo de peligro, etiqueta «Calidad» encima del selector, materia prima sin preselección, zona de arrastre real al importar · UX §1, §4 · E 03, 05 · T17.1
+
+**Checkpoint F17:** `npm test` completo verde, lint y build; recorrido en 1440 y 390 px de cotización manual, stock, nota de pedido y PDF. Espero tu OK.
+

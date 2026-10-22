@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Boton } from "@/components/ui/base";
+import { Boton, Hecho } from "@/components/ui/base";
 import { campoAlto } from "@/components/ui/campos";
 import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
@@ -23,7 +23,7 @@ function useEnvio() {
 
 const Mensaje = ({ exito, error }: { exito: string | null; error: unknown }) => (
   <>
-    {exito && <p role="status" className="mt-3 text-sm text-musgo">{exito}</p>}
+    {exito && <Hecho className="mt-3">{exito}</Hecho>}
     {error ? <ErrorAccion error={error} className="mt-3" /> : null}
   </>
 );
@@ -45,7 +45,7 @@ export function EditarPuerta({ codigo, ubicacion, calidad, observacion, ubicacio
         <datalist id="ubicaciones-puerta">{ubicaciones.map((u) => <option key={u} value={u} />)}</datalist>
       </label>
       <div className="block text-sm">Calidad
-        <Dropdown name="calidad" aria-label="Calidad" defaultValue={calidad} className="mt-1"><option value="primera">Primera</option><option value="segunda">De segunda</option></Dropdown>
+        <Dropdown name="calidad" aria-label="Calidad" defaultValue={calidad} className="mt-1 w-full"><option value="primera">Primera</option><option value="segunda">De segunda</option></Dropdown>
       </div>
       <label className="block text-sm">Observación
         <input name="observacion" defaultValue={observacion ?? ""} maxLength={300} className={`${campo} mt-1`} placeholder="Manchada, pintada, sin film…" />
@@ -88,7 +88,9 @@ export function AccionesPuerta({ codigo, existencia, apartada, puedeMover, puede
   return (
     <div>
       <div className="flex flex-wrap gap-2">
-        {disponibles.map((a) => <Boton key={a} variante={abierta === a ? "primario" : "secundario"} onClick={() => setAbierta(abierta === a ? null : a)}>{ACCION[a].boton}</Boton>)}
+        {disponibles.map((a) => (
+          <Boton key={a} variante={abierta === a ? "primario" : a === "baja" ? "peligro" : "secundario"} onClick={() => setAbierta(abierta === a ? null : a)}>{ACCION[a].boton}</Boton>
+        ))}
       </div>
       {abierta && (
         <form aria-label={ACCION[abierta].boton} className="mt-4 rounded-md border border-linea bg-papel p-3" onSubmit={(e) => {
@@ -100,7 +102,7 @@ export function AccionesPuerta({ codigo, existencia, apartada, puedeMover, puede
             <input name="dato" required minLength={ACCION[abierta].minimo} maxLength={120} autoFocus className={`${campo} mt-1`} />
           </label>
           <p className="mt-2 text-xs text-tinta-tenue">Queda como movimiento de la puerta: no se puede editar ni borrar.</p>
-          <Boton type="submit" variante="primario" disabled={pendiente} className="mt-3 w-full">{pendiente ? "Registrando…" : `Confirmar: ${ACCION[abierta].boton.toLowerCase()}`}</Boton>
+          <Boton type="submit" variante={abierta === "baja" ? "peligro" : "primario"} disabled={pendiente} className="mt-3 w-full">{pendiente ? "Registrando…" : `Confirmar: ${ACCION[abierta].boton.toLowerCase()}`}</Boton>
         </form>
       )}
       <Mensaje exito={exito} error={error} />

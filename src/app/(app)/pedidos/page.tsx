@@ -3,8 +3,10 @@ import Link from "next/link";
 import { FileUp } from "lucide-react";
 import { BotonLink, Encabezado, Etiqueta, Panel, Vacio } from "@/components/ui/base";
 import { estadoPago, estadoPedido, estadosPago, estadosPedido } from "@/components/ui/estado-pedido";
+import { FilaEnlazada } from "@/components/ui/fila-enlazada";
+import { Paginacion } from "@/components/ui/paginacion";
 import { SinPermiso } from "@/components/ui/sin-permiso";
-import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
+import { Tabla, Td, Th } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { contarPedidos, listarPedidos } from "@/domain/pedidos/consulta";
@@ -24,7 +26,7 @@ export default async function PedidosPage({ searchParams }: PageProps<"/pedidos"
   const estado = typeof sp.estado === "string" && sp.estado in estadosPedido ? sp.estado : "";
   const pago = typeof sp.pago === "string" && sp.pago in estadosPago ? (sp.pago as EstadoPago) : "";
   const antes = Number(sp.antes);
-  const [{ datos, siguiente }, conteo] = await Promise.all([
+  const [{ datos, total, siguiente }, conteo] = await Promise.all([
     listarPedidos(bd(), { estado: estado || undefined, estadoPago: pago || undefined, antesDe: antes > 0 ? antes : undefined }, sesion.permisos.has("clientes.ver")),
     contarPedidos(bd()),
   ]);
@@ -72,11 +74,11 @@ export default async function PedidosPage({ searchParams }: PageProps<"/pedidos"
                 const e = estadoPedido(p.estado);
                 const ep = estadoPago(p.estadoPago);
                 return (
-                  <Tr key={p.id}>
+                  <FilaEnlazada key={p.id} href={`/pedidos/${p.id}`}>
                     <Td><Link href={`/pedidos/${p.id}`} aria-label={`Nota de pedido N.º ${p.numero}`} className="-my-2 inline-block py-2 font-medium tabular-nums text-rauli hover:underline">{p.numero}</Link></Td>
                     <Td className="font-medium">{p.cliente}</Td>
                     <Td className="hidden text-tinta-suave lg:table-cell">{p.cotizacion ? `Cotización N.º ${p.cotizacion}` : `Nota de la tienda N.º ${p.refExterna}`}</Td>
-                    <Td className="hidden text-tinta-suave md:table-cell">{fecha(new Date(p.creadoEn).toISOString())}</Td>
+                    <Td className="hidden whitespace-nowrap text-tinta-suave md:table-cell">{fecha(new Date(p.creadoEn).toISOString())}</Td>
                     <Td className="hidden md:table-cell">
                       <span className="tabular-nums">{p.reservado} / {p.cantidad}</span>
                       {(p.estado === "pendiente" || p.estado === "en_produccion") && p.reservado < p.cantidad && <span className="ml-2 text-xs text-pizarra">{p.cantidad - p.reservado === 1 ? "falta 1" : `faltan ${p.cantidad - p.reservado}`}</span>}
@@ -88,18 +90,15 @@ export default async function PedidosPage({ searchParams }: PageProps<"/pedidos"
                     {/* Una nota cancelada sin pagos no tiene nada que cobrar ni anotar. */}
                     <Td>{p.estado === "cancelada" && p.pagado === 0 ? <span className="text-tinta-tenue">—</span> : <Etiqueta tono={ep.tono} className="whitespace-nowrap">{ep.texto}</Etiqueta>}</Td>
                     <Td alinear="der" className="font-medium">{clp(p.total)}{p.pagado > 0 && p.pagado < p.total && <span className="block text-xs font-normal text-tinta-tenue">pagado {clp(p.pagado)}</span>}</Td>
-                  </Tr>
+                  </FilaEnlazada>
                 );
               })}
             </tbody>
           </Tabla>
         )}
       </Panel>
-      {siguiente && (
-        <p className="mt-4 text-sm">
-          <Link href={enlace({ antes: String(siguiente) })} aria-label="Ver más notas de pedido" className="text-rauli hover:underline">Ver más</Link>
-        </p>
-      )}
+      <Paginacion total={total} singular="nota de pedido" plural="notas de pedido" etiquetaSiguiente="Más antiguas"
+        inicio={antes > 0 ? enlace({}) : undefined} siguiente={siguiente ? enlace({ antes: String(siguiente) }) : null} />
     </>
   );
 }

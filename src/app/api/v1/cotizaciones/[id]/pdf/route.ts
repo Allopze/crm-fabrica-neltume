@@ -1,6 +1,7 @@
 import { bd } from "@/db/conexion";
 import { conPermiso } from "@/domain/auth/politica";
 import { registrarAuditoria } from "@/domain/auditoria";
+import { nombreArchivoPdf } from "@/domain/pdf/contenido";
 import { pdfCotizacion } from "@/domain/pdf/cotizacion";
 
 // GET /api/v1/cotizaciones/:id/pdf — solo aprobadas (409 NO_APROBADA), auditado (REQ-COT-4.2, 4.3, 4.5; ADR-0004).
@@ -12,6 +13,6 @@ export const GET = conPermiso<{ id: string }>(["cotizaciones.aprobar", "clientes
     return r;
   });
   return new Response(new Uint8Array(pdf), {
-    headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename="cotizacion-${numero}.pdf"`, "cache-control": "private, no-store" },
+    headers: { "content-type": "application/pdf", "content-disposition": nombreArchivoPdf("Cotización", numero), "cache-control": "private, no-store" },
   });
 }, { ocultar: "Cotización no encontrada" });

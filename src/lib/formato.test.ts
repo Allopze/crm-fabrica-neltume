@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clp, fecha, fechaHora, metros, cantidad, leerCantidad, usoPorPuerta } from "./formato";
+import { clp, fecha, fechaHora, metros, metrosDesdeMm, cantidad, leerCantidad, nombreMadera, nombrePropio, puntoFinal, titulo, usd, usoPorPuerta } from "./formato";
 
 describe("formato chileno (REQ-STK-2.3, REQ-NFR-9)", () => {
   it("formatea CLP sin decimales y con punto de miles", () => {
@@ -24,6 +24,40 @@ describe("formato chileno (REQ-STK-2.3, REQ-NFR-9)", () => {
   it("formatea metros con dos decimales y coma", () => {
     expect(metros(2.1)).toBe("2,10");
     expect(metros(0.9)).toBe("0,90");
+    expect(metrosDesdeMm(900)).toBe("0,90");
+    expect(metrosDesdeMm(885)).toBe("0,885");
+    expect(metrosDesdeMm(2100)).toBe("2,10");
+  });
+
+  it("formatea dólares con coma decimal", () => {
+    expect(usd(0.15)).toBe("US$ 0,15");
+    expect(usd(5)).toBe("US$ 5,00");
+    expect(usd(0.0284, 4)).toBe("US$ 0,0284");
+    expect(usd(null)).toBe("—");
+  });
+});
+
+describe("textos importados en mayúsculas (REQ-NFR-9)", () => {
+  it("lee nombres y estados como se escriben a mano, sin tocar lo que ya trae minúsculas", () => {
+    expect(nombrePropio("MIREYA OBANDO")).toBe("Mireya Obando");
+    expect(nombrePropio("JUAN DE LA FUENTE")).toBe("Juan de la Fuente");
+    expect(nombrePropio("VENDIDA")).toBe("Vendida");
+    expect(nombrePropio("NELTUME.CO")).toBe("Neltume.co");
+    expect(nombrePropio("F. 2440")).toBe("F. 2440");
+    expect(nombrePropio("Constructora Los Alerces SpA")).toBe("Constructora Los Alerces SpA");
+    expect(titulo("ESPECIAL LOS LAGOS // RANCO")).toBe("Especial Los Lagos // Ranco");
+  });
+
+  it("nombra las maderas con sus tildes", () => {
+    expect(nombreMadera("PINO OREGON")).toBe("Pino Oregón");
+    expect(nombreMadera("RAULI")).toBe("Raulí");
+    expect(nombreMadera("Raulí")).toBe("Raulí");
+    expect(nombreMadera("COIGUE")).toBe("Coigue");
+  });
+
+  it("no duplica el punto final después de un nombre que ya lo trae", () => {
+    expect(puntoFinal("Ferretería Puyehue Ltda.")).toBe("");
+    expect(puntoFinal("Camila Torres")).toBe(".");
   });
 });
 

@@ -1,7 +1,7 @@
 // Lectura de cotizaciones (REQ-COT-2.6, 3.1, 6.3, 10). Avisos de stock calculados al leer, nunca guardados.
-import { and, asc, desc, eq, ilike, lt, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, lt, or, sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
-import { listaPrecio, parametro } from "@/db/esquema/catalogo";
+import { articulo, listaPrecio, parametro } from "@/db/esquema/catalogo";
 import { cliente, cotizacion, cotizacionItem, notaPedido } from "@/db/esquema/comercial";
 import { usuario } from "@/db/esquema/seguridad";
 import { ErrorDominio } from "../errores";
@@ -23,11 +23,16 @@ export async function obtenerCotizacion(tx: Tx, id: string, verCliente: boolean)
   const [pedido] = await tx.select({ id: notaPedido.id, numero: notaPedido.numero, estado: notaPedido.estado }).from(notaPedido).where(eq(notaPedido.cotizacionId, id));
   const [vigencia] = await tx.select({ valor: parametro.valor }).from(parametro).where(eq(parametro.clave, "vigencia_dias_habiles"));
 
+  // Código de cada artículo, para mostrarlo como en la nota de pedido y el PDF.
+  const ids = [...new Set(items.map((i) => i.articuloId).filter((x): x is string => Boolean(x)))];
+  const codigos = new Map(ids.length ? (await tx.select({ id: articulo.id, codigo: articulo.codigo }).from(articulo).where(inArray(articulo.id, ids))).map((a) => [a.id, a.codigo]) : []);
+
   const conAviso = await Promise.all(items.map(async (i) => {
-    if (i.estadoItem !== "ok" || !i.articuloId) return { ...i, avisoStock: null };
+    const codigo = i.articuloId ? codigos.get(i.articuloId) ?? null : null;
+    if (i.estadoItem !== "ok" || !i.articuloId) return { ...i, codigo, avisoStock: null };
     const { disponible } = await saldo(tx, { articuloId: i.articuloId });
     const faltan = i.cantidad - Math.max(disponible, 0);
-    return { ...i, avisoStock: faltan > 0 ? `Disponible ${Math.max(disponible, 0)} · faltan ${faltan} (a fabricar)` : null };
+    return { ...i, codigo, avisoStock: faltan > 0 ? `Disponible ${Math.max(disponible, 0)} · faltan ${faltan} (a fabricar)` : null };
   }));
   const vencida = c.estado === "aprobada" && c.vigenciaHasta !== null && c.vigenciaHasta < hoySantiago();
   // Sugerencias (REQ-COT-2.18–2.20): mientras se revisa, las tres; después solo el plazo, para la nota de pedido.
@@ -60,6 +65,9 @@ export async function listarCotizaciones(tx: Tx, f: { estado?: string; q?: strin
   // Fechas de creación en días calendario de Santiago (REQ-COT-10.1).
   if (f.desde) condiciones.push(sql`${cotizacion.creadoEn} >= (${f.desde}::date)::timestamp AT TIME ZONE 'America/Santiago'`);
   if (f.hasta) condiciones.push(sql`${cotizacion.creadoEn} < ((${f.hasta}::date + 1))::timestamp AT TIME ZONE 'America/Santiago'`);
+  // Total con los filtros, sin la página: «N cotizaciones» en el pie de la lista.
+  const [{ total }] = await tx.select({ total: sql<number>`count(*)::int` }).from(cotizacion).leftJoin(cliente, eq(cliente.id, cotizacion.clienteId))
+    .where(condiciones.length ? and(...condiciones) : undefined);
   if (f.antesDe) condiciones.push(lt(cotizacion.numero, f.antesDe));
   const filas = await tx
     .select({ id: cotizacion.id, numero: cotizacion.numero, estado: cotizacion.estado, origen: cotizacion.origen, creadoEn: cotizacion.creadoEn,
@@ -70,5 +78,5 @@ export async function listarCotizaciones(tx: Tx, f: { estado?: string; q?: strin
     .orderBy(desc(cotizacion.numero)).limit(limite + 1);
   const hoy = hoySantiago();
   const datos = filas.slice(0, limite).map((x) => ({ ...x, cliente: x.cliente && !verCliente ? "(oculto)" : x.cliente, vencida: x.estado === "aprobada" && x.vigenciaHasta !== null && x.vigenciaHasta < hoy }));
-  return { datos, siguiente: filas.length > limite ? datos.at(-1)!.numero : null };
+  return { datos, total, siguiente: filas.length > limite ? datos.at(-1)!.numero : null };
 }

@@ -110,7 +110,48 @@ body {
   input, textarea {
     caret-color: var(--rauli);
   }
+  /* Casillas y opciones con el acento de la marca en toda la app. */
+  input[type="checkbox"], input[type="radio"] {
+    accent-color: var(--rauli);
+  }
+  /* Barras de desplazamiento delgadas y del color de las líneas: en Windows las nativas son grises y gruesas. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--linea-fuerte) transparent;
+  }
 }
+
+.veta {
+  scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+}
+
+/* Tabla que se desplaza de lado: una sombra en el borde avisa que hay más columnas (UX §1). Los degradados «local»
+   tapan la sombra cuando no queda nada por ver de ese lado. */
+.desliza {
+  --fondo-desliza: var(--lamina);
+  background:
+    linear-gradient(to right, var(--fondo-desliza) 40%, transparent) left center / 2.5rem 100% no-repeat local,
+    linear-gradient(to left, var(--fondo-desliza) 40%, transparent) right center / 2.5rem 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgb(30 40 30 / 0.18), transparent) left center / 0.85rem 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgb(30 40 30 / 0.18), transparent) right center / 0.85rem 100% no-repeat scroll;
+}
+
+/* Listas largas: el encabezado queda a la vista mientras se recorren las filas. */
+.tabla-fija thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--lamina);
+  box-shadow: inset 0 -1px 0 var(--linea-fuerte);
+}
+
+/* Panel lateral (formularios de movimiento): entra desde la derecha sobre un velo del bosque. */
+@keyframes panel-entra {
+  from { transform: translateX(100%); }
+  to { transform: none; }
+}
+dialog.panel-lateral[open] { animation: panel-entra 0.28s cubic-bezier(0.2, 0.7, 0.2, 1); }
+dialog.panel-lateral::backdrop { background: rgb(22 33 26 / 0.45); }
 
 /* Veta de madera para la barra lateral. */
 .veta {
@@ -154,5 +195,5 @@ body {
 .escaneo { animation: escaneo 1.6s ease-in-out infinite alternate; }
 
 @media (prefers-reduced-motion: reduce) {
-  .entrada, .escaneo { animation: none; }
+  .entrada, .escaneo, dialog.panel-lateral[open] { animation: none; }
 }

@@ -5,8 +5,11 @@ describe("lectura humana de la auditoría (REQ-ADM-3.2)", () => {
   it("traduce acciones y recursos, sin guiones bajos ni ids", () => {
     expect(textoAccion("consumo_produccion")).toBe("Consumo de producción");
     expect(textoAccion("crear manual")).toBe("Creación a mano");
-    expect(textoAccion("POST /api/v1/ordenes/2acb16c4-c75c-40ed-90fe-9d2afd0c4f9d/cerrar")).toBe("Registrar /ordenes/…/cerrar");
+    expect(textoAccion("POST /api/v1/ordenes/2acb16c4-c75c-40ed-90fe-9d2afd0c4f9d/cerrar")).toBe("Cerrar orden de producción");
+    expect(textoAccion("GET /api/v1/cotizaciones/2acb16c4-c75c-40ed-90fe-9d2afd0c4f9d")).toBe("Consultar cotización");
+    expect(textoAccion("GET /api/v1/metricas/ia?dias=30")).toBe("Consultar métricas");
     expect(textoAccion("algo_nuevo")).toBe("Algo nuevo");
+    expect(textoAccion("convertir_a_puertas")).toBe("Convertir a puertas");
     expect(textoRecurso("nota_pedido")).toBe("Nota de pedido");
     expect(textoRecurso("otro_recurso")).toBe("Otro recurso");
   });
@@ -18,6 +21,11 @@ describe("lectura humana de la auditoría (REQ-ADM-3.2)", () => {
     expect(detalle({ motivo: "ver 2acb16c4-c75c-40ed-90fe-9d2afd0c4f9d" })).toEqual([["Motivo", "ver …"]]);
     expect(detalle({ codigo: "INSUMOS_INSUFICIENTES" })).toEqual([["Código", "faltan insumos"]]);
     expect(detalle({ codigo: "NEL-R-4-B" })).toEqual([["Código", "NEL-R-4-B"]]);
+  });
+
+  it("recupera las tildes de los campos que no tienen traducción", () => {
+    expect(detalle({ articulos: 76, yaExistian: 0, codigosNuevos: 1, fueraCatalogo: 213, historico: 2 }).map(([k]) => k))
+      .toEqual(["Artículos", "Ya existían", "Códigos nuevos", "Fuera de catálogo", "Histórico"]);
   });
 
   it("resume en una línea con hasta tres campos", () => {

@@ -29,17 +29,58 @@ const ACCIONES: Record<string, string> = {
 const METODOS: Record<string, string> = { GET: "Consultar", POST: "Registrar", PATCH: "Modificar", PUT: "Reemplazar", DELETE: "Eliminar" };
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 
+// Las claves sin traducción se leen desde camelCase o snake_case; estas palabras recuperan sus tildes.
+const TILDES: Record<string, string> = {
+  articulo: "artículo", articulos: "artículos", catalogo: "catálogo", categoria: "categoría", categorias: "categorías", codigo: "código",
+  codigos: "códigos", descripcion: "descripción", dia: "día", dias: "días", direccion: "dirección", existian: "existían", habiles: "hábiles",
+  historico: "histórico", leidas: "leídas", linea: "línea", lineas: "líneas", migracion: "migración", minimo: "mínimo", numero: "número",
+  observacion: "observación", produccion: "producción", razon: "razón", recepcion: "recepción", telefono: "teléfono", ubicacion: "ubicación",
+  ultima: "última", ultimo: "último", version: "versión",
+};
+const conTildes = (t: string) => t.replace(/\p{L}+/gu, (p) => TILDES[p.toLowerCase()] ?? p).replace(/\bfuera catálogo\b/i, (m) => m.replace(" ", " de "));
+
 const capital = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 export function textoRecurso(recurso: string): string {
-  return RECURSOS[recurso] ?? capital(recurso.replace(/_/g, " "));
+  return RECURSOS[recurso] ?? capital(conTildes(recurso.replace(/_/g, " ")));
 }
 
-/** «POST /api/v1/ordenes/<id>/cerrar» → «Registrar /ordenes/…/cerrar»; el resto, por tabla o sin guiones bajos. */
+// Peticiones a la API registradas como acceso (denegadas o fallidas), en palabras: nunca la ruta.
+const RUTAS: [RegExp, string][] = [
+  [/^POST \/ordenes\/[^/]+\/cerrar$/, "Cerrar orden de producción"], [/^POST \/ordenes\/[^/]+\/anular$/, "Anular orden de producción"],
+  [/^POST \/ordenes$/, "Crear orden de producción"], [/^POST \/movimientos\/entradas$/, "Registrar entrada de puertas"],
+  [/^POST \/movimientos\/salidas$/, "Registrar salida de puertas"], [/^POST \/movimientos\/ajustes$/, "Registrar ajuste"],
+  [/^POST \/recepciones$/, "Registrar recepción"], [/^POST \/cotizaciones\/interpretaciones$/, "Enviar pedido a la IA"],
+  [/^POST \/cotizaciones\/[^/]+\/aprobar$/, "Aprobar cotización"], [/^GET \/cotizaciones\/[^/]+\/pdf$/, "Descargar PDF de la cotización"],
+  [/^POST \/cotizaciones\/[^/]+\/descuento$/, "Aplicar descuento"], [/^POST \/cotizaciones\/[^/]+\/items$/, "Agregar ítem"],
+  [/^PATCH \/cotizaciones\/[^/]+\/items\/[^/]+$/, "Modificar ítem"], [/^DELETE \/cotizaciones\/[^/]+\/items\/[^/]+$/, "Quitar ítem"],
+  [/^POST \/cotizaciones\/[^/]+\/recalcular$/, "Recalcular con la lista vigente"], [/^POST \/cotizaciones$/, "Crear cotización"],
+  [/^(GET|PATCH) \/cotizaciones\/[^/]+$/, "$1 cotización"], [/^GET \/pedidos\/[^/]+\/pdf$/, "Descargar PDF de la nota de pedido"],
+  [/^POST \/pedidos\/nota-tienda$/, "Cargar nota de la tienda"], [/^POST \/pedidos\/[^/]+\/despachar$/, "Despachar nota de pedido"],
+  [/^POST \/pedidos\/[^/]+\/pagos$/, "Registrar pago"], [/^POST \/pedidos$/, "Crear nota de pedido"],
+  [/^POST \/puertas\/[^/]+\/apartar$/, "Apartar puerta"], [/^POST \/puertas\/[^/]+\/liberar$/, "Liberar puerta"],
+  [/^PATCH \/puertas\/[^/]+$/, "Modificar puerta"], [/^POST \/importaciones$/, "Importar el Excel"], [/^POST \/listas-precio$/, "Crear versión de la lista"],
+  [/^PUT \/usuarios\/[^/]+\/clave$/, "Restablecer contraseña"], [/^POST \/usuarios$/, "Crear usuario"], [/^PATCH \/usuarios\/[^/]+$/, "Modificar usuario"],
+  [/^PUT \/roles/, "Modificar permisos"], [/^PUT \/ajustes\/ia$/, "Cambiar los ajustes de IA"], [/^POST \/bom\/aplicar$/, "Aplicar a varias recetas"],
+  [/^POST \/compras\/sincronizar$/, "Pedir sincronización con Chipax"], [/^POST \/feriados$/, "Agregar feriado"],
+];
+const SEGMENTOS: Record<string, string> = {
+  auditoria: "auditoría", clientes: "clientes", cotizaciones: "cotizaciones", pedidos: "notas de pedido", stock: "stock", puertas: "puertas",
+  "materias-primas": "materias primas", metricas: "métricas", ordenes: "órdenes de producción", bom: "recetas", usuarios: "usuarios",
+  "listas-precio": "lista de precios", feriados: "feriados", compras: "compras de Chipax", "proveedores-compra": "proveedores de Chipax",
+};
+
+/** «POST /api/v1/ordenes/<id>/cerrar» → «Cerrar orden de producción»; el resto, por tabla o sin guiones bajos. */
 export function textoAccion(accion: string): string {
   const http = /^(GET|POST|PATCH|PUT|DELETE) \/api\/v1(\/\S*)$/.exec(accion);
-  if (http) return `${METODOS[http[1]]} ${http[2].replace(UUID, "…")}`;
-  return ACCIONES[accion] ?? capital(accion.replace(/_/g, " "));
+  if (http) {
+    const ruta = `${http[1]} ${http[2].replace(/\?.*$/, "")}`;
+    const conocida = RUTAS.find(([r]) => r.test(ruta));
+    if (conocida) return ruta.replace(conocida[0], conocida[1]).replace(/^(GET|PATCH) /, (_, m: string) => `${METODOS[m]} `);
+    const primero = http[2].split("/").filter(Boolean)[0] ?? "";
+    return `${METODOS[http[1]]} ${SEGMENTOS[primero] ?? primero.replace(/-/g, " ")}`;
+  }
+  return ACCIONES[accion] ?? capital(conTildes(accion.replace(/_/g, " ")));
 }
 
 const CAMPOS: Record<string, string> = {
@@ -97,7 +138,7 @@ export function detalle(v: unknown): [string, string][] {
   if (typeof v !== "object" || Array.isArray(v)) return [["Valor", valor("", v)]];
   return Object.entries(v as Record<string, unknown>)
     .filter(([k]) => !OCULTOS.has(k))
-    .map(([k, x]) => [CAMPOS[k] ?? capital(k.replace(/([A-Z])/g, " $1").toLowerCase()), valor(k, x)]);
+    .map(([k, x]) => [CAMPOS[k] ?? capital(conTildes(k.replace(/([A-Z])/g, " $1").replace(/_/g, " ").toLowerCase())), valor(k, x)]);
 }
 
 /** Resumen de una línea para la tabla: hasta tres campos. */

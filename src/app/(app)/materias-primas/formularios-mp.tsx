@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PackagePlus, Plus, SlidersHorizontal } from "lucide-react";
-import { Boton } from "@/components/ui/base";
+import { Boton, Hecho } from "@/components/ui/base";
+import { PanelLateral } from "@/components/ui/panel-lateral";
 import { campoAlto } from "@/components/ui/campos";
 import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
@@ -32,7 +33,7 @@ function useAccion() {
     });
   const aviso = (
     <>
-      {exito && <p role="status" className="text-sm text-musgo">{exito}</p>}
+      {exito && <Hecho>{exito}</Hecho>}
       {error ? <ErrorAccion error={error} /> : null}
     </>
   );
@@ -46,7 +47,8 @@ export function FormularioRecepcion({ materias, csrf, inicial, desdeChipax = {} 
   desdeChipax?: Record<string, string>;
 }) {
   const { ejecutar, pendiente, aviso } = useAccion();
-  const [mpId, setMpId] = useState(materias.some((m) => m.id === inicial) ? inicial! : materias[0]?.id ?? "");
+  // Sin elección previa: una materia prima ya puesta parece elegida y facilita registrar en la equivocada.
+  const [mpId, setMpId] = useState(materias.some((m) => m.id === inicial) ? inicial! : "");
   const unidad = materias.find((m) => m.id === mpId)?.unidad ?? "";
   return (
     <form aria-label="Registrar recepción" className="space-y-4" onSubmit={(e) => {
@@ -58,7 +60,8 @@ export function FormularioRecepcion({ materias, csrf, inicial, desdeChipax = {} 
       }), "Recepción registrada.", form);
     }}>
       <div className="block text-sm font-medium">Materia prima
-        <Dropdown aria-label="Materia prima" value={mpId} onChange={setMpId} className="mt-1.5">
+        <Dropdown aria-label="Materia prima" value={mpId} onChange={setMpId} className="mt-1.5 w-full">
+          <option value="">Elige una materia prima…</option>
           {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </Dropdown>
       </div>
@@ -78,34 +81,40 @@ export function FormularioRecepcion({ materias, csrf, inicial, desdeChipax = {} 
   );
 }
 
-/** Alta de materia prima (REQ-MP-1). */
+/** Alta de materia prima (REQ-MP-1), en un panel lateral para no mover el encabezado. */
 export function FormularioNuevaMp({ unidades, csrf }: { unidades: { codigo: string; nombre: string }[]; csrf: string }) {
   const { ejecutar, pendiente, aviso } = useAccion();
   const [abierto, setAbierto] = useState(false);
-  if (!abierto) return <Boton onClick={() => setAbierto(true)}><Plus className="h-4 w-4" /> Nueva materia prima</Boton>;
   return (
-    <form aria-label="Nueva materia prima" className="grid w-full max-w-xl gap-2 rounded-lg border border-linea-fuerte bg-lamina p-4 sm:grid-cols-[1fr_120px_110px_auto]" onSubmit={(e) => {
-      e.preventDefault();
-      const f = new FormData(e.currentTarget);
-      const form = e.currentTarget;
-      const minimo = String(f.get("minimo") ?? "");
-      ejecutar(() => pedir("POST", "/api/v1/materias-primas", {
-        csrf, cuerpo: { nombre: f.get("nombre"), unidadCodigo: f.get("unidad"), stockMinimo: minimo ? decimal(minimo) : null },
-      }), "Materia prima creada.", form);
-    }}>
-      <input name="nombre" required minLength={2} placeholder="Nombre" aria-label="Nombre" className={campo} />
-      <Dropdown name="unidad" aria-label="Unidad">{unidades.map((u) => <option key={u.codigo} value={u.codigo}>{u.codigo} · {u.nombre}</option>)}</Dropdown>
-      <input name="minimo" inputMode="decimal" placeholder="Mínimo" aria-label="Mínimo" className={campo} />
-      <Boton variante="primario" type="submit" disabled={pendiente} className="h-10">{pendiente ? "Creando…" : "Crear"}</Boton>
-      <div className="sm:col-span-4">{aviso}</div>
-    </form>
+    <>
+      <Boton onClick={() => setAbierto(true)}><Plus className="h-4 w-4" /> Nueva materia prima</Boton>
+      <PanelLateral abierto={abierto} alCerrar={() => setAbierto(false)} titulo="Nueva materia prima" descripcion="Nombre, unidad de medida y, si quieres, el mínimo que avisa cuando hay que reponer.">
+        <form aria-label="Nueva materia prima" className="space-y-4" onSubmit={(e) => {
+          e.preventDefault();
+          const f = new FormData(e.currentTarget);
+          const form = e.currentTarget;
+          const minimo = String(f.get("minimo") ?? "");
+          ejecutar(() => pedir("POST", "/api/v1/materias-primas", {
+            csrf, cuerpo: { nombre: f.get("nombre"), unidadCodigo: f.get("unidad"), stockMinimo: minimo ? decimal(minimo) : null },
+          }), "Materia prima creada.", form);
+        }}>
+          <label className="block text-sm font-medium">Nombre<input name="nombre" required minLength={2} placeholder='Ej. Tabla raulí 1"' aria-label="Nombre" className={`${campo} mt-1.5`} /></label>
+          <div className="block text-sm font-medium">Unidad
+            <Dropdown name="unidad" aria-label="Unidad" className="mt-1.5 w-full">{unidades.map((u) => <option key={u.codigo} value={u.codigo}>{u.codigo} · {u.nombre}</option>)}</Dropdown>
+          </div>
+          <label className="block text-sm font-medium">Mínimo (opcional)<input name="minimo" inputMode="decimal" placeholder="Sin mínimo" aria-label="Mínimo" className={`${campo} mt-1.5 tabular-nums`} /></label>
+          <Boton variante="primario" type="submit" disabled={pendiente} className="h-10 w-full">{pendiente ? "Creando…" : "Crear"}</Boton>
+          {aviso}
+        </form>
+      </PanelLateral>
+    </>
   );
 }
 
 /** Ajuste de materia prima con motivo (REQ-MP-5): crea un movimiento inmutable; nunca edita la existencia. */
 export function FormularioAjusteMp({ materias, csrf }: { materias: { id: string; nombre: string; unidad: string }[]; csrf: string }) {
   const { ejecutar, pendiente, aviso } = useAccion();
-  const [mpId, setMpId] = useState(materias[0]?.id ?? "");
+  const [mpId, setMpId] = useState("");
   const unidad = materias.find((m) => m.id === mpId)?.unidad ?? "";
   return (
     <form aria-label="Ajuste de materia prima" className="space-y-4" onSubmit={(e) => {
@@ -117,7 +126,8 @@ export function FormularioAjusteMp({ materias, csrf }: { materias: { id: string;
       }), "Ajuste registrado.", form);
     }}>
       <div className="block text-sm font-medium">Materia prima
-        <Dropdown aria-label="Materia prima" value={mpId} onChange={setMpId} className="mt-1.5">
+        <Dropdown aria-label="Materia prima" value={mpId} onChange={setMpId} className="mt-1.5 w-full">
+          <option value="">Elige una materia prima…</option>
           {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </Dropdown>
       </div>

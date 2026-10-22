@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Hecho } from "@/components/ui/base";
 import { Dropdown } from "@/components/ui/dropdown";
 import { pedir } from "@/lib/api-cliente";
 
@@ -30,7 +31,7 @@ export function MaderaInsumo({ maderas, materias, editable, csrf }: {
       <ul className="divide-y divide-linea/70">
         {maderas.map((m) => (
           <li key={m.codigo} className="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
-            <span className="min-w-0 flex-1">{m.nombre}{guardada === m.codigo && <span role="status" className="ml-2 text-xs normal-case text-musgo">guardado</span>}</span>
+            <span className="min-w-0 flex-1">{m.nombre}{guardada === m.codigo && <Hecho enLinea className="ml-2 text-xs normal-case">Guardado</Hecho>}</span>
             <Dropdown aria-label={`Materia prima de ${m.nombre}`} disabled={!editable || pendiente} value={m.materiaPrimaId ?? ""}
               onChange={(materiaPrimaId) => guardar(m.codigo, materiaPrimaId)} className="w-full sm:w-64">
               <option value="">— sin asociar —</option>

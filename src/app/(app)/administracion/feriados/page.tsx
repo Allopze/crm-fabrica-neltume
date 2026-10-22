@@ -38,10 +38,10 @@ export default async function FeriadosPage({ searchParams }: PageProps<"/adminis
           <tbody>
             {datos.map((f) => (
               <Tr key={f.fecha}>
-                <Td className="font-mono text-sm">{fecha(f.fecha)}</Td>
+                <Td className="whitespace-nowrap tabular-nums">{fecha(f.fecha)}</Td>
                 <Td className="capitalize text-tinta-suave">{dia.format(new Date(`${f.fecha}T00:00:00Z`))}</Td>
                 <Td>{f.nombre}</Td>
-                <Td>{f.origen === "ley" ? <Etiqueta>por ley</Etiqueta> : <Etiqueta tono="pizarra">adicional</Etiqueta>}</Td>
+                <Td>{f.origen === "ley" ? <Etiqueta>Por ley</Etiqueta> : <Etiqueta tono="pizarra">Adicional</Etiqueta>}</Td>
                 <Td>{edita && f.origen === "adicional" && <QuitarFeriado fecha={f.fecha} csrf={sesion.csrf} />}</Td>
               </Tr>
             ))}

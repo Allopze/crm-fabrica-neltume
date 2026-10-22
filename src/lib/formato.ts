@@ -38,6 +38,50 @@ export function metros(valor: number): string {
   return mFmt.format(valor);
 }
 
+const mmFmt = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+
+/** Medida exacta en metros desde milímetros: 885 → «0,885», 2100 → «2,10». */
+export function metrosDesdeMm(mm: number): string {
+  return mmFmt.format(mm / 1000);
+}
+
+/** Dólares con coma decimal (tarifas y gasto de la IA): 0.15 → «US$ 0,15». */
+export function usd(valor: number | null | undefined, decimales = 2): string {
+  if (valor === null || valor === undefined) return "—";
+  return `US$ ${new Intl.NumberFormat("es-CL", { minimumFractionDigits: decimales, maximumFractionDigits: Math.max(decimales, 4) }).format(valor)}`;
+}
+
+export const capital = (texto: string) => texto.charAt(0).toLocaleUpperCase("es-CL") + texto.slice(1);
+
+const PARTICULAS = new Set(["de", "del", "la", "las", "los", "y", "e"]);
+
+/**
+ * Texto importado TODO EN MAYÚSCULAS, como se escribe a mano: «MIREYA OBANDO» → «Mireya Obando». Lo que ya trae
+ * minúsculas se deja tal cual. Con `particulas`, «de la» queda en minúscula dentro de un nombre de persona.
+ */
+function enMayusculasALeible(texto: string, particulas: boolean): string {
+  if (/\p{Ll}/u.test(texto) || !/\p{Lu}.*\p{Lu}/u.test(texto)) return texto;
+  return texto.toLocaleLowerCase("es-CL").replace(/(^|[\s(«"/-])(\p{L}+)/gu, (_, antes: string, palabra: string, i: number) =>
+    antes + (particulas && i > 0 && PARTICULAS.has(palabra) ? palabra : capital(palabra)));
+}
+
+/** Nombre de persona o estado importado: «JUAN DE LA FUENTE» → «Juan de la Fuente». */
+export const nombrePropio = (texto: string) => enMayusculasALeible(texto, true);
+
+/** Nombre de modelo o tipo: «ESPECIAL LOS LAGOS» → «Especial Los Lagos». */
+export const titulo = (texto: string) => enMayusculasALeible(texto, false);
+
+const sinTildes = (texto: string) => texto.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+const MADERAS: Record<string, string> = { "pino oregon": "Pino Oregón", oregon: "Pino Oregón", lenga: "Lenga", mara: "Mara", rauli: "Raulí", alamo: "Álamo" };
+
+/** Madera con su nombre de catálogo y sus tildes, aunque la BD la tenga en mayúsculas: «PINO OREGON» → «Pino Oregón». */
+export function nombreMadera(texto: string): string {
+  return MADERAS[sinTildes(texto).toLowerCase().trim()] ?? titulo(texto);
+}
+
+/** Punto que cierra una oración que termina en un nombre, salvo que el nombre ya lo traiga («Ltda.»). */
+export const puntoFinal = (texto: string) => (/[.!?…]$/.test(texto.trim()) ? "" : ".");
+
 const SANTIAGO = "America/Santiago";
 const santiagoFmt = new Intl.DateTimeFormat("en-CA", {
   timeZone: SANTIAGO, year: "numeric", month: "2-digit", day: "2-digit",

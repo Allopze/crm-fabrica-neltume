@@ -1,11 +1,12 @@
 // Contenido del PDF de cotización, separado del render para poder probarlo (REQ-COT-4.2; TESTING U `pdf.contenido`).
 import { clp, fecha } from "@/lib/formato";
 import { type DatosEmpresa, datosEmpresa } from "@/lib/marca";
+import { formatearRut } from "../rut";
 
 /** Líneas del bloque de la empresa bajo el logo; solo las que estén configuradas (NELTUME_EMPRESA_*). */
 export function lineasEmpresa(d: DatosEmpresa): string[] {
   const contacto = [d.telefono && `Tel. ${d.telefono}`, d.web].filter(Boolean).join(" · ");
-  return [d.nombre, d.rut && `RUT ${d.rut}`, d.direccion, contacto].filter((x): x is string => Boolean(x));
+  return [d.nombre, d.rut && `RUT ${formatearRut(d.rut)}`, d.direccion, contacto].filter((x): x is string => Boolean(x));
 }
 export const NOTA_FLETE = "Valores puestos en fábrica, flete aparte.";
 
@@ -36,7 +37,7 @@ export function contenidoCotizacion(c: CotizacionPdf, empresa: DatosEmpresa = da
     titulo: `Cotización N.º ${c.numero}`,
     fechas: `Fecha ${fechaSantiago(c.aprobadaEn)} · Válida hasta ${fecha(c.vigenciaHasta)}`,
     cliente: c.cliente && [
-      ["Cliente", c.cliente.nombre], ["RUT", c.cliente.rut ?? "—"], ["Contacto", c.cliente.contacto ?? "—"], ["Comuna", c.cliente.comuna ?? "—"],
+      ["Cliente", c.cliente.nombre], ["RUT", c.cliente.rut ? formatearRut(c.cliente.rut) : "—"], ["Contacto", c.cliente.contacto ?? "—"], ["Comuna", c.cliente.comuna ?? "—"],
     ] as [string, string][],
     lineas: c.items.map((i) => ({
       codigo: i.codigo ?? "A pedido", descripcion: i.medidaSolicitada ? `${i.descripcion}\nMedida solicitada: ${i.medidaSolicitada}` : i.descripcion, cantidad: String(i.cantidad),
@@ -71,9 +72,9 @@ export function contenidoPedido(p: PedidoPdf) {
     titulo: `Nota de pedido N.º ${p.numero}${p.estado === "cancelada" ? " (cancelada)" : ""}`,
     fechas: `Fecha ${fechaSantiago(p.creadoEn)} · ${p.cotizacionNumero ? `Cotización N.º ${p.cotizacionNumero}` : `Nota de la tienda N.º ${p.notaTienda}`}`,
     datos: [
-      ["Cliente", p.cliente.nombre], ["RUT", p.cliente.rut ?? "—"], ["Contacto", p.cliente.contacto ?? "—"], ["Teléfono", p.cliente.telefono ?? "—"],
+      ["Cliente", p.cliente.nombre], ["RUT", p.cliente.rut ? formatearRut(p.cliente.rut) : "—"], ["Contacto", p.cliente.contacto ?? "—"], ["Teléfono", p.cliente.telefono ?? "—"],
       ["Despacho", p.direccionDespacho ?? "Retira en fábrica"], ["Transporte", p.medioTransporte ?? "—"],
-      ["Entrega", p.entregaComprometida ? fecha(p.entregaComprometida) : "por comprometer"],
+      ["Entrega", p.entregaComprometida ? fecha(p.entregaComprometida) : "Por comprometer"],
     ] as [string, string][],
     filas: p.items.map((i) => [i.codigo ?? "A pedido", i.medidaSolicitada ? `${i.descripcion}\nMedida solicitada: ${i.medidaSolicitada}` : i.descripcion,
       String(i.cantidad), i.faltante ? String(i.faltante) : "—", clp(i.totalLinea)]),
@@ -87,4 +88,11 @@ export function contenidoPedido(p: PedidoPdf) {
     pago: p.pago ? [["Pagado", clp(p.pago.pagado)], ["Saldo", clp(p.pago.saldo)]] as [string, string][] : [],
     pie: [`${NOTA_FLETE} ${p.cotizacionNumero ? `Precios congelados de la cotización N.º ${p.cotizacionNumero}.` : "Precios de venta de la lista vigente al confirmar el pedido."}`, "\"Por fabricar\": unidades sin stock al confirmar el pedido."],
   };
+}
+
+/** Nombre del archivo descargado, con la marca: «Neltume - Cotización N.º 9.pdf» (y una versión ASCII para navegadores antiguos). */
+export function nombreArchivoPdf(documento: "Cotización" | "Nota de pedido", numero: number) {
+  const nombre = `Neltume - ${documento} N.º ${numero}.pdf`;
+  const ascii = `Neltume-${documento === "Cotización" ? "Cotizacion" : "Nota-de-pedido"}-${numero}.pdf`;
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(nombre)}`;
 }

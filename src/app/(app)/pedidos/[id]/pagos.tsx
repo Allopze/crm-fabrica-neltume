@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Undo2, Wallet } from "lucide-react";
-import { Boton } from "@/components/ui/base";
+import { Boton, Hecho } from "@/components/ui/base";
+import { CampoFecha } from "@/components/ui/campo-fecha";
 import { campo as campoBase } from "@/components/ui/campos";
 import { Dropdown } from "@/components/ui/dropdown";
 import { MEDIOS } from "@/components/ui/estado-pedido";
@@ -52,13 +53,19 @@ export function Pagos({ id, csrf, resumen, pagos, puedeRegistrar, cancelada, hoy
 
   return (
     <div className="space-y-4 text-sm">
+      {/* El abono y el saldo solo pesan cuando la nota exige pago y sigue abierta: si no, no se destacan ni se piden. */}
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
         <div><dt className="text-tinta-tenue">Total</dt><dd className="mt-0.5 tabular-nums">{clp(resumen.total)}</dd></div>
-        <div><dt className="text-tinta-tenue">Abono ({resumen.abonoPct} %)</dt><dd className="mt-0.5 tabular-nums">{clp(resumen.abonoRequerido)}</dd></div>
+        {resumen.estado !== "sin_control" && !cancelada && <div><dt className="text-tinta-tenue">Abono ({resumen.abonoPct} %)</dt><dd className="mt-0.5 tabular-nums">{clp(resumen.abonoRequerido)}</dd></div>}
         <div><dt className="text-tinta-tenue">Pagado</dt><dd className="mt-0.5 tabular-nums">{clp(resumen.pagado)}</dd></div>
-        <div><dt className="text-tinta-tenue">Saldo</dt><dd className={cn("mt-0.5 font-display text-xl tabular-nums", resumen.saldo > 0 && resumen.estado !== "sin_control" && "text-ambar")}>{clp(resumen.saldo)}</dd></div>
+        {!cancelada && (
+          <div><dt className="text-tinta-tenue">Saldo</dt>
+            <dd className={cn("mt-0.5 tabular-nums", resumen.estado === "sin_control" ? "" : "font-display text-xl", resumen.saldo > 0 && resumen.estado !== "sin_control" && "text-ambar")}>{clp(resumen.saldo)}</dd></div>
+        )}
       </dl>
-      {resumen.estado === "sin_control" && <p className="text-tinta-tenue">Esta nota no exige abono ni pago total (tienda o nota anterior al control de pagos). Los pagos que lleguen se registran igual.</p>}
+      {cancelada
+        ? <p className="text-tinta-tenue">La nota está cancelada: no se cobra el saldo.</p>
+        : resumen.estado === "sin_control" && <p className="text-tinta-tenue">Esta nota no exige abono ni pago total (tienda o nota anterior al control de pagos). Los pagos que lleguen se registran igual.</p>}
 
       {pagos.length > 0 && (
         <ul className="divide-y divide-linea border-y border-linea" aria-label="Pagos registrados">
@@ -116,7 +123,7 @@ export function Pagos({ id, csrf, resumen, pagos, puedeRegistrar, cancelada, hoy
             <button type="button" onClick={() => setMonto(String(resumen.saldo))} className="inline-flex min-h-9 items-center rounded-full border border-linea px-2.5 py-1 hover:border-tinta pointer-coarse:min-h-11">Saldo completo {clp(resumen.saldo)}</button>
           </p>
           <div className="grid grid-cols-2 gap-3">
-            <label className="block text-tinta-tenue">Fecha<input type="date" name="fecha" defaultValue={hoy} max={hoy} required className={campo} /></label>
+            <div className="block text-tinta-tenue">Fecha<CampoFecha name="fecha" defaultValue={hoy} max={hoy} required aria-label="Fecha del pago" className="mt-1 w-full" /></div>
             <div className="block text-tinta-tenue">Medio de pago
               <Dropdown name="medio" defaultValue="transferencia" aria-label="Medio de pago">
                 {Object.entries(MEDIOS).map(([v, t]) => <option key={v} value={v}>{t}</option>)}
@@ -137,7 +144,7 @@ export function Pagos({ id, csrf, resumen, pagos, puedeRegistrar, cancelada, hoy
           <Wallet className="h-4 w-4" /> Registrar pago
         </Boton>
       ))}
-      {mensaje && <p role="status" className="text-musgo">{mensaje}</p>}
+      {mensaje && <Hecho>{mensaje}</Hecho>}
       {error ? <ErrorAccion error={error} /> : null}
     </div>
   );

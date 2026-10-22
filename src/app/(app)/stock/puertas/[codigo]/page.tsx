@@ -10,11 +10,13 @@ import { bd } from "@/db/conexion";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { ErrorDominio } from "@/domain/errores";
 import { obtenerPuerta, ubicaciones } from "@/domain/puertas/consulta";
-import { cn, fecha, fechaHora } from "@/lib/formato";
-import { Calidad, EstadoPuerta, medidaPuerta } from "../presentacion";
+import { cn, fecha, fechaHora, nombreMadera, nombrePropio, titulo } from "@/lib/formato";
+import { Calidad, EstadoPuerta, medidaPuerta, textoApartada } from "../presentacion";
 import { AccionesPuerta, EditarPuerta } from "./acciones-puerta";
 
-export const metadata: Metadata = { title: "Puerta" };
+export async function generateMetadata({ params }: PageProps<"/stock/puertas/[codigo]">): Promise<Metadata> {
+  return { title: `Puerta ${decodeURIComponent((await params).codigo)}` };
+}
 
 function Referencia({ refTipo, refId, refNumero }: { refTipo: string | null; refId: string | null; refNumero: number | null }) {
   if (refTipo === "pedido" && refId && refNumero !== null) return <Link href={`/pedidos/${refId}`} className="text-rauli hover:underline">Nota de pedido N.º {refNumero}</Link>;
@@ -43,11 +45,11 @@ export default async function PuertaPage({ params }: PageProps<"/stock/puertas/[
       </nav>
       <Encabezado
         titulo={<span className="font-mono">{p.codigo}</span>}
-        meta={<span className="capitalize">{p.modelo.toLowerCase()} · {p.madera.toLowerCase()} · {medidaPuerta(p)} · {p.ubicacion}</span>}
+        meta={`${titulo(p.modelo)} · ${nombreMadera(p.madera)} · ${medidaPuerta(p)} m · ${p.ubicacion}`}
         acciones={<div className="flex items-center gap-2"><Calidad calidad={p.calidad} /><EstadoPuerta p={p} /><Link href={`/stock/${encodeURIComponent(p.articulo)}`}><Placa codigo={p.articulo} className="px-3 py-1 text-base hover:border-tinta" /></Link></div>}
       />
       {p.apartadaPara && (
-        <div className="mb-6"><Aviso tono="pizarra" titulo={p.apartadaPara}>No sale en despachos automáticos. Libérala o regístrale la salida cuando se entregue.</Aviso></div>
+        <div className="mb-6"><Aviso tono="pizarra" titulo={textoApartada(p.apartadaPara)}>No sale en despachos automáticos. Libérala o regístrale la salida cuando se entregue.</Aviso></div>
       )}
       {p.fueraCatalogo && (
         <div className="mb-6"><Aviso tono="neutro" titulo="Fuera de catálogo">No está en la lista de precios: no se cotiza. Se vende registrando su salida con el documento.</Aviso></div>
@@ -65,10 +67,10 @@ export default async function PuertaPage({ params }: PageProps<"/stock/puertas/[
                       <Td className="whitespace-nowrap text-tinta-suave">{fechaHora(new Date(m.ocurridoEn).toISOString())}</Td>
                       <Td>
                         <span className={cn(m.tipo !== "reserva" && m.tipo !== "liberacion" && (m.cantidad > 0 ? "text-musgo" : "text-error"))}>{nombreMovimiento(m.tipo, "puerta")}</span>
-                        {m.motivo && <span className="block text-xs text-tinta-tenue">{m.motivo}</span>}
+                        {m.motivo && <span className="block text-xs text-tinta-tenue">{textoApartada(m.motivo)}</span>}
                       </Td>
                       <Td className="text-tinta-suave"><Referencia refTipo={m.refTipo} refId={m.refId} refNumero={m.refNumero} /></Td>
-                      <Td className="hidden text-tinta-suave sm:table-cell">{m.usuario}</Td>
+                      <Td className="hidden whitespace-nowrap text-tinta-suave sm:table-cell">{m.usuario}</Td>
                     </Tr>
                   ))}
                 </tbody>
@@ -82,7 +84,7 @@ export default async function PuertaPage({ params }: PageProps<"/stock/puertas/[
                 <tbody>
                   {p.historico.map((h) => (
                     <Tr key={h.id}>
-                      <Td>{h.estado ?? "—"}</Td>{verClientes && <Td>{h.cliente ?? "—"}</Td>}<Td>{h.documento ?? "—"}</Td>
+                      <Td>{h.estado ? nombrePropio(h.estado) : "—"}</Td>{verClientes && <Td>{h.cliente ? nombrePropio(h.cliente) : "—"}</Td>}<Td>{h.documento ?? "—"}</Td>
                       <Td className="hidden text-tinta-suave sm:table-cell">{h.fechaProduccion ? fecha(h.fechaProduccion) : h.fechaTexto ?? "—"}</Td>
                     </Tr>
                   ))}

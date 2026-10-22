@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Boton, BotonLink, Encabezado, Etiqueta, Panel, Vacio } from "@/components/ui/base";
+import { ClipboardList } from "lucide-react";
+import { BotonLink, Encabezado, Etiqueta, Panel, Vacio } from "@/components/ui/base";
+import { campo } from "@/components/ui/campos";
+import { Filtros } from "@/components/ui/filtros";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -15,7 +18,6 @@ import { FormularioAjusteMp, FormularioNuevaMp, FormularioRecepcion } from "./fo
 
 export const metadata: Metadata = { title: "Materias primas" };
 
-const campo = "h-9 rounded-md border border-linea-fuerte bg-lamina px-3 text-sm focus:border-tinta focus:outline-none pointer-coarse:h-11";
 const sinTildes = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
 export default async function MateriasPrimasPage({ searchParams }: PageProps<"/materias-primas">) {
@@ -25,6 +27,7 @@ export default async function MateriasPrimasPage({ searchParams }: PageProps<"/m
   const q = typeof sp.q === "string" ? sp.q.trim().slice(0, 80) : "";
   const soloBajo = sp.bajoMinimo === "1";
   const recibir = typeof sp.recibir === "string" ? sp.recibir : undefined;
+  const contando = sp.conteo === "1";
   const [todas, unidades, reponer, desdeChipax] = await Promise.all([listarMateriasPrimas(bd()), listarUnidades(bd()), materiasParaReponer(bd()), materiasDesdeChipax(bd())]);
   const faltan = new Map(reponer.map((m) => [m.id, m.faltan]));
   const materias = todas.filter((m) => (!q || sinTildes(m.nombre).includes(sinTildes(q))) && (!soloBajo || faltan.has(m.id)));
@@ -32,6 +35,7 @@ export default async function MateriasPrimasPage({ searchParams }: PageProps<"/m
   const editaMinimo = sesion.permisos.has("config.editar");
   const activas = todas.filter((m) => m.activo);
   const opciones = activas.map((m) => ({ id: m.id, nombre: m.nombre, unidad: m.unidad }));
+  const puedeContar = activas.length > 0 && (sesion.permisos.has("stock.ajustar") || editaMinimo);
 
   return (
     <>
@@ -39,24 +43,24 @@ export default async function MateriasPrimasPage({ searchParams }: PageProps<"/m
         titulo="Materias primas"
         descripcion="Madera, tableros, colas y barnices. Las recepciones suman stock y el cierre de cada orden de producción lo descuenta según el BOM."
         acciones={<>
+          {puedeContar && !contando && <BotonLink href="/materias-primas?conteo=1" scroll={false}><ClipboardList className="h-4 w-4" /> Conteo de existencias</BotonLink>}
           <BotonLink href="/materias-primas/compras">Compras (Chipax)</BotonLink>
           {sesion.permisos.has("mp.editar") && <FormularioNuevaMp unidades={unidades} csrf={sesion.csrf} />}
         </>}
       />
-      {activas.length > 0 && (sesion.permisos.has("stock.ajustar") || editaMinimo) && (
+      {puedeContar && contando && (
         <ConteoExistencias csrf={sesion.csrf} puedeAjustar={sesion.permisos.has("stock.ajustar")} puedeMinimo={editaMinimo}
           filas={activas.map((m) => ({ id: m.id, nombre: m.nombre, unidad: m.unidad, existencia: m.existencia, minimo: m.stockMinimo }))} />
       )}
-      <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 items-start gap-8 [&>*]:min-w-0 lg:grid-cols-[1fr_340px]">
         <Panel titulo="Existencias" accion={reponer.length > 0 && <Link href="/materias-primas?bajoMinimo=1"><Etiqueta tono="ambar">{reponer.length} bajo el mínimo</Etiqueta></Link>} sinRelleno>
           {todas.length > 0 && (
-            <form method="get" role="search" aria-label="Filtrar materias primas" className="flex flex-wrap items-center gap-2 border-b border-linea px-5 py-3">
+            <Filtros etiqueta="Filtrar materias primas" className="border-b border-linea px-5 py-3">
               <input type="search" name="q" defaultValue={q} maxLength={80} placeholder="Buscar materia prima" aria-label="Buscar materia prima" className={`${campo} w-full max-w-64`} />
-              <label className="flex items-center gap-2 text-sm text-tinta-suave"><input type="checkbox" name="bajoMinimo" value="1" defaultChecked={soloBajo} className="accent-[var(--rauli)]" /> Solo bajo el mínimo</label>
-              <Boton type="submit">Filtrar</Boton>
+              <label className="flex min-h-9 items-center gap-2 text-sm text-tinta-suave pointer-coarse:min-h-11"><input type="checkbox" name="bajoMinimo" value="1" defaultChecked={soloBajo} /> Solo bajo el mínimo</label>
               {(q || soloBajo) && <Link href="/materias-primas" className="text-sm text-tinta-suave hover:text-tinta">Limpiar</Link>}
               <span className="ml-auto text-sm text-tinta-tenue">{q || soloBajo ? `${materias.length} de ${todas.length}` : `${todas.length} materias primas`}</span>
-            </form>
+            </Filtros>
           )}
           {todas.length === 0 ? (
             <Vacio titulo="Aún no hay materias primas">Crea la primera con «Nueva materia prima».</Vacio>

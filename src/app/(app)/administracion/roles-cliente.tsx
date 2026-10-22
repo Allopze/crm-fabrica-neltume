@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Boton, Etiqueta } from "@/components/ui/base";
+import { Boton, Hecho } from "@/components/ui/base";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
-import { cn } from "@/lib/formato";
+import { cn, capital } from "@/lib/formato";
 
 interface Rol { id: string; nombre: string; permisos: string[] }
 
@@ -53,7 +53,7 @@ export function RolesCliente({ roles, catalogo, csrf }: { roles: Rol[]; catalogo
         {roles.map((r) => (
           <button key={r.id} type="button" aria-pressed={r.id === rolId} onClick={() => elegir(r.id)}
             className={cn("min-h-9 rounded-full px-3 py-1 text-sm pointer-coarse:min-h-11", r.id === rolId ? "bg-tinta text-lamina" : "border border-linea text-tinta-suave hover:border-tinta")}>
-            {r.nombre} <span className="opacity-60">· {r.permisos.length}</span>
+            {capital(r.nombre)} <span className="opacity-60">· {r.permisos.length}</span>
           </button>
         ))}
       </div>
@@ -64,8 +64,8 @@ export function RolesCliente({ roles, catalogo, csrf }: { roles: Rol[]; catalogo
             <ul className="space-y-2">
               {catalogo.filter(([codigo]) => area.prefijos.some((p) => codigo.startsWith(p))).map(([codigo, texto]) => (
                 <li key={codigo}>
-                  <label className="flex min-h-9 cursor-pointer items-start gap-2 py-1 text-sm pointer-coarse:min-h-11" title={codigo}>
-                    <input type="checkbox" className="mt-0.5 accent-[var(--musgo)]" checked={marcados.has(codigo)}
+                  <label className="flex min-h-9 cursor-pointer items-start gap-2 py-1 text-sm pointer-coarse:min-h-11">
+                    <input type="checkbox" className="mt-0.5" checked={marcados.has(codigo)}
                       onChange={(e) => {
                         const s = new Set(marcados);
                         if (e.target.checked) s.add(codigo); else s.delete(codigo);
@@ -81,7 +81,7 @@ export function RolesCliente({ roles, catalogo, csrf }: { roles: Rol[]; catalogo
       </div>
       <div className="mt-5 flex items-center gap-3">
         <Boton variante="primario" onClick={guardar} disabled={pendiente}>{pendiente ? "Guardando…" : "Guardar permisos"}</Boton>
-        {exito && <span role="status"><Etiqueta tono="musgo">{exito}</Etiqueta></span>}
+        {exito && <Hecho enLinea>{exito}</Hecho>}
       </div>
       {error ? <ErrorAccion error={error} className="mt-3" /> : null}
     </div>

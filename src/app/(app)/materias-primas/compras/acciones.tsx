@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, PackagePlus, Plus, RefreshCw } from "lucide-react";
-import { Boton } from "@/components/ui/base";
+import { Boton, Hecho } from "@/components/ui/base";
 import { campo } from "@/components/ui/campos";
 import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
@@ -29,7 +29,7 @@ function useAccion() {
   });
   const aviso = (
     <>
-      {exito && <p role="status" className="text-sm text-musgo">{exito}</p>}
+      {exito && <Hecho>{exito}</Hecho>}
       {error ? <ErrorAccion error={error} className="px-2 py-1 text-xs" /> : null}
     </>
   );
@@ -116,7 +116,7 @@ export function ActivarProveedor({ rut, activo, csrf }: { rut: string; activo: b
   const { ejecutar, pendiente, aviso } = useAccion();
   return (
     <div className="inline-flex flex-col items-end">
-      <button type="button" disabled={pendiente} className="-my-2 py-2 text-xs text-rauli hover:underline disabled:opacity-50"
+      <button type="button" disabled={pendiente} className={`-my-2 py-2 text-xs hover:underline disabled:opacity-50 ${activo ? "text-error" : "text-rauli"}`}
         onClick={() => ejecutar(() => pedir("PATCH", `/api/v1/proveedores-compra/${rut}`, { csrf, cuerpo: { activo: !activo } }), activo ? "Proveedor desactivado." : "Proveedor reactivado desde hoy.")}>
         {activo ? "Desactivar" : "Reactivar"}
       </button>

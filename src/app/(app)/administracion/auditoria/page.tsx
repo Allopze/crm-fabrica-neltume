@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Lock } from "lucide-react";
-import { Boton, Encabezado, Etiqueta, Panel, Vacio } from "@/components/ui/base";
+import { Encabezado, Etiqueta, Panel, Vacio } from "@/components/ui/base";
+import { CampoFecha } from "@/components/ui/campo-fecha";
 import { campo } from "@/components/ui/campos";
 import { Dropdown } from "@/components/ui/dropdown";
+import { Filtros } from "@/components/ui/filtros";
+import { Paginacion } from "@/components/ui/paginacion";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
@@ -23,6 +26,25 @@ const FILTROS = ["actor", "recurso", "accion", "resultado", "desde", "hasta"] as
 type Fila = { ocurridoEn: Date; actor: string | null; correlacionId: string | null };
 const mismaOperacion = (a: Fila, b: Fila) =>
   (a.correlacionId !== null && a.correlacionId === b.correlacionId) || (a.actor === b.actor && a.ocurridoEn.getTime() === b.ocurridoEn.getTime());
+
+/** Tarea periódica del sistema que no cambió nada (p. ej. una sincronización con Chipax sin facturas nuevas). */
+type Registro = { actorTipo: string; resultado: string; accion: string; recurso: string; despues: unknown };
+function sinCambios(e: Registro): boolean {
+  if (e.actorTipo !== "sistema" || e.resultado !== "ok" || !e.despues || typeof e.despues !== "object" || Array.isArray(e.despues)) return false;
+  const valores = Object.entries(e.despues as Record<string, unknown>);
+  return !valores.some(([k]) => k === "error") && valores.some(([, v]) => typeof v === "number") && valores.every(([, v]) => typeof v !== "number" || v === 0);
+}
+
+/** Las repeticiones seguidas sin cambios se leen como una sola fila: el registro sigue completo, solo se agrupa al mostrarlo. */
+function agrupar<T extends Registro>(datos: T[]): ({ e: T; i: number } | { grupo: T[] })[] {
+  const vista: ({ e: T; i: number } | { grupo: T[] })[] = [];
+  for (let i = 0; i < datos.length; i++) {
+    let j = i;
+    while (sinCambios(datos[i]) && j + 1 < datos.length && sinCambios(datos[j + 1]) && datos[j + 1].accion === datos[i].accion && datos[j + 1].recurso === datos[i].recurso) j++;
+    if (j > i) { vista.push({ grupo: datos.slice(i, j + 1) }); i = j; } else vista.push({ e: datos[i], i });
+  }
+  return vista;
+}
 
 const ORIGEN: Record<string, string> = { web: "web", api: "API", consola: "consola", worker: "proceso de IA" };
 
@@ -49,11 +71,11 @@ export default async function AuditoriaPage({ searchParams }: PageProps<"/admini
   for (const k of ["desde", "hasta"] as const) if (filtro[k] && !/^\d{4}-\d{2}-\d{2}$/.test(filtro[k]!)) filtro[k] = undefined;
   if (filtro.actor && !/^[0-9a-f-]{36}$/i.test(filtro.actor)) filtro.actor = undefined;
   const antes = Number(valor("antes"));
-  const [{ datos, siguiente }, { recursos, actores }] = await Promise.all([
+  const [{ datos, total, siguiente }, { recursos, actores }] = await Promise.all([
     consultarAuditoria(bd(), { ...filtro, antesDe: antes > 0 ? antes : undefined }),
     opcionesAuditoria(bd()),
   ]);
-  const masAntiguos = new URLSearchParams(Object.entries({ ...filtro, antes: String(siguiente) }).filter(([, v]) => v) as [string, string][]);
+  const conFiltros = (extra: Record<string, string>) => new URLSearchParams(Object.entries({ ...filtro, ...extra }).filter(([, v]) => v) as [string, string][]);
 
   return (
     <>
@@ -62,7 +84,7 @@ export default async function AuditoriaPage({ searchParams }: PageProps<"/admini
         descripcion="Quién hizo qué, cuándo y con qué resultado, incluidos los intentos denegados. El registro no se puede editar ni borrar."
         acciones={<span className="inline-flex items-center gap-1.5 text-sm text-tinta-tenue"><Lock className="h-4 w-4" /> solo lectura</span>}
       />
-      <form method="get" className="mb-5 flex flex-wrap gap-2" aria-label="Filtros">
+      <Filtros>
         <Dropdown name="actor" defaultValue={filtro.actor ?? ""} aria-label="Actor">
           <option value="">Todos los actores</option>
           {actores.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
@@ -71,21 +93,40 @@ export default async function AuditoriaPage({ searchParams }: PageProps<"/admini
           <option value="">Todos los recursos</option>
           {recursos.map((r) => <option key={r} value={r}>{textoRecurso(r)}</option>)}
         </Dropdown>
-        <input name="accion" defaultValue={filtro.accion ?? ""} placeholder="Acción contiene…" className={campo} aria-label="Acción" maxLength={80} />
+        <input type="search" name="accion" defaultValue={filtro.accion ?? ""} placeholder="Acción contiene…" className={campo} aria-label="Acción" maxLength={80} />
         <Dropdown name="resultado" defaultValue={filtro.resultado ?? ""} aria-label="Resultado">
           <option value="">Todo resultado</option><option value="ok">Hecho</option><option value="denegado">Denegado</option><option value="error">Error</option>
         </Dropdown>
-        <input type="date" name="desde" defaultValue={filtro.desde ?? ""} className={campo} aria-label="Desde" />
-        <input type="date" name="hasta" defaultValue={filtro.hasta ?? ""} className={campo} aria-label="Hasta" />
-        <Boton type="submit">Filtrar</Boton>
+        <span className="flex items-center gap-1.5 text-sm text-tinta-suave">Desde <CampoFecha name="desde" defaultValue={filtro.desde ?? ""} aria-label="Desde" /></span>
+        <span className="flex items-center gap-1.5 text-sm text-tinta-suave">Hasta <CampoFecha name="hasta" defaultValue={filtro.hasta ?? ""} aria-label="Hasta" /></span>
         {FILTROS.some((k) => filtro[k]) && <Link href="/administracion/auditoria" className="self-center text-sm text-tinta-suave hover:text-tinta">Limpiar</Link>}
-      </form>
+      </Filtros>
       <Panel sinRelleno>
         {datos.length === 0 ? <Vacio titulo="Sin registros">No hay registros con estos filtros.</Vacio> : (
-          <Tabla etiqueta="Registro de auditoría">
+          <Tabla etiqueta="Registro de auditoría" fija>
             <thead><tr><Th>Fecha</Th><Th>Quién</Th><Th>Acción</Th><Th>Sobre</Th><Th>Resultado</Th><Th>Detalle</Th></tr></thead>
             <tbody>
-              {datos.map((e, i) => {
+              {agrupar(datos).map((v) => {
+                if ("grupo" in v) {
+                  const [ultima] = v.grupo;
+                  const primera = v.grupo.at(-1)!;
+                  return (
+                    <Tr key={`g${ultima.id}`}>
+                      <Td className="whitespace-nowrap text-xs tabular-nums text-tinta-suave">{fecha(dia.format(ultima.ocurridoEn))} {hora.format(ultima.ocurridoEn)}</Td>
+                      <Td><span className="text-tinta-tenue">Sistema</span></Td>
+                      <Td className="font-medium">{textoAccion(ultima.accion)}</Td>
+                      <Td className="text-tinta-suave">{textoRecurso(ultima.recurso)}</Td>
+                      <Td><Etiqueta tono="musgo">Hecho</Etiqueta></Td>
+                      <Td className="max-w-md text-sm text-tinta-suave">
+                        <details>
+                          <summary className="cursor-pointer">Sin cambios · {v.grupo.length} veces desde {fecha(dia.format(primera.ocurridoEn))} {hora.format(primera.ocurridoEn).slice(0, 5)}</summary>
+                          <p className="mt-2 rounded bg-papel-hundido p-3 text-xs tabular-nums">{v.grupo.map((g) => hora.format(g.ocurridoEn).slice(0, 5)).join(" · ")}</p>
+                        </details>
+                      </Td>
+                    </Tr>
+                  );
+                }
+                const { e, i } = v;
                 // Una misma operación (p. ej. cerrar una orden) deja varias filas en la misma transacción: se leen como un bloque.
                 const sigue = i > 0 && mismaOperacion(e, datos[i - 1]);
                 const continua = i + 1 < datos.length && mismaOperacion(e, datos[i + 1]);
@@ -115,7 +156,9 @@ export default async function AuditoriaPage({ searchParams }: PageProps<"/admini
           </Tabla>
         )}
       </Panel>
-      {siguiente && <p className="mt-4 text-sm"><Link href={`/administracion/auditoria?${masAntiguos}`} className="text-rauli hover:underline">Ver más antiguos</Link></p>}
+      <Paginacion total={total} singular="registro" plural="registros" etiquetaSiguiente="Más antiguos"
+        inicio={antes > 0 ? `/administracion/auditoria?${conFiltros({})}` : undefined}
+        siguiente={siguiente ? `/administracion/auditoria?${conFiltros({ antes: String(siguiente) })}` : null} />
     </>
   );
 }

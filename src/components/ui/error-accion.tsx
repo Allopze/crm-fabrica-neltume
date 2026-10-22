@@ -5,12 +5,16 @@ import { Copy, TriangleAlert } from "lucide-react";
 import { ErrorApi } from "@/lib/api-cliente";
 import { cn } from "@/lib/formato";
 
-/** Error de una acción con el código de correlación que sirve para soporte (UX §2). */
+/**
+ * Error de una acción (UX §2). El código para soporte solo aparece en errores inesperados (del servidor): en uno de
+ * datos o credenciales (4xx) basta el mensaje, que ya dice qué corregir.
+ */
 export function ErrorAccion({ error, className }: { error: unknown; className?: string }) {
   const [copiado, setCopiado] = useState(false);
   if (!error) return null;
   const mensaje = error instanceof Error ? error.message : String(error);
-  const correlacion = error instanceof ErrorApi ? error.correlacionId : undefined;
+  const inesperado = error instanceof ErrorApi && !(error.estado !== undefined && error.estado >= 400 && error.estado < 500);
+  const correlacion = inesperado ? error.correlacionId : undefined;
 
   return (
     <div role="alert" className={cn("rounded-md border border-error/25 bg-error-velo px-4 py-3 text-sm text-error", className)}>

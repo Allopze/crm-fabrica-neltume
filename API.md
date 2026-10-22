@@ -5,7 +5,7 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 ## 1. Convenciones
 
 - **Autenticación:** cookie de sesión `HttpOnly`. Las mutaciones exigen la cabecera `X-CSRF-Token`.
-- **Paginación:** `?limite=` (por defecto 50, máximo 200) y `?cursor=` (opaco). Respuesta: `{ "datos": [...], "siguiente": "<cursor>|null" }`.
+- **Paginación:** `?limite=` (por defecto 50, máximo 200) y `?cursor=` (opaco). Respuesta: `{ "datos": [...], "total": n, "siguiente": "<cursor>|null" }`; `total` cuenta lo que cumple los filtros, sin la página (UX §1).
 - **Idempotencia:** la cabecera `Idempotency-Key` (UUID) es **obligatoria** donde dice *Idem*. Una repetición con el mismo cuerpo devuelve la respuesta original; mientras la primera sigue en curso, 409 `IDEMPOTENCIA_EN_CURSO` (reintentar con la misma clave); con otro cuerpo u otra ruta, 422 `IDEMPOTENCIA_CONFLICTO` (DESIGN §5).
 - **Concurrencia:** las ediciones de cotización llevan `version`; si no coincide, 409 `VERSION_OBSOLETA`.
 - **Entrada:** Zod estricto. Cualquier campo no esperado da 400. Los campos de importe (`precio*`, `total`, `iva`, `subtotal`) **nunca** se aceptan, salvo `precio_unitario` al fijar un ítem `a_pedido` y el `monto` de un pago (ADR-0020) de la nota de pedido, que solo suma al pagado (SECURITY T2).

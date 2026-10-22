@@ -96,7 +96,7 @@ export default async function ProduccionPage({ searchParams }: PageProps<"/produ
         </div>
       )}
       {vista === "ordenes" && gestiona && (
-        <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 xl:grid-cols-[1.25fr_1fr]">
+        <div className="grid grid-cols-1 items-start gap-8 [&>*]:min-w-0 xl:grid-cols-[1.25fr_1fr]">
           <Panel titulo="Órdenes de producción" sinRelleno>
             {ordenes.length === 0 ? <Vacio titulo="Aún no hay órdenes">Crea una con «Nueva orden».</Vacio> : (
               <Tabla>

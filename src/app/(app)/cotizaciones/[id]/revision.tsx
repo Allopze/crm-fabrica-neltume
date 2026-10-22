@@ -2,21 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ClipboardList, Download, Eye, Lock, PencilLine, Plus, RotateCcw, ShieldAlert, Truck } from "lucide-react";
+import { ClipboardList, Download, Eye, Lock, PencilLine, Plus, RotateCcw, ShieldAlert, Truck } from "lucide-react";
 import { Boton, BotonDescarga, BotonLink } from "@/components/ui/base";
 import { campo } from "@/components/ui/campos";
-import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { pedir } from "@/lib/api-cliente";
-import { clp, cn, fecha, fechaHora } from "@/lib/formato";
-import { Descuento } from "./descuento";
+import { cn, fecha, fechaHora } from "@/lib/formato";
 import { PistasBorrador, PlazoPedido } from "./pistas";
+import { Aprobacion, Resumen } from "./resumen";
 import { SelectorArticulo } from "./selector-articulo";
 import { TarjetaItem } from "./tarjeta-item";
 import { TextoMarcado } from "./texto-marcado";
 import type { CotizacionDetalle } from "./tipos";
-
-const numeroPct = (f: number) => `${String(Math.round(f * 10_000) / 100).replace(".", ",")} %`;
 
 interface Props {
   inicial: CotizacionDetalle;
@@ -38,11 +35,6 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, puedeCre
   const [pendiente, iniciar] = useTransition();
   const aprobada = c.estado === "aprobada" || c.estado === "aceptada";
   const base = `/api/v1/cotizaciones/${c.id}`;
-  // Los motivos visibles por los que Aprobar está deshabilitado se asocian al botón (UX §2).
-  const motivosAprobar = [
-    c.pendientes > 0 ? "aprobar-pendientes" : null,
-    c.pendientes === 0 && !c.clienteId ? "aprobar-cliente" : null,
-  ].filter((id): id is string => id !== null).join(" ") || undefined;
 
   // El servidor sigue siendo la fuente de verdad, pero un refresco no debe remontar la pantalla ni borrar lo tecleado.
   const [versionServidor, setVersionServidor] = useState(inicial.version);
@@ -79,6 +71,61 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, puedeCre
     });
   }
 
+  const items = (
+    <>
+      {error ? <ErrorAccion error={error} className="mb-3" /> : null}
+      {c.estado === "ia_fallida" && (
+        <div role="alert" className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-error/25 bg-error-velo px-4 py-3 text-sm text-error">
+          <p><strong>No pudimos interpretar el pedido.</strong> El texto quedó guardado a la izquierda; agrega los ítems que reconozcas.</p>
+          <Boton variante="peligro" onClick={() => document.getElementById("agregar-item")?.focus()}><PencilLine className="h-4 w-4" /> Cotizar a mano</Boton>
+        </div>
+      )}
+      <h2 className="mb-3 text-sm font-semibold text-tinta-suave">Ítems · {c.items.length}</h2>
+      <div className="space-y-3">
+        {c.items.map((it, i) => (
+          <TarjetaItem key={it.id} item={it} n={i + 1} activo={activo === it.id} bloqueado={aprobada || pendiente} soloLectura={aprobada} listaVersion={c.lista.vigente} onActivar={setActivo}
+            acciones={{
+              resolver: (codigo) => item(it.id, { codigo }),
+              fijarPrecio: (precio) => item(it.id, { precioUnitario: precio }),
+              cantidad: (n) => item(it.id, { cantidad: n }),
+              quitar: () => accion(() => pedir("DELETE", `${base}/items/${it.id}?version=${c.version}`, { csrf })),
+            }} />
+        ))}
+      </div>
+      {!aprobada && (
+        <>
+          <div className="mt-3 flex items-center gap-2 rounded-md border border-dashed border-linea-fuerte p-3">
+            <Plus className="h-4 w-4 text-tinta-tenue" />
+            <SelectorArticulo id="agregar-item" version={c.lista.vigente} etiqueta="Agregar ítem del catálogo" onElegir={(codigo) => accion(() => pedir("POST", `${base}/items`, { csrf, cuerpo: { codigo, cantidad: 1, version: c.version } }))} />
+          </div>
+          <form aria-label="Agregar línea por confirmar" onSubmit={agregarLibre}
+            className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-dashed border-linea-fuerte p-3">
+            <input id="agregar-linea-libre" value={detalleLibre} onChange={(e) => setDetalleLibre(e.target.value)} maxLength={200}
+              placeholder="¿No está en el catálogo? Descríbelo (queda por confirmar)" aria-label="Artículo fuera de catálogo"
+              className={`${campo} min-w-0 flex-1 basis-60`} />
+            <Boton type="submit" disabled={!detalleLibre.trim() || pendiente} className="max-sm:w-full"><Plus className="h-4 w-4" /> Agregar por confirmar</Boton>
+          </form>
+        </>
+      )}
+    </>
+  );
+
+  const resumen = (
+    <Resumen c={c} clientes={clientes} aprobada={aprobada} pendiente={pendiente} puedeDescontar={puedeDescontar}
+      onCliente={(clienteId) => accion(() => pedir("PATCH", base, { csrf, cuerpo: { clienteId, version: c.version } }))}
+      onDescuento={(porcentaje, motivo) => accion(() => pedir("POST", `${base}/descuento`, { csrf, cuerpo: { porcentaje, motivo, version: c.version } }))} />
+  );
+
+  const aprobacion = aprobada ? null : puedeAprobar ? (
+    <Aprobacion c={c} clientes={clientes} pendiente={pendiente} confirmando={confirmando} lateral={!c.textoOriginal}
+      onConfirmar={() => setConfirmando(true)} onCancelar={() => setConfirmando(false)}
+      onAprobar={() => accion(() => pedir("POST", `${base}/aprobar`, { csrf, idempotente: true, cuerpo: { version: c.version } }), true)} />
+  ) : (
+    <p role="status" className={cn("rounded-md border border-linea bg-papel-hundido/60 px-4 py-3 text-sm text-tinta-suave", c.textoOriginal && "mt-5")}>
+      No tienes permiso para aprobar cotizaciones. Pídeselo a quien administra los usuarios.
+    </p>
+  );
+
   return (
     <div className="space-y-6">
       {aprobada ? (
@@ -109,8 +156,8 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, puedeCre
             onAsignar={(clienteId, por) => accion(() => pedir("PATCH", base, { csrf, cuerpo: { clienteId, clienteDetectadoPor: por, version: c.version } }))} />
         </>
       )}
-      <div className={cn("grid grid-cols-1 gap-6 [&>*]:min-w-0", c.textoOriginal ? "xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]" : "max-w-3xl")}>
-        {c.textoOriginal && (
+      {c.textoOriginal ? (
+        <div className="grid grid-cols-1 gap-6 [&>*]:min-w-0 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
           <section className="rounded-lg border border-linea bg-papel-hundido/50 p-6 xl:sticky xl:top-20 xl:self-start">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
               <h2 className="text-sm font-semibold text-tinta-suave">{vistaIA ? "Lo que recibió la IA" : "Texto original · tal como llegó"}</h2>
@@ -120,115 +167,22 @@ export function Revision({ inicial, csrf, puedeAprobar, puedeDescontar, puedeCre
             </div>
             <TextoMarcado texto={c.textoOriginal} items={c.items} activo={activo} onActivar={setActivo} vistaIA={vistaIA} />
           </section>
-        )}
-
-        <section>
-          {error ? <ErrorAccion error={error} className="mb-3" /> : null}
-          {c.estado === "ia_fallida" && (
-            <div role="alert" className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-error/25 bg-error-velo px-4 py-3 text-sm text-error">
-              <p><strong>No pudimos interpretar el pedido.</strong> El texto quedó guardado a la izquierda; agrega los ítems que reconozcas.</p>
-              <Boton variante="peligro" onClick={() => document.getElementById("agregar-item")?.focus()}><PencilLine className="h-4 w-4" /> Cotizar a mano</Boton>
-            </div>
-          )}
-          <h2 className="mb-3 text-sm font-semibold text-tinta-suave">Ítems · {c.items.length}</h2>
-          <div className="space-y-3">
-            {c.items.map((it, i) => (
-              <TarjetaItem key={it.id} item={it} n={i + 1} activo={activo === it.id} bloqueado={aprobada || pendiente} soloLectura={aprobada} listaVersion={c.lista.vigente} onActivar={setActivo}
-                acciones={{
-                  resolver: (codigo) => item(it.id, { codigo }),
-                  fijarPrecio: (precio) => item(it.id, { precioUnitario: precio }),
-                  cantidad: (n) => item(it.id, { cantidad: n }),
-                  quitar: () => accion(() => pedir("DELETE", `${base}/items/${it.id}?version=${c.version}`, { csrf })),
-                }} />
-            ))}
-          </div>
-          {!aprobada && (
-            <>
-              <div className="mt-3 flex items-center gap-2 rounded-md border border-dashed border-linea-fuerte p-3">
-                <Plus className="h-4 w-4 text-tinta-tenue" />
-                <SelectorArticulo id="agregar-item" version={c.lista.vigente} etiqueta="Agregar ítem del catálogo" onElegir={(codigo) => accion(() => pedir("POST", `${base}/items`, { csrf, cuerpo: { codigo, cantidad: 1, version: c.version } }))} />
-              </div>
-              <form aria-label="Agregar línea por confirmar" onSubmit={agregarLibre}
-                className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-dashed border-linea-fuerte p-3">
-                <input id="agregar-linea-libre" value={detalleLibre} onChange={(e) => setDetalleLibre(e.target.value)} maxLength={200}
-                  placeholder="¿No está en el catálogo? Descríbelo (queda por confirmar)" aria-label="Artículo fuera de catálogo"
-                  className={`${campo} min-w-0 flex-1`} />
-                <Boton type="submit" disabled={!detalleLibre.trim() || pendiente}><Plus className="h-4 w-4" /> Agregar por confirmar</Boton>
-              </form>
-            </>
-          )}
-
-          <div className="mt-6 rounded-lg border border-linea-fuerte bg-lamina">
-            {aprobada ? (
-              <div className="flex items-center justify-between gap-3 border-b border-linea px-5 py-3 text-sm">
-                <span className="text-tinta-suave">Cliente</span><span className="font-medium">{c.cliente?.nombre ?? "—"}</span>
-              </div>
-            ) : clientes && (
-              <div className="flex items-center justify-between gap-3 border-b border-linea px-5 py-3 text-sm">
-                <span className="text-tinta-suave">Cliente</span>
-                <Dropdown disabled={aprobada || pendiente} value={c.clienteId ?? ""} aria-label="Cliente" className="max-w-xs"
-                  onChange={(clienteId) => accion(() => pedir("PATCH", base, { csrf, cuerpo: { clienteId: clienteId || null, version: c.version } }))}>
-                  <option value="">Elegir cliente…</option>
-                  {clientes.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
-                </Dropdown>
-              </div>
-            )}
-            <dl className="divide-y divide-linea/70 text-sm">
-              <div className="flex justify-between px-5 py-2.5"><dt className="text-tinta-suave">Subtotal neto</dt><dd className="tabular-nums">{clp(Number(c.subtotal))}</dd></div>
-              {Number(c.descuento) > 0 && <div className="flex justify-between px-5 py-2.5"><dt className="text-tinta-suave">Descuento {numeroPct(Number(c.descuentoPct))} ({c.descuentoMotivo})</dt><dd className="tabular-nums">−{clp(Number(c.descuento))}</dd></div>}
-              {puedeDescontar && !aprobada && (
-                <div className="px-5 py-2.5">
-                  <dt className="sr-only">Aplicar descuento</dt>
-                  <dd><Descuento key={`${c.descuentoPct}:${c.descuentoMotivo}`} pct={Number(c.descuentoPct)} motivo={c.descuentoMotivo} deshabilitado={pendiente}
-                    onAplicar={(porcentaje, motivo) => accion(() => pedir("POST", `${base}/descuento`, { csrf, cuerpo: { porcentaje, motivo, version: c.version } }))} /></dd>
-                </div>
-              )}
-              <div className="flex justify-between px-5 py-2.5"><dt className="text-tinta-suave">IVA 19 %</dt><dd className="tabular-nums">{clp(Number(c.iva))}</dd></div>
-              <div className="flex items-baseline justify-between px-5 py-4"><dt className="font-medium">Total</dt><dd className="font-display text-3xl font-medium tabular-nums tracking-tight">{clp(Number(c.total))}</dd></div>
-            </dl>
-            <p className="border-t border-linea px-5 py-2 text-xs text-tinta-tenue">Valores puestos en fábrica, flete aparte. Precios calculados por el sistema (lista v{c.lista.usada ?? c.lista.vigente}); la IA no fija importes.</p>
-          </div>
-
-          {!aprobada && puedeAprobar && !confirmando && (
-            <div className="sticky bottom-0 z-10 -mx-1 mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-linea bg-papel/95 px-1 py-3 backdrop-blur">
-              {c.pendientes > 0 && <p id="aprobar-pendientes" className="text-sm text-ambar">Resuelve {c.pendientes} {c.pendientes === 1 ? "ítem" : "ítems"} para poder aprobar.</p>}
-              {c.pendientes === 0 && !c.clienteId && (
-                <p id="aprobar-cliente" className="text-sm text-ambar">
-                  {clientes ? "Elige el cliente para poder aprobar." : "Falta asignar el cliente. Pídelo a alguien con permiso para ver clientes."}
-                </p>
-              )}
-              <Boton variante="primario" className={cn("h-11 px-5", c.pendientes === 0 && c.clienteId && "ring-4 ring-rauli/15")}
-                disabled={pendiente || c.pendientes > 0 || !c.clienteId || c.items.length === 0}
-                aria-describedby={motivosAprobar}
-                onClick={() => setConfirmando(true)}>
-                <Check className="h-4 w-4" /> Aprobar cotización
-              </Boton>
-            </div>
-          )}
-          {!aprobada && puedeAprobar && confirmando && (
-            <div role="group" aria-labelledby="confirmar-aprobacion" className="mt-5 rounded-lg border border-rauli/30 bg-rauli-velo/50 p-5">
-              <p id="confirmar-aprobacion" className="font-display text-lg font-medium">Aprobar la cotización N.º {c.numero}</p>
-              <ul className="mt-2 space-y-1 text-sm text-tinta-suave">
-                <li>{c.items.length === 1 ? "1 ítem" : `${c.items.length} ítems`} para <strong className="text-tinta">{clientes?.find((x) => x.id === c.clienteId)?.nombre ?? "el cliente elegido"}</strong> · total <strong className="text-tinta tabular-nums">{clp(Number(c.total))}</strong> IVA incluido.</li>
-                <li>Los precios quedan congelados con la lista v{c.lista.usada ?? c.lista.vigente}, aunque la lista cambie después.</li>
-                <li>Vigencia de {c.vigenciaDias} días hábiles desde hoy. Después ya no se puede editar: queda lista para el PDF y para convertirla en pedido.</li>
-              </ul>
-              <div className="mt-4 flex flex-wrap justify-end gap-2">
-                <Boton variante="fantasma" disabled={pendiente} onClick={() => setConfirmando(false)}>Volver a revisar</Boton>
-                <Boton variante="primario" className="h-11 px-5" disabled={pendiente} autoFocus
-                  onClick={() => accion(() => pedir("POST", `${base}/aprobar`, { csrf, idempotente: true, cuerpo: { version: c.version } }), true)}>
-                  <Check className="h-4 w-4" /> {pendiente ? "Aprobando…" : "Confirmar aprobación"}
-                </Boton>
-              </div>
-            </div>
-          )}
-          {!aprobada && !puedeAprobar && (
-            <p role="status" className="mt-5 rounded-md border border-linea bg-papel-hundido/60 px-4 py-3 text-sm text-tinta-suave">
-              No tienes permiso para aprobar cotizaciones. Pídeselo a quien administra los usuarios.
-            </p>
-          )}
-        </section>
-      </div>
+          <section>
+            {items}
+            <div className="mt-6">{resumen}</div>
+            {aprobacion}
+          </section>
+        </div>
+      ) : (
+        // Sin texto del cliente, el resumen va en una columna fija: cliente, totales y Aprobar siempre a la vista (UX §3).
+        <div className="grid grid-cols-1 items-start gap-6 [&>*]:min-w-0 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
+          <section>{items}</section>
+          <aside aria-label="Resumen de la cotización" className="space-y-4 lg:sticky lg:top-20">
+            {resumen}
+            {aprobacion}
+          </aside>
+        </div>
+      )}
     </div>
   );
 }

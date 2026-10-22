@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { CalendarClock, CircleHelp, Hammer, Hourglass, TriangleAlert, Wallet } from "lucide-react";
@@ -8,7 +9,9 @@ import { requerirSesion } from "@/domain/auth/servidor";
 import { alertasGasto, gastoIa } from "@/domain/metricas-ia";
 import { alertasStock, cifrasDelMes, pedidosConFaltante, porRevisar } from "@/domain/panel";
 import { pedidosPorAtender } from "@/domain/pedidos/consulta";
-import { clp, fechaHora, numero } from "@/lib/formato";
+import { clp, fechaHora, numero, titulo } from "@/lib/formato";
+
+export const metadata: Metadata = { title: "Panel" };
 
 const mes = new Intl.DateTimeFormat("es-CL", { month: "long", timeZone: "America/Santiago" });
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
@@ -110,14 +113,14 @@ export default async function PanelPage() {
                         <span className="flex min-w-0 grow basis-full items-baseline gap-3 sm:basis-0">
                           <span className="w-14 shrink-0 text-sm tabular-nums text-tinta-tenue">N.º {c.numero}</span>
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate font-medium">{c.cliente ?? <span className="text-tinta-tenue">sin cliente</span>}</span>
-                            <span className="block truncate text-sm text-tinta-tenue">{fechaHora(new Date(c.creadoEn).toISOString())} · {c.origen === "ia" ? "desde texto" : "manual"}</span>
+                            <span className="block truncate font-medium">{c.cliente ?? <span className="font-normal text-tinta-tenue">Sin cliente</span>}</span>
+                            <span className="block truncate text-sm text-tinta-tenue">{fechaHora(new Date(c.creadoEn).toISOString())} · {c.origen === "ia" ? "desde texto" : "a mano"}</span>
                           </span>
                         </span>
                         {c.estado === "ia_fallida" ? <Etiqueta tono="error"><TriangleAlert className="h-3 w-3" /> IA no disponible</Etiqueta>
-                          : c.estado === "interpretando" ? <Etiqueta tono="pizarra"><Hourglass className="h-3 w-3" /> interpretando</Etiqueta>
+                          : c.estado === "interpretando" ? <Etiqueta tono="pizarra"><Hourglass className="h-3 w-3" /> Interpretando</Etiqueta>
                           : c.pendientes > 0 ? <Etiqueta tono="ambar"><CircleHelp className="h-3 w-3" /> {c.pendientes} por confirmar</Etiqueta>
-                          : <Etiqueta tono="musgo">lista para aprobar</Etiqueta>}
+                          : <Etiqueta tono="musgo">Lista para aprobar</Etiqueta>}
                       </Link>
                     </li>
                   ))}
@@ -144,9 +147,9 @@ export default async function PanelPage() {
                     return (
                       <FilaPedido key={p.id} id={p.id} numero={p.numero} cliente={p.cliente}
                         avisos={<>
-                          <Etiqueta tono="pizarra"><Hammer className="h-3 w-3" /> {p.faltante === 1 ? "falta 1" : `faltan ${p.faltante}`} por fabricar</Etiqueta>
-                          {aviso?.sinAbono && <Etiqueta tono="ambar"><Wallet className="h-3 w-3" /> sin abono</Etiqueta>}
-                          {aviso && aviso.atrasoDias > 0 && <Etiqueta tono="error"><CalendarClock className="h-3 w-3" /> atrasada {plural(aviso.atrasoDias, "día", "días")}</Etiqueta>}
+                          <Etiqueta tono="pizarra"><Hammer className="h-3 w-3" /> {p.faltante === 1 ? "Falta 1" : `Faltan ${p.faltante}`} por fabricar</Etiqueta>
+                          {aviso?.sinAbono && <Etiqueta tono="ambar"><Wallet className="h-3 w-3" /> Sin abono</Etiqueta>}
+                          {aviso && aviso.atrasoDias > 0 && <Etiqueta tono="error"><CalendarClock className="h-3 w-3" /> Atrasada {plural(aviso.atrasoDias, "día", "días")}</Etiqueta>}
                         </>} />
                     );
                   })}
@@ -168,8 +171,8 @@ export default async function PanelPage() {
                   {restoPorAtender.map((p) => (
                     <FilaPedido key={p.id} id={p.id} numero={p.numero} cliente={p.cliente}
                       avisos={<>
-                        {p.sinAbono && <Etiqueta tono="ambar"><Wallet className="h-3 w-3" /> sin abono</Etiqueta>}
-                        {p.atrasoDias > 0 && <Etiqueta tono="error"><CalendarClock className="h-3 w-3" /> atrasada {plural(p.atrasoDias, "día", "días")}</Etiqueta>}
+                        {p.sinAbono && <Etiqueta tono="ambar"><Wallet className="h-3 w-3" /> Sin abono</Etiqueta>}
+                        {p.atrasoDias > 0 && <Etiqueta tono="error"><CalendarClock className="h-3 w-3" /> Atrasada {plural(p.atrasoDias, "día", "días")}</Etiqueta>}
                       </>} />
                   ))}
                 </ul>
@@ -178,7 +181,7 @@ export default async function PanelPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 lg:grid-cols-[1fr_1.15fr]">
+        <div className="grid grid-cols-1 items-start gap-8 [&>*]:min-w-0 lg:grid-cols-[1fr_1.15fr]">
           {alertas && (
             <Panel titulo="Bajo el mínimo" sinRelleno
               accion={alertas.puertas.length || !alertas.mp.length
@@ -190,7 +193,7 @@ export default async function PanelPage() {
                     <li key={a.codigo} className="flex items-center justify-between gap-3 px-5 py-3">
                       <Link href={`/stock/${a.codigo}`} className="flex min-w-0 items-center gap-3">
                         <Placa codigo={a.codigo} />
-                        <span className="truncate text-sm capitalize text-tinta-suave">{a.modelo.toLowerCase()}</span>
+                        <span className="truncate text-sm text-tinta-suave">{titulo(a.modelo)}</span>
                       </Link>
                       <span className="shrink-0 text-sm tabular-nums"><strong className="text-ambar">{a.disponible}</strong><span className="text-tinta-tenue"> / mín. {a.minimo}</span></span>
                     </li>

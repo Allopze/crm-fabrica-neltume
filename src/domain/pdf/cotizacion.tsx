@@ -1,8 +1,7 @@
-// PDF de cotización con @react-pdf/renderer desde los datos congelados (ADR-0004). Fuentes estándar: sin red.
+// PDF de cotización con @react-pdf/renderer desde los datos congelados (ADR-0004). Fuentes de la marca incrustadas: sin red.
 import { Document, Page, renderToBuffer } from "@react-pdf/renderer";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
-import { articulo } from "@/db/esquema/catalogo";
 import { cliente } from "@/db/esquema/comercial";
 import { MARCA } from "@/lib/marca";
 import { obtenerCotizacion } from "../cotizaciones/consulta";
@@ -33,14 +32,12 @@ export const renderizarCotizacion = (c: CotizacionPdf) => renderToBuffer(<Docume
 export async function pdfCotizacion(tx: Tx, id: string): Promise<{ numero: number; pdf: Buffer }> {
   const c = await obtenerCotizacion(tx, id, true);
   if (c.estado !== "aprobada" && c.estado !== "aceptada") throw new ErrorDominio("NO_APROBADA", "Solo una cotización aprobada tiene PDF.");
-  const ids = c.items.flatMap((i) => (i.articuloId ? [i.articuloId] : []));
-  const codigos = new Map(ids.length ? (await tx.select({ id: articulo.id, codigo: articulo.codigo }).from(articulo).where(inArray(articulo.id, ids))).map((a) => [a.id, a.codigo]) : []);
   const [cli] = c.clienteId ? await tx.select({ tipo: cliente.tipo }).from(cliente).where(eq(cliente.id, c.clienteId)) : [];
   const tienda = cli?.tipo === "tienda";
   const datos: CotizacionPdf = {
     numero: c.numero, aprobadaEn: c.aprobadaEn!, vigenciaHasta: c.vigenciaHasta!, listaVersion: c.lista.usada,
     cliente: c.cliente && { nombre: c.cliente.nombre, rut: c.cliente.rut ?? null, comuna: c.cliente.comuna ?? null, contacto: c.cliente.contacto ?? null },
-    items: c.items.map((i) => ({ codigo: i.articuloId ? codigos.get(i.articuloId) ?? null : null, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, cantidad: i.cantidad, precioUnitario: Number(i.precioUnitario), totalLinea: Number(i.totalLinea) })),
+    items: c.items.map((i) => ({ codigo: i.codigo, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, cantidad: i.cantidad, precioUnitario: Number(i.precioUnitario), totalLinea: Number(i.totalLinea) })),
     subtotal: Number(c.subtotal), descuento: Number(c.descuento), descuentoMotivo: c.descuentoMotivo, iva: Number(c.iva), total: Number(c.total),
     abonoPct: tienda ? null : await abonoPct(tx),
   };

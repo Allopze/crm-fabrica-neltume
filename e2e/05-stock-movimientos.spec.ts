@@ -102,8 +102,8 @@ test("las puertas y los despachos anteriores tienen su pestaña en Stock", async
   await ingresar(page, ADMIN.email, ADMIN.clave);
   await ir(page, "/stock");
   await page.getByRole("navigation", { name: "Secciones de stock" }).getByRole("link", { name: "Puertas" }).click();
-  await elegirDropdown(page.getByLabel("Ubicación"), "Galpón arriba");
-  await page.getByRole("button", { name: "Filtrar" }).click();
+  await elegirDropdown(page.getByLabel("Ubicación"), "Galpón arriba"); // los filtros se aplican al elegir
+  await expect(page).toHaveURL(/ubicacion=/);
   await expect(page.getByRole("region", { name: "Puertas" }).getByRole("row")).toHaveCount(2);
   await page.getByRole("navigation", { name: "Secciones de stock" }).getByRole("link", { name: "Despachos anteriores" }).click();
   await expect(page.getByText("Sin despachos anteriores")).toBeVisible();

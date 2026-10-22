@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { BotonLink, Vacio } from "@/components/ui/base";
+
+export const metadata: Metadata = { title: "No encontrado" };
 
 export default function NoEncontrado() {
   return (

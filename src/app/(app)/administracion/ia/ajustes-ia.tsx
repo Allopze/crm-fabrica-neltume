@@ -7,10 +7,10 @@ import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import type { EstadoAjustesIA, ModeloIA, ProveedorConfigurado } from "@/ai/ajustes";
 import { pedir } from "@/lib/api-cliente";
-import { fechaHora } from "@/lib/formato";
+import { fechaHora, usd } from "@/lib/formato";
 
 const fecha = (iso: string | null) => iso ? fechaHora(iso) : "aún no consultado";
-const precios = (m: ModeloIA) => m.precioEntradaUsdMTok === undefined ? "tarifa no disponible" : `US$ ${m.precioEntradaUsdMTok} entrada / US$ ${m.precioSalidaUsdMTok} salida por millón`;
+const precios = (m: ModeloIA) => m.precioEntradaUsdMTok === undefined ? "tarifa no disponible" : `${usd(m.precioEntradaUsdMTok)} entrada / ${usd(m.precioSalidaUsdMTok)} salida por millón`;
 const NOMBRE_PROVEEDOR: Record<string, string> = { commandcode: "Command Code", groq: "Groq" };
 const limites = (m: ModeloIA) => m.limites ? `RPM ${m.limites.rpm ?? "—"} · RPD ${m.limites.rpd ?? "—"} · TPM ${m.limites.tpm ?? "—"} · TPD ${m.limites.tpd ?? "—"}` : "Sin límite Free publicado";
 
@@ -84,7 +84,7 @@ export function AjustesIA({ csrf }: { csrf: string }) {
             {proveedor === "commandcode" ? <p className="mt-2 text-tinta-suave">{precios(modeloElegido)} · tarifa publicada</p> : <p className="mt-2 text-tinta-suave">Límites Free de referencia: {limites(modeloElegido)}</p>}
           </div>}
           {proveedor === "groq" && <label className="flex items-start gap-3 rounded-md border border-ambar/30 bg-ambar-velo p-3 text-sm text-ambar">
-            <input type="checkbox" className="mt-0.5 accent-current" checked={zdr} onChange={(e) => setZdr(e.target.checked)} />
+            <input type="checkbox" className="mt-0.5" checked={zdr} onChange={(e) => setZdr(e.target.checked)} />
             <span>Confirmo que el proveedor no guarda los datos que le enviamos (retención cero). Es una configuración de su cuenta; la app no puede comprobarla.</span>
           </label>}
           <Boton variante="primario" disabled={pendiente || !modelo || !modeloElegido?.compatible || modeloElegido.preview} onClick={() => iniciar(() => void activar())}>

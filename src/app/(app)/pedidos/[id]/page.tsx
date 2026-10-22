@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { eq } from "drizzle-orm";
 import { ChevronRight, Download, Hammer } from "lucide-react";
 import { BotonDescarga, Encabezado, Etiqueta, Panel, Placa } from "@/components/ui/base";
 import { estadoPago, estadoPedido, MEDIOS } from "@/components/ui/estado-pedido";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { bd } from "@/db/conexion";
+import { notaPedido } from "@/db/esquema/comercial";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { ErrorDominio } from "@/domain/errores";
 import { obtenerPedido } from "@/domain/pedidos/consulta";
@@ -18,7 +20,13 @@ import { CancelarPedido } from "./cancelar-pedido";
 import { FormularioDespacho } from "./despacho";
 import { Pagos } from "./pagos";
 
-export const metadata: Metadata = { title: "Nota de pedido" };
+export async function generateMetadata({ params }: PageProps<"/pedidos/[id]">): Promise<Metadata> {
+  const sesion = await requerirSesion();
+  const { id } = await params;
+  if (!sesion.permisos.has("pedidos.gestionar") || !/^[0-9a-f-]{36}$/i.test(id)) return { title: "Nota de pedido" };
+  const [p] = await bd().select({ numero: notaPedido.numero }).from(notaPedido).where(eq(notaPedido.id, id));
+  return { title: p ? `Nota de pedido N.º ${p.numero}` : "Nota de pedido" };
+}
 
 /** Detalle breve de cada paso del historial (REQ-COT-8.15), desde lo que guardó la auditoría. */
 function detallePaso(accion: string, d: Record<string, unknown> | null): string | null {
@@ -99,7 +107,7 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
         </Panel>
       )}
 
-      <div className="grid grid-cols-1 gap-8 [&>*]:min-w-0 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid grid-cols-1 items-start gap-8 [&>*]:min-w-0 lg:grid-cols-[1.5fr_1fr]">
         <Panel titulo="Ítems y reserva">
           <ul className="space-y-6">
             {p.items.map((i) => (

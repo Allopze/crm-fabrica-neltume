@@ -26,8 +26,7 @@ test("filtrar por actor en la pantalla muestra solo sus registros, con los deneg
   await ingresar(page, ADMIN.email, ADMIN.clave);
   await ir(page, "/administracion/auditoria");
   await elegirDropdown(page.getByLabel("Actor"), { label: CONSULTA.nombre });
-  await elegirDropdown(page.getByLabel("Resultado"), "denegado");
-  await page.getByRole("button", { name: "Filtrar" }).click();
+  await elegirDropdown(page.getByLabel("Resultado"), "denegado"); // los filtros se aplican al elegir
   await expect(page).toHaveURL(/resultado=denegado/);
   const filas = page.getByRole("row").filter({ hasText: "denegado" });
   await expect(filas.first()).toBeVisible();

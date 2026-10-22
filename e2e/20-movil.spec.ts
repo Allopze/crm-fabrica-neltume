@@ -60,8 +60,8 @@ test("los controles principales miden al menos 44 px de alto con el dedo", async
     expect(await alto(nueva, "«Nueva cotización»"), "«Nueva cotización» debe medir al menos 44 px de alto").toBeGreaterThanOrEqual(44);
 
     await ir(page, "/stock");
-    const filtrar = page.getByRole("button", { name: "Filtrar" });
-    expect(await alto(filtrar, "«Filtrar» de /stock"), "«Filtrar» de /stock debe medir al menos 44 px de alto").toBeGreaterThanOrEqual(44);
+    const madera = page.getByRole("combobox", { name: "Madera" });
+    expect(await alto(madera, "«Madera» de /stock"), "El filtro «Madera» de /stock debe medir al menos 44 px de alto").toBeGreaterThanOrEqual(44);
   } finally {
     await contexto.close();
   }

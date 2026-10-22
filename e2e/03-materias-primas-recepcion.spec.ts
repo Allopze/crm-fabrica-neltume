@@ -11,9 +11,9 @@ test("crea 3 materias primas con su unidad", async ({ page }) => {
   await ingresar(page, ADMIN.email, ADMIN.clave);
   await ir(page, "/materias-primas");
   for (const [nombre, unidad, minimo] of MATERIAS) {
-    const abrir = page.getByRole("button", { name: "Nueva materia prima" });
-    if (await abrir.isVisible()) await abrir.click(); // el formulario queda abierto para cargar varias seguidas
     const form = page.getByRole("form", { name: "Nueva materia prima" });
+    // El panel lateral queda abierto para cargar varias seguidas: solo se abre la primera vez.
+    if (!(await form.isVisible())) await page.getByRole("button", { name: "Nueva materia prima" }).click();
     await form.getByLabel("Nombre").fill(nombre);
     await elegirDropdown(form.getByLabel("Unidad"), unidad);
     if (minimo) await form.getByLabel("Mínimo").fill(minimo);

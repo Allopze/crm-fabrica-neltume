@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BotonLink, Encabezado, Panel, Vacio } from "@/components/ui/base";
+import { CampoFecha } from "@/components/ui/campo-fecha";
 import { campo } from "@/components/ui/campos";
 import { EstadoCotizacionEtiqueta } from "@/components/ui/estado-cotizacion";
+import { FilaEnlazada } from "@/components/ui/fila-enlazada";
+import { Filtros } from "@/components/ui/filtros";
+import { Paginacion } from "@/components/ui/paginacion";
 import { SinPermiso } from "@/components/ui/sin-permiso";
-import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
+import { Tabla, Td, Th } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
 import { requerirSesion } from "@/domain/auth/servidor";
 import { listarCotizaciones } from "@/domain/cotizaciones/consulta";
@@ -27,7 +31,7 @@ export default async function CotizacionesPage({ searchParams }: PageProps<"/cot
   const busqueda = { q: texto("q"), desde: fechaValida("desde"), hasta: fechaValida("hasta") };
   const antesDe = Number(sp.antes) > 0 ? Number(sp.antes) : undefined;
   const verCliente = sesion.permisos.has("clientes.ver");
-  const { datos, siguiente } = await listarCotizaciones(bd(), { estado: estado || undefined, q: busqueda.q || undefined, desde: busqueda.desde || undefined, hasta: busqueda.hasta || undefined, antesDe, limite: 50 }, verCliente);
+  const { datos, total, siguiente } = await listarCotizaciones(bd(), { estado: estado || undefined, q: busqueda.q || undefined, desde: busqueda.desde || undefined, hasta: busqueda.hasta || undefined, antesDe, limite: 50 }, verCliente);
   const conFiltros = (extra: Record<string, string>) =>
     `/cotizaciones?${new URLSearchParams(Object.entries({ estado, ...busqueda, ...extra }).filter(([, v]) => v) as [string, string][])}`;
   const filtrando = Boolean(busqueda.q || busqueda.desde || busqueda.hasta);
@@ -49,15 +53,14 @@ export default async function CotizacionesPage({ searchParams }: PageProps<"/cot
         ))}
       </nav>
 
-      <form method="get" className="mb-5 flex flex-wrap items-center gap-2" aria-label="Buscar cotizaciones">
+      <Filtros etiqueta="Buscar cotizaciones">
         {estado && <input type="hidden" name="estado" value={estado} />}
         <input type="search" name="q" defaultValue={busqueda.q} maxLength={80} aria-label="Buscar"
           placeholder={verCliente ? "N.º de cotización o cliente" : "N.º de cotización"} className={`${campo} w-64`} />
-        <label className="flex items-center gap-1.5 text-sm text-tinta-suave">Desde <input type="date" name="desde" defaultValue={busqueda.desde} className={campo} /></label>
-        <label className="flex items-center gap-1.5 text-sm text-tinta-suave">Hasta <input type="date" name="hasta" defaultValue={busqueda.hasta} className={campo} /></label>
-        <button className="h-9 rounded-md border border-linea-fuerte px-3 text-sm hover:border-tinta pointer-coarse:h-11">Buscar</button>
+        <span className="flex items-center gap-1.5 text-sm text-tinta-suave">Desde <CampoFecha name="desde" defaultValue={busqueda.desde} aria-label="Desde" /></span>
+        <span className="flex items-center gap-1.5 text-sm text-tinta-suave">Hasta <CampoFecha name="hasta" defaultValue={busqueda.hasta} aria-label="Hasta" /></span>
         {filtrando && <Link href={conFiltros({ q: "", desde: "", hasta: "" })} className="text-sm text-tinta-suave hover:text-tinta">Limpiar</Link>}
-      </form>
+      </Filtros>
 
       <Panel sinRelleno>
         {datos.length === 0 ? (
@@ -72,28 +75,25 @@ export default async function CotizacionesPage({ searchParams }: PageProps<"/cot
             </thead>
             <tbody>
               {datos.map((c) => (
-                <Tr key={c.id}>
+                <FilaEnlazada key={c.id} href={`/cotizaciones/${c.id}`}>
                   <Td><Link href={`/cotizaciones/${c.id}`} aria-label={`Cotización N.º ${c.numero}`} className="-my-2 inline-block py-2 font-medium tabular-nums text-rauli hover:underline">{c.numero}</Link></Td>
-                  <Td className="font-medium">{c.cliente ?? <span className="text-tinta-tenue">sin cliente</span>}</Td>
-                  <Td className="hidden text-tinta-suave md:table-cell">{fechaHora(new Date(c.creadoEn).toISOString())}</Td>
-                  <Td className="hidden text-tinta-suave lg:table-cell">{c.origen === "ia" ? "Texto + IA" : "Manual"}</Td>
+                  <Td className="font-medium">{c.cliente ?? <span className="font-normal text-tinta-tenue">Sin cliente</span>}</Td>
+                  <Td className="hidden whitespace-nowrap text-tinta-suave md:table-cell">{fechaHora(new Date(c.creadoEn).toISOString())}</Td>
+                  <Td className="hidden text-tinta-suave lg:table-cell">{c.origen === "ia" ? "Desde texto" : "A mano"}</Td>
                   <Td>
                     <EstadoCotizacionEtiqueta estado={(c.vencida ? "vencida" : c.estado) as never} pedidoEstado={c.pedidoEstado} />
                     {c.estado === "borrador" && c.pendientes > 0 && <span className="ml-2 whitespace-nowrap text-xs text-ambar">{c.pendientes} por confirmar</span>}
                   </Td>
-                  <Td className="hidden text-tinta-suave md:table-cell">{c.vigenciaHasta ? `hasta ${fecha(c.vigenciaHasta)}` : "—"}</Td>
+                  <Td className="hidden whitespace-nowrap text-tinta-suave md:table-cell">{c.vigenciaHasta ? `hasta ${fecha(c.vigenciaHasta)}` : "—"}</Td>
                   <Td alinear="der" className="font-medium">{c.total !== null && Number(c.total) > 0 ? clp(Number(c.total)) : "—"}</Td>
-                </Tr>
+                </FilaEnlazada>
               ))}
             </tbody>
           </Tabla>
         )}
       </Panel>
-      {siguiente && (
-        <p className="mt-4 text-sm">
-          <Link href={conFiltros({ antes: String(siguiente) })} aria-label="Ver más cotizaciones" className="text-rauli hover:underline">Ver más</Link>
-        </p>
-      )}
+      <Paginacion total={total} singular="cotización" plural="cotizaciones" etiquetaSiguiente="Más antiguas"
+        inicio={antesDe ? conFiltros({}) : undefined} siguiente={siguiente ? conFiltros({ antes: String(siguiente) }) : null} />
     </>
   );
 }

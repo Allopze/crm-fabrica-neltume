@@ -7,12 +7,12 @@ const mapa: Record<EstadoCotizacion, { texto: string; tono: "neutro" | "musgo" |
   borrador: { texto: "Borrador", tono: "ambar" },
   ia_fallida: { texto: "IA no disponible", tono: "error" },
   aprobada: { texto: "Aprobada", tono: "musgo" },
-  aceptada: { texto: "Aceptada · pedido", tono: "rauli" },
+  aceptada: { texto: "En nota de pedido", tono: "rauli" },
   vencida: { texto: "Vencida", tono: "neutro" },
 };
 
-/** Una aceptada cuyo pedido se canceló no debe seguir diciendo «pedido». */
+/** Una aceptada cuyo pedido se canceló no debe seguir diciendo que está en pedido. */
 export function EstadoCotizacionEtiqueta({ estado, pedidoEstado }: { estado: EstadoCotizacion; pedidoEstado?: string | null }) {
-  const e = estado === "aceptada" && pedidoEstado === "cancelada" ? { texto: "Aceptada · pedido cancelado", tono: "neutro" as const } : mapa[estado];
+  const e = estado === "aceptada" && pedidoEstado === "cancelada" ? { texto: "Nota de pedido cancelada", tono: "neutro" as const } : mapa[estado];
   return <Etiqueta tono={e.tono}>{e.texto}</Etiqueta>;
 }

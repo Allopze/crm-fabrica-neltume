@@ -47,11 +47,13 @@ export async function listarPuertas(tx: Tx, f: FiltroPuertas, verClientes: boole
   if (f.calidad) c.push(sql`p.calidad = ${f.calidad}`);
   if (f.articulo) c.push(sql`a.codigo = ${normalizarCodigo(f.articulo)}`);
   if (f.fueraCatalogo !== undefined) c.push(sql`a.fuera_catalogo = ${f.fueraCatalogo}`);
+  const dondeTotal = c.length ? sql`WHERE ${sql.join(c, sql` AND `)}` : sql``;
+  const { rows: [{ total }] } = await tx.execute<{ total: number }>(sql`SELECT count(*)::int AS total ${desde} ${dondeTotal}`);
   if (f.cursor) c.push(sql`p.codigo > ${f.cursor}`);
   const donde = c.length ? sql`WHERE ${sql.join(c, sql` AND `)}` : sql``;
   const { rows } = await tx.execute<PuertaListada>(sql`SELECT ${columnas(verClientes)} ${desde} ${donde} ORDER BY p.codigo LIMIT ${limite + 1}`);
   const datos = rows.slice(0, limite);
-  return { datos, siguiente: rows.length > limite ? datos.at(-1)!.codigo : null };
+  return { datos, total, siguiente: rows.length > limite ? datos.at(-1)!.codigo : null };
 }
 
 /** Ubicaciones en uso, las más frecuentes primero (filtros y sugerencias). */
@@ -94,6 +96,8 @@ export async function listarHistorico(tx: Tx, f: FiltroHistorico, verClientes: b
       ? sql`(h.codigo ILIKE ${q} OR h.documento ILIKE ${q} OR h.modelo ILIKE ${q} OR h.cliente ILIKE ${q})`
       : sql`(h.codigo ILIKE ${q} OR h.documento ILIKE ${q} OR h.modelo ILIKE ${q})`);
   }
+  const dondeTotal = c.length ? sql`WHERE ${sql.join(c, sql` AND `)}` : sql``;
+  const { rows: [{ total }] } = await tx.execute<{ total: number }>(sql`SELECT count(*)::int AS total FROM despacho_historico h ${dondeTotal}`);
   const cursor = /^(\d+)_([0-9a-f-]{36})$/.exec(f.cursor ?? "");
   if (cursor) c.push(sql`(h.fila, h.id) < (${Number(cursor[1])}, ${cursor[2]}::uuid)`);
   const donde = c.length ? sql`WHERE ${sql.join(c, sql` AND `)}` : sql``;
@@ -102,7 +106,7 @@ export async function listarHistorico(tx: Tx, f: FiltroHistorico, verClientes: b
       h.estado, ${verClientes ? sql`h.cliente` : sql`NULL`} AS cliente, h.documento, h.nota, h.dudas
     FROM despacho_historico h ${donde} ORDER BY h.fila DESC, h.id DESC LIMIT ${limite + 1}`);
   const datos = rows.slice(0, limite);
-  return { datos, siguiente: rows.length > limite ? `${datos.at(-1)!.fila}_${datos.at(-1)!.id}` : null };
+  return { datos, total, siguiente: rows.length > limite ? `${datos.at(-1)!.fila}_${datos.at(-1)!.id}` : null };
 }
 
 /** Códigos de las puertas que entraron al cerrar una orden (para anotarlos en sus etiquetas, REQ-STK-8.2). */

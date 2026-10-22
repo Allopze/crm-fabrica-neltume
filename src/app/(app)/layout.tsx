@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { AccesoCotizar } from "@/components/shell/acceso-cotizar";
 import { AvisoConexion } from "@/components/shell/aviso-conexion";
 import { BarraLateral, MenuMovil } from "@/components/shell/barra-lateral";
 import { UsuarioActual } from "@/components/shell/usuario-actual";
@@ -27,14 +27,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               Entorno de desarrollo
             </span>
           )}
-          {sesion.permisos.has("cotizaciones.crear") && (
-            <Link
-              href="/cotizaciones/nueva"
-              className="ml-auto inline-flex h-9 items-center gap-2 rounded-md bg-rauli px-3.5 text-sm font-medium text-lamina shadow-[inset_0_-2px_0_rgb(0_0_0/0.18)] hover:bg-rauli-hondo pointer-coarse:h-11"
-            >
-              <Plus className="h-4 w-4" /> Nueva cotización
-            </Link>
-          )}
+          {sesion.permisos.has("cotizaciones.crear") && <AccesoCotizar />}
         </header>
         <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-[1320px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-10 focus:outline-none">{children}</main>
       </div>

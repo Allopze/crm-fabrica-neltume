@@ -1,6 +1,7 @@
 // Llamadas del navegador a /api/v1 con CSRF y, en mutaciones idempotentes, Idempotency-Key.
 export class ErrorApi extends Error {
-  constructor(public codigo: string, mensaje: string, public correlacionId?: string) {
+  /** `estado` es el código HTTP; sin él (corte de red) no se sabe qué pasó. */
+  constructor(public codigo: string, mensaje: string, public correlacionId?: string, public estado?: number) {
     super(mensaje);
   }
 }
@@ -79,7 +80,7 @@ export async function pedir<T = unknown>(
   if (res.status === 204) return undefined as T;
   const datos = await res.json().catch(() => null);
   if (!res.ok) {
-    throw new ErrorApi(datos?.error?.codigo ?? "INTERNO", datos?.error?.mensaje ?? "Error inesperado", datos?.error?.correlacion_id);
+    throw new ErrorApi(datos?.error?.codigo ?? "INTERNO", datos?.error?.mensaje ?? "Error inesperado", datos?.error?.correlacion_id, res.status);
   }
   return datos as T;
 }

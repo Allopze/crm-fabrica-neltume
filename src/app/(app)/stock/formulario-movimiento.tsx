@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal, X } from "lucide-react";
-import { Boton } from "@/components/ui/base";
-import { campoAlto } from "@/components/ui/campos";
+import { ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal } from "lucide-react";
+import { Boton, Hecho } from "@/components/ui/base";
+import { areaTexto, campoAlto } from "@/components/ui/campos";
+import { ErrorAccion } from "@/components/ui/error-accion";
+import { PanelLateral } from "@/components/ui/panel-lateral";
 import { pedir } from "@/lib/api-cliente";
 
 type Tipo = "entrada" | "salida" | "ajuste";
@@ -21,11 +23,15 @@ const campo = `w-full ${campoAlto}`;
 /** Etiquetas escritas una por línea o separadas por comas o espacios. */
 const leerCodigos = (texto: FormDataEntryValue | null) => String(texto ?? "").split(/[\s,;]+/).map((c) => c.trim().toUpperCase()).filter(Boolean);
 
-/** Botones y formulario de movimientos (REQ-STK-3–5, 8.2–8.3). El backend valida permisos, stock, puertas e idempotencia. */
+/**
+ * Botones y formulario de movimientos (REQ-STK-3–5, 8.2–8.3), en un panel lateral para no mover la página (UX §1).
+ * El backend valida permisos, stock, puertas e idempotencia.
+ */
 export function AccionesMovimiento({ tipos, csrf, codigo, ubicaciones = [] }: { tipos: Tipo[]; csrf: string; codigo?: string; ubicaciones?: string[] }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState<Tipo | null>(null);
-  const [mensaje, setMensaje] = useState<{ ok: boolean; texto: string } | null>(null);
+  const [hecho, setHecho] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [pendiente, iniciar] = useTransition();
 
   function enviar(form: FormData) {
@@ -40,65 +46,65 @@ export function AccionesMovimiento({ tipos, csrf, codigo, ubicaciones = [] }: { 
       ...(abierto !== "salida" && String(form.get("ubicacion") ?? "").trim() ? { ubicacion: String(form.get("ubicacion")).trim() } : {}),
       ...(abierto === "ajuste" ? { motivo: form.get("detalle") } : form.get("detalle") ? { referencia: form.get("detalle") } : {}),
     };
+    setError(null);
     iniciar(async () => {
       try {
         const r = await pedir<{ puertas?: string[] }>("POST", CONFIG[abierto].ruta, { csrf, idempotente: true, cuerpo });
         const lista = r.puertas?.length ? ` Puertas: ${r.puertas.join(", ")}.` : "";
-        setMensaje({ ok: true, texto: `${CONFIG[abierto].titulo}: registrada.${lista}` });
+        setHecho(`${CONFIG[abierto].titulo}: registrada.${lista}`);
         setAbierto(null);
         router.refresh();
       } catch (e) {
-        setMensaje({ ok: false, texto: (e as Error).message });
+        setError(e);
       }
     });
   }
 
+  const actual = abierto ? CONFIG[abierto] : null;
   return (
     <div className="flex flex-col items-end gap-3">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         {tipos.map((t) => {
           const { icono: Icono, titulo } = CONFIG[t];
           return (
-            <Boton key={t} variante={t === "entrada" ? "primario" : "secundario"} onClick={() => { setAbierto(t); setMensaje(null); }}>
+            <Boton key={t} variante={t === "entrada" ? "primario" : "secundario"} onClick={() => { setAbierto(t); setHecho(null); setError(null); }}>
               <Icono className="h-4 w-4" /> {titulo.split(" ")[0]}
             </Boton>
           );
         })}
       </div>
-      {mensaje && <p role={mensaje.ok ? "status" : "alert"} className={mensaje.ok ? "max-w-md text-sm text-musgo" : "text-sm text-error"}>{mensaje.texto}</p>}
-      {abierto && (
-        <form action={enviar} aria-label={CONFIG[abierto].titulo}
-          className="entrada w-full max-w-md rounded-lg border border-linea-fuerte bg-lamina p-5 text-left shadow-[0_18px_40px_-28px_rgb(30_40_30/0.5)]">
-          <div className="mb-4 flex items-start justify-between">
-            <div>
-              <p className="font-display text-lg">{CONFIG[abierto].titulo}</p>
-              <p className="text-xs text-tinta-tenue">{CONFIG[abierto].ayuda}</p>
+      {hecho && <Hecho className="max-w-md">{hecho}</Hecho>}
+      <PanelLateral abierto={abierto !== null} alCerrar={() => setAbierto(null)} titulo={actual?.titulo ?? ""} descripcion={actual?.ayuda}>
+        {abierto && actual && (
+          <form action={enviar} aria-label={actual.titulo} className="space-y-4">
+            <div className="grid grid-cols-[1fr_110px] gap-3">
+              <label className="text-sm">Código<input name="codigo" required={abierto === "entrada"} defaultValue={codigo} className={`${campo} mt-1 font-mono uppercase`} /></label>
+              <label className="text-sm">Cantidad<input name="cantidad" required={abierto === "ajuste"} inputMode="numeric" className={`${campo} mt-1 tabular-nums`} placeholder={abierto === "ajuste" ? "−1" : "1"} /></label>
             </div>
-            <button type="button" aria-label="Cerrar" onClick={() => setAbierto(null)} className="grid h-9 w-9 place-items-center rounded text-tinta-tenue hover:bg-papel-hundido hover:text-tinta pointer-coarse:h-11 pointer-coarse:w-11"><X className="h-4 w-4" /></button>
-          </div>
-          <div className="grid grid-cols-[1fr_110px] gap-3">
-            <label className="text-sm">Código<input name="codigo" required={abierto === "entrada"} defaultValue={codigo} className={`${campo} mt-1 font-mono uppercase`} /></label>
-            <label className="text-sm">Cantidad<input name="cantidad" required={abierto === "ajuste"} inputMode="numeric" className={`${campo} mt-1 tabular-nums`} placeholder={abierto === "ajuste" ? "−1" : "1"} /></label>
-          </div>
-          <label className="mt-3 block text-sm">
-            {CONFIG[abierto].codigos}
-            <textarea name="puertas" rows={2} className="mt-1 w-full rounded-md border border-linea-fuerte bg-lamina px-3 py-2 font-mono text-sm uppercase focus:border-tinta focus:outline-none" />
-          </label>
-          {abierto !== "salida" && (
-            <label className="mt-3 block text-sm">
-              Ubicación de las puertas que entran
-              <input name="ubicacion" list="ubicaciones-stock" placeholder="Fábrica" maxLength={60} className={`${campo} mt-1`} />
-              <datalist id="ubicaciones-stock">{ubicaciones.map((u) => <option key={u} value={u} />)}</datalist>
+            <label className="block text-sm">
+              {actual.codigos}
+              <textarea name="puertas" rows={2} className={`mt-1 font-mono uppercase ${areaTexto}`} />
             </label>
-          )}
-          <label className="mt-3 block text-sm">
-            {abierto === "ajuste" ? "Motivo (obligatorio)" : abierto === "salida" ? "Documento (factura, boleta, guía…)" : "Referencia (orden, guía…)"}
-            <input name="detalle" required={abierto === "ajuste"} minLength={abierto === "ajuste" ? 3 : undefined} className={`${campo} mt-1`} />
-          </label>
-          {abierto !== "entrada" && <p className="mt-2 text-xs text-tinta-tenue">Sin artículo, indica las etiquetas: el artículo sale de cada puerta.</p>}
-          <Boton type="submit" variante="primario" disabled={pendiente} className="mt-4 w-full">{pendiente ? "Registrando…" : "Registrar"}</Boton>
-        </form>
-      )}
+            {abierto !== "salida" && (
+              <label className="block text-sm">
+                Ubicación de las puertas que entran
+                <input name="ubicacion" list="ubicaciones-stock" placeholder="Fábrica" maxLength={60} className={`${campo} mt-1`} />
+                <datalist id="ubicaciones-stock">{ubicaciones.map((u) => <option key={u} value={u} />)}</datalist>
+              </label>
+            )}
+            <label className="block text-sm">
+              {abierto === "ajuste" ? "Motivo (obligatorio)" : abierto === "salida" ? "Documento (factura, boleta, guía…)" : "Referencia (orden, guía…)"}
+              <input name="detalle" required={abierto === "ajuste"} minLength={abierto === "ajuste" ? 3 : undefined} className={`${campo} mt-1`} />
+            </label>
+            {abierto !== "entrada" && <p className="text-xs text-tinta-tenue">Sin artículo, indica las etiquetas: el artículo sale de cada puerta.</p>}
+            {error ? <ErrorAccion error={error} /> : null}
+            <div className="flex gap-2 pt-1">
+              <Boton type="submit" variante="primario" disabled={pendiente} className="flex-1">{pendiente ? "Registrando…" : "Registrar"}</Boton>
+              <Boton type="button" variante="fantasma" onClick={() => setAbierto(null)}>Cancelar</Boton>
+            </div>
+          </form>
+        )}
+      </PanelLateral>
     </div>
   );
 }
