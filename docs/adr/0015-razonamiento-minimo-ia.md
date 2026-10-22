@@ -1,6 +1,6 @@
 # ADR-0015 — Variante sin razonamiento y esfuerzo mínimo
 
-**Estado:** aceptado y aclarado por el usuario · **Fecha:** 07-10-2026 · **Refs:** REQ-COT-2.17, REQ-ADM-4.x, ADR-0009.
+**Estado:** aceptado y aclarado por el usuario; las reglas de Groq quedaron sin uso con ADR-0022 (22-10-2026) · **Fecha:** 07-10-2026 · **Refs:** REQ-COT-2.17, REQ-ADM-4.x, ADR-0009.
 
 ## Contexto
 

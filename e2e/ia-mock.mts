@@ -1,3 +1,5 @@
+// Command Code simulado para E2E (suite 17): responde como la Provider API con la herramienta proponer_items.
+// Exige la clave y el encabezado de retención cero, como el servicio real. Ninguna suite llama al proveedor real.
 import { createServer } from "node:http";
 
 const propuesta = {
@@ -18,11 +20,15 @@ const propuesta = {
 
 const servidor = createServer((req, res) => {
   if (req.method === "GET" && req.url === "/health") return void res.writeHead(200).end("ok");
-  if (req.method !== "POST" || req.url !== "/openai/v1/chat/completions") return void res.writeHead(404).end();
-  req.resume();
+  if (req.method !== "POST" || req.url !== "/provider/v1/chat/completions") return void res.writeHead(404).end();
+  if (!req.headers.authorization?.startsWith("Bearer ")) return void res.writeHead(401).end();
+  if (req.headers["x-cmd-zdr"] !== "1") return void res.writeHead(400).end("zero data retention requerido");
+  let cuerpo = "";
+  req.on("data", (trozo) => { cuerpo += trozo; });
   req.on("end", () => {
+    const modelo = (JSON.parse(cuerpo || "{}") as { model?: string }).model ?? "desconocido";
     res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({
-      model: "openai/gpt-oss-120b",
+      model: modelo,
       choices: [{
         message: { tool_calls: [{ function: { name: "proponer_items", arguments: JSON.stringify(propuesta) } }] },
         finish_reason: "tool_calls",

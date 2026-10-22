@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { poolApp, poolOwner } from "./bd";
 import { DobleIA } from "@/ai/doble";
-import { GroqIA } from "@/ai/proveedores/groq";
+import { CommandCodeIA } from "@/ai/proveedores/commandcode";
 import type { InterpreteIA } from "@/ai/interfaz";
 import { procesarSiguiente } from "@/ai/procesar";
 import { bd, cerrarBd } from "@/db/conexion";
@@ -60,10 +60,10 @@ describe("worker de IA (REQ-COT-2.1–2.9, ADR-0006)", () => {
       const args = JSON.stringify({ items: [], alertas: [], sin_items: true });
       return new Response(JSON.stringify({ model: "openai/gpt-oss-20b", choices: [{ message: { tool_calls: [{ function: { name: "proponer_items", arguments: args } }] }, finish_reason: "tool_calls" }], usage: {} }), { status: 200 });
     }) as typeof fetch;
-    const groq = new GroqIA({ apiKey: "clave-de-prueba", modelo: "openai/gpt-oss-20b", timeoutMs: 5_000 }, fetchFalso);
+    const proveedor = new CommandCodeIA({ apiKey: "clave-de-prueba", baseUrl: "https://proveedor.invalid", modelo: "gpt-6-luna", timeoutMs: 5_000, precioEntradaMTok: 0, precioSalidaMTok: 0 }, fetchFalso);
     const sensibles = ["+56987654321", "56987654321", "9 87 65 43 21", "(9) 8765-4321", "12.345.678–9", "12 345 678-9", "123456789", "josé.núñez@correo.cl"];
     const c = await nueva(`1 puerta Neltume raulí 90x210\n${sensibles.map((s, i) => `dato ${i}: ${s}`).join("\n")}`);
-    await procesarSiguiente(groq, { esperasMs: [1, 1] });
+    await procesarSiguiente(proveedor, { esperasMs: [1, 1] });
     expect(cuerpos.length).toBeGreaterThan(0);
     const { rows } = await app.query("SELECT l.entrada_redactada FROM llamada_ia l JOIN trabajo_ia t ON t.id = l.trabajo_id WHERE t.cotizacion_id = $1", [c.id]);
     for (const enviado of [...cuerpos, ...rows.map((r) => r.entrada_redactada)]) {

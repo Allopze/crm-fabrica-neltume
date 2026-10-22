@@ -335,9 +335,9 @@ Facturación electrónica · portal de clientes · ventas de la tienda · envío
 | NC-15 | Compras desde Chipax (aprobado el 14-10-2026, ADR-0021): las facturas de compra de proveedores habilitados suben el stock de materias primas; solo líneas con mapeo exacto, lo demás «por asociar» o «por revisar»; sin histórico previo a la habilitación. Proveedores definidos el 20-10-2026 (lista en ADR-0021); el desfase entre factura y llegada se acepta (REQ-MP-7.x) |
 | — | Nombre del cliente: nunca se envía a la IA (REQ-COT-2.9) |
 
-## 10. Ajustes de IA (ADR-0009, 06-10-2026)
+## 10. Ajustes de IA (ADR-0009, 06-10-2026; ADR-0022, 22-10-2026)
 
-- **REQ-ADM-4.1:** Command Code y Groq usan claves independientes (`CMD_API_KEY`, `GROQ_API_KEY`) configuradas solo en el entorno privado del worker. Ajustes configura proveedor/modelo y ZDR; API, UI, logs y auditoría no reciben ni exponen las claves.
+- **REQ-ADM-4.1:** Command Code usa la clave `CMD_API_KEY`, configurada solo en el entorno privado del worker. Ajustes configura el modelo; API, UI, logs y auditoría no reciben ni exponen la clave. Cada llamada pide retención cero (`x-cmd-zdr: 1`).
 - **REQ-ADM-4.2:** Ajustes lista modelos de Command Code y tarifas públicas por millón; modelos sin chat/herramienta o sin precio quedan deshabilitados con motivo. La configuración activa se aplica al iniciar el próximo trabajo.
-- **REQ-ADM-4.3:** Ajustes lista modelos autenticados de Groq, capacidades Free públicas (RPM, RPD, TPM, TPD) y fecha. Son referencias; la cuota real se consulta en Groq Console. Preview e incompatibles se deshabilitan. Activar Groq exige confirmar ZDR en Console.
-- La evaluación de AI.md es informativa y no bloquea cambiar proveedor o modelo; no habilita aprobación automática de cotizaciones.
+- **REQ-ADM-4.3:** *Retirado el 22-10-2026 (ADR-0022):* Groq dejó de ser proveedor. Una configuración guardada con Groq se lee como «sin proveedor» y Ajustes pide elegir un modelo de Command Code.
+- La evaluación de AI.md es informativa y no bloquea cambiar el modelo; no habilita aprobación automática de cotizaciones.

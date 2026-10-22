@@ -24,7 +24,7 @@ export interface ResultadoInterpretacion {
   latenciaMs: number;
 }
 
-export type TipoProveedor = "commandcode" | "groq" | "doble";
+export type TipoProveedor = "commandcode" | "doble";
 export type TipoErrorIA = "timeout" | "transitorio" | "permanente" | "invalida" | "sin_zdr";
 export const MAX_RETRY_AFTER_MS = 30_000;
 

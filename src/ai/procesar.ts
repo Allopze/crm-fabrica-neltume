@@ -22,7 +22,7 @@ const WORKER = { tipo: "worker" as const };
  * de una interpretación (reintentos con espera, Retry-After de hasta 30 s y la segunda pasada): por defecto 180 s.
  */
 const umbralColgadoS = () => Number(process.env.IA_TRABAJO_COLGADO_S || 180);
-/** Tope diario de llamadas al LLM: limita el gasto también si el proveedor no informa costo (Groq; auditoría H-12). */
+/** Tope diario de llamadas al LLM: limita el gasto también si el proveedor no informa costo (auditoría H-12). */
 const topeDiarioLlamadas = () => Number(process.env.LLM_TOPE_DIARIO_LLAMADAS || 300);
 
 /** Un trabajo que otro proceso retomó o que ya no está en curso: su resultado se descarta (auditoría H-09). */

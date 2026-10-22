@@ -8,18 +8,12 @@ import { refrescarCatalogosIA } from "./catalogos";
 import { procesarSiguiente } from "./procesar";
 
 if (process.env.NODE_ENV !== "production") {
-  const clavesWorker = {
-    commandcode: process.env.CMD_API_KEY,
-    groq: process.env.GROQ_API_KEY,
-  };
+  const claveWorker = process.env.CMD_API_KEY;
   delete process.env.CMD_API_KEY;
-  delete process.env.GROQ_API_KEY;
   cargarEnvLocal();
-  // .env.local contiene la configuración de Next; no debe aportar claves al worker.
-  if (clavesWorker.commandcode) process.env.CMD_API_KEY = clavesWorker.commandcode;
+  // .env.local contiene la configuración de Next; no debe aportar la clave al worker.
+  if (claveWorker) process.env.CMD_API_KEY = claveWorker;
   else delete process.env.CMD_API_KEY;
-  if (clavesWorker.groq) process.env.GROQ_API_KEY = clavesWorker.groq;
-  else delete process.env.GROQ_API_KEY;
 }
 let activo = true;
 

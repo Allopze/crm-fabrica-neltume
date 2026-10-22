@@ -11,7 +11,7 @@ export default async function AjustesIAPage() {
   if (!sesion.permisos.has("config.editar")) return <SinPermiso permiso="config.editar" />;
   return <>
     <Encabezado titulo="Ajustes de IA"
-      descripcion="Elige el proveedor y el modelo que interpretan los pedidos. El cambio rige desde el siguiente pedido; los precios siempre los calcula el sistema." />
+      descripcion="Elige el modelo de Command Code que interpreta los pedidos. El cambio rige desde el siguiente pedido; los precios siempre los calcula el sistema." />
     <AjustesIA csrf={sesion.csrf} />
   </>;
 }

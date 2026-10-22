@@ -1,6 +1,6 @@
 # ADR-0014 — Pedidos por destino y evaluación completa de ítems
 
-**Estado:** aprobado por el usuario el 07-10-2026 al pedir proceder con el análisis de precisión · **Refs:** REQ-COT-2.14/2.15 · AI.md §2, §6 · TASKS T7.6
+**Estado:** aprobado por el usuario el 07-10-2026 al pedir proceder con el análisis de precisión; desde ADR-0022 no se evalúan modelos Groq · **Refs:** REQ-COT-2.14/2.15 · AI.md §2, §6 · TASKS T7.6
 
 ## Contexto
 

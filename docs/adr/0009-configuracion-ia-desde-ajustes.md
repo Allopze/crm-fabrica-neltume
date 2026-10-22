@@ -1,6 +1,6 @@
 # ADR-0009 — Proveedor/modelo en Ajustes y claves en el worker
 
-**Estado:** aceptado · **Fecha:** 06-10-2026 · **Refs:** REQ-ADM-4.x, REQ-COT-2.x, REQ-NFR-5 · actualiza ADR-0001 y SECURITY T5.
+**Estado:** aceptado; Groq retirado por ADR-0022 (22-10-2026): queda solo Command Code · **Fecha:** 06-10-2026 · **Refs:** REQ-ADM-4.x, REQ-COT-2.x, REQ-NFR-5 · actualiza ADR-0001 y SECURITY T5.
 
 ## Contexto
 

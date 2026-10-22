@@ -12,21 +12,18 @@ Requisitos: Node 24 (`.nvmrc`) y PostgreSQL local (Postgres.app en `localhost:54
    - `DATABASE_URL_OWNER`: `postgres://neltume_owner:<clave>@localhost:5432/neltume_dev`.
    - `DATABASE_URL`: `postgres://neltume_app:<clave>@localhost:5432/neltume_dev`.
    - Claves aleatorias: `openssl rand -hex 18`.
-3. `cp .env.worker.example .env.worker.local` y pega las claves que usarás:
-   - `CMD_API_KEY`: API key de Command Code.
-   - `GROQ_API_KEY`: API key de Groq.
-   Puedes configurar una o ambas. No las pongas en `.env.local`; el worker y `eval:ia` leen `.env.worker.local`.
+3. `cp .env.worker.example .env.worker.local` y pega `CMD_API_KEY`, la API key de Command Code. No la pongas en `.env.local`; el worker y `eval:ia` leen `.env.worker.local`.
 4. `npm run db:setup`: crea los roles (dueño, app, `neltume_worker`, el rol con permisos mínimos del worker de IA, ADR-0017, y `neltume_compras`, el del servicio de compras desde Chipax, ADR-0021) y las bases `neltume_dev`, `neltume_test` y `neltume_e2e`. Es idempotente; vuelve a correrlo si actualizas desde una versión sin el rol del worker. En desarrollo la clave del worker se deriva de `DATABASE_URL` si no defines `DATABASE_URL_WORKER`.
 5. `npm run crear-admin`: primer usuario. La contraseña se pide por consola.
 6. `npm run dev`: migra la BD y levanta la app en `http://localhost:3000`. El worker carga las claves y actualiza los catálogos. Si agregas o cambias claves en `.env.worker.local` después de iniciarlo, reinicia `npm run dev` para que el worker las vuelva a cargar.
-7. En **Ajustes de IA**, elige proveedor y modelo; para Groq confirma ZDR en Console.
-8. `npm run eval:ia`: en la terminal, elige proveedor (1 Command Code, 2 Groq) y después el número del modelo en la tabla del catálogo. Command Code aparece ordenado por costo estimado por llamada (4.000 tokens de entrada y 400 de salida, menor primero); la tabla muestra tarifas y estimación. La tabla de Groq muestra los límites Free de referencia. Usa las claves de `.env.worker.local` y no cambia el proveedor activo. También acepta `--proveedor <commandcode|groq> --modelo <id>` y `--ids 1,17,34` para un diagnóstico breve; el informe guarda los hashes de prompt, casos y pipeline y no sobrescribe otro. Usa casos sintéticos y no requiere la confirmación ZDR de Ajustes; el worker debe haber actualizado el catálogo. Llama al servicio real y puede consumir cuota.
+7. En **Ajustes de IA**, elige el modelo de Command Code.
+8. `npm run eval:ia`: en la terminal, elige el número del modelo en la tabla del catálogo de Command Code, ordenada por costo estimado por llamada (4.000 tokens de entrada y 400 de salida, menor primero), con tarifas y estimación. Usa la clave de `.env.worker.local` y no cambia el modelo activo. También acepta `--modelo <id>` y `--ids 1,17,34` para un diagnóstico breve; el informe guarda los hashes de prompt, casos y pipeline y no sobrescribe otro. Usa casos sintéticos; el worker debe haber actualizado el catálogo. Llama al servicio real y puede consumir cuota.
 
 Pruebas: `npm test` (lint → typecheck → unit → integración → E2E). Siempre se corre completo. Recrea `neltume_test` y `neltume_e2e` y usa el Chrome instalado.
 
 ## 2. Producción (Docker Compose)
 
-1. En el servidor: `cp .env.example .env` y completa las variables de BD y despliegue, además de `CMD_API_KEY` y/o `GROQ_API_KEY`. Compose entrega esas claves solo a `worker`. `DATABASE_URL_OWNER`, `DATABASE_URL` y `DATABASE_URL_WORKER` (usuario `neltume_worker`, clave propia; ADR-0017) apuntan a `@db:5432/neltume`.
+1. En el servidor: `cp .env.example .env` y completa las variables de BD y despliegue, además de `CMD_API_KEY`. Compose entrega esa clave solo a `worker`. Si el `.env` trae `GROQ_API_KEY` de una versión anterior, se puede borrar: Groq se retiró (ADR-0022) y, si estaba activo, hay que elegir un modelo de Command Code en Ajustes. `DATABASE_URL_OWNER`, `DATABASE_URL` y `DATABASE_URL_WORKER` (usuario `neltume_worker`, clave propia; ADR-0017) apuntan a `@db:5432/neltume`.
 2. `docker compose up -d --build`. El servicio `migrar` crea los roles y la base, aplica las migraciones y termina; luego arranca `app`.
 3. Primer usuario: `docker compose run --rm -it migrar npx tsx scripts/crear-admin.mts`.
    - Lista de precios (si no se sube desde Precios → Importar): `docker compose run --rm -T -v /ruta/cotizador.xlsx:/tmp/cotizador.xlsx:ro migrar npx tsx scripts/importar-excel.mts /tmp/cotizador.xlsx`. Idempotente; audita a nombre del primer administrador y no imprime costos ni precios. Va **antes** de cargar el inventario: sin catálogo, toda puerta quedaría fuera de catálogo.
@@ -93,7 +90,7 @@ Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-com
 | # | Pantalla | Acción | Qué mostrar |
 |---|---|---|---|
 | 1 | Login → Panel | Ingresar | Borradores, alertas bajo mínimo y pedidos con faltante (UX §1) |
-| 2 | Ajustes de IA | Elegir proveedor/modelo; las claves están en el entorno del worker; en Groq confirmar ZDR en Console | Catálogo y precios/límites tienen fecha (REQ-ADM-4.x) |
+| 2 | Ajustes de IA | Elegir el modelo de Command Code; la clave está en el entorno del worker | Catálogo y tarifas tienen fecha (REQ-ADM-4.x) |
 | 3 | Precios | Ver la lista v1 y el informe de importación; fijar recargos por tipo | 29 filas rechazadas con motivo; cada cambio crea una versión nueva (REQ-COT-1.x) |
 | 4 | Stock → NEL-R-4-B | Ver existencia 2; registrar un ajuste sin motivo y luego con motivo | Movimientos inmutables; el ajuste exige motivo (REQ-STK-5) |
 | 5 | Materias primas → Producción | Recepción de cola; orden de 2 MOL-L-4-B y cerrarla | Consume insumos según el BOM *demo* y suma puertas (REQ-MP-2–4) |

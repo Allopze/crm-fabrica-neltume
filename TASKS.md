@@ -321,3 +321,10 @@ Terminación de la interfaz y del PDF detectada al recorrer las 34 pantallas en 
 
 **Checkpoint F17:** `npm test` completo verde, lint y build; recorrido en 1440 y 390 px de cotización manual, stock, nota de pedido y PDF. Espero tu OK.
 
+## Fase 18 — Groq deja de ser proveedor de IA (pedida el 22-10-2026; ADR-0022)
+
+- [x] T18.0 Decisión en documentos: ADR-0022, ADR-0009/0014/0015 anotados, SPEC (REQ-ADM-4.1, 4.3 retirado), AI, DESIGN, SECURITY, API, RUNBOOK, README, TESTING · REQ-ADM-4.x · — · —
+- [x] T18.1 (60) Fuera el adaptador, el catálogo y los límites de Groq, su confirmación de retención cero y sus variables (Compose, `.env.example`, `.env.worker.example`, `npm run dev`, worker, `eval:ia`); una configuración guardada con Groq se lee como «sin proveedor» · REQ-ADM-4.1, 4.2 · I `ajustes-ia`, `compose`, `worker` · T18.0
+- [x] T18.2 (30) Ajustes de IA solo con el modelo de Command Code y aviso si no hay modelo activo; E2E 17 contra un Command Code simulado que exige la clave y `x-cmd-zdr: 1` · REQ-ADM-4.2, UX §1 · E 17 · T18.1
+
+**Checkpoint F18:** `npm test` completo verde, lint y build; en Ajustes de IA se elige un modelo de Command Code y una cotización desde texto lo usa. Antes de desplegar: si producción tenía Groq activo, elegir un modelo de Command Code en Ajustes; `GROQ_API_KEY` se puede borrar del `.env`. Espero tu OK.

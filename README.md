@@ -21,7 +21,7 @@ Español en UI y documentos; CLP como enteros; precios con y sin IVA (19 %); nú
 | Validación | Zod estricto (`strictObject`; campos de importe se rechazan en la entrada) | API.md |
 | Sesiones | Propias, cookie HttpOnly + CSRF; contraseñas argon2id | ADR-0005 |
 | PDF | `@react-pdf/renderer`; lectura de PDFs con `pdfjs-dist` (solo texto) | ADR-0004, ADR-0008 |
-| IA | Command Code o Groq detrás de una interfaz agnóstica en `src/ai/`; cola en la BD | ADR-0001, ADR-0006, ADR-0009 |
+| IA | Command Code detrás de una interfaz agnóstica en `src/ai/`; cola en la BD | ADR-0001, ADR-0006, ADR-0009, ADR-0022 |
 | Pruebas | Vitest (unit + integración) y Playwright (E2E secuencial) | TESTING.md |
 | Producción | Docker Compose + Cloudflare Tunnel (sin proxy; ningún puerto publicado) | ADR-0010, ADR-0011 |
 
@@ -32,11 +32,11 @@ Node 24 (`.nvmrc`) y npm ≥ 11.
 ```
 Navegador → Cloudflare → túnel (cloudflared, saliente) → app (Next.js: UI + /api/v1) → PostgreSQL
                                                           worker (src/ai/worker.ts) ─┘   ↑
-                                                          Command Code / Groq  ← ────────┘
+                                                          Command Code         ← ────────┘
 ```
 
 - **app**: páginas y route handlers `/api/v1`. No tiene claves del LLM.
-- **worker** (perfil `ia` de Compose): toma trabajos de la cola `trabajo_ia` (`FOR UPDATE SKIP LOCKED`), llama al LLM y guarda la propuesta. Es el único servicio que recibe `CMD_API_KEY` / `GROQ_API_KEY` y usa un rol de BD con permisos mínimos.
+- **worker** (perfil `ia` de Compose): toma trabajos de la cola `trabajo_ia` (`FOR UPDATE SKIP LOCKED`), llama al LLM y guarda la propuesta. Es el único servicio que recibe `CMD_API_KEY` y usa un rol de BD con permisos mínimos.
 - **db**: única fuente de verdad, con triggers de inmutabilidad y la vista `v_stock`.
 - **tunnel / backup**: única entrada desde internet y `pg_dump` diario con copia externa.
 
@@ -77,7 +77,7 @@ src/domain/         Lógica del negocio (la mayor parte de la app)
   importacion/      Lector/mapeador del Excel del cotizador y carga transaccional
 src/ai/             Único módulo que habla con el LLM
   interfaz.ts       Contrato InterpreteIA + tipos de error
-  proveedores/      commandcode.ts, groq.ts (herramienta forzada proponer_items)
+  proveedores/      commandcode.ts (herramienta forzada proponer_items)
   esquema.ts        Esquema Zod estricto de la salida (sin importes)
   prompt.ts revision.ts reintentos.ts redaccion.ts (enmascarado) procesar.ts worker.ts
   doble.ts          Doble determinista para tests (LLM_PROVEEDOR=doble)
@@ -142,7 +142,7 @@ Con el doble determinista no necesitas proveedor: `LLM_PROVEEDOR=doble` hace que
 ## Pruebas
 
 - **Unit** (`src/**/*.test.ts`, Vitest): lógica pura de `src/domain` y `src/ai`. **Integración** (`tests/integracion/`): route handlers contra PostgreSQL real, una BD por archivo creada desde una plantilla migrada; el LLM se sustituye por `src/ai/doble.ts` (`procesarSiguiente(new DobleIA())`).
-- **E2E** (`e2e/NN-*.spec.ts`, Playwright): 17 suites **secuenciales con estado compartido** (1 worker, orden por nombre); levantan su propio `next dev` (:3200, `NEXT_DIST_DIR=.next-e2e`), el worker (:3201) y un **mock de Groq** (:3202). Nunca ejecutar una suite suelta.
+- **E2E** (`e2e/NN-*.spec.ts`, Playwright): 17 suites **secuenciales con estado compartido** (1 worker, orden por nombre); levantan su propio `next dev` (:3200, `NEXT_DIST_DIR=.next-e2e`), el worker (:3201) y un **Command Code simulado** (:3202). Nunca ejecutar una suite suelta.
 - **Estructurales** (en integración): toda ruta exporta handlers con `conPermiso`/`publico`, no existen `/webhooks`, ningún archivo supera 500 líneas, Compose no publica puertos, escaneo de secretos.
 - `eval:ia` llama al proveedor real y **no** forma parte de `npm test`; sus umbrales (≥ 90 % de acierto exacto, 100 % sin sobrantes, p90 ≤ 15 s, ≤ US$ 0,10 por cotización) son orientativos y no habilitan envío automático.
 

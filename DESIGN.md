@@ -11,7 +11,7 @@ flowchart LR
   T --> A[app<br/>Next.js: UI + API]
   A --> D[(db<br/>PostgreSQL)]
   W[worker<br/>src/ai/worker] --> D
-  W -->|HTTPS; ZDR según proveedor| L[Command Code o Groq]
+  W -->|HTTPS; retención cero| L[Command Code]
   B[backup<br/>pg_dump diario] --> D
   B --> X[(copia externa)]
 ```
@@ -77,7 +77,7 @@ Días hábiles: lunes a viernes, descontando los feriados legales de Chile (calc
 | `tunnel` | `cloudflare/cloudflared` | `borde`, `backend` | ninguno | `TUNNEL_TOKEN` | — |
 | `migrar` | build `.` (target `migrar`) | `datos` | ninguno | `DATABASE_ADMIN_URL`, `DATABASE_URL_OWNER`, `DATABASE_URL` | — |
 | `app` | build `.` (target `app`) | `backend`, `datos` | ninguno | `DATABASE_URL`, `APP_URL`, `APP_TZ`, topes de gasto | — |
-| `worker` | build `.` (target `worker`) | `datos`, `salida` | ninguno | `DATABASE_URL`, `CMD_API_KEY`, `GROQ_API_KEY`, URLs opcionales, timeout, reintentos y topes | — |
+| `worker` | build `.` (target `worker`) | `datos`, `salida` | ninguno | `DATABASE_URL`, `CMD_API_KEY`, URL opcional, timeout, reintentos y topes | — |
 | `db` | `postgres:18` fijada por digest (como todas las imágenes y la base del Dockerfile) | `datos` (internal) | `127.0.0.1:5432` solo con `docker-compose.admin.yml` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `pg_data` |
 | `backup` | `postgres` + cron | `datos` | ninguno | `PGPASSWORD`, `BACKUP_RETENCION_DIAS`, `BACKUP_DESTINO_EXTERNO` | `backups` |
 
@@ -133,13 +133,13 @@ Objetivos: pérdida máxima de 24 h y restauración en menos de 2 h (REQ-NFR-4).
 | C5 | AI.md y DATA-MODEL.md agregan `npm run eval:ia` y `npm run crear-admin`, que no están en los comandos de AGENTS.md | Resuelto: agregados a AGENTS.md |
 | C6 | SPEC REQ-COT-1.5 habla de ocultar costos a quien no tenga permiso, pero hoy el único rol los ve | Sin conflicto real: aplica cuando haya más perfiles (`costos.ver`) |
 
-## 9. Ajustes de IA (REQ-ADM-4.x, ADR-0009)
+## 9. Ajustes de IA (REQ-ADM-4.x, ADR-0009, ADR-0022)
 
-`/administracion/ia` y `GET/PUT /api/v1/ajustes/ia` requieren `config.editar`. El worker consulta Command Code y Groq usando las claves del entorno (`CMD_API_KEY`, `GROQ_API_KEY`) y cachea modelos, compatibilidad, precios públicos de Command Code y límites Free de Groq en `parametro`; la UI solo lee la caché. En desarrollo las claves viven en `.env.worker.local`; en producción solo se inyectan en `worker`. Los catálogos llevan fecha y una falla externa conserva la última copia válida.
+`/administracion/ia` y `GET/PUT /api/v1/ajustes/ia` requieren `config.editar`. El worker consulta Command Code con la clave del entorno (`CMD_API_KEY`) y cachea modelos, compatibilidad y precios públicos en `parametro`; la UI solo lee la caché. En desarrollo la clave vive en `.env.worker.local`; en producción solo se inyecta en `worker`. Los catálogos llevan fecha y una falla externa conserva la última copia válida.
 
-Ajustes guarda proveedor, modelo y confirmación ZDR de Groq; no recibe ni persiste nuevas API keys. GET, respuestas, logs y auditoría nunca incluyen secretos. Cada trabajo captura proveedor/modelo al tomarlo y el worker usa la clave de entorno de ese proveedor; cambiar proveedor/modelo rige desde el siguiente trabajo. Command Code usa Chat Completions con `x-cmd-zdr: 1`; Groq usa `/openai/v1/chat/completions` y herramienta forzada. Preview y modelos sin chat/herramienta no se activan. La evaluación queda disponible como referencia, sin bloquear la selección inmediata.
+Ajustes guarda proveedor y modelo; no recibe ni persiste API keys. GET, respuestas, logs y auditoría nunca incluyen secretos. Cada trabajo captura proveedor/modelo al tomarlo y el worker usa la clave de entorno; cambiar el modelo rige desde el siguiente trabajo. Command Code usa Chat Completions con `x-cmd-zdr: 1` y herramienta forzada. Groq se retiró (ADR-0022): una configuración guardada con Groq se lee como «sin proveedor». Preview y modelos sin chat/herramienta no se activan. La evaluación queda disponible como referencia, sin bloquear la selección inmediata.
 
-**Modo de razonamiento (REQ-COT-2.17, ADR-0015):** `src/ai/razonamiento.ts` resuelve el control de esfuerzo antes de llamar al LLM. En Groq Qwen 3.6/3.8 usa `none`, GPT-OSS 20B/120B usa `low` y Llama 3.1/3.3 no recibe esfuerzo. En Command Code, GPT-6 Luna usa `low`. Cuando un proveedor no admite un control comprobado, se omite el parámetro y se conserva la compatibilidad normal del catálogo; Qwen 3.7 Flash sigue seleccionable. Ajustes muestra el modo efectivo. El worker y `npm run eval:ia` aplican la misma política; la evaluación real sigue siendo informativa.
+**Modo de razonamiento (REQ-COT-2.17, ADR-0015):** `src/ai/razonamiento.ts` resuelve el control de esfuerzo antes de llamar al LLM. En Command Code, GPT-6 Luna usa `low`. Cuando un proveedor no admite un control comprobado, se omite el parámetro y se conserva la compatibilidad normal del catálogo; Qwen 3.7 Flash sigue seleccionable. Ajustes muestra el modo efectivo. El worker y `npm run eval:ia` aplican la misma política; la evaluación real sigue siendo informativa.
 
 ## 10. Compras desde Chipax (ADR-0021)
 
@@ -152,4 +152,4 @@ Ajustes guarda proveedor, modelo y confirmación ZDR de Groq; no recibe ni persi
 5. Recibe las líneas con mapeo exacto con `registrarRecepcion` y la clave de idempotencia de la línea.
 6. Deja el resto por asociar o por revisar.
 
-Si una factura falla (XML aún no disponible, `410`, error de formato), se registra en los conteos y se reintenta en la corrida siguiente. Las demás facturas siguen. En `npm test` el cliente apunta a un Chipax simulado local (como el Groq simulado de E2E 17).
+Si una factura falla (XML aún no disponible, `410`, error de formato), se registra en los conteos y se reintenta en la corrida siguiente. Las demás facturas siguen. En `npm test` el cliente apunta a un Chipax simulado local (como el Command Code simulado de E2E 17).

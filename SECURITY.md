@@ -87,7 +87,7 @@ Reglas verificables:
 
 - El enmascarado (`src/lib/datos-personales.ts`, compartido con los logs) normaliza guiones Unicode y reconoce RUT (con o sin puntos, espacios o guion), correo (también con tildes), teléfono (`+56`/`56` opcional, cualquier agrupación y paréntesis) y URL, reemplazados por `[RUT]`, `[CORREO]`, `[TELEFONO]` y `[URL]`. Como red, toda secuencia de 7 o más dígitos pasa a `[NUMERO]` (medidas y cantidades tienen hasta 4). Un test usa un corpus adversarial y verifica que la petición al proveedor y `llamada_ia` no contienen nada de eso.
 - El registro de llamadas al LLM (`llamada_ia`) guarda el texto ya enmascarado, la respuesta, los tokens, el costo, la latencia y el resultado. No guarda datos del cliente.
-- Command Code usa `x-cmd-zdr: 1`. En Groq un administrador confirma en Ajustes que ZDR está habilitado en Console; la app no puede verificarlo por API. Si el proveedor no responde con la herramienta requerida, falla la interpretación y se ofrece la cotización manual (ADR-0009).
+- Command Code usa `x-cmd-zdr: 1` (retención cero) en cada llamada; es el único proveedor desde ADR-0022. Si el proveedor no responde con la herramienta requerida, falla la interpretación y se ofrece la cotización manual (ADR-0009).
 - Ley chilena de datos personales: mínimo necesario, finalidad (cotizar y despachar) y acceso restringido a `clientes.ver`.
 
 ## 5. Top 8 amenazas
@@ -105,13 +105,13 @@ Reglas verificables:
 | T9 | PDF malicioso o engañoso subido como nota de la tienda | Máximo 5 MB y firma `%PDF-`; `pdfjs-dist` 6 solo extrae texto (sin XFA, sin fuentes del sistema, se detiene ante errores); el archivo no se guarda (solo su hash); vista previa y confirmación humana; el servidor vuelve a leer el PDF al confirmar; códigos validados contra el catálogo y precio siempre de la lista (ADR-0008) | Unit: lector con nota anulada, sin tabla y sin códigos; integración: no PDF → 400, código inexistente → bloquea, duplicado → 409, sin datos del cliente final en BD ni auditoría |
 | T10 (ADR-0021) | Factura errónea, de otro proveedor o XML hostil que infla el stock o ataca el parser | Solo RUT habilitados y líneas con mapeo exacto; lo demás queda por asociar o por revisar; XML sin DTD ni entidades externas y con tope de 2 MB; idempotencia por RUT, tipo, folio y línea; el rol `neltume_compras` solo inserta recepciones de materias primas; la corrección es un ajuste con motivo | Integración `compras-chipax` con un Chipax simulado: RUT no habilitado, línea sin mapeo, XML con entidad externa, repetición y rol de BD |
 
-### Claves de proveedores y ZDR (REQ-ADM-4.x)
+### Clave del proveedor y retención cero (REQ-ADM-4.x)
 
-`CMD_API_KEY` y `GROQ_API_KEY` viven en `.env.worker.local` para desarrollo y en las variables privadas del servicio `worker` para producción. Next.js, el navegador y la API de Ajustes no las reciben.
+`CMD_API_KEY` vive en `.env.worker.local` para desarrollo y en las variables privadas del servicio `worker` para producción. Next.js, el navegador y la API de Ajustes no la reciben.
 
 Compras desde Chipax (ADR-0021): `CHIPAX_APP_ID` y `CHIPAX_SECRET_KEY` siguen el mismo criterio. Viven en `.env.compras.local` para desarrollo y en el entorno del servicio `compras` en producción. El token JWT y las URL firmadas del XML solo existen en memoria y nunca van a logs, auditoría ni BD. El CLI `eval:ia` lee el mismo archivo local. Las claves no se escriben en respuestas, logs, auditoría ni `parametro`, y no hay ninguna ruta de claves cifradas en la base (ADR-0009).
 
-Command Code exige `x-cmd-zdr: 1`. Para Groq, un administrador confirma en Ajustes que habilitó Zero Data Retention en Data Controls; la aplicación no puede verificar ese control por API. Los límites Free que se muestran en la UI son una referencia pública; las cuotas exactas de la organización se consultan en Groq Console.
+Command Code exige `x-cmd-zdr: 1`: la retención cero va en cada llamada y no depende de una confirmación manual. Groq, que sí la requería, se retiró el 22-10-2026 (ADR-0022).
 
 ## 6. Exposición de red
 

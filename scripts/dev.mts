@@ -22,11 +22,11 @@ try {
 }
 
 // App y worker de IA (cola de interpretaciones) en paralelo; si uno termina, se detiene el otro.
-const entornoNext = { ...process.env, CMD_API_KEY: "", GROQ_API_KEY: "" };
+const entornoNext = { ...process.env, CMD_API_KEY: "" };
 const next = spawn("npx", ["next", "dev", ...process.argv.slice(2)], { stdio: "inherit", env: entornoNext });
 // El worker usa su propio rol de BD, con permisos mínimos (ADR-0017).
 const entornoWorker: NodeJS.ProcessEnv = { ...process.env, DATABASE_URL: urlWorker(app) };
-for (const clave of ["CMD_API_KEY", "GROQ_API_KEY", "CMD_API_BASE_URL", "GROQ_API_BASE_URL"]) delete entornoWorker[clave];
+for (const clave of ["CMD_API_KEY", "CMD_API_BASE_URL"]) delete entornoWorker[clave];
 const worker = spawn("npx", ["tsx", "--env-file-if-exists=.env.worker.local", "src/ai/worker.ts"], { stdio: "inherit", env: entornoWorker });
 const procesos = [next, worker];
 // Compras desde Chipax (ADR-0021): solo con credenciales completas en .env.compras.local (sin ellas el servicio
@@ -34,7 +34,7 @@ const procesos = [next, worker];
 const chipax = existsSync(".env.compras.local") ? parseEnv(readFileSync(".env.compras.local", "utf8")) : {};
 if (chipax.CHIPAX_APP_ID && chipax.CHIPAX_SECRET_KEY) {
   const entornoCompras: NodeJS.ProcessEnv = { ...process.env, DATABASE_URL_COMPRAS: urlCompras(app) };
-  for (const clave of ["CMD_API_KEY", "GROQ_API_KEY", "CHIPAX_APP_ID", "CHIPAX_SECRET_KEY"]) delete entornoCompras[clave];
+  for (const clave of ["CMD_API_KEY", "CHIPAX_APP_ID", "CHIPAX_SECRET_KEY"]) delete entornoCompras[clave];
   procesos.push(spawn("npx", ["tsx", "--env-file-if-exists=.env.compras.local", "src/compras/servicio.ts"], { stdio: "inherit", env: entornoCompras }));
 } else {
   console.log("· Compras desde Chipax: sin credenciales en .env.compras.local, el servicio no se inicia (RUNBOOK §7).");

@@ -1,4 +1,4 @@
-// `npm run eval:ia` permite elegir proveedor y modelo; los flags permiten automatizar la selección.
+// `npm run eval:ia` permite elegir el modelo de Command Code; los flags permiten automatizar la selección.
 // Evalúa el intérprete con AI.md §6 contra el catálogo importado. Usa APIs reales, por lo que puede tener costo.
 // Escribe eval/informes/<fecha>-<modelo>.{md,json}; no imprime ni guarda claves de proveedor.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -8,7 +8,6 @@ import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import { generarCasos } from "../src/ai/casos-generados";
 import { CommandCodeIA, baseDeApi } from "../src/ai/proveedores/commandcode";
-import { GroqIA } from "../src/ai/proveedores/groq";
 import { ordenarPorCostoEstimado } from "../src/ai/costo-estimado";
 import { renderizarTablaCLI } from "../src/ai/tabla-cli";
 import { type Caso, evaluarCaso, type Obtenido, type ResultadoCaso, resumir } from "../src/ai/evaluacion";
@@ -24,27 +23,19 @@ import { alertaNotaIa, mapearConDudasIa } from "../src/domain/cotizaciones/mapea
 // --generados N [--semilla S]: en vez de eval/casos.json, N pedidos generados desde el catálogo (src/ai/casos-generados.ts).
 const { values } = parseArgs({ options: { modelo: { type: "string" }, proveedor: { type: "string" }, generados: { type: "string" }, semilla: { type: "string" }, ids: { type: "string" } } });
 const terminal = stdin.isTTY && stdout.isTTY ? createInterface({ input: stdin, output: stdout }) : null;
-const OPCIONES_PROVEEDOR: { id: ProveedorConfigurado; nombre: string }[] = [
-  { id: "commandcode", nombre: "Command Code" }, { id: "groq", nombre: "Groq" },
-];
 
 const pct = (n: number) => `${Math.round(n * 100)} %`;
 const valor = (nombre: string, v: number) => (nombre.startsWith("Latencia") ? `${(v / 1000).toFixed(1).replace(".", ",")} s` : nombre.startsWith("Costo") ? `US$ ${v.toFixed(4).replace(".", ",")}` : pct(v));
 async function preguntar(texto: string) {
-  if (!terminal) throw new Error("Usa una terminal interactiva o indica --proveedor y --modelo en la línea de comandos.");
+  if (!terminal) throw new Error("Usa una terminal interactiva o indica --modelo en la línea de comandos.");
   return (await terminal.question(texto)).trim();
 }
 
-async function seleccionarProveedor(argumento?: string): Promise<ProveedorConfigurado> {
-  let respuesta = argumento?.trim().toLowerCase();
-  if (!respuesta) {
-    console.log("\nProveedor para la evaluación:\n  1. CommandCode\n  2. Groq");
-    respuesta = (await preguntar("Elige proveedor [1-2]: ")).toLowerCase();
-  }
-  if (respuesta === "1") return "commandcode";
-  if (respuesta === "2") return "groq";
-  if (OPCIONES_PROVEEDOR.some((p) => p.id === respuesta)) return respuesta as ProveedorConfigurado;
-  throw new Error("Proveedor inválido. Elige 1 (Command Code) o 2 (Groq), o usa --proveedor commandcode|groq.");
+/** Solo queda Command Code (ADR-0022); `--proveedor commandcode` se sigue aceptando para no romper scripts. */
+function seleccionarProveedor(argumento?: string): ProveedorConfigurado {
+  const respuesta = argumento?.trim().toLowerCase();
+  if (!respuesta || respuesta === "commandcode" || respuesta === "1") return "commandcode";
+  throw new Error(`Proveedor inválido: ${respuesta}. El único proveedor es Command Code (Groq se retiró, ADR-0022).`);
 }
 
 function modelosEvaluables(proveedor: ProveedorConfigurado, catalogo: CatalogoIA, config: ConfiguracionPrivadaIA): ModeloIA[] {
@@ -61,45 +52,30 @@ const numeroTabla = (n: number | undefined) => n === undefined ? "—" : n.toLoc
 async function seleccionarModelo(proveedor: ProveedorConfigurado, catalogo: CatalogoIA, config: ConfiguracionPrivadaIA, argumento?: string) {
   const todos = modelosEvaluables(proveedor, catalogo, config);
   const elegibles = todos.filter((m) => m.compatible && !m.preview);
-  const habilitados = proveedor === "commandcode"
-    ? ordenarPorCostoEstimado(elegibles)
-    : [...elegibles].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  const habilitados = ordenarPorCostoEstimado(elegibles);
   if (catalogo.actualizadoEn) {
     const fecha = new Intl.DateTimeFormat("es-CL", { timeZone: "America/Santiago", dateStyle: "short" }).format(new Date(catalogo.actualizadoEn));
     console.log(`\nModelos ${proveedor} · catálogo consultado ${fecha}`);
   } else {
     console.log(`\nModelos ${proveedor} · catálogo sin fecha de actualización`);
   }
-  if (proveedor === "commandcode") {
-    console.log("Ordenados por costo estimado, de menor a mayor. Tarifas en US$/millón de tokens; costo estimado con 4.000 tokens de entrada + 400 de salida.\n");
-  } else {
-    console.log("Límites Free publicados como referencia; las cuotas exactas se consultan en Groq Console.\n");
-  }
+  console.log("Ordenados por costo estimado, de menor a mayor. Tarifas en US$/millón de tokens; costo estimado con 4.000 tokens de entrada + 400 de salida.\n");
   if (!habilitados.length) {
     const bloqueados = todos.map((m) => `  · ${m.nombre}: ${m.motivo ?? "no compatible"}`).join("\n");
     throw new Error(`No hay modelos compatibles en el catálogo. Inicia el worker para actualizarlo.${bloqueados ? `\n${bloqueados}` : ""}`);
   }
-  const columnas = proveedor === "commandcode"
-    ? [
-      { titulo: "#", alineacion: "derecha" as const }, { titulo: "Modelo (ID)" },
-      { titulo: "Entrada US$/M", alineacion: "derecha" as const }, { titulo: "Salida US$/M", alineacion: "derecha" as const },
-      { titulo: "Est. US$/llamada", alineacion: "derecha" as const },
-    ]
-    : [
-      { titulo: "#", alineacion: "derecha" as const }, { titulo: "Modelo (ID)" },
-      { titulo: "RPM", alineacion: "derecha" as const }, { titulo: "RPD", alineacion: "derecha" as const },
-      { titulo: "TPM", alineacion: "derecha" as const }, { titulo: "TPD", alineacion: "derecha" as const },
-    ];
+  const columnas = [
+    { titulo: "#", alineacion: "derecha" as const }, { titulo: "Modelo (ID)" },
+    { titulo: "Entrada US$/M", alineacion: "derecha" as const }, { titulo: "Salida US$/M", alineacion: "derecha" as const },
+    { titulo: "Est. US$/llamada", alineacion: "derecha" as const },
+  ];
   const filas = habilitados.map((m, i) => {
     const activo = config.proveedor === proveedor && config.modelo === m.id ? "✓ " : "";
     const modelo = `${activo}${m.nombre} (${m.id})`;
-    if (proveedor === "commandcode") {
-      const estimado = m.precioEntradaUsdMTok === undefined || m.precioSalidaUsdMTok === undefined
-        ? "—"
-        : numeroTabla((m.precioEntradaUsdMTok * 4_000 + m.precioSalidaUsdMTok * 400) / 1_000_000);
-      return [String(i + 1), modelo, numeroTabla(m.precioEntradaUsdMTok), numeroTabla(m.precioSalidaUsdMTok), estimado];
-    }
-    return [String(i + 1), modelo, m.limites?.rpm ?? "—", m.limites?.rpd ?? "—", m.limites?.tpm ?? "—", m.limites?.tpd ?? "—"];
+    const estimado = m.precioEntradaUsdMTok === undefined || m.precioSalidaUsdMTok === undefined
+      ? "—"
+      : numeroTabla((m.precioEntradaUsdMTok * 4_000 + m.precioSalidaUsdMTok * 400) / 1_000_000);
+    return [String(i + 1), modelo, numeroTabla(m.precioEntradaUsdMTok), numeroTabla(m.precioSalidaUsdMTok), estimado];
   });
   console.log(renderizarTablaCLI(columnas, filas));
   if (habilitados.some((m) => config.proveedor === proveedor && config.modelo === m.id)) console.log("\n✓ Modelo activo en Ajustes.");
@@ -120,22 +96,17 @@ async function seleccionarModelo(proveedor: ProveedorConfigurado, catalogo: Cata
 }
 
 function cargarEntornoWorkerLocal() {
-  // npm ejecuta eval con .env.local para la BD. Las claves de proveedores se toman de .env.worker.local.
+  // npm ejecuta eval con .env.local para la BD. La clave del proveedor se toma de .env.worker.local.
   delete process.env.CMD_API_KEY;
-  delete process.env.GROQ_API_KEY;
   delete process.env.CMD_API_BASE_URL;
-  delete process.env.GROQ_API_BASE_URL;
   try { process.loadEnvFile(".env.worker.local"); } catch { /* La validación de proveedor explica si falta la clave. */ }
 }
 
 function crearInterpreteEvaluacion(proveedor: ProveedorConfigurado, modelo: ModeloIA): InterpreteIA {
   const apiKey = apiKeyDesdeEntorno(proveedor);
-  if (!apiKey) throw new Error(`Falta ${proveedor === "groq" ? "GROQ_API_KEY" : "CMD_API_KEY"} en .env.worker.local.`);
+  if (!apiKey) throw new Error("Falta CMD_API_KEY en .env.worker.local.");
   const timeoutMs = Number(process.env.LLM_TIMEOUT_MS || 12_000);
   const maxTokensSalida = Number(process.env.LLM_MAX_TOKENS_SALIDA || 2_000);
-  if (proveedor === "groq") {
-    return new GroqIA({ apiKey, modelo: modelo.id, timeoutMs, maxTokensSalida, baseUrl: process.env.GROQ_API_BASE_URL });
-  }
   return new CommandCodeIA({
     apiKey, modelo: modelo.id, baseUrl: baseDeApi(process.env.CMD_API_BASE_URL), timeoutMs, maxTokensSalida,
     precioEntradaMTok: modelo.precioEntradaUsdMTok ?? 0,
@@ -149,8 +120,8 @@ async function main() {
   const semilla = Number(values.semilla ?? 1);
   if (values.generados && !(Number.isInteger(generados) && generados > 0 && Number.isInteger(semilla))) throw new Error("--generados y --semilla deben ser enteros positivos.");
   const config = await leerConfiguracionPrivada();
-  const proveedor = await seleccionarProveedor(values.proveedor);
-  if (!apiKeyDesdeEntorno(proveedor)) throw new Error(`Falta ${proveedor === "groq" ? "GROQ_API_KEY" : "CMD_API_KEY"} en .env.worker.local.`);
+  const proveedor = seleccionarProveedor(values.proveedor);
+  if (!apiKeyDesdeEntorno(proveedor)) throw new Error("Falta CMD_API_KEY en .env.worker.local.");
   const catalogoProveedor = await leerCatalogo(proveedor);
   const modelo = await seleccionarModelo(proveedor, catalogoProveedor, config, values.modelo);
 
@@ -198,8 +169,7 @@ async function main() {
     console.log(`${u.ok ? "✓" : "✗"} ${String(c.id).padStart(2)} ${c.grupo.padEnd(9)} ${(u.latenciaMs / 1000).toFixed(1)} s ${u.motivos.join("; ")}`);
   }
 
-  const modeloCommandCode = proveedor === "commandcode" ? modelo : undefined;
-  const conTarifa = proveedor === "commandcode" && modeloCommandCode?.precioEntradaUsdMTok !== undefined && modeloCommandCode?.precioSalidaUsdMTok !== undefined;
+  const conTarifa = modelo.precioEntradaUsdMTok !== undefined && modelo.precioSalidaUsdMTok !== undefined;
   const { criterios, aprobado, tokensMedios } = resumir(resultados, conTarifa);
   const marca = (c: boolean | null) => (c === null ? "sin tarifa" : c ? "✓" : "✗");
   const fecha = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santiago" }).format(new Date());
@@ -210,7 +180,7 @@ async function main() {
     `# Evaluación del intérprete · ${modelo.id}`, "",
     `Fecha ${fecha.split("-").reverse().join("-")} · proveedor ${base.nombre} · ${origen} · **${aprobado ? "APROBADO" : "NO APROBADO"}**`, "",
     `Modo efectivo: ${modelo.modoRazonamiento} · modelo ${modelo.modeloEfectivo ?? modelo.id}.`, "",
-    `Tokens medios por pedido: ${tokensMedios.entrada} de entrada y ${tokensMedios.salida} de salida.${conTarifa ? "" : proveedor === "groq" ? " Groq no informó costos por llamada; el costo no se evalúa." : " Sin tarifas del modelo: el costo no se evalúa."}`, "",
+    `Tokens medios por pedido: ${tokensMedios.entrada} de entrada y ${tokensMedios.salida} de salida.${conTarifa ? "" : " Sin tarifas del modelo: el costo no se evalúa."}`, "",
     `Identificadores de comparación: prompt ${promptHash} · casos ${casosHash} · pipeline ${pipelineHash}.`, "",
     "| Criterio | Resultado | Meta | |", "|---|---|---|---|",
     ...criterios.map((k) => `| ${k.nombre} | ${valor(k.nombre, k.valor)} | ${k.meta} | ${marca(k.cumple)} |`), "",

@@ -34,18 +34,18 @@ export default defineConfig({
       url: `http://localhost:${PUERTO}/login`,
       reuseExistingServer: false,
       timeout: 120_000,
-      env: { NEXT_DIST_DIR: ".next-e2e", DATABASE_URL: DATABASE_E2E, CMD_API_KEY: "", GROQ_API_KEY: "" },
+      env: { NEXT_DIST_DIR: ".next-e2e", DATABASE_URL: DATABASE_E2E, CMD_API_KEY: "" },
     },
     {
-      // El worker usa un servidor HTTP local compatible con Groq; ninguna suite llama al proveedor real.
+      // El worker usa un Command Code simulado local (e2e/ia-mock.mts); ninguna suite llama al proveedor real.
       command: "npx tsx src/ai/worker.ts",
       url: `http://localhost:${PUERTO + 1}`,
       reuseExistingServer: false,
       timeout: 60_000,
-      env: { DATABASE_URL: DATABASE_E2E_WORKER, LLM_PROVEEDOR: "doble", CMD_API_KEY: "", GROQ_API_KEY: "groq-e2e-key-simulada-no-real", GROQ_API_BASE_URL: `http://127.0.0.1:${PUERTO + 2}/openai/v1`, WORKER_PUERTO_SALUD: String(PUERTO + 1), LLM_MAX_REINTENTOS: "1", IA_CATALOGO_DESHABILITADO: "1" },
+      env: { DATABASE_URL: DATABASE_E2E_WORKER, LLM_PROVEEDOR: "doble", CMD_API_KEY: "cmd-e2e-key-simulada-no-real", CMD_API_BASE_URL: `http://127.0.0.1:${PUERTO + 2}`, WORKER_PUERTO_SALUD: String(PUERTO + 1), LLM_MAX_REINTENTOS: "1", IA_CATALOGO_DESHABILITADO: "1" },
     },
     {
-      command: `npx tsx e2e/groq-mock.mts`,
+      command: `npx tsx e2e/ia-mock.mts`,
       url: `http://localhost:${PUERTO + 2}/health`,
       reuseExistingServer: false,
       timeout: 30_000,
