@@ -23,7 +23,8 @@
     "worker": "tsx --env-file-if-exists=.env.worker.local src/ai/worker.ts",
     "compras": "tsx --env-file-if-exists=.env.compras.local src/compras/servicio.ts",
     "compras:probar": "tsx --env-file-if-exists=.env.compras.local scripts/chipax-probar.mts",
-    "compras:proveedores": "tsx --env-file-if-exists=.env.compras.local scripts/chipax-proveedores.mts"
+    "compras:proveedores": "tsx --env-file-if-exists=.env.compras.local scripts/chipax-proveedores.mts",
+    "integracion:enviar-prueba": "tsx --env-file-if-exists=.env.local scripts/integracion-enviar-prueba.mts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.1",

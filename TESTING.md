@@ -8,14 +8,15 @@ Refs: AGENTS.md (pruebas y calidad), SPEC.md (REQ), AI.md §5–6, ADR-0005. `np
 |---|---|---|---|---|
 | Unit | Vitest | `src/domain` puro (precios, redondeo, IVA, días hábiles, mapeo a catálogo, validación de RUT, estados), `src/ai/esquema` y `src/ai/redaccion` | `src/**/*.test.ts` | ~150 |
 | Integración | Vitest + PostgreSQL local (BD `neltume_test`, recreada) | Route handlers con su permiso, transacciones, triggers de inmutabilidad, idempotencia, `audit_log`, importación del Excel mini, worker con el doble | `tests/integracion/**` | ~120 |
-| E2E | Playwright (`workers: 1`, `fullyParallel: false`, orden por nombre de archivo) | Recorrido de punta a punta en navegador, con estado compartido entre suites | `e2e/NN-*.spec.ts` | 20 suites |
+| E2E | Playwright (`workers: 1`, `fullyParallel: false`, orden por nombre de archivo) | Recorrido de punta a punta en navegador, con estado compartido entre suites | `e2e/NN-*.spec.ts` | 21 suites |
 | Evaluación IA | `npm run eval:ia` (modelo real) | Set de AI.md §6, o N casos generados con semilla (`--generados`) | `eval/` | 62 casos fijos + generados; **no** forma parte de `npm test` |
 
 `npm test` ejecuta `lint → typecheck → unit → integración → e2e` en ese orden y se detiene al primer fallo. Si alguna capa falla, la suite no está verde.
 
 Chequeos estructurales (corren en integración):
-- Cada `route.ts` exporta solo handlers con `conPermiso` o `publico`.
+- Cada `route.ts` exporta solo handlers con `conPermiso` o `publico`; `integracion` solo bajo `src/app/api/integrations/` (ADR-0023).
 - No hay rutas `/webhooks`.
+- El secreto de la API de la tienda solo llega al servicio `app` en Compose.
 - Ningún archivo fuente supera 500 líneas.
 - `docker compose config` no publica puertos en `0.0.0.0`.
 - Escaneo de secretos sobre el repo.
@@ -53,6 +54,7 @@ Cada suite parte del estado que dejó la anterior. Nunca se ejecuta una suite su
 | 18 | `18-pagos-pedido` | Sobre un pedido nuevo: «Producir» bloqueado sin abono; registra 50 % → abonado y produce; despachar bloqueado con saldo; registra el saldo → pagado y despacha; revierte un pago con motivo y ve el saldo resultante; otro pedido pagado completo de una vez; cancelar uno con abono deja el monto anotado | Pedido pagado y despachado |
 | 19 | `19-compras-chipax` | Con un Chipax simulado local y el servicio de compras real: habilita un proveedor, sincroniza, una línea con mapeo entra sola y otra queda por asociar; la asocia con su factor y sube el stock; marca un flete como «no es materia prima»; repetir la sincronización no duplica | Recepciones desde Chipax |
 | 20 | `20-movil` | Recorre `/`, `/cotizaciones`, `/pedidos`, `/stock`, `/materias-primas`, `/precios`, `/produccion` y `/clientes` en un contexto de celular (390×844, táctil, `isMobile`): ninguna pantalla tiene scroll horizontal de página y, con `pointer: coarse`, «Nueva cotización» y un control de `/stock` miden al menos 44 px de alto (sin puntero grueso, ese chequeo queda omitido) | — |
+| 21 | `21-recepcion-tienda` | La tienda envía por la API una nota firmada (sin firma → 401; reintento → `duplicate`); aparece en Notas de pedido como «Recibida automáticamente», con sus documentos, y la orden de trabajo se descarga; un perfil Producción la ve sin un «$», sin «PDF» ni nota comercial; con la nota en producción, la revisión 2 espera y una persona la aplica | Nota N.º 801 rev. 2 |
 
 ## 4. Datos semilla y entorno
 
@@ -112,6 +114,7 @@ U = unit, I = integración, E = E2E (número de suite). Todo REQ P1 tiene al men
 | COT-8.1, 8.2, 8.3, 8.4 | P1 | I `pedidos`; E 09, 11 |
 | COT-8.10–8.17 (ADR-0020) | P1 | U `pagos.estado` (abono redondeado hacia arriba, abonado/pagado, total de una vez); I `pedidos-pagos` (trigger de solo inserción, sobrepago, reverso único, compuertas de producción y despacho, excepción con motivo, cancelación con pagos, notas anteriores sin control, 403 y fila en `audit_log` por endpoint); E 18 |
 | MP-7.1–7.10 (ADR-0021) | P2 | U `compras.dte` (DTE suelto y `EnvioDTE`, ISO-8859-1, sin DTD ni entidades, tope de tamaño), U `compras.mapeo` (clave por código o nombre, factor, unidad distinta); I `compras-chipax` (login, paginación, `429` con `Retry-After`, `xml_not_available`, `410`, solo RUT habilitados y desde su habilitación, idempotencia, nota de crédito y rechazada por revisar, rol `neltume_compras`, 403 y auditoría, precio solo con `costos.ver`); E 19 |
+| COT-8.18–8.24 (ADR-0023) | P1 | U `integracion.firma` (vectores compartidos con la tienda, ventana, rotación), `integracion.contrato` (esquema estricto, sin datos personales), `integracion.documentos`, `integracion.lineas`, `pdf.orden-trabajo`, lector «por fábrica» (T19.9); I `integracion-tienda` (401 sin cabeceras, firma o ventana; 503; 415; Santiago y versión 422; esquema 400; PDF dañado; recepción válida con ítems, medidas, observaciones, documentos y sin datos personales; duplicado; 10 simultáneos; fallo a mitad sin restos; código desconocido y especial; PDF retenido; adjuntos), `integracion-tienda-flujo` (importes y documento comercial con permiso y su denegación auditada, orden de trabajo sin «$», adjuntos por nota, ciclo producir/lista/despacho, orden por faltante, revisiones y anulaciones solas o con una persona, 403), `compose`; E 21 |
 | COT-9.1, 9.2, 9.3 | P1 | U `rut`; I `clientes`; E 08, 11 |
 | COT-10.1, 10.2 | P2 | I `cotizaciones.lista`, IDOR |
 | NFR-1, NFR-2 | — | `eval:ia` (p90 y costo); I tope de costo y límite 429 |

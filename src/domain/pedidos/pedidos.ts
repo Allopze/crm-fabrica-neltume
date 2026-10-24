@@ -33,7 +33,11 @@ export async function crearPedido(tx: Tx, d: DatosPedido, actor: Actor & { id: s
   return p;
 }
 
-export interface LineaPedido { articuloId: string | null; descripcion: string; medidaSolicitada: string | null; cantidad: number; precioUnitario: number; totalLinea: number }
+export interface LineaPedido {
+  articuloId: string | null; descripcion: string; medidaSolicitada: string | null; cantidad: number; precioUnitario: number; totalLinea: number;
+  /** Solo en las notas que llegan por la API de la tienda (ADR-0023). */
+  observacion?: string | null; revisar?: string | null; referencias?: unknown;
+}
 
 /**
  * Núcleo común de un pedido (desde cotización o desde la nota de la tienda): bloquea los artículos antes de leer el

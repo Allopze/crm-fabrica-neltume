@@ -141,3 +141,33 @@ Las facturas de compra de los proveedores habilitados suben el stock de materias
 - El intervalo de 30 min y la ventana de 45 días están en `parametro`. Por ejemplo: `UPDATE parametro SET valor = '15' WHERE clave = 'chipax_intervalo_min'`.
 - Chipax permite un GET con filtros cada 5 s; el servicio espera entre páginas y respeta `Retry-After`.
 
+## 8. Recepción automática de las notas de la tienda (ADR-0023)
+
+La tienda envía sola cada nota de pedido de Panguipulli a `POST /api/integrations/neltume/orders`, firmada con un secreto que comparten solo las dos apps. El contrato está en el repo de la tienda (`docs/integracion-fabrica.md`) y lo propio de la fábrica, en `docs/contratos/pedidos-tienda-v1.md`.
+
+**Configurar (una vez):**
+1. Genera el secreto: `openssl rand -base64 32`.
+2. En la fábrica, en el `.env` del servidor (en desarrollo, en `.env.local`):
+   - `INTEGRACION_TIENDA_SECRETO`: el secreto;
+   - `INTEGRACION_TIENDA_CLIENTE_RUT`: el RUT del cliente de tipo tienda;
+   - `INTEGRACION_TIENDA_FABRICA`: `PANGUIPULLI`.
+
+   Luego `docker compose up -d`.
+3. En la tienda: `NELTUME_FABRICA_PANGUIPULLI_URL` (el origen público de la fábrica, sin ruta) y `NELTUME_FABRICA_PANGUIPULLI_SECRETO` (el mismo secreto).
+4. Prueba en desarrollo, sin la tienda: `npm run integracion:enviar-prueba` (solo hacia `http://localhost…`). Crea la nota de prueba N.º 9001 con datos inventados. Con la tienda: las dos apps usan el puerto 3000 en `npm run dev`, así que la tienda se levanta en el 3001 y su `NELTUME_FABRICA_PANGUIPULLI_URL` apunta a `http://localhost:3000`.
+5. Opcional, recomendado: una regla de Cloudflare (WAF) que solo deje llegar a `/api/integrations/*` desde la IP de salida del servidor de la tienda.
+
+**Rotar el secreto:**
+1. Pon el actual en `INTEGRACION_TIENDA_SECRETO_ANTERIOR` y el nuevo en `INTEGRACION_TIENDA_SECRETO`, y reinicia la app.
+2. Cambia el secreto en la tienda.
+3. Cuando su bandeja quede al día, vacía `INTEGRACION_TIENDA_SECRETO_ANTERIOR` y reinicia.
+
+**Diagnóstico:**
+
+| Síntoma | Causa probable | Acción |
+|---|---|---|
+| La tienda recibe 503 `not_configured` | Falta el secreto, el RUT no es de un cliente tienda o no hay lista vigente | Revisar el `.env` y Clientes; la tienda reintenta sola |
+| La tienda recibe 401 `invalid_signature` | Secretos distintos, reloj desfasado más de 5 min o cuerpo modificado en el camino | Comparar secretos; `timedatectl` en ambos servidores; en la fábrica, `docker compose logs app` muestra el motivo (`fuera_de_plazo`, `firma_invalida`) |
+| Una nota no aparece | La tienda la rechazó por un 4xx o aún reintenta | En la tienda, `npm run integracion`; en la fábrica, Auditoría con recurso «API de la tienda» |
+| «La tienda envió la revisión N» en una ficha | La nota ya estaba en curso | Una persona la aplica (cancela y crea la nueva) o la descarta, con motivo |
+| Documento de producción «retenido» | Su texto trae montos en pesos | Imprimir la orden de trabajo de la fábrica; avisar a la tienda |

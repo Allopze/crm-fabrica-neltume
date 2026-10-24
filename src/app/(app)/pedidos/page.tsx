@@ -9,7 +9,7 @@ import { SinPermiso } from "@/components/ui/sin-permiso";
 import { Tabla, Td, Th } from "@/components/ui/tabla";
 import { bd } from "@/db/conexion";
 import { requerirSesion } from "@/domain/auth/servidor";
-import { contarPedidos, listarPedidos } from "@/domain/pedidos/consulta";
+import { contarPedidos, listarPedidos, vistaDe } from "@/domain/pedidos/consulta";
 import type { EstadoPago } from "@/domain/pedidos/pagos";
 import { clp, cn, fecha } from "@/lib/formato";
 
@@ -27,7 +27,7 @@ export default async function PedidosPage({ searchParams }: PageProps<"/pedidos"
   const pago = typeof sp.pago === "string" && sp.pago in estadosPago ? (sp.pago as EstadoPago) : "";
   const antes = Number(sp.antes);
   const [{ datos, total, siguiente }, conteo] = await Promise.all([
-    listarPedidos(bd(), { estado: estado || undefined, estadoPago: pago || undefined, antesDe: antes > 0 ? antes : undefined }, sesion.permisos.has("clientes.ver")),
+    listarPedidos(bd(), { estado: estado || undefined, estadoPago: pago || undefined, antesDe: antes > 0 ? antes : undefined }, vistaDe(sesion.permisos)),
     contarPedidos(bd()),
   ]);
   const enlace = (extra: Record<string, string>) => {
@@ -68,7 +68,7 @@ export default async function PedidosPage({ searchParams }: PageProps<"/pedidos"
           </Vacio>
         ) : (
           <Tabla etiqueta="Notas de pedido">
-            <thead><tr><Th>N.º</Th><Th>Cliente</Th><Th className="hidden lg:table-cell">Origen</Th><Th className="hidden md:table-cell">Creada</Th><Th className="hidden md:table-cell">Reservado / pedido</Th><Th>Estado</Th><Th>Pago</Th><Th alinear="der">Total</Th></tr></thead>
+            <thead><tr><Th>N.º</Th><Th>Cliente</Th><Th className="hidden lg:table-cell">Origen</Th><Th className="hidden md:table-cell">Creada</Th><Th className="hidden md:table-cell">Reservado / pedido</Th><Th>Estado</Th><Th>Pago</Th>{sesion.permisos.has("pedidos.importes.ver") && <Th alinear="der">Total</Th>}</tr></thead>
             <tbody>
               {datos.map((p) => {
                 const e = estadoPedido(p.estado);
@@ -77,7 +77,7 @@ export default async function PedidosPage({ searchParams }: PageProps<"/pedidos"
                   <FilaEnlazada key={p.id} href={`/pedidos/${p.id}`}>
                     <Td><Link href={`/pedidos/${p.id}`} aria-label={`Nota de pedido N.º ${p.numero}`} className="-my-2 inline-block py-2 font-medium tabular-nums text-rauli hover:underline">{p.numero}</Link></Td>
                     <Td className="font-medium">{p.cliente}</Td>
-                    <Td className="hidden text-tinta-suave lg:table-cell">{p.cotizacion ? `Cotización N.º ${p.cotizacion}` : `Nota de la tienda N.º ${p.refExterna}`}</Td>
+                    <Td className="hidden text-tinta-suave lg:table-cell">{p.cotizacion ? `Cotización N.º ${p.cotizacion}` : `Nota de la tienda N.º ${p.refExterna}${p.revisionExterna > 1 ? ` (rev. ${p.revisionExterna})` : ""}`}{p.origen === "tienda_api" && <span className="block text-xs text-tinta-tenue">Recibida automáticamente</span>}</Td>
                     <Td className="hidden whitespace-nowrap text-tinta-suave md:table-cell">{fecha(new Date(p.creadoEn).toISOString())}</Td>
                     <Td className="hidden md:table-cell">
                       <span className="tabular-nums">{p.reservado} / {p.cantidad}</span>
@@ -88,8 +88,8 @@ export default async function PedidosPage({ searchParams }: PageProps<"/pedidos"
                       {p.atrasoDias > 0 && <span className="mt-1 block text-xs text-error">Atrasada {p.atrasoDias === 1 ? "1 día" : `${p.atrasoDias} días`}</span>}
                     </Td>
                     {/* Una nota cancelada sin pagos no tiene nada que cobrar ni anotar. */}
-                    <Td>{p.estado === "cancelada" && p.pagado === 0 ? <span className="text-tinta-tenue">—</span> : <Etiqueta tono={ep.tono} className="whitespace-nowrap">{ep.texto}</Etiqueta>}</Td>
-                    <Td alinear="der" className="font-medium">{clp(p.total)}{p.pagado > 0 && p.pagado < p.total && <span className="block text-xs font-normal text-tinta-tenue">pagado {clp(p.pagado)}</span>}</Td>
+                    <Td>{p.estado === "cancelada" && (p.pagado ?? 0) === 0 ? <span className="text-tinta-tenue">—</span> : <Etiqueta tono={ep.tono} className="whitespace-nowrap">{ep.texto}</Etiqueta>}</Td>
+                    {p.total !== null && p.pagado !== null && <Td alinear="der" className="font-medium">{clp(p.total)}{p.pagado > 0 && p.pagado < p.total && <span className="block text-xs font-normal text-tinta-tenue">pagado {clp(p.pagado)}</span>}</Td>}
                   </FilaEnlazada>
                 );
               })}

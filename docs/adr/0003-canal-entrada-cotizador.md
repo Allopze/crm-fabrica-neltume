@@ -1,6 +1,6 @@
 # ADR-0003 — Canal de entrada del cotizador: solo webapp
 
-**Estado:** aceptado · **Fecha:** 05-10-2026 · **Refs:** REQ-COT-2.x, 4.4, SECURITY T6
+**Estado:** aceptado; **modificado por ADR-0023** (24-10-2026): además de la webapp, entra la API firmada de la tienda, solo para sus notas de pedido · **Fecha:** 05-10-2026 · **Refs:** REQ-COT-2.x, 4.4, SECURITY T6
 
 ## Contexto
 El brief contemplaba la webapp, Gmail y WhatsApp. En la entrevista (Fase 0) el usuario eligió **solo webapp** y **siempre aprobación humana**.

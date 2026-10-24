@@ -15,8 +15,8 @@ import { ElegirPuertas, eleccionInicial, type GrupoDespacho } from "./elegir-pue
  */
 export function AccionesCiclo({ id, estado, faltanteCatalogo, itemsAPedido, puedeProducir, grupos = [], csrf, bloqueo, puedeExcepcion }: {
   id: string; estado: string; faltanteCatalogo: number; itemsAPedido: number; puedeProducir: boolean; grupos?: GrupoDespacho[]; csrf: string;
-  /** Lo que falta pagar para producir (abono) o para despachar (saldo); nulo si no bloquea. */
-  bloqueo: { abono: number | null; saldo: number | null }; puedeExcepcion: boolean;
+  /** Lo que falta pagar para producir (abono) o para despachar (saldo); nulo si no bloquea. El monto es nulo sin pedidos.importes.ver. */
+  bloqueo: { abono: { monto: number | null } | null; saldo: { monto: number | null } | null }; puedeExcepcion: boolean;
 }) {
   const router = useRouter();
   const [confirmo, setConfirmo] = useState(false);
@@ -87,11 +87,11 @@ export function AccionesCiclo({ id, estado, faltanteCatalogo, itemsAPedido, pued
         </label>
       )}
       {estado === "pendiente" && puedeProducir && bloqueo.abono !== null && (
-        <Bloqueo texto={`Falta el abono: ${clp(bloqueo.abono)} para producir.`} accion={puedeExcepcion && excepcion !== "abono" ? "Producir igual (excepción)" : null}
+        <Bloqueo texto={bloqueo.abono.monto === null ? "Falta el abono para producir." : `Falta el abono: ${clp(bloqueo.abono.monto)} para producir.`} accion={puedeExcepcion && excepcion !== "abono" ? "Producir igual (excepción)" : null}
           abrir={() => { setExcepcion("abono"); setMotivo(""); }} />
       )}
       {estado === "lista" && bloqueo.saldo !== null && (
-        <Bloqueo texto={`Falta pagar el saldo: ${clp(bloqueo.saldo)} para despachar.`} accion={puedeExcepcion && excepcion !== "saldo" ? "Despachar con saldo (excepción)" : null}
+        <Bloqueo texto={bloqueo.saldo.monto === null ? "Falta pagar el saldo para despachar." : `Falta pagar el saldo: ${clp(bloqueo.saldo.monto)} para despachar.`} accion={puedeExcepcion && excepcion !== "saldo" ? "Despachar con saldo (excepción)" : null}
           abrir={() => { setExcepcion("saldo"); setMotivo(""); }} />
       )}
       {excepcion && (

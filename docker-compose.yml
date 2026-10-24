@@ -49,6 +49,11 @@ services:
       NELTUME_EMPRESA_TELEFONO: ${NELTUME_EMPRESA_TELEFONO:-}
       NELTUME_EMPRESA_WEB: ${NELTUME_EMPRESA_WEB:-}
       NELTUME_EMPRESA_CORREO: ${NELTUME_EMPRESA_CORREO:-}
+      # Recepción automática de las notas de la tienda (ADR-0023): solo la app recibe el secreto HMAC. Vacío = apagada (503).
+      INTEGRACION_TIENDA_SECRETO: ${INTEGRACION_TIENDA_SECRETO:-}
+      INTEGRACION_TIENDA_SECRETO_ANTERIOR: ${INTEGRACION_TIENDA_SECRETO_ANTERIOR:-}
+      INTEGRACION_TIENDA_FABRICA: ${INTEGRACION_TIENDA_FABRICA:-PANGUIPULLI}
+      INTEGRACION_TIENDA_CLIENTE_RUT: ${INTEGRACION_TIENDA_CLIENTE_RUT:-}
     networks: [backend, datos]
     depends_on:
       migrar: { condition: service_completed_successfully }

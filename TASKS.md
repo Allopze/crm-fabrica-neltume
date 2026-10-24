@@ -328,3 +328,27 @@ Terminación de la interfaz y del PDF detectada al recorrer las 34 pantallas en 
 - [x] T18.2 (30) Ajustes de IA solo con el modelo de Command Code y aviso si no hay modelo activo; E2E 17 contra un Command Code simulado que exige la clave y `x-cmd-zdr: 1` · REQ-ADM-4.2, UX §1 · E 17 · T18.1
 
 **Checkpoint F18:** `npm test` completo verde, lint y build; en Ajustes de IA se elige un modelo de Command Code y una cotización desde texto lo usa. Antes de desplegar: si producción tenía Groq activo, elegir un modelo de Command Code en Ajustes; `GROQ_API_KEY` se puede borrar del `.env`. Espero tu OK.
+
+## Fase 19 — Recepción automática de las notas de la tienda (aprobada el 24-10-2026; ADR-0023)
+
+La tienda envía sola cada nota de Panguipulli por una API firmada. La nota entra pendiente al ciclo de siempre, con sus dos PDF y una orden de trabajo sin precios, y Bea no transcribe. El contrato lo comparten los dos repos (`docs/contratos/pedidos-tienda-v1.md`).
+
+- [x] T19.0 Decisiones en documentos: ADR-0023 (D1–D5 por defecto), ADR-0003 y ADR-0008 anotados, AGENTS (canales de entrada), SPEC (REQ-COT-8.18–8.24, 8.9 enmendado, NC-16), API, SECURITY (permiso, T6, T11, §4, §6), DATA-MODEL, DESIGN §11, UX, TESTING, RUNBOOK §8, README · ADR-0023 · — · —
+- [x] T19.1 (60) Migración 0023: `recepcion_tienda`, `documento_tienda` y `adjunto_tienda` (estas dos de solo inserción), `nota_pedido.revision_externa`/`reemplaza_id`/origen `tienda_api` y unicidad por revisión, `pedido_item.observacion`/`revisar`/`referencias`; permiso `pedidos.importes.ver`; usuario técnico inactivo · DATA-MODEL · I `integracion-tienda` (solo inserción), `usuarios-semilla` · T19.0
+- [x] T19.2 (75) Dominio puro: firma y ventana, esquema estricto, PDF y adjuntos, líneas y medidas · REQ-COT-8.18, 8.19, 8.22 · U `integracion.*` · T19.1
+- [x] T19.3 (90) `recibirMensaje` en una transacción: idempotencia, revisiones, anulaciones y `resolverRecepcion` · REQ-COT-8.20, 8.21 · I `integracion-tienda`, `integracion-tienda-flujo` · T19.2
+- [x] T19.4 (60) Envoltura `integracion()`, rutas de pedidos y adjuntos, test estructural, auditoría de rechazos · REQ-COT-8.19, SECURITY T6 · I `integracion-tienda`, `estructura` · T19.3
+- [x] T19.5 (75) `pedidos.importes.ver`: importes omitidos en API, lista, ficha, cliente y PDF; rutas de documentos y adjuntos · REQ-COT-8.24 · I `integracion-tienda-flujo` · T19.1
+- [x] T19.6 (60) PDF «Orden de trabajo» para toda nota · REQ-COT-8.23 · U `pdf.orden-trabajo`, I `integracion-tienda-flujo` · T19.5
+- [x] T19.7 (60) Ficha y lista: origen y revisión, documentos, observaciones, «Revisar», referencias, revisión pendiente con aplicar/descartar · UX · E 21 · T19.6
+- [x] T19.8 (90) Pruebas de los 16 casos pedidos y E2E `21-recepcion-tienda` · TESTING §3, §5 · E 21 · T19.7
+- [x] T19.9 (60) Lector de ADR-0008 para el formato «por fábrica» del 23-10-2026 (rechaza la nota de Santiago) · REQ-COT-8.6 · U lector «por fábrica» · —
+- [x] T19.10 (30) `npm run integracion:enviar-prueba`, variables en Compose y `.env.example`, secreto fuera del worker y de compras · RUNBOOK §8 · I `compose` · T19.4
+- [ ] T19.11 Puesta en marcha (fuera del código):
+  - generar el secreto y configurarlo en ambos servidores;
+  - el hostname público para la tienda;
+  - la regla opcional de Cloudflare;
+  - crear el perfil Producción para quien corresponda;
+  - una muestra de la planilla de Bea para comparar con la orden de trabajo (ADR-0023 P1–P3) · RUNBOOK §8
+
+**Checkpoint F19:** `npm test` completo verde, lint y build. Recorrido: una nota firmada llega sola, aparece en «Notas de pedido» con sus dos documentos, el perfil Producción imprime la orden de trabajo sin ver importes, y una revisión sobre una nota en producción espera a una persona. Espero tu OK.

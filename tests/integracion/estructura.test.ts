@@ -11,7 +11,7 @@ const leer = (f: string) => readFileSync(f, "utf8");
 const METODOS = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
 describe("estructura del código (SECURITY §2, AGENTS.md)", () => {
-  it("toda ruta API exporta handlers envueltos en conPermiso o publico", () => {
+  it("toda ruta API exporta handlers envueltos en conPermiso o publico (o integracion, solo la de la tienda)", () => {
     const rutas = fuente.filter((f) => /^src\/app\/.*\/route\.tsx?$/.test(f));
     expect(rutas.length).toBeGreaterThan(0);
     for (const f of rutas) {
@@ -19,8 +19,10 @@ describe("estructura del código (SECURITY §2, AGENTS.md)", () => {
       expect(t, `${f}: no usar export function`).not.toMatch(new RegExp(`export\\s+(async\\s+)?function\\s+(${METODOS.join("|")})\\b`));
       const exportados = [...t.matchAll(new RegExp(`export\\s+const\\s+(${METODOS.join("|")})\\s*=\\s*(\\w+)`, "g"))];
       expect(exportados.length, `${f}: sin handlers`).toBeGreaterThan(0);
+      // `integracion` (firma HMAC de la tienda, ADR-0023) solo vale bajo src/app/api/integrations/.
+      const permitidas = f.startsWith("src/app/api/integrations/") ? ["integracion"] : ["conPermiso", "publico"];
       for (const [, metodo, envoltura] of exportados) {
-        expect(["conPermiso", "publico"], `${f} ${metodo}`).toContain(envoltura);
+        expect(permitidas, `${f} ${metodo}`).toContain(envoltura);
       }
     }
   });

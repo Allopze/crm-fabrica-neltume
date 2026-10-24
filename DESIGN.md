@@ -153,3 +153,16 @@ Ajustes guarda proveedor y modelo; no recibe ni persiste API keys. GET, respuest
 6. Deja el resto por asociar o por revisar.
 
 Si una factura falla (XML aún no disponible, `410`, error de formato), se registra en los conteos y se reintenta en la corrida siguiente. Las demás facturas siguen. En `npm test` el cliente apunta a un Chipax simulado local (como el Command Code simulado de E2E 17).
+
+## 11. Recepción de las notas de la tienda (ADR-0023)
+
+`src/domain/integracion-tienda/` es el único módulo que recibe datos de la tienda. Las rutas están en `src/app/api/integrations/neltume/` y van envueltas en `integracion()` (`src/domain/auth/integracion.ts`). Una petición pasa por este orden:
+
+1. Acota el cuerpo (20 MB pedidos, 10 MB adjuntos) y revisa el `Content-Type`.
+2. Lee la configuración (`firma.ts`; sin secreto, 503) y verifica la firma HMAC sobre los bytes crudos.
+3. Parsea con el esquema estricto (`contrato.ts`, réplica del de la tienda) y comprueba clave de idempotencia y destino.
+4. Si la clave y el cuerpo ya se recibieron, responde `duplicate` sin volver a leer los PDF.
+5. Verifica los PDF (`documentos.ts`): base64, sha256, `%PDF-`, `pdfjs-dist`, número de la nota y montos en el de producción.
+6. Abre **una** transacción (`recibir.ts`): candado por pedido de la tienda, idempotencia y revisión, nota vigente (`nota.ts`), alta o reemplazo con `insertarPedido`, documentos y auditoría.
+
+Las líneas se arman en `lineas.ts` (lista vigente sin recargo; código desconocido o especial «a pedido, revisar»). Una persona resuelve lo pendiente con `resolver.ts`. La ficha lee `consulta.ts`, y la orden de trabajo sale de `src/domain/pdf/orden-trabajo.tsx`. Lo comercial nunca entra en precios ni totales (SECURITY T2).

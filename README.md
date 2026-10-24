@@ -137,6 +137,7 @@ Con el doble determinista no necesitas proveedor: `LLM_PROVEEDOR=doble` hace que
 | `npm run demo:preparar` | Deja el entorno de demo listo (idempotente) |
 | `npm run eval:ia` | Evalúa el intérprete con el **modelo real** (no es parte de `npm test`); escribe informe en `eval/informes/` |
 | `npm run worker` | Worker suelto (lee `.env.worker.local`) |
+| `npm run integracion:enviar-prueba` | Envía una nota de la tienda de prueba, firmada, a la app local (ADR-0023, RUNBOOK §8) |
 | `npm run build` · `npm run deploy` | Build de producción · despliegue por SSH + Compose (RUNBOOK §2) |
 
 ## Pruebas

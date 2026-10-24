@@ -1,5 +1,5 @@
 import type { Client } from "pg";
-import { PERMISOS, ROL_ADMIN } from "@/domain/auth/permisos";
+import { PERMISOS, ROL_ADMIN, USUARIO_INTEGRACION } from "@/domain/auth/permisos";
 import { ALIAS_INICIALES, compacto } from "@/domain/cotizaciones/modelos";
 
 // Datos de referencia estables (DATA-MODEL §6). Rangos, altos y tipos coinciden con la hoja Categorias.
@@ -26,6 +26,14 @@ export async function sembrar(cliente: Client): Promise<void> {
        SELECT r.id, p.codigo FROM rol r CROSS JOIN permiso p WHERE r.nombre = $1
        ON CONFLICT DO NOTHING`,
       [ROL_ADMIN],
+    );
+    // Usuario técnico de la API de la tienda (ADR-0023): rol sin permisos, inactivo y con un hash que nunca valida.
+    await cliente.query("INSERT INTO rol (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING", [USUARIO_INTEGRACION.rol]);
+    await cliente.query(
+      `INSERT INTO usuario (email, nombre, hash_password, rol_id, activo)
+       SELECT $1, $2, '!', r.id, false FROM rol r WHERE r.nombre = $3
+       ON CONFLICT (email) DO NOTHING`,
+      [USUARIO_INTEGRACION.email, USUARIO_INTEGRACION.nombre, USUARIO_INTEGRACION.rol],
     );
     await cliente.query("INSERT INTO bodega (nombre) VALUES ('Fábrica') ON CONFLICT DO NOTHING");
     for (const t of ["BLOQUE", "PANEL", "ESPECIAL"]) {

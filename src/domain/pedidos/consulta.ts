@@ -1,5 +1,6 @@
 // Lectura de notas de pedido (REQ-COT-8.1, REQ-STK-7.3): reservado y faltante por ítem; cliente solo con clientes.ver.
-// Suma el estado de pago, los pagos, el historial de estados y el atraso (REQ-COT-8.12, 8.15; ADR-0020).
+// Suma el estado de pago, los pagos, el historial de estados y el atraso (REQ-COT-8.12, 8.15; ADR-0020). Precios,
+// totales y pagos solo con pedidos.importes.ver: sin él, el servidor no los devuelve (ADR-0023 §8).
 import { and, asc, count, desc, eq, inArray, lt, type SQL, sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
 import { articulo } from "@/db/esquema/catalogo";
@@ -18,19 +19,24 @@ export function diasAtraso(entrega: string | null, estado: string, hoy = hoySant
   return Math.round((Date.parse(hoy) - Date.parse(entrega)) / 86_400_000);
 }
 
+/** Qué puede ver quien consulta: datos del cliente y, aparte, los importes (ADR-0023 §8). */
+export interface Vista { cliente: boolean; importes: boolean }
+export const vistaDe = (permisos: ReadonlySet<string>): Vista => ({ cliente: permisos.has("clientes.ver"), importes: permisos.has("pedidos.importes.ver") });
+
 // Pasos del historial de la nota, tomados de la auditoría (fecha y usuario de cada uno).
 const PASOS = ["crear pedido", "pedido en produccion", "completar reserva", "pedido lista", "pedido despachada", "cancelar pedido",
-  "registrar pago", "revertir pago", "excepcion de pago"];
+  "registrar pago", "revertir pago", "excepcion de pago", "revision de la tienda", "anulacion de la tienda", "aplicar revision de la tienda", "descartar revision de la tienda"];
 
-export async function obtenerPedido(tx: Tx, id: string, verCliente: boolean) {
+export async function obtenerPedido(tx: Tx, id: string, vista: Vista) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) throw new ErrorDominio("NO_ENCONTRADO", "Nota de pedido no encontrada");
   const [p] = await tx.select({ pedido: notaPedido, cotizacion: { id: cotizacion.id, numero: cotizacion.numero, subtotal: cotizacion.subtotal, descuento: cotizacion.descuento, iva: cotizacion.iva, total: cotizacion.total } })
     .from(notaPedido).leftJoin(cotizacion, eq(cotizacion.id, notaPedido.cotizacionId)).where(eq(notaPedido.id, id));
   if (!p) throw new ErrorDominio("NO_ENCONTRADO", "Nota de pedido no encontrada");
   const items = await tx.select({ id: pedidoItem.id, articuloId: pedidoItem.articuloId, codigo: articulo.codigo, descripcion: pedidoItem.descripcion, medidaSolicitada: pedidoItem.medidaSolicitada, cantidad: pedidoItem.cantidad,
-    reservado: pedidoItem.reservado, faltante: pedidoItem.faltante, precioUnitario: pedidoItem.precioUnitario, totalLinea: pedidoItem.totalLinea })
+    reservado: pedidoItem.reservado, faltante: pedidoItem.faltante, precioUnitario: pedidoItem.precioUnitario, totalLinea: pedidoItem.totalLinea,
+    observacion: pedidoItem.observacion, revisar: pedidoItem.revisar, referencias: pedidoItem.referencias })
     .from(pedidoItem).leftJoin(articulo, eq(articulo.id, pedidoItem.articuloId)).where(eq(pedidoItem.notaPedidoId, id)).orderBy(asc(pedidoItem.orden));
-  const [cli] = verCliente ? await tx.select().from(cliente).where(eq(cliente.id, p.pedido.clienteId)) : [];
+  const [cli] = vista.cliente ? await tx.select().from(cliente).where(eq(cliente.id, p.pedido.clienteId)) : [];
   const ordenes = await tx.select({ id: ordenProduccion.id, numero: ordenProduccion.numero, estado: ordenProduccion.estado })
     .from(ordenProduccion).where(eq(ordenProduccion.notaPedidoId, id)).orderBy(asc(ordenProduccion.numero));
   // Desde cotización: sus totales congelados. Desde la nota de la tienda: se calculan con las líneas (sin descuento).
@@ -45,13 +51,29 @@ export async function obtenerPedido(tx: Tx, id: string, verCliente: boolean) {
   const historial = await tx.select({ en: auditLog.ocurridoEn, accion: auditLog.accion, actor: usuario.nombre, detalle: auditLog.despues })
     .from(auditLog).leftJoin(usuario, eq(usuario.id, auditLog.actorId))
     .where(and(eq(auditLog.recurso, "nota_pedido"), eq(auditLog.recursoId, id), eq(auditLog.resultado, "ok"), inArray(auditLog.accion, PASOS))).orderBy(asc(auditLog.id));
+  const conImportes = vista.importes;
   return {
-    ...p.pedido, cotizacion: p.cotizacion, totales: { subtotal: totales.subtotal, descuento: totales.descuento, iva: totales.iva, total: totales.total }, items, ordenes,
+    ...p.pedido,
+    cotizacion: p.cotizacion && { id: p.cotizacion.id, numero: p.cotizacion.numero },
+    totales: conImportes ? { subtotal: totales.subtotal, descuento: totales.descuento, iva: totales.iva, total: totales.total } : null,
+    items: items.map((i) => ({ ...i, referencias: (i.referencias ?? []) as Referencia[],
+      precioUnitario: conImportes ? Number(i.precioUnitario) : null, totalLinea: conImportes ? Number(i.totalLinea) : null })),
+    ordenes,
     cliente: cli ? { nombre: cli.nombre, rut: cli.rut, comuna: cli.comuna, contacto: cli.contacto, telefono: cli.telefono } : { nombre: "(oculto)" },
-    pago, pagos: pagos.map((x) => ({ ...x, monto: Number(x.monto), revertido: revertidos.has(x.id) })),
-    historial: historial.map((h) => ({ ...h, actor: h.actor ?? "Sistema" })),
+    // Sin importes queda el estado de pago (sin abono, abonado, pagado), que decide si se puede producir o despachar.
+    pago: conImportes ? pago : { ...pago, total: null, pagado: null, saldo: null, abonoRequerido: null, faltaAbono: null },
+    pagos: conImportes ? pagos.map((x) => ({ ...x, monto: Number(x.monto), revertido: revertidos.has(x.id) })) : [],
+    historial: historial.map((h) => ({ ...h, actor: h.actor ?? "Sistema", detalle: conImportes ? h.detalle : sinMontos(h.detalle) })),
     atrasoDias: diasAtraso(p.pedido.entregaComprometida, p.pedido.estado),
   };
+}
+
+export interface Referencia { attachmentId: string; filename: string; mimeType: string; sizeBytes: number }
+
+/** El detalle de un paso del historial sin importes (el monto de un pago, lo pagado al cancelar). */
+function sinMontos(d: unknown): unknown {
+  if (!d || typeof d !== "object") return d;
+  return Object.fromEntries(Object.entries(d).filter(([k]) => !["monto", "pagado", "total", "saldo"].includes(k)));
 }
 
 // Total con IVA y pagado por nota, en SQL para filtrar y contar (mismas reglas que calcularPago).
@@ -62,7 +84,7 @@ const estadoPagoNota = (pct: number): SQL<EstadoPago> => sql<EstadoPago>`CASE WH
 
 export interface FiltroPedidos { estado?: string; estadoPago?: EstadoPago; clienteId?: string; antesDe?: number; limite?: number }
 
-export async function listarPedidos(tx: Tx, f: FiltroPedidos, verCliente: boolean) {
+export async function listarPedidos(tx: Tx, f: FiltroPedidos, vista: Vista) {
   const limite = Math.min(Math.max(f.limite ?? 50, 1), 200);
   const pct = await abonoPct(tx);
   const filtros = [f.estado ? eq(notaPedido.estado, f.estado) : undefined, f.estadoPago ? sql`${estadoPagoNota(pct)} = ${f.estadoPago}` : undefined,
@@ -71,7 +93,7 @@ export async function listarPedidos(tx: Tx, f: FiltroPedidos, verCliente: boolea
     .where(and(...filtros));
   const filas = await tx.select({
     id: notaPedido.id, numero: notaPedido.numero, estado: notaPedido.estado, creadoEn: notaPedido.creadoEn, cliente: cliente.nombre,
-    cotizacion: cotizacion.numero, origen: notaPedido.origen, refExterna: notaPedido.refExterna, entregaComprometida: notaPedido.entregaComprometida,
+    cotizacion: cotizacion.numero, origen: notaPedido.origen, refExterna: notaPedido.refExterna, revisionExterna: notaPedido.revisionExterna, entregaComprometida: notaPedido.entregaComprometida,
     total: totalNota, pagado: pagadoNota, estadoPago: estadoPagoNota(pct),
     cantidad: sql<number>`(SELECT coalesce(sum(cantidad), 0)::int FROM ${pedidoItem} WHERE ${pedidoItem.notaPedidoId} = ${notaPedido.id})`,
     reservado: sql<number>`(SELECT coalesce(sum(reservado), 0)::int FROM ${pedidoItem} WHERE ${pedidoItem.notaPedidoId} = ${notaPedido.id})`,
@@ -79,8 +101,8 @@ export async function listarPedidos(tx: Tx, f: FiltroPedidos, verCliente: boolea
     .where(and(...filtros, f.antesDe ? lt(notaPedido.numero, f.antesDe) : undefined))
     .orderBy(desc(notaPedido.numero)).limit(limite + 1);
   const hoy = hoySantiago();
-  const datos = filas.slice(0, limite).map((x) => ({ ...x, total: Number(x.total), pagado: Number(x.pagado), cliente: verCliente ? x.cliente : "(oculto)",
-    atrasoDias: diasAtraso(x.entregaComprometida, x.estado, hoy) }));
+  const datos = filas.slice(0, limite).map((x) => ({ ...x, total: vista.importes ? Number(x.total) : null, pagado: vista.importes ? Number(x.pagado) : null,
+    cliente: vista.cliente ? x.cliente : "(oculto)", atrasoDias: diasAtraso(x.entregaComprometida, x.estado, hoy) }));
   return { datos, total, siguiente: filas.length > limite ? datos.at(-1)!.numero : null };
 }
 

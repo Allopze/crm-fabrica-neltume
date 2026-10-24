@@ -127,8 +127,10 @@ export const notaPedido = pgTable("nota_pedido", {
   id: uuid().primaryKey().defaultRandom(),
   numero: serial().notNull().unique(),
   cotizacionId: uuid().unique().references(() => cotizacion.id), // una por cotización (REQ-COT-8.3); nula si viene de la tienda
-  origen: text().notNull().default("cotizacion"), // cotizacion | nota_tienda (ADR-0008)
+  origen: text().notNull().default("cotizacion"), // cotizacion | nota_tienda (PDF, ADR-0008) | tienda_api (ADR-0023)
   refExterna: text(), // N° de la nota de pedido de la tienda
+  revisionExterna: integer().notNull().default(1), // revisión de la nota de la tienda (ADR-0023)
+  reemplazaId: uuid().references((): AnyPgColumn => notaPedido.id), // la nota que esta revisión reemplazó
   archivoHash: text(), // SHA-256 del PDF importado (el archivo no se guarda)
   proyecto: text(),
   clienteId: uuid().notNull().references(() => cliente.id),
@@ -155,8 +157,9 @@ export const notaPedido = pgTable("nota_pedido", {
   excepcionSaldoEn: timestamp({ withTimezone: true }),
 }, (t) => [
   check("pedido_estado", sql`${t.estado} in ('pendiente', 'en_produccion', 'lista', 'despachada', 'cancelada')`),
-  check("pedido_origen", sql`(${t.origen} = 'cotizacion' AND ${t.cotizacionId} IS NOT NULL) OR (${t.origen} = 'nota_tienda' AND ${t.refExterna} IS NOT NULL AND ${t.archivoHash} IS NOT NULL)`),
-  unique("pedido_nota_tienda_unica").on(t.clienteId, t.refExterna),
+  check("pedido_origen", sql`(${t.origen} = 'cotizacion' AND ${t.cotizacionId} IS NOT NULL) OR (${t.origen} = 'nota_tienda' AND ${t.refExterna} IS NOT NULL AND ${t.archivoHash} IS NOT NULL) OR (${t.origen} = 'tienda_api' AND ${t.refExterna} IS NOT NULL)`),
+  check("pedido_revision_externa", sql`${t.revisionExterna} > 0`),
+  unique("pedido_nota_tienda_unica").on(t.clienteId, t.refExterna, t.revisionExterna),
   unique("pedido_archivo_unico").on(t.archivoHash),
   check("pedido_cancelacion", sql`${t.estado} <> 'cancelada' OR length(trim(coalesce(${t.motivoCancelacion}, ''))) > 0`),
   check("pedido_excepcion_abono", sql`(${t.excepcionAbonoEn} IS NULL) = (${t.excepcionAbonoMotivo} IS NULL) AND (${t.excepcionAbonoEn} IS NULL) = (${t.excepcionAbonoPor} IS NULL) AND length(trim(coalesce(${t.excepcionAbonoMotivo}, 'x'))) > 0`),
@@ -171,6 +174,9 @@ export const pedidoItem = pgTable("pedido_item", {
   articuloId: uuid().references(() => articulo.id), // nulo en ítems a pedido: se fabrican
   descripcion: text().notNull(),
   medidaSolicitada: text(), // la que pidió el cliente si difiere del artículo (p. ej. «830 × 2360 mm, vano»)
+  observacion: text(), // del ítem, como la escribió la tienda (ADR-0023)
+  revisar: text(), // por qué una persona debe revisarlo: código fuera del catálogo o precio por definir (ADR-0023 D3, D4)
+  referencias: jsonb(), // [{ attachmentId, filename, mimeType, sizeBytes }]: archivos del cliente (adjunto_tienda)
   cantidad: integer().notNull(),
   reservado: integer().notNull().default(0),
   faltante: integer().notNull().default(0),

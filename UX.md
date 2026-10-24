@@ -82,6 +82,13 @@ Listas: los filtros se aplican solos (el texto, al dejar de escribir); el pie di
 - **Auditoría:** acciones, recursos y resultados en español; el detalle muestra pares campo–valor (antes y después) con montos, cifras y fechas en formato chileno, sin ids internos; los códigos de error se leen en palabras. Las filas de una misma operación (misma transacción) se agrupan bajo la primera.
 - **Selector de archivo:** botón y texto en español («Elegir PDF», «Ningún archivo elegido»), no el control nativo del navegador. Un recuadro punteado (Importar Excel) acepta soltar el archivo encima.
 - **Nota de pedido:** «Cancelar pedido» va al pie del panel de avance, lejos del PDF. Despachada, cada ítem dice cuántas se despacharon (sin «reservadas»).
+- **Notas recibidas de la tienda** (ADR-0023): llegan solas a «Notas de pedido», sin bandeja aparte ni botón de importar.
+  - En la lista, el origen dice «Nota de la tienda N.º 577 (rev. 2)» y «Recibida automáticamente».
+  - En la ficha, junto a «PDF» está «Orden de trabajo» (sin precios), para toda nota.
+  - El panel «Documentos de la tienda» trae la orden de trabajo de la tienda y, con importes, la nota comercial. Si el PDF de producción vino con montos, se dice que quedó retenido.
+  - Cada ítem muestra su observación, «Revisar: …» en pizarra si el código no está en el catálogo o el precio está por definir, y las referencias del cliente (enlace, o «pendiente de recibir»).
+  - Una revisión o anulación que llegó con la nota en curso aparece arriba, en un aviso pizarra, con «Aplicar» o «Descartar» y motivo; aplicar una revisión lleva a la nota nueva.
+- **Sin `pedidos.importes.ver`** (perfil Producción): la nota de pedido, la lista, la ficha del cliente y el panel no muestran precios, totales ni pagos (los omite el servidor); los bloqueos de pago dicen «Falta el abono para producir» sin monto; no aparecen «PDF» ni la nota comercial.
 - **Compras (Chipax)** (ADR-0021): página `/materias-primas/compras`, con enlace desde Materias primas.
   - Arriba, la última sincronización (hora, resultado, facturas leídas, líneas recibidas, por asociar y por revisar) y «Sincronizar ahora».
   - Luego **Por asociar**: cada línea con proveedor, folio, ítem tal como lo escribió el proveedor, cantidad y unidad. Se elige la materia prima y el factor (con una vista previa: «12 m³ × 424 = 5.088 pulg»), y se elige «Asociar y recibir» o «No es materia prima».
@@ -108,4 +115,4 @@ Listas: los filtros se aplican solos (el texto, al dejar de escribir); el pie di
 - **Despachos anteriores:** tabla de solo lectura; una fila con datos dudosos lo dice en ámbar («código repetido», «fecha imposible»). Sin `clientes.ver` no hay columna de cliente.
 - **Clientes:** la ficha reúne los datos mínimos, sus últimas cotizaciones y notas de pedido. Sin `clientes.ver` se responde como si no existiera. Los datos personales solo se muestran ahí y nunca se envían a la IA.
 - **Costos y márgenes:** columnas visibles solo con `costos.ver`.
-- **PDF:** logo, datos de la fábrica, cliente, ítems, subtotal, IVA, total, vigencia y la nota "valores puestos en fábrica, flete aparte". Con las fuentes de la marca (incrustadas, ADR-0004), RUT con puntos y «Página N de M»; el archivo se llama «Neltume - Cotización N.º 9.pdf» o «Neltume - Nota de pedido N.º 1.pdf».
+- **PDF:** logo, datos de la fábrica, cliente, ítems, subtotal, IVA, total, vigencia y la nota "valores puestos en fábrica, flete aparte". Con las fuentes de la marca (incrustadas, ADR-0004), RUT con puntos y «Página N de M»; el archivo se llama «Neltume - Cotización N.º 9.pdf», «Neltume - Nota de pedido N.º 1.pdf» u «Neltume - Orden de trabajo N.º 1.pdf» (esta, sin precios ni datos del cliente final).

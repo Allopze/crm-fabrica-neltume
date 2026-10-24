@@ -90,9 +90,41 @@ export function contenidoPedido(p: PedidoPdf) {
   };
 }
 
+export interface OrdenTrabajoPdf {
+  numero: number; creadoEn: Date; estado: string; cotizacionNumero: number | null; notaTienda: string | null; revisionTienda: number;
+  proyecto: string | null; direccionDespacho: string | null; medioTransporte: string | null; entregaComprometida: string | null; observaciones: string | null;
+  items: { codigo: string | null; descripcion: string; medidaSolicitada: string | null; observacion: string | null; revisar: string | null; referencias: number;
+    cantidad: number; reservado: number; faltante: number }[];
+}
+
+/**
+ * Orden de trabajo de la nota de pedido, para producción (ADR-0023 §7): sin precios, totales ni pagos, y sin datos
+ * personales del cliente final. Sale de los datos guardados, nunca del PDF de la tienda.
+ */
+export function contenidoOrdenTrabajo(o: OrdenTrabajoPdf) {
+  const origen = o.cotizacionNumero ? `Cotización N.º ${o.cotizacionNumero}`
+    : `Nota de la tienda N.º ${o.notaTienda}${o.revisionTienda > 1 ? ` (rev. ${o.revisionTienda})` : ""}`;
+  return {
+    titulo: `Orden de trabajo · Nota N.º ${o.numero}${o.estado === "cancelada" ? " (cancelada)" : ""}`,
+    fechas: `Fecha ${fechaSantiago(o.creadoEn)} · ${origen}`,
+    datos: [
+      ["Proyecto", o.proyecto ?? "—"], ["Despacho", o.direccionDespacho ?? "Retira en fábrica"], ["Transporte", o.medioTransporte ?? "—"],
+      ["Entrega", o.entregaComprometida ? fecha(o.entregaComprometida) : "Por comprometer"],
+    ] as [string, string][],
+    filas: o.items.map((i) => [
+      i.codigo ?? "A pedido",
+      [i.descripcion, i.medidaSolicitada && `Medida solicitada: ${i.medidaSolicitada}`, i.observacion, i.referencias ? `Referencias del cliente: ${i.referencias} (en la app)` : null,
+        i.revisar && `REVISAR: ${i.revisar}`].filter(Boolean).join("\n"),
+      String(i.cantidad), i.codigo ? String(i.reservado) : "—", i.codigo ? (i.faltante ? String(i.faltante) : "—") : String(i.cantidad),
+    ]),
+    observaciones: o.observaciones,
+    pie: ["Documento para producción: no lleva precios.", "\"En stock\": unidades ya reservadas para esta nota; \"Por fabricar\": lo que falta."],
+  };
+}
+
 /** Nombre del archivo descargado, con la marca: «Neltume - Cotización N.º 9.pdf» (y una versión ASCII para navegadores antiguos). */
-export function nombreArchivoPdf(documento: "Cotización" | "Nota de pedido", numero: number) {
-  const nombre = `Neltume - ${documento} N.º ${numero}.pdf`;
-  const ascii = `Neltume-${documento === "Cotización" ? "Cotizacion" : "Nota-de-pedido"}-${numero}.pdf`;
+export function nombreArchivoPdf(documento: "Cotización" | "Nota de pedido" | "Orden de trabajo", numero: number, sufijo = "") {
+  const nombre = `Neltume - ${documento} N.º ${numero}${sufijo}.pdf`;
+  const ascii = `Neltume-${documento.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ /g, "-")}-${numero}${sufijo.normalize("NFD").replace(/[^A-Za-z0-9.-]+/g, "-")}.pdf`;
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(nombre)}`;
 }

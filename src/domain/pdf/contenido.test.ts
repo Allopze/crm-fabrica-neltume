@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { datosEmpresa } from "@/lib/marca";
-import { contenidoCotizacion, contenidoPedido, fechaSantiago, lineasEmpresa } from "./contenido";
+import { contenidoCotizacion, contenidoOrdenTrabajo, contenidoPedido, fechaSantiago, lineasEmpresa } from "./contenido";
 
 const base = {
   numero: 124, aprobadaEn: new Date("2026-10-06T02:30:00Z"), vigenciaHasta: "2026-10-20", listaVersion: 3,
@@ -69,5 +69,26 @@ describe("datos de la empresa en el membrete (marca real)", () => {
     const d = datosEmpresa({ NELTUME_EMPRESA_RUT: "11.111.111-1", NELTUME_EMPRESA_DIRECCION: "Camino a Neltume s/n", NELTUME_EMPRESA_WEB: "ejemplo.cl", NELTUME_EMPRESA_CORREO: "ventas@ejemplo.cl" });
     expect(lineasEmpresa(d)).toEqual(["Neltume.co", "RUT 11.111.111-1", "Camino a Neltume s/n", "ejemplo.cl"]);
     expect(contenidoCotizacion(base, d).pie[1]).toContain("ventas@ejemplo.cl");
+  });
+});
+
+describe("pdf.orden-trabajo (ADR-0023 §7)", () => {
+  it("lleva lo necesario para fabricar y ningún importe ni dato del cliente final", () => {
+    const k = contenidoOrdenTrabajo({
+      numero: 418, creadoEn: new Date("2026-10-24T15:00:00Z"), estado: "pendiente", cotizacionNumero: null, notaTienda: "577", revisionTienda: 2,
+      proyecto: "Casa Lago", direccionDespacho: "Camino a Neltume km 3", medioTransporte: "Starken", entregaComprometida: "2026-11-16", observaciones: "Entregar en dos etapas.",
+      items: [
+        { codigo: "FUY-O-2-A", descripcion: "Fuy · Pino Oregón", medidaSolicitada: "720 × 2000 mm (Hoja)", observacion: "Bisagras a la derecha", revisar: null, referencias: 1, cantidad: 3, reservado: 1, faltante: 2 },
+        { codigo: null, descripcion: "Puerta según diseño · Roble", medidaSolicitada: "900 × 2100 mm (Vano)", observacion: null, revisar: "Pedido especial de la tienda; precio por definir", referencias: 0, cantidad: 1, reservado: 0, faltante: 0 },
+      ],
+    });
+    expect(k.titulo).toBe("Orden de trabajo · Nota N.º 418");
+    expect(k.fechas).toBe("Fecha 24-10-2026 · Nota de la tienda N.º 577 (rev. 2)");
+    expect(k.datos).toContainEqual(["Entrega", "16-11-2026"]);
+    expect(k.filas[0]).toEqual(["FUY-O-2-A", "Fuy · Pino Oregón\nMedida solicitada: 720 × 2000 mm (Hoja)\nBisagras a la derecha\nReferencias del cliente: 1 (en la app)", "3", "1", "2"]);
+    expect(k.filas[1][0]).toBe("A pedido");
+    expect(k.filas[1][1]).toContain("REVISAR: Pedido especial");
+    expect(k.filas[1].slice(2)).toEqual(["1", "—", "1"]);
+    expect(JSON.stringify(k)).not.toMatch(/\$|IVA|Total|RUT/);
   });
 });

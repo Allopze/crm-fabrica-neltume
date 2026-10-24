@@ -1,6 +1,7 @@
 import { defineConfig } from "@playwright/test";
 import { cargarEnvLocal, conBase, requerirEnv, urlCompras, urlWorker } from "./src/db/urls";
 import { CREDENCIALES_PRUEBA } from "./tests/fixtures/chipax/simulado";
+import { RUT_TIENDA_PRUEBA, SECRETO_PRUEBA } from "./tests/fixtures/tienda/constantes";
 
 cargarEnvLocal();
 
@@ -34,7 +35,9 @@ export default defineConfig({
       url: `http://localhost:${PUERTO}/login`,
       reuseExistingServer: false,
       timeout: 120_000,
-      env: { NEXT_DIST_DIR: ".next-e2e", DATABASE_URL: DATABASE_E2E, CMD_API_KEY: "" },
+      // La API de la tienda (ADR-0023, E2E 21) con un secreto de pruebas; el cliente tienda lo registra la suite 15.
+      env: { NEXT_DIST_DIR: ".next-e2e", DATABASE_URL: DATABASE_E2E, CMD_API_KEY: "", INTEGRACION_TIENDA_SECRETO: SECRETO_PRUEBA,
+        INTEGRACION_TIENDA_FABRICA: "PANGUIPULLI", INTEGRACION_TIENDA_CLIENTE_RUT: RUT_TIENDA_PRUEBA },
     },
     {
       // El worker usa un Command Code simulado local (e2e/ia-mock.mts); ninguna suite llama al proveedor real.

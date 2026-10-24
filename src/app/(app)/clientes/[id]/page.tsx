@@ -12,7 +12,7 @@ import { requerirSesion } from "@/domain/auth/servidor";
 import { obtenerCliente } from "@/domain/clientes";
 import { listarCotizaciones } from "@/domain/cotizaciones/consulta";
 import { ErrorDominio } from "@/domain/errores";
-import { listarPedidos } from "@/domain/pedidos/consulta";
+import { listarPedidos, vistaDe } from "@/domain/pedidos/consulta";
 import { formatearRut } from "@/domain/rut";
 import { clp, fecha } from "@/lib/formato";
 import { EditarCliente } from "./editar-cliente";
@@ -26,9 +26,10 @@ export default async function ClientePage({ params }: PageProps<"/clientes/[id]"
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const c = await obtenerCliente(bd(), id).catch((e) => { if (e instanceof ErrorDominio) notFound(); throw e; });
+  const verImportes = sesion.permisos.has("pedidos.importes.ver");
   const [cotizaciones, pedidos] = await Promise.all([
     listarCotizaciones(bd(), { clienteId: c.id, limite: 8 }, true),
-    listarPedidos(bd(), { clienteId: c.id, limite: 8 }, true),
+    listarPedidos(bd(), { clienteId: c.id, limite: 8 }, vistaDe(sesion.permisos)),
   ]);
 
   return (
@@ -68,7 +69,7 @@ export default async function ClientePage({ params }: PageProps<"/clientes/[id]"
             accion={<Link href="/pedidos" className="-my-2 py-2 text-sm text-rauli hover:underline">Ver todas</Link>}>
             {pedidos.datos.length === 0 ? <Vacio titulo="Sin notas de pedido">Aún no hay notas de pedido para este cliente.</Vacio> : (
               <Tabla etiqueta={`Notas de pedido de ${c.nombre}`}>
-                <thead><tr><Th>N.º</Th><Th>Creada</Th><Th>Estado</Th><Th>Pago</Th><Th alinear="der">Total</Th></tr></thead>
+                <thead><tr><Th>N.º</Th><Th>Creada</Th><Th>Estado</Th><Th>Pago</Th>{verImportes && <Th alinear="der">Total</Th>}</tr></thead>
                 <tbody>
                   {pedidos.datos.map((x) => {
                     const ep = estadoPago(x.estadoPago);
@@ -79,7 +80,7 @@ export default async function ClientePage({ params }: PageProps<"/clientes/[id]"
                         <Td className="text-tinta-suave">{fecha(new Date(x.creadoEn).toISOString())}</Td>
                         <Td><Etiqueta tono={ee.tono}>{ee.texto}</Etiqueta></Td>
                         <Td><Etiqueta tono={ep.tono}>{ep.texto}</Etiqueta></Td>
-                        <Td alinear="der">{clp(x.total)}{x.pagado > 0 && x.pagado < x.total && <span className="block text-xs font-normal text-tinta-tenue">pagado {clp(x.pagado)}</span>}</Td>
+                        {x.total !== null && x.pagado !== null && <Td alinear="der">{clp(x.total)}{x.pagado > 0 && x.pagado < x.total && <span className="block text-xs font-normal text-tinta-tenue">pagado {clp(x.pagado)}</span>}</Td>}
                       </FilaEnlazada>
                     );
                   })}

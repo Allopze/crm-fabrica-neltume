@@ -43,6 +43,14 @@ describe("docker-compose.yml de producción (SECURITY §6, T8)", () => {
     expect(compose.services.compras.networks).toEqual(["datos", "salida"]);
   });
 
+  it("el secreto de la API de la tienda solo llega a la app (ADR-0023 §9)", () => {
+    for (const [nombre, s] of Object.entries(compose.services as Record<string, Servicio>)) {
+      if (nombre !== "app") expect(Object.keys(s.environment ?? {}).filter((k) => k.startsWith("INTEGRACION_TIENDA_")), `servicio ${nombre}`).toEqual([]);
+    }
+    expect(compose.services.app.environment).toHaveProperty("INTEGRACION_TIENDA_SECRETO");
+    expect(compose.services.app.environment).toHaveProperty("INTEGRACION_TIENDA_CLIENTE_RUT");
+  });
+
   it("la app recibe los datos de la empresa que imprimen los PDF", () => {
     const ejemplo = readFileSync(".env.example", "utf8").match(/^NELTUME_EMPRESA_[A-Z]+(?==)/gm) ?? [];
     expect(ejemplo.length).toBeGreaterThan(0);

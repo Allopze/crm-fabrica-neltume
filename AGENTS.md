@@ -2,7 +2,7 @@
 
 ## Proyecto
 Webapp interna de la fábrica de puertas Neltume (no de la tienda): stock de puertas, materias primas con BOM, producción, nota de pedido y cotizador con IA en lenguaje natural.
-Alcance por fases en SPEC.md (demo primero, producto después). Un solo rol hoy, que hace todo (ve costos y márgenes); permisos por permiso para sumar roles sin refactor. Único canal de entrada: la webapp.
+Alcance por fases en SPEC.md (demo primero, producto después). Un solo rol hoy, que hace todo (ve costos y márgenes); permisos por permiso para sumar roles sin refactor. Canales de entrada: la webapp y, solo para las notas de pedido de la tienda, su API firmada (ADR-0023).
 UI y docs en español. CLP como enteros; precios con y sin IVA (19 %); números y fechas en formato chileno (1.234,56; dd-mm-aaaa).
 
 ## Stack y comandos

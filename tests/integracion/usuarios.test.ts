@@ -75,7 +75,7 @@ describe("usuarios y roles (REQ-ADM-2.1–2.4)", () => {
     const r = await llamar(rutaRolPermisos.PUT, "PUT", "/x", { ...admin, cuerpo: { permisos: sinGestion } }, { id: rolAdminId });
     expect(r.estado).toBe(422);
     const { rows } = await app.query("SELECT count(*)::int AS n FROM rol_permiso WHERE rol_id = $1", [rolAdminId]);
-    expect(rows[0].n).toBe(19);
+    expect(rows[0].n).toBe(20);
   });
 
   it("cada cambio queda auditado con antes y después", async () => {

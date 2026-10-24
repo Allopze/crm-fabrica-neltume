@@ -28,15 +28,16 @@ function DocumentoPedido({ p }: { p: PedidoPdf }) {
 export const renderizarPedido = (p: PedidoPdf) => renderToBuffer(<DocumentoPedido p={p} />);
 
 export async function pdfPedido(tx: Tx, id: string): Promise<{ numero: number; pdf: Buffer }> {
-  const p = await obtenerPedido(tx, id, true);
+  // Es la nota con precios: la ruta exige pedidos.importes.ver y clientes.ver (ADR-0023 §8).
+  const p = await obtenerPedido(tx, id, { cliente: true, importes: true });
   const c = p.cliente as { nombre: string; rut?: string; contacto?: string | null; telefono?: string | null };
   const datos: PedidoPdf = {
     numero: p.numero, creadoEn: p.creadoEn, estado: p.estado, cotizacionNumero: p.cotizacion?.numero ?? null, notaTienda: p.refExterna,
     cliente: { nombre: c.nombre, rut: c.rut ?? null, contacto: c.contacto ?? null, telefono: c.telefono ?? null },
     direccionDespacho: p.direccionDespacho, medioTransporte: p.medioTransporte, entregaComprometida: p.entregaComprometida, observaciones: p.observaciones,
-    items: p.items.map((i) => ({ codigo: i.codigo, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, cantidad: i.cantidad, faltante: i.faltante, totalLinea: Number(i.totalLinea) })),
-    ...p.totales,
-    pago: p.pago.estado === "sin_control" ? null : { pagado: p.pago.pagado, saldo: p.pago.saldo },
+    items: p.items.map((i) => ({ codigo: i.codigo, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, cantidad: i.cantidad, faltante: i.faltante, totalLinea: i.totalLinea! })),
+    ...p.totales!,
+    pago: p.pago.estado === "sin_control" ? null : { pagado: p.pago.pagado!, saldo: p.pago.saldo! },
   };
   return { numero: p.numero, pdf: await renderizarPedido(datos) };
 }

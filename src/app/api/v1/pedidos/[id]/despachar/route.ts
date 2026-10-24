@@ -3,7 +3,7 @@ import { z } from "zod";
 import { bd } from "@/db/conexion";
 import { conPermiso } from "@/domain/auth/politica";
 import { despachar } from "@/domain/pedidos/ciclo";
-import { obtenerPedido } from "@/domain/pedidos/consulta";
+import { obtenerPedido, vistaDe } from "@/domain/pedidos/consulta";
 
 const Despacho = z.strictObject({ puertas: z.array(z.string().trim().min(3).max(40)).max(2000).optional() });
 
@@ -12,5 +12,5 @@ const Despacho = z.strictObject({ puertas: z.array(z.string().trim().min(3).max(
 export const POST = conPermiso<{ id: string }>("pedidos.gestionar", async ({ req, params, actor, sesion }) => {
   const { puertas = [] } = Despacho.parse(await req.json().catch(() => ({})));
   const r = await bd().transaction((tx) => despachar(tx, params.id, actor, "web", puertas));
-  return NextResponse.json({ ...(await obtenerPedido(bd(), params.id, sesion.permisos.has("clientes.ver"))), puertasDespachadas: r.puertas });
+  return NextResponse.json({ ...(await obtenerPedido(bd(), params.id, vistaDe(sesion.permisos))), puertasDespachadas: r.puertas });
 }, { idempotente: true });

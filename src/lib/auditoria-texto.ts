@@ -9,6 +9,7 @@ const RECURSOS: Record<string, string> = {
   orden_produccion: "Orden de producción", rol: "Rol", sesion: "Sesión", usuario: "Usuario",
   compra: "Factura de compra (Chipax)", proveedor_compra: "Proveedor (Chipax)", mapeo_item_compra: "Ítem de proveedor",
   sincronizacion_chipax: "Sincronización con Chipax",
+  recepcion_tienda: "Nota recibida de la tienda", adjunto_tienda: "Adjunto de la tienda", integracion: "API de la tienda",
 };
 
 const ACCIONES: Record<string, string> = {
@@ -24,6 +25,10 @@ const ACCIONES: Record<string, string> = {
   "leer factura chipax": "Factura leída de Chipax", "sincronizar chipax": "Sincronización con Chipax", "asociar item compra": "Ítem asociado",
   "ignorar item compra": "Ítem marcado «no es materia prima»", "habilitar proveedor": "Proveedor habilitado", "desactivar proveedor": "Proveedor desactivado",
   "editar mapeo compra": "Ítem de proveedor editado", "solicitar sincronizacion": "Sincronización pedida",
+  "recibir de la tienda": "Recibida de la tienda", "recibir adjunto de la tienda": "Adjunto recibido de la tienda",
+  "revision de la tienda": "Revisión de la tienda por aplicar", "anulacion de la tienda": "Anulación de la tienda por aplicar",
+  "aplicar revision de la tienda": "Revisión de la tienda aplicada", "descartar revision de la tienda": "Revisión de la tienda descartada",
+  "descargar orden de trabajo": "Orden de trabajo descargada", "descargar documento de la tienda": "Documento de la tienda descargado",
 };
 
 const METODOS: Record<string, string> = { GET: "Consultar", POST: "Registrar", PATCH: "Modificar", PUT: "Reemplazar", DELETE: "Eliminar" };

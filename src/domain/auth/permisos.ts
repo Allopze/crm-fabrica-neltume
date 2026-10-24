@@ -15,6 +15,7 @@ export const PERMISOS = {
   "cotizaciones.aprobar": "Aprobar cotizaciones y descargar su PDF",
   "descuentos.aplicar": "Aplicar descuentos con motivo",
   "pedidos.gestionar": "Crear, cancelar y despachar notas de pedido",
+  "pedidos.importes.ver": "Ver precios, totales y pagos de las notas de pedido y el documento comercial de la tienda",
   "pagos.registrar": "Registrar pagos, reversos y excepciones de abono o saldo de las notas de pedido",
   "clientes.ver": "Ver clientes",
   "clientes.editar": "Crear y editar clientes",
@@ -24,3 +25,9 @@ export const PERMISOS = {
 export type Permiso = keyof typeof PERMISOS;
 export const CODIGOS_PERMISO = Object.keys(PERMISOS) as Permiso[];
 export const ROL_ADMIN = "administrador";
+
+/**
+ * Usuario técnico que firma lo que recibe la API de la tienda (ADR-0023 §5): inactivo (no inicia sesión), con un rol
+ * sin permisos y sin contraseña utilizable. Ni se reactiva ni se le cambia la clave desde la administración.
+ */
+export const USUARIO_INTEGRACION = { email: "integracion-tienda@sistema.neltume", nombre: "Integración tienda", rol: "integracion" } as const;

@@ -1,6 +1,9 @@
-// Lectura determinista de la nota de pedido en PDF del cotizador de la tienda (ADR-0008; REQ-COT-8.6, 8.7).
+// Lectura determinista de la nota de pedido en PDF del cotizador de la tienda (ADR-0008; REQ-COT-8.6, 8.7). Reconoce
+// también el formato «por fábrica» del 23-10-2026 (nota-tienda-fabrica.ts; ADR-0023 §10).
 // Puro: recibe los fragmentos de texto con su posición (pdf-texto.ts los extrae). Sin IA y sin datos personales del
 // cliente final: de la sección CLIENTE no se lee nada; del despacho, solo dirección, transporte y proyecto.
+
+import { esNotaPorFabrica, leerNotaPorFabrica } from "./nota-tienda-fabrica";
 
 export interface Fragmento { x: number; y: number; texto: string; pagina: number }
 
@@ -22,18 +25,19 @@ export interface NotaTienda {
 export class NotaIlegible extends Error {}
 
 /** Código del catálogo: MOD-MADERA-ANCHO-ALTO, p. ej. HUIL-O-3-B, MAR-O-2X4-B, ENDO-O-6X1-I. */
-const CODIGO = /^[A-Z]{2,6}-[A-Z]{1,2}-\d{1,2}(?:X\d{1,2}(?:,\d)?)?-[A-Z]$/;
-const PESOS = /^\$\s?\d{1,3}(?:\.\d{3})*$/;
-const MISMA_LINEA = 3; // puntos de tolerancia vertical
+export const CODIGO = /^[A-Z]{2,6}-[A-Z]{1,2}-\d{1,2}(?:X\d{1,2}(?:,\d)?)?-[A-Z]$/;
+export const PESOS = /^\$\s?\d{1,3}(?:\.\d{3})*$/;
+export const MISMA_LINEA = 3; // puntos de tolerancia vertical
 
-const pesos = (t: string) => Number(t.replace(/[$\s.]/g, ""));
-const limpio = (t: string) => t.replace(/\s+/g, " ").trim();
+export const pesos = (t: string) => Number(t.replace(/[$\s.]/g, ""));
+export const limpio = (t: string) => t.replace(/\s+/g, " ").trim();
 const isoDesde = (dmy: string) => {
   const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(dmy.trim());
   return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
 };
 
 export function leerNotaTienda(fragmentos: Fragmento[]): NotaTienda {
+  if (esNotaPorFabrica(fragmentos)) return leerNotaPorFabrica(fragmentos);
   // Orden de lectura: página, de arriba hacia abajo (y decreciente en PDF), de izquierda a derecha.
   const fs = fragmentos.map((f) => ({ ...f, texto: limpio(f.texto) })).filter((f) => f.texto)
     .sort((a, b) => a.pagina - b.pagina || b.y - a.y || a.x - b.x);

@@ -19,7 +19,7 @@ Sin marcas [NEEDS CLARIFICATION] abiertas: las decisiones de la Fase 3 están en
 | O4 | Diferencia entre stock del sistema y conteo físico, en conteo cíclico | ≤ 2 % de los artículos contados |
 | O5 | Cotizaciones con texto original, interpretación, versión de lista y aprobador guardados | 100 % |
 
-**No-objetivos.** Facturación electrónica; portal de clientes; ventas de la tienda; envío automático de cotizaciones; entrada de pedidos por correo o mensajería; terminaciones, herrajes y puertas enchapadas; modo sin conexión; cálculo de flete (hoy "pendiente" en la cotización).
+**No-objetivos.** Facturación electrónica; portal de clientes; ventas de la tienda; envío automático de cotizaciones; entrada de pedidos por correo o mensajería (la única entrada externa es la API firmada de la tienda para sus notas de pedido, ADR-0023); terminaciones, herrajes y puertas enchapadas; modo sin conexión; cálculo de flete (hoy "pendiente" en la cotización).
 
 **Restricciones.** Español; moneda CLP en importes enteros; precios con y sin IVA (19 %); fechas y números en formato chileno. Bases de datos y paneles de administración nunca expuestos públicamente. Ningún secreto en documentos. Uso principal en PC con internet estable.
 
@@ -267,7 +267,7 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-COT-8.6: WHEN un usuario con permiso de pedidos sube el PDF de una nota de pedido de la tienda THE SYSTEM SHALL leerla sin IA (número, códigos, cantidades, medida solicitada y despacho) y mostrar una vista previa, validando cada código contra el catálogo activo, antes de crear nada (ADR-0008).
 - REQ-COT-8.7: WHEN el usuario confirma la vista previa THE SYSTEM SHALL crear la nota de pedido para la tienda al precio de venta de la lista vigente sin recargo, reservar lo disponible y avisar si el precio de la nota difiere de la lista.
 - REQ-COT-8.8: IF la nota ya se cargó (mismo archivo o mismo número para la misma tienda), tiene códigos inexistentes, no es un PDF legible o está anulada THEN THE SYSTEM SHALL rechazarla sin crear el pedido.
-- REQ-COT-8.9: THE SYSTEM SHALL no guardar los datos personales del cliente final que aparecen en la nota de la tienda (nombre, RUT, giro, dirección, teléfono); solo la dirección de despacho, el transporte y el proyecto.
+- REQ-COT-8.9: THE SYSTEM SHALL no guardar como datos los datos personales del cliente final que aparecen en la nota de la tienda (nombre, RUT, giro, dirección, teléfono); solo la dirección de despacho, el transporte y el proyecto. *(Enmendado el 24-10-2026, ADR-0023 D1: el PDF comercial que manda la API de la tienda se conserva tal cual, visible solo con `pedidos.importes.ver` y `clientes.ver`, y cada descarga se audita.)*
 
 *Pagos y seguimiento (aprobado el 14-10-2026, ADR-0020):*
 - REQ-COT-8.10: WHEN un usuario con permiso de pagos registra un pago (monto, fecha, medio y comprobante opcional) THE SYSTEM SHALL guardarlo como registro de solo inserción y auditarlo; pagado = suma de pagos y saldo = total con IVA − pagado. Un error se corrige con un reverso con motivo.
@@ -278,6 +278,15 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 - REQ-COT-8.15: THE SYSTEM SHALL mostrar en la nota el historial de estados (fecha y usuario de cada paso, tomado de la auditoría) y marcarla atrasada cuando hoy supera la entrega comprometida y sigue abierta.
 - REQ-COT-8.16: THE SYSTEM SHALL indicar en el PDF de la cotización la condición de pago y en el de la nota de pedido lo pagado y el saldo.
 - REQ-COT-8.17 (20-10-2026): WHEN se crea una nota de pedido para un cliente de tipo tienda THE SYSTEM SHALL no exigirle abono para producir ni saldo para despachar, registrar igual los pagos que lleguen y no imprimir la condición de pago en su cotización.
+
+*Recepción automática desde la tienda (aprobado el 24-10-2026, ADR-0023; contrato en docs/contratos/pedidos-tienda-v1.md):*
+- REQ-COT-8.18: WHEN la tienda envía por su API una nota de pedido para Panguipulli, firmada con HMAC-SHA256 dentro de ±300 s, THE SYSTEM SHALL validarla con el esquema estricto del contrato y crear, en una sola transacción, la nota de pedido pendiente para el cliente tienda (precio de la lista vigente sin recargo, reserva de lo disponible), con sus dos PDF; nada se produce ni se aprueba solo.
+- REQ-COT-8.19: IF la petición no trae firma válida, está fuera de la ventana, es para otra fábrica, no cumple el esquema o trae un PDF dañado THEN THE SYSTEM SHALL rechazarla sin crear nada (401, 422 o 400) y auditar el rechazo sin secretos.
+- REQ-COT-8.20: WHEN llega otra vez el mismo pedido y revisión (reintento o envíos simultáneos) THE SYSTEM SHALL responder éxito con la misma nota sin crear otra; con otro contenido, o con una revisión anterior a la recibida, SHALL responder 409.
+- REQ-COT-8.21: WHEN llega una revisión o una anulación de una nota sin iniciar (pendiente, sin pagos y sin orden de producción) THE SYSTEM SHALL cancelar la vigente (liberando su reserva) y crear la nueva, o solo cancelarla; IF la nota ya está en curso THEN SHALL dejarla pendiente para que una persona la aplique o la descarte con motivo, auditado.
+- REQ-COT-8.22: WHEN una línea trae un código que la fábrica no tiene o es un pedido especial THE SYSTEM SHALL incorporarla como ítem a pedido marcado «revisar», con el precio de la tienda o $0 «por definir», sin rechazar la nota.
+- REQ-COT-8.23: THE SYSTEM SHALL ofrecer para toda nota de pedido una orden de trabajo en PDF sin precios, totales, pagos ni datos del cliente final, armada desde los datos guardados.
+- REQ-COT-8.24: IF un usuario sin `pedidos.importes.ver` consulta notas de pedido THEN THE SYSTEM SHALL omitir en el servidor precios, totales, pagos y el documento comercial, y negarle el PDF con precios.
 
 **H9 Clientes (P1).** Como usuario, quiero registrar clientes con datos mínimos.
 - REQ-COT-9.1: WHEN un usuario crea o edita un cliente (nombre, RUT, giro, dirección, comuna, contacto, correo, teléfono) THE SYSTEM SHALL validar el RUT y guardar el cambio con auditoría.
@@ -333,6 +342,7 @@ Facturación electrónica · portal de clientes · ventas de la tienda · envío
 | NC-13 | Feriados legales calculados por ley (portado del cotizador de la tienda), sin sincronizar con fuentes externas; los únicos se cargan a mano (REQ-COT-6.6) |
 | NC-14 | Pago (aprobado el 14-10-2026, ADR-0020): abono mínimo del 50 % (configurable) para producir y saldo antes de despachar o retirar; se puede pagar el total de una vez; si se cancela con abono, solo se anota. a la tienda no se le exige abono ni saldo: sus pagos son opcionales (20-10-2026, REQ-COT-8.17) (REQ-COT-8.10–8.14) |
 | NC-15 | Compras desde Chipax (aprobado el 14-10-2026, ADR-0021): las facturas de compra de proveedores habilitados suben el stock de materias primas; solo líneas con mapeo exacto, lo demás «por asociar» o «por revisar»; sin histórico previo a la habilitación. Proveedores definidos el 20-10-2026 (lista en ADR-0021); el desfase entre factura y llegada se acepta (REQ-MP-7.x) |
+| NC-16 | Recepción automática de las notas de la tienda (aprobado el 24-10-2026, ADR-0023): API firmada, solo Panguipulli; D1 PDF comercial guardado con permiso y sin datos personales estructurados; D2 y D5 revisiones y anulaciones solas solo si la nota no empezó; D3 y D4 códigos desconocidos y especiales «a pedido, revisar» (REQ-COT-8.18–8.24) |
 | — | Nombre del cliente: nunca se envía a la IA (REQ-COT-2.9) |
 
 ## 10. Ajustes de IA (ADR-0009, 06-10-2026; ADR-0022, 22-10-2026)

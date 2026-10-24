@@ -1,6 +1,6 @@
 # API.md — Contratos HTTP
 
-Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin Cloudflare Access (ADR-0010): sin sesión solo responden `POST /sesion` y `GET /salud`. Todos los handlers van envueltos en `conPermiso` (SECURITY §2). Los importes van en CLP enteros y las fechas en ISO 8601; el formato chileno se aplica en la UI y en el PDF.
+Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin Cloudflare Access (ADR-0010): sin sesión solo responden `POST /sesion` y `GET /salud`. Aparte, `/api/integrations/neltume/*` recibe las notas firmadas de la tienda (§3, Integraciones; ADR-0023). Todos los handlers van envueltos en `conPermiso` (SECURITY §2). Los importes van en CLP enteros y las fechas en ISO 8601; el formato chileno se aplica en la UI y en el PDF.
 
 ## 1. Convenciones
 
@@ -102,9 +102,13 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | GET `/cotizaciones/:id/pdf` | `cotizaciones.aprobar` + `clientes.ver` | | 409 `NO_APROBADA`; sin permiso, 404; lleva datos del cliente; auditado |
 | GET/POST `/clientes` · GET/PATCH `/clientes/:id` | `clientes.ver` / `clientes.editar` | | RUT validado |
 | POST `/pedidos` (`cotizacionId, direccionDespacho?, medioTransporte?`) | `pedidos.gestionar` | ✔ | Crea la nota de pedido y las reservas; 409 `VENCIDA`, `YA_TIENE_PEDIDO`, `NO_APROBADA` |
-| GET `/pedidos` · GET `/pedidos/:id` | `pedidos.gestionar` | | Muestra reservado y faltante por ítem, origen (`cotizacion` / `nota_tienda`) y totales |
+| GET `/pedidos` · GET `/pedidos/:id` | `pedidos.gestionar` | | Muestra reservado y faltante por ítem, origen (`cotizacion` / `nota_tienda` / `tienda_api`), revisión de la tienda y totales. Sin `pedidos.importes.ver`, precios, totales, pagos y montos del historial vienen en `null` o vacíos (ADR-0023 §8). `GET /pedidos/:id` suma `tienda`: revisión, avisos, documentos disponibles, revisiones pendientes y lo comercial (este solo con importes) |
 | POST `/pedidos/:id/cancelar` (`motivo`) | `pedidos.gestionar` | ✔ | Libera las reservas; 409 `NO_EDITABLE` si ya está cancelada o despachada |
-| GET `/pedidos/:id/pdf` | `pedidos.gestionar` + `clientes.ver` | | Nota de pedido; auditado |
+| GET `/pedidos/:id/pdf` | `pedidos.gestionar` + `pedidos.importes.ver` + `clientes.ver` | | Nota de pedido con precios; auditado |
+| GET `/pedidos/:id/orden-trabajo` | `pedidos.gestionar` | | Orden de trabajo en PDF, sin precios, pagos ni datos del cliente final; para toda nota; auditada (REQ-COT-8.23) |
+| GET `/pedidos/:id/documentos/produccion` · GET `/pedidos/:id/documentos/comercial` | `pedidos.gestionar` / + `pedidos.importes.ver` + `clientes.ver` | | PDF de la tienda de esa revisión; sin permiso, 404. El de producción retenido no se sirve. Privado, `nosniff` y `CSP: sandbox`; auditado (ADR-0023 §6) |
+| GET `/pedidos/:id/adjuntos/:sha256` | `pedidos.gestionar` | | Foto o croquis del cliente, solo si lo nombra un ítem de esa nota; 404 si no o si aún no llega |
+| POST `/pedidos/:id/recepciones/:recepcionId` (`accion`: `aplicar`/`descartar`, `motivo`) | `pedidos.gestionar` | ✔ | Revisión o anulación de la tienda que espera a una persona: aplicar cancela la nota y crea la nueva (o solo la cancela); 409 `NO_EDITABLE` si ya se resolvió (REQ-COT-8.21) |
 | PATCH `/pedidos/:id` (`direccionDespacho?, medioTransporte?, entregaComprometida?, observaciones?`) | `pedidos.gestionar` | | Hasta despachar; 409 `NO_EDITABLE` |
 | POST `/pedidos/:id/produccion` | `pedidos.gestionar` + `produccion.gestionar` | ✔ | Pendiente → en producción; crea la orden por el faltante de catálogo (REQ-COT-8.5) |
 | POST `/pedidos/:id/completar-reserva` | `pedidos.gestionar` | ✔ | Reserva el faltante con el stock disponible (REQ-STK-7.5) |
@@ -117,8 +121,15 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | POST `/pedidos/nota-tienda/vista-previa` (multipart: `archivo` PDF ≤ 5 MB, `clienteId?`) | `pedidos.gestionar` | | Lee y valida la nota de la tienda sin escribir; 422 `NOTA_ILEGIBLE` (ADR-0008) |
 | POST `/pedidos/nota-tienda` (multipart: `archivo`, `clienteId` de tipo tienda, `direccionDespacho?`, `medioTransporte?`, `entregaComprometida?`, `observaciones?`) | `pedidos.gestionar` | ✔ | El servidor vuelve a leer el PDF; 409 `YA_IMPORTADA`; precio de lista sin recargo (REQ-COT-8.6–8.9) |
 
-### Webhooks
-No hay. El único canal es la webapp (ADR-0003). Un test verifica que no existen rutas `/webhooks/*`.
+### Integraciones (ADR-0023)
+Sin sesión, cookies ni CSRF: firma HMAC-SHA256 (`X-Neltume-Timestamp`, `X-Neltume-Signature: v1=…`, ±300 s) sobre los bytes crudos y `X-Idempotency-Key`. Errores `{ error: { code, message } }` en snake_case. El contrato completo está en el repo de la tienda (`docs/integracion-fabrica.md`); lo propio de la fábrica, en `docs/contratos/pedidos-tienda-v1.md`.
+
+| Método y ruta | Cuerpo | Respuestas |
+|---|---|---|
+| POST `/api/integrations/neltume/orders` | JSON v1.0 (≤ 20 MB): `order.ready` con `order` y `documents`, u `order.cancelled` | 201 `accepted` (nueva o revisión aplicada), 200 `duplicate` o `accepted`, 202 `accepted` (espera a una persona o anulación recordada); 400 `schema_invalid`, 401 `invalid_signature`, 409 `idempotency_conflict`/`stale_revision`, 413, 415, 422 `destination_mismatch`/`unsupported_schema_version`/`document_invalid`, 503 `not_configured`, 500 `internal` |
+| PUT `/api/integrations/neltume/attachments/:sha256` | bytes de la imagen o PDF (≤ 10 MB) | 201 nuevo, 200 ya estaba; 422 `attachment_hash_mismatch`/`attachment_type_mismatch` |
+
+No hay rutas `/webhooks/*` ni otras entradas externas: un test lo verifica, y otro exige que solo `src/app/api/integrations/**` use la envoltura `integracion`.
 
 ## 4. Ejemplo: interpretación
 

@@ -1,6 +1,6 @@
 # ADR-0008 — Pedido directo desde el PDF de la nota de pedido de la tienda
 
-**Estado:** aceptado (Fase 5, 06-10-2026) · **Refs:** REQ-COT-8.6–8.9, REQ-NFR-5, ADR-0003, SECURITY T9
+**Estado:** aceptado (Fase 5, 06-10-2026); **complementado por ADR-0023** (24-10-2026): las notas llegan solas por la API firmada y la carga del PDF queda como respaldo; el lector reconoce también el formato «por fábrica» del 23-10-2026 · **Refs:** REQ-COT-8.6–8.9, REQ-NFR-5, ADR-0003, SECURITY T9
 
 ## Contexto
 La tienda (Neltume.co) cotiza a sus clientes con su propio cotizador y, cuando el cliente paga el anticipo, le envía a la fábrica una **nota de pedido en PDF** con los mismos códigos del catálogo, cantidades, precio de venta, medida solicitada y despacho. Hoy la fábrica solo puede crear pedidos desde una cotización propia y tendría que transcribir la nota a mano.

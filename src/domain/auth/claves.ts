@@ -5,6 +5,7 @@ import { intentoLogin, sesion, usuario } from "@/db/esquema/seguridad";
 import { type Actor, type Origen, registrarAuditoria } from "../auditoria";
 import { ErrorDominio } from "../errores";
 import { hashPassword, verificarPassword } from "./password";
+import { USUARIO_INTEGRACION } from "./permisos";
 import { MAX_FALLOS, type SesionActiva, VENTANA_MIN } from "./sesiones";
 
 interface Contexto { ip?: string; userAgent?: string; correlacionId?: string }
@@ -47,7 +48,8 @@ export async function cambiarClavePropia(s: SesionActiva, actual: string, nueva:
 /** Un administrador fija una contraseña nueva para otro usuario y cierra todas sus sesiones (REQ-ADM-2.5). */
 export async function restablecerClave(tx: Tx, usuarioId: string, nueva: string, actor: Actor & { id: string }, origen: Origen): Promise<void> {
   const nuevoHash = await hashPassword(nueva);
-  const [u] = await tx.update(usuario).set({ hashPassword: nuevoHash, actualizadoEn: sql`now()` }).where(eq(usuario.id, usuarioId)).returning({ id: usuario.id });
+  const [u] = await tx.update(usuario).set({ hashPassword: nuevoHash, actualizadoEn: sql`now()` })
+    .where(and(eq(usuario.id, usuarioId), ne(usuario.email, USUARIO_INTEGRACION.email))).returning({ id: usuario.id });
   if (!u) throw new ErrorDominio("NO_ENCONTRADO", "Usuario no encontrado");
   const revocadas = await tx.update(sesion).set({ revocadaEn: sql`now()` })
     .where(and(eq(sesion.usuarioId, usuarioId), sql`${sesion.revocadaEn} IS NULL`)).returning({ id: sesion.id });

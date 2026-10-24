@@ -9,7 +9,7 @@ import { pedir } from "@/lib/api-cliente";
 import { clp } from "@/lib/formato";
 
 /** Cancelar exige motivo y libera las reservas (REQ-STK-7.2). Antes de confirmar se dice qué se pierde. */
-export function CancelarPedido({ id, csrf, reservas, pagado }: { id: string; csrf: string; reservas: number; pagado: number }) {
+export function CancelarPedido({ id, csrf, reservas, pagado }: { id: string; csrf: string; reservas: number; pagado: number | null }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [motivo, setMotivo] = useState("");
@@ -37,7 +37,7 @@ export function CancelarPedido({ id, csrf, reservas, pagado }: { id: string; csr
       <p className="text-sm text-tinta">
         Se liberarán <strong>{reservas} {reservas === 1 ? "reserva" : "reservas"}</strong>. La nota no se puede reabrir.
       </p>
-      {pagado > 0 && (
+      {pagado !== null && pagado > 0 && (
         <p className="mt-1 text-sm text-error">
           Hay {clp(pagado)} registrado: el sistema no devuelve el dinero automáticamente. Anótalo antes de cancelar.
         </p>

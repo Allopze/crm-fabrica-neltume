@@ -50,7 +50,7 @@ function contextoBase<P>(req: NextRequest, params: P, correlacionId = randomUUID
  * él (envío por trozos; `cloudflared` puede reenviar así), se lee contando bytes y se corta al pasar el máximo; lo
  * leído se entrega al handler como una petición nueva con el mismo método, URL y cabeceras.
  */
-async function acotarCuerpo(req: NextRequest, max: number, correlacionId: string): Promise<NextRequest | NextResponse> {
+export async function acotarCuerpo(req: NextRequest, max: number, correlacionId: string): Promise<NextRequest | NextResponse> {
   const grande = () => respuestaError("CUERPO_GRANDE", `El envío supera ${Math.round(max / 1024 / 1024)} MB.`, correlacionId);
   const largo = req.headers.get("content-length");
   if (largo !== null) {

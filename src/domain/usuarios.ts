@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
 import { rol, rolPermiso, sesion, usuario } from "@/db/esquema/seguridad";
-import { ROL_ADMIN } from "./auth/permisos";
+import { ROL_ADMIN, USUARIO_INTEGRACION } from "./auth/permisos";
 import { hashPassword } from "./auth/password";
 import { type Actor, type Origen, registrarAuditoria } from "./auditoria";
 import { ErrorDominio } from "./errores";
@@ -59,8 +59,9 @@ export async function verificarQuedaAdmin(tx: Tx): Promise<void> {
 
 /** Activa/desactiva o cambia el rol. Revoca las sesiones del usuario afectado. */
 export async function actualizarUsuario(tx: Tx, id: string, cambios: { activo?: boolean; rolId?: string }, actor: Actor, origen: Origen) {
-  const [antes] = await tx.select({ id: usuario.id, activo: usuario.activo, rolId: usuario.rolId }).from(usuario).where(eq(usuario.id, id));
+  const [antes] = await tx.select({ id: usuario.id, activo: usuario.activo, rolId: usuario.rolId, email: usuario.email }).from(usuario).where(eq(usuario.id, id));
   if (!antes) throw new ErrorDominio("NO_ENCONTRADO", "Usuario no encontrado");
+  if (antes.email === USUARIO_INTEGRACION.email) throw new ErrorDominio("VALIDACION", "La integración con la tienda es un usuario técnico: no se activa ni cambia de rol.");
   if (cambios.rolId) {
     const [r] = await tx.select({ id: rol.id }).from(rol).where(eq(rol.id, cambios.rolId));
     if (!r) throw new ErrorDominio("VALIDACION", "Rol inexistente");
@@ -72,6 +73,6 @@ export async function actualizarUsuario(tx: Tx, id: string, cambios: { activo?: 
     .returning({ id: usuario.id, activo: usuario.activo, rolId: usuario.rolId });
   await verificarQuedaAdmin(tx);
   await tx.update(sesion).set({ revocadaEn: sql`now()` }).where(and(eq(sesion.usuarioId, id), sql`${sesion.revocadaEn} IS NULL`));
-  await registrarAuditoria(tx, { actor, accion: "actualizar", recurso: "usuario", recursoId: id, antes, despues, resultado: "ok", origen });
+  await registrarAuditoria(tx, { actor, accion: "actualizar", recurso: "usuario", recursoId: id, antes: { id: antes.id, activo: antes.activo, rolId: antes.rolId }, despues, resultado: "ok", origen });
   return despues;
 }
