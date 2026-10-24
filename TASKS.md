@@ -352,3 +352,12 @@ La tienda envía sola cada nota de Panguipulli por una API firmada. La nota entr
   - una muestra de la planilla de Bea para comparar con la orden de trabajo (ADR-0023 P1–P3) · RUNBOOK §8
 
 **Checkpoint F19:** `npm test` completo verde, lint y build. Recorrido: una nota firmada llega sola, aparece en «Notas de pedido» con sus dos documentos, el perfil Producción imprime la orden de trabajo sin ver importes, y una revisión sobre una nota en producción espera a una persona. Espero tu OK.
+
+## Fase 20 — Nombre visible de la tienda (pedida el 24-10-2026; pendiente, después de pasar F19 a producción)
+
+Las etiquetas que hoy dicen «la tienda» pasan a decir «Neltume.co». Se toma de un nombre visible configurable y no de los datos del cliente, porque esos solo se ven con `clientes.ver` (REQ-COT-9.3). No cambia el contrato, los datos ni la tienda. Lo ya guardado (motivos, observaciones, avisos, auditoría) queda tal cual.
+
+- [ ] T20.0 Decisión en UX.md: nombre visible, alcance (textos de ADR-0008 y de la F19) y lo guardado que no se reescribe · UX · — · —
+- [ ] T20.1 (90) `INTEGRACION_TIENDA_NOMBRE` (por omisión «la tienda») en Compose y `.env.example`, usado en lista, ficha, PDF, orden de trabajo, carga del PDF, avisos nuevos y textos de auditoría (unos 95 textos en unos 20 archivos) · REQ-COT-8.6, 8.18–8.24 · U `pdf.contenido`, I `integracion-tienda-flujo`, E 15, 21 · T20.0
+
+**Checkpoint F20:** `npm test` completo verde, lint y build; con `INTEGRACION_TIENDA_NOMBRE=Neltume.co`, la lista, la ficha y los PDF dicen «Neltume.co». Espero tu OK.
