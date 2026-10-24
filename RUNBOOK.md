@@ -34,7 +34,7 @@ Pruebas: `npm test` (lint → typecheck → unit → integración → E2E). Siem
    - `docker compose ps` no debe mostrar puertos publicados.
    - En el host, `ss -tlnp` no debe mostrar 5432 ni 3000 en `0.0.0.0`.
 
-Despliegue desde el equipo de desarrollo: `npm run deploy` (`scripts/deploy.sh`). Requiere el `.env` de producción **fuera del repositorio**, en `~/.config/neltume/produccion.env` (u otra ruta con `DEPLOY_ENV_FILE`): dentro del repo, `next dev` lo cargaría y `next build` lo copiaría a `.next/standalone` (auditoría H-15). Para mover uno existente: `mkdir -p ~/.config/neltume && mv .env ~/.config/neltume/produccion.env && chmod 600 ~/.config/neltume/produccion.env && rm -rf .next/standalone`. El script rechaza un archivo cuyo `DATABASE_URL` o `DATABASE_URL_WORKER` no apunten a `@db:5432` y avisa si queda un `.env` en la raíz. Requiere SSH al host `server` (alias de `~/.ssh/config`; otro con `DEPLOY_HOST`) y `rsync` en ambos extremos. Sube por rsync lo que versiona git y aparte ese archivo como `.env` (con permisos 600) a `/server/crm_fabrica_puertas`, borra allí el código obsoleto (conserva `respaldos-externos/` y `datos/`) y ejecuta `docker compose up -d --build --remove-orphans`. Otro destino: `DEPLOY_HOST=… DEPLOY_DIR=… npm run deploy`. El primer usuario y los BOM reales (paso 3) siguen siendo manuales.
+Despliegue desde el equipo de desarrollo: `npm run deploy` (`scripts/deploy.sh`). **El `.env` de producción es el del servidor** (`/server/crm_fabrica_puertas/.env`): se edita ahí y el deploy **nunca lo sobrescribe** (24-10-2026). El script verifica que exista y que su `DATABASE_URL` y `DATABASE_URL_WORKER` apunten a `@db:5432`, y avisa si queda un `.env` en la raíz del repo (dentro del repo, `next dev` lo cargaría y `next build` lo copiaría a `.next/standalone`, auditoría H-15). Solo en la primera instalación, si el servidor aún no tiene `.env`, sube una vez la copia local de `~/.config/neltume/produccion.env` (u otra ruta con `DEPLOY_ENV_FILE`), con permisos 600. Requiere SSH al host `server` (alias de `~/.ssh/config`; otro con `DEPLOY_HOST`) y `rsync` en ambos extremos. Sube por rsync lo que versiona git a `/server/crm_fabrica_puertas`, borra allí el código obsoleto (conserva `.env`, `respaldos-externos/` y `datos/`) y ejecuta `docker compose up -d --build --remove-orphans`. Otro destino: `DEPLOY_HOST=… DEPLOY_DIR=… npm run deploy`. Un cambio en el `.env` se aplica con `docker compose up -d` en el servidor (o con el siguiente deploy). El primer usuario y los BOM reales (paso 3) siguen siendo manuales.
 
 Acceso administrativo a la BD, solo desde el host: `docker compose -f docker-compose.yml -f docker-compose.admin.yml up -d db`. Expone `127.0.0.1:5432`. Ciérralo al terminar.
 
@@ -147,7 +147,7 @@ La tienda envía sola cada nota de pedido de Panguipulli a `POST /api/integratio
 
 **Configurar (una vez):**
 1. Genera el secreto: `openssl rand -base64 32`.
-2. En la fábrica, en el `.env` del servidor (en desarrollo, en `.env.local`):
+2. En la fábrica, en `/server/crm_fabrica_puertas/.env` (en desarrollo, en `.env.local`):
    - `INTEGRACION_TIENDA_SECRETO`: el secreto;
    - `INTEGRACION_TIENDA_CLIENTE_RUT`: el RUT del cliente de tipo tienda;
    - `INTEGRACION_TIENDA_FABRICA`: `PANGUIPULLI`.

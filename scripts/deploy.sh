@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Despliegue a producción (RUNBOOK §2): sube el código y el .env al servidor por SSH y levanta Compose.
+# Despliegue a producción (RUNBOOK §2): sube el código al servidor por SSH y levanta Compose.
 # Uso: npm run deploy. Host y carpeta se cambian con DEPLOY_HOST y DEPLOY_DIR.
-# El .env de producción vive FUERA del repositorio (DEPLOY_ENV_FILE, auditoría H-15): dentro, `next dev` lo cargaría
-# y `next build` lo copiaría a .next/standalone.
+# El .env de producción vive en el servidor ($DIR/.env) y es la fuente de verdad: el deploy NUNCA lo sobrescribe.
+# Solo en la primera instalación, si el servidor aún no tiene .env, se sube la copia local (DEPLOY_ENV_FILE), que
+# vive FUERA del repositorio (auditoría H-15): dentro, `next dev` la cargaría y `next build` la copiaría a .next/standalone.
 set -euo pipefail
 
 HOST="${DEPLOY_HOST:-server}"
@@ -10,39 +11,43 @@ DIR="${DEPLOY_DIR:-/server/crm_fabrica_puertas}"
 ENV_FILE="${DEPLOY_ENV_FILE:-$HOME/.config/neltume/produccion.env}"
 cd "$(dirname "$0")/.."
 
-if [ ! -f "$ENV_FILE" ]; then
-  echo "Falta el .env de producción en $ENV_FILE (o define DEPLOY_ENV_FILE)." >&2
-  if [ -f .env ]; then
-    echo "Hay un .env en la raíz del repo: muévelo fuera con" >&2
-    echo "  mkdir -p ~/.config/neltume && mv .env ~/.config/neltume/produccion.env && chmod 600 ~/.config/neltume/produccion.env" >&2
-  fi
-  exit 1
-fi
 if [ -f .env ]; then
   echo "Aviso: hay un .env en la raíz del repo. Bórralo: next dev lo carga y next build lo copia a .next/standalone (RUNBOOK §2)." >&2
 fi
-# El worker de IA usa su propio rol de BD (ADR-0017): sin esta variable no arranca.
-if ! grep -Eq '^DATABASE_URL_WORKER=.*@db:5432/' "$ENV_FILE"; then
-  echo "$ENV_FILE no define DATABASE_URL_WORKER (rol neltume_worker @db:5432, ADR-0017; RUNBOOK §2)." >&2
+
+ssh "$HOST" "mkdir -p '$DIR'"
+if ssh "$HOST" "test -f '$DIR/.env'"; then
+  echo "→ Se usa el .env que ya está en $HOST:$DIR (no se sobrescribe)."
+else
+  # Primera instalación: se sube la copia local una sola vez, con permisos 600 (umask 077; el openrsync de macOS no
+  # acepta --chmod). Desde ahí se edita directamente en el servidor.
+  if [ ! -f "$ENV_FILE" ]; then
+    echo "El servidor no tiene $DIR/.env y no hay copia local en $ENV_FILE (o define DEPLOY_ENV_FILE)." >&2
+    echo "Créalo en el servidor desde .env.example (RUNBOOK §2) y vuelve a desplegar." >&2
+    exit 1
+  fi
+  echo "→ El servidor no tiene .env: se sube $ENV_FILE (solo esta vez)."
+  ssh "$HOST" "umask 077 && cat > '$DIR/.env'" < "$ENV_FILE"
+fi
+
+# El .env del servidor debe ser de producción: el worker usa su propio rol de BD (ADR-0017) y todo apunta a @db:5432.
+if ! ssh "$HOST" "grep -Eq '^DATABASE_URL_WORKER=.*@db:5432/' '$DIR/.env'"; then
+  echo "$HOST:$DIR/.env no define DATABASE_URL_WORKER (rol neltume_worker @db:5432, ADR-0017; RUNBOOK §2)." >&2
   exit 1
 fi
-# Evita subir por error la configuración de desarrollo (.env.local apunta a localhost).
-if ! grep -Eq '^DATABASE_URL=.*@db:5432/' "$ENV_FILE"; then
-  echo "$ENV_FILE no parece de producción: DATABASE_URL debe apuntar a @db:5432 (RUNBOOK §2)." >&2
+if ! ssh "$HOST" "grep -Eq '^DATABASE_URL=.*@db:5432/' '$DIR/.env'"; then
+  echo "$HOST:$DIR/.env no parece de producción: DATABASE_URL debe apuntar a @db:5432 (RUNBOOK §2)." >&2
   exit 1
 fi
 
-echo "→ Subiendo a $HOST:$DIR"
-ssh "$HOST" "mkdir -p '$DIR'"
+echo "→ Subiendo el código a $HOST:$DIR"
 # Se sube lo que versiona git. Lo demás del servidor se borra (código obsoleto), salvo lo protegido con P: respaldos
-# locales por defecto (BACKUP_DESTINO_EXTERNO), datos/ y el .env, que se sube aparte desde fuera del repo.
+# locales por defecto (BACKUP_DESTINO_EXTERNO), datos/ y el .env.
 rsync -az --delete \
   -f 'P /respaldos-externos/' -f 'P /datos/' -f 'P /.env' \
   --exclude=/.git/ --exclude=/.claude/ \
   -f ':- .gitignore' \
   ./ "$HOST:$DIR/"
-# Por ssh y con umask 077: el .env nace con permisos 600 (el openrsync de macOS no acepta --chmod).
-ssh "$HOST" "umask 077 && cat > '$DIR/.env'" < "$ENV_FILE"
 
 echo "→ Levantando Docker Compose"
 # Los perfiles opcionales (p. ej. el worker de IA) se activan con COMPOSE_PROFILES en el .env.
