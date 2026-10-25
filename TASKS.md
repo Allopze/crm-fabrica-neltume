@@ -363,3 +363,22 @@ Las etiquetas que hoy dicen «la tienda» pasan a decir «Neltume.co». Se toma 
 - [ ] T20.1 (90) `INTEGRACION_TIENDA_NOMBRE` (por omisión «la tienda») en Compose y `.env.example`, usado en lista, ficha, PDF, orden de trabajo, carga del PDF, avisos nuevos y textos de auditoría (unos 95 textos en unos 20 archivos) · REQ-COT-8.6, 8.18–8.24 · U `pdf.contenido`, I `integracion-tienda-flujo`, E 15, 21 · T20.0
 
 **Checkpoint F20:** `npm test` completo verde, lint y build; con `INTEGRACION_TIENDA_NOMBRE=Neltume.co`, la lista, la ficha y los PDF dicen «Neltume.co». Espero tu OK.
+
+## Fase 21 — Prueba de conexión con la tienda (aprobada el 25-10-2026; ADR-0024)
+
+Un botón en Ajustes manda un PDF de prueba a la tienda y el de la tienda manda otro a la fábrica; cada lado lo ve en su pantalla. No crea pedidos ni mueve stock. El contrato lo comparten los dos repos (`docs/contratos/prueba-conexion-v1.md`) y la tienda implementa su lado en el suyo. Es independiente de la Fase 20; sus textos nuevos entran en el alcance de la F20.
+
+- [x] T21.0 Decisiones en documentos: ADR-0024 (D1–D3 por defecto), AGENTS (canales), SPEC (REQ-ADM-5.1–5.4, NC-17), API, SECURITY (§6, T6, T12, matriz), DATA-MODEL, DESIGN §4, UX, TESTING, RUNBOOK, README, ADR-0023 anotado · ADR-0024 · — · —
+- [x] T21.1 (60) Migración 0024: `prueba_conexion` y rol `neltume_enlace` con permisos mínimos (`db:setup`, `urlEnlace`, `aplicarPermisosEnlace`) · DATA-MODEL · I `defensa-bd`, `conexion-tienda` · T21.0
+- [x] T21.2 (75) Dominio puro: mensaje, firma, PDF de prueba, validación del receptor y diagnóstico por código · REQ-ADM-5.1, 5.2 · U `conexion.mensaje`, `conexion.diagnostico`, `pdf.prueba-conexion` · T21.1
+- [x] T21.3 (60) Ruta de recepción con `integracion()`: guardar, idempotencia, retención de 20, auditoría y rechazos · REQ-ADM-5.2, 5.3, SECURITY T6, T12 · I `conexion-tienda`, `estructura` · T21.2
+- [x] T21.4 (75) Rutas de la app (solicitar y firmar, estado y lista, ver PDF) con `config.editar` · REQ-ADM-5.1, 5.3 · I `conexion-tienda` (403 y fila en `audit_log`) · T21.2
+- [x] T21.5 (90) Servicio `enlace`: reenvía lo firmado solo a `ENLACE_TIENDA_URL` (plazo, sin redirecciones, respuesta acotada, `receiver` y `eventId`, vence lo viejo); Dockerfile, Compose (perfil `tienda`), `.env.example`, `dev.mts` · REQ-ADM-5.1, 5.4, SECURITY §6 · I `enlace-tienda` (tienda falsa: aceptada, 401, 404, 503, plazo, redirección, otra app), `compose` · T21.4
+- [x] T21.6 (75) Pantalla «Conexión con la tienda» y su ítem de menú · UX · E 22 · T21.5
+- [x] T21.7 (75) E2E `22-conexion-tienda` con una tienda falsa, y prueba cruzada en desarrollo con el repo de la tienda · TESTING §5 · E 22 · T21.6
+- [ ] T21.8 Puesta en marcha (fuera del código; RUNBOOK §9):
+  - en el `.env` del servidor: `ENLACE_TIENDA_URL=https://cotizador.puertasneltume.cl`, `DATABASE_URL_ENLACE` y `tienda` en `COMPOSE_PROFILES`; luego `docker compose up -d`;
+  - que la tienda tenga desplegada su ruta y `cotizador.puertasneltume.cl` en su `NELTUME_HOSTS` (no está detrás de Cloudflare Access: confirmado el 25-10-2026);
+  - la prueba cruzada en producción, apretando el botón en cada app (ADR-0024 P1–P3) · RUNBOOK
+
+**Checkpoint F21:** `npm test` completo verde, lint y build. Recorrido: el botón de la fábrica deja el PDF en la pantalla de la tienda y el de la tienda lo deja en la de la fábrica; un fallo (secreto distinto, URL equivocada, servicio apagado) dice por qué; y nada de esto crea una nota ni mueve stock. Espero tu OK.

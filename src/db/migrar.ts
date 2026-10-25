@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Client } from "pg";
 import { sembrar } from "./semilla";
-import { ident, partesUrl, urlCompras, urlWorker } from "./urls";
+import { ident, partesUrl, urlCompras, urlEnlace, urlWorker } from "./urls";
 
 const CARPETA = path.join(process.cwd(), "src/db/migraciones");
 
@@ -26,6 +26,7 @@ export async function migrar(urlOwner: string, urlApp: string): Promise<void> {
     await aplicarPermisos(cliente, partesUrl(urlApp).usuario);
     await aplicarPermisosWorker(cliente, partesUrl(urlWorker(urlApp)).usuario);
     await aplicarPermisosCompras(cliente, partesUrl(urlCompras(urlApp)).usuario);
+    await aplicarPermisosEnlace(cliente, partesUrl(urlEnlace(urlApp)).usuario);
     await sembrar(cliente);
   } finally {
     await cliente.end();
@@ -61,6 +62,29 @@ async function aplicarPermisosWorker(cliente: Client, rolWorker: string): Promis
   await cliente.query(`GRANT INSERT ON cotizacion_item, llamada_ia, audit_log, parametro TO ${w}`);
   await cliente.query(`GRANT UPDATE ON cotizacion, trabajo_ia, parametro TO ${w}`);
   await cliente.query(`GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ${w}`);
+}
+
+/**
+ * Permisos mínimos del servicio de enlace con la tienda (ADR-0024): ve solo lo que necesita para tomar una prueba de
+ * conexión enviada que la app dejó firmada, actualiza únicamente su resultado (y borra la solicitud firmada) e inserta
+ * en la auditoría. No lee el PDF, usuarios, clientes ni stock, no puede borrar y no toca ninguna secuencia. Si el rol aún no existe (falta
+ * `npm run db:setup`), se avisa y se sigue: la app no lo necesita.
+ */
+async function aplicarPermisosEnlace(cliente: Client, rolEnlace: string): Promise<void> {
+  if (!(await cliente.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [rolEnlace])).rowCount) {
+    process.stderr.write(`Aviso: no existe el rol ${rolEnlace} del servicio de enlace; ejecuta \`npm run db:setup\` (ADR-0024).\n`);
+    return;
+  }
+  const e = ident(rolEnlace);
+  await cliente.query(`REVOKE ALL ON ALL TABLES IN SCHEMA public FROM ${e}`);
+  await cliente.query(`GRANT USAGE ON SCHEMA public TO ${e}`);
+  await cliente.query(`GRANT SELECT (id, direccion, event_id, estado, solicitud, cabeceras, firmada_en, tomada_en, creado_en) ON prueba_conexion TO ${e}`);
+  await cliente.query(`GRANT UPDATE (estado, solicitud, cabeceras, tomada_en, destino, http_status, codigo_error, detalle, latencia_ms, desfase_reloj_ms, resuelto_en) ON prueba_conexion TO ${e}`);
+  await cliente.query(`GRANT INSERT ON audit_log TO ${e}`);
+  // Ninguna secuencia: `audit_log.id` es una columna identity (Postgres no pide permiso sobre su secuencia) y `prueba_conexion`
+  // usa gen_random_uuid(). Con USAGE podría llamar nextval y quemar los correlativos de cotizaciones, notas y órdenes. El REVOKE
+  // limpia también lo que una versión anterior de este archivo haya otorgado.
+  await cliente.query(`REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM ${e}`);
 }
 
 /**

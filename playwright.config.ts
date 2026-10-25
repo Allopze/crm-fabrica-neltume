@@ -1,5 +1,5 @@
 import { defineConfig } from "@playwright/test";
-import { cargarEnvLocal, conBase, requerirEnv, urlCompras, urlWorker } from "./src/db/urls";
+import { cargarEnvLocal, conBase, requerirEnv, urlCompras, urlEnlace, urlWorker } from "./src/db/urls";
 import { CREDENCIALES_PRUEBA } from "./tests/fixtures/chipax/simulado";
 import { RUT_TIENDA_PRUEBA, SECRETO_PRUEBA } from "./tests/fixtures/tienda/constantes";
 
@@ -11,6 +11,8 @@ const DATABASE_E2E = conBase(requerirEnv("DATABASE_URL"), "neltume_e2e");
 const DATABASE_E2E_WORKER = conBase(urlWorker(), "neltume_e2e");
 // El servicio de compras corre con su propio rol de BD, como en producción (ADR-0021).
 const DATABASE_E2E_COMPRAS = conBase(urlCompras(), "neltume_e2e");
+// El servicio de enlace con la tienda corre con su propio rol de BD y sin el secreto de la integración (ADR-0024).
+const DATABASE_E2E_ENLACE = conBase(urlEnlace(), "neltume_e2e");
 process.env.DATABASE_URL = DATABASE_E2E;
 
 // E2E secuenciales con estado compartido (TESTING.md §3): 1 worker, orden por nombre de archivo,
@@ -71,6 +73,25 @@ export default defineConfig({
         DATABASE_URL_COMPRAS: DATABASE_E2E_COMPRAS, CHIPAX_APP_ID: CREDENCIALES_PRUEBA.appId, CHIPAX_SECRET_KEY: CREDENCIALES_PRUEBA.secretKey,
         CHIPAX_API_URL: `http://127.0.0.1:${PUERTO + 3}/v2`, CHIPAX_XML_HOSTS: "127.0.0.1", CHIPAX_ESPERA_MS: "50", COMPRAS_SONDEO_MS: "500",
         COMPRAS_PUERTO_SALUD: String(PUERTO + 4),
+      },
+    },
+    {
+      // La tienda simulada (E2E 22): verifica la firma como la real y responde según el modo que fije la prueba.
+      command: "npx tsx e2e/tienda-mock.mts",
+      url: `http://localhost:${PUERTO + 5}/health`,
+      reuseExistingServer: false,
+      timeout: 30_000,
+      env: { E2E_TIENDA_PUERTO: String(PUERTO + 5) },
+    },
+    {
+      // El servicio de enlace envía las pruebas a esa tienda simulada; su plazo es corto para probar «sin respuesta».
+      command: "npx tsx src/enlace/servicio.ts",
+      url: `http://localhost:${PUERTO + 6}`,
+      reuseExistingServer: false,
+      timeout: 60_000,
+      env: {
+        DATABASE_URL_ENLACE: DATABASE_E2E_ENLACE, ENLACE_TIENDA_URL: `http://127.0.0.1:${PUERTO + 5}`, ENLACE_TIENDA_TIMEOUT_MS: "1500",
+        ENLACE_SONDEO_MS: "300", ENLACE_PUERTO_SALUD: String(PUERTO + 6),
       },
     },
   ],

@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
 import { auditLog } from "@/db/esquema/seguridad";
 
-export type Origen = "web" | "api" | "worker" | "importacion" | "consola";
+export type Origen = "web" | "api" | "worker" | "importacion" | "consola" | "enlace";
 export interface Actor {
   tipo: "usuario" | "visitante" | "sistema" | "worker";
   id?: string;

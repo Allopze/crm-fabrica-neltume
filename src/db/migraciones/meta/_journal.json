@@ -169,6 +169,13 @@
       "when": 1792814390050,
       "tag": "0023_recepcion_tienda",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792949190006,
+      "tag": "0024_prueba_conexion",
+      "breakpoints": true
     }
   ]
 }

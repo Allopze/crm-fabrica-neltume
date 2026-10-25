@@ -51,6 +51,23 @@ export function urlWorker(urlApp = requerirEnv("DATABASE_URL")): string {
   return u.toString();
 }
 
+/** Usuario de BD del servicio de enlace con la tienda (ADR-0024). */
+export const USUARIO_ENLACE = "neltume_enlace";
+
+/**
+ * URL del rol de BD del servicio de enlace (ADR-0024): solo toma las pruebas de conexión enviadas que la app dejó
+ * firmadas, actualiza su resultado e inserta en la auditoría. Igual que el worker y compras: explícita
+ * (`DATABASE_URL_ENLACE`) o derivada de la de la app con una clave que es un hash de la clave de la app.
+ */
+export function urlEnlace(urlApp = requerirEnv("DATABASE_URL")): string {
+  const explicita = process.env.DATABASE_URL_ENLACE;
+  if (explicita) return explicita;
+  const u = new URL(urlApp);
+  u.username = USUARIO_ENLACE;
+  u.password = createHash("sha256").update(`neltume-enlace:${decodeURIComponent(u.password)}`).digest("hex").slice(0, 32);
+  return u.toString();
+}
+
 /** Usuario de BD del servicio de compras desde Chipax (ADR-0021). */
 export const USUARIO_COMPRAS = "neltume_compras";
 

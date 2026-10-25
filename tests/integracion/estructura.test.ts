@@ -27,6 +27,30 @@ describe("estructura del código (SECURITY §2, AGENTS.md)", () => {
     }
   });
 
+  it("la app no sale a internet: solo los servicios con salida (src/ai, src/compras, src/enlace) hacen llamadas de red (SECURITY §6)", () => {
+    const app = fuente.filter((f) => /^src\/(domain|app\/api)\//.test(f) && !/\.test\.tsx?$/.test(f));
+    expect(app.length).toBeGreaterThan(0);
+    for (const f of app) expect(leer(f), f).not.toMatch(/\bfetch\s*\(|from "node:(https?|net|dns|tls)"|from "undici"/);
+  });
+
+  it("el servicio de enlace nunca usa el secreto de la integración ni firma nada: reenvía lo que la app firmó (ADR-0024 §3)", () => {
+    const enlace = fuente.filter((f) => f.startsWith("src/enlace/") && !/\.test\.tsx?$/.test(f));
+    expect(enlace.length).toBeGreaterThan(0);
+    for (const f of enlace) {
+      for (const prohibido of [/INTEGRACION_TIENDA_SECRETO/, /configIntegracion|configEnvio/, /\bfirmar\s*\(/, /\bfirmaHmac\b/, /armarPruebaSaliente/]) {
+        expect(leer(f), `${f} ↔ ${prohibido}`).not.toMatch(prohibido);
+      }
+    }
+  });
+
+  it("un handler OPTIONS o HEAD sin envoltura solo puede responder 405 (no toca datos ni se salta la autorización)", () => {
+    const rutas = fuente.filter((f) => /^src\/app\/.*\/route\.tsx?$/.test(f));
+    for (const f of rutas) {
+      const t = leer(f);
+      if (/export\s+(const|async\s+function|function)\s+(OPTIONS|HEAD)\b/.test(t)) expect(t, `${f}: OPTIONS/HEAD`).toMatch(/status:\s*405/);
+    }
+  });
+
   it("no hay rutas de webhooks (ADR-0003)", () => {
     expect(archivos.filter((f) => /\/webhooks?\//i.test(f))).toEqual([]);
   });

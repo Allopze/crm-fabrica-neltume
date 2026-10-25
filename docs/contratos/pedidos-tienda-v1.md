@@ -7,6 +7,8 @@
 - `src/servidor/integracion-contrato.ts` (esquemas Zod)
 - `src/servidor/integracion-firma.ts` (firma de referencia)
 
+La prueba de conexión (`connection.test`) tiene su propio contrato, igual en los dos sentidos: [`prueba-conexion-v1.md`](prueba-conexion-v1.md) (ADR-0024).
+
 Este archivo no repite ese contrato. Solo anota cómo lo cumple la fábrica y los ajustes pedidos a la tienda el 24-10-2026. Un cambio de nombres, tipos, rutas, firma o formatos se acuerda en los dos repos y sube `schemaVersion`.
 
 ## 1. Lo que la fábrica acepta tal cual

@@ -30,14 +30,24 @@ export function integracion<P = Record<string, never>>(
     const correlacionId = randomUUID();
     const ip = peticion.headers.get("cf-connecting-ip") ?? peticion.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined;
     const ruta = `${peticion.method} ${peticion.nextUrl.pathname}`;
+    // Lo rechazado antes de la firma (tamaño o tipo) no tiene autor conocido: queda en el registro con su motivo y en la
+    // auditoría agregada por IP (ADR-0016), igual que una firma inválida. Sin el cuerpo ni nada que haya escrito quien envía.
+    const rechazoSinFirma = async (motivo: string, detalle: string) => {
+      registro.warn("integración de la tienda: petición rechazada antes de la firma", { motivo, ruta, ip, correlacion_id: correlacionId });
+      await registrarDenegacionAnonima(bd(), { actor: { tipo: "visitante", ip, userAgent: peticion.headers.get("user-agent") ?? undefined }, accion: ruta, recurso: "integracion",
+        motivo, despues: { detalle }, origen: "api", correlacionId });
+    };
     const acotada = await acotarCuerpo(peticion, opciones.maxCuerpo, correlacionId);
     if (acotada instanceof NextResponse) {
-      return acotada.status === 413
-        ? errorIntegracion(413, "payload_too_large", `El envío supera ${Math.round(opciones.maxCuerpo / 1024 / 1024)} MB.`, correlacionId)
-        : errorIntegracion(400, "schema_invalid", "Content-Length inválido.", correlacionId);
+      if (acotada.status !== 413) return errorIntegracion(400, "schema_invalid", "Content-Length inválido.", correlacionId);
+      await rechazoSinFirma("CUERPO_GRANDE", "el cuerpo supera el máximo");
+      return errorIntegracion(413, "payload_too_large", `El envío supera ${Math.round(opciones.maxCuerpo / 1024 / 1024)} MB.`, correlacionId);
     }
     const tipo = acotada.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ?? "";
-    if (!opciones.tipos.includes(tipo)) return errorIntegracion(415, "unsupported_media_type", `Content-Type no admitido: se espera ${opciones.tipos.join(", ")}.`, correlacionId);
+    if (!opciones.tipos.includes(tipo)) {
+      await rechazoSinFirma("TIPO_NO_ADMITIDO", "Content-Type no admitido");
+      return errorIntegracion(415, "unsupported_media_type", `Content-Type no admitido: se espera ${opciones.tipos.join(", ")}.`, correlacionId);
+    }
     const config = configIntegracion();
     if (!config) return errorIntegracion(503, "not_configured", "La integración con la tienda no está configurada en la fábrica.", correlacionId, { "retry-after": "600" });
 

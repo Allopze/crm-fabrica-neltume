@@ -12,11 +12,18 @@ const CLAVES_REDACTADAS = new Set([
 const BEARER = /Bearer\s+[\w.-]+/gi;
 const redactarTexto = (t: string) => enmascararDatosPersonales(t, "[REDACTADO]").texto.replace(BEARER, "[REDACTADO]");
 
+/**
+ * Un error de la BD (Drizzle) trae en su mensaje los parámetros de la consulta: el PDF de una prueba de conexión, o su solicitud
+ * con la firma vigente. Se registra el principio (la consulta y el motivo) y no el resto: el log no es lugar para bytes ni firmas.
+ */
+export const MAX_MENSAJE_ERROR = 1_500;
+const recortarError = (m: string) => (m.length > MAX_MENSAJE_ERROR ? `${m.slice(0, MAX_MENSAJE_ERROR)}… [recortado: ${m.length} caracteres]` : m);
+
 export function redactar(valor: unknown, profundidad = 0): unknown {
   if (profundidad > 6) return "[…]";
   if (typeof valor === "string") return redactarTexto(valor);
   if (Array.isArray(valor)) return valor.map((v) => redactar(v, profundidad + 1));
-  if (valor instanceof Error) return { nombre: valor.name, mensaje: redactar(valor.message, profundidad + 1) };
+  if (valor instanceof Error) return { nombre: valor.name, mensaje: redactar(recortarError(valor.message), profundidad + 1) };
   if (valor && typeof valor === "object") {
     return Object.fromEntries(
       Object.entries(valor).map(([k, v]) => [k, CLAVES_REDACTADAS.has(k.toLowerCase()) ? "[REDACTADO]" : redactar(v, profundidad + 1)]),

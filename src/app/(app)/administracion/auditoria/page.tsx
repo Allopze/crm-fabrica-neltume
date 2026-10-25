@@ -46,7 +46,7 @@ function agrupar<T extends Registro>(datos: T[]): ({ e: T; i: number } | { grupo
   return vista;
 }
 
-const ORIGEN: Record<string, string> = { web: "web", api: "API", consola: "consola", worker: "proceso de IA" };
+const ORIGEN: Record<string, string> = { web: "web", api: "API", consola: "consola", worker: "proceso de IA", enlace: "servicio de enlace" };
 
 function Pares({ titulo, valor }: { titulo: string; valor: unknown }) {
   const pares = detalle(valor);

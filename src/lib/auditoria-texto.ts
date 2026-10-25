@@ -10,6 +10,7 @@ const RECURSOS: Record<string, string> = {
   compra: "Factura de compra (Chipax)", proveedor_compra: "Proveedor (Chipax)", mapeo_item_compra: "Ítem de proveedor",
   sincronizacion_chipax: "Sincronización con Chipax",
   recepcion_tienda: "Nota recibida de la tienda", adjunto_tienda: "Adjunto de la tienda", integracion: "API de la tienda",
+  prueba_conexion: "Prueba de conexión con la tienda",
 };
 
 const ACCIONES: Record<string, string> = {
@@ -29,6 +30,8 @@ const ACCIONES: Record<string, string> = {
   "revision de la tienda": "Revisión de la tienda por aplicar", "anulacion de la tienda": "Anulación de la tienda por aplicar",
   "aplicar revision de la tienda": "Revisión de la tienda aplicada", "descartar revision de la tienda": "Revisión de la tienda descartada",
   "descargar orden de trabajo": "Orden de trabajo descargada", "descargar documento de la tienda": "Documento de la tienda descargado",
+  "solicitar prueba de conexion": "Prueba de conexión pedida", "enviar prueba de conexion": "Prueba de conexión enviada a la tienda",
+  "recibir prueba de conexion": "Prueba de conexión recibida de la tienda",
 };
 
 const METODOS: Record<string, string> = { GET: "Consultar", POST: "Registrar", PATCH: "Modificar", PUT: "Reemplazar", DELETE: "Eliminar" };
@@ -68,11 +71,13 @@ const RUTAS: [RegExp, string][] = [
   [/^PUT \/usuarios\/[^/]+\/clave$/, "Restablecer contraseña"], [/^POST \/usuarios$/, "Crear usuario"], [/^PATCH \/usuarios\/[^/]+$/, "Modificar usuario"],
   [/^PUT \/roles/, "Modificar permisos"], [/^PUT \/ajustes\/ia$/, "Cambiar los ajustes de IA"], [/^POST \/bom\/aplicar$/, "Aplicar a varias recetas"],
   [/^POST \/compras\/sincronizar$/, "Pedir sincronización con Chipax"], [/^POST \/feriados$/, "Agregar feriado"],
+  [/^POST \/integracion\/tienda\/pruebas$/, "Enviar prueba de conexión a la tienda"], [/^GET \/integracion\/tienda\/pruebas\/[^/]+\/pdf$/, "Ver PDF de una prueba de conexión"],
 ];
 const SEGMENTOS: Record<string, string> = {
   auditoria: "auditoría", clientes: "clientes", cotizaciones: "cotizaciones", pedidos: "notas de pedido", stock: "stock", puertas: "puertas",
   "materias-primas": "materias primas", metricas: "métricas", ordenes: "órdenes de producción", bom: "recetas", usuarios: "usuarios",
   "listas-precio": "lista de precios", feriados: "feriados", compras: "compras de Chipax", "proveedores-compra": "proveedores de Chipax",
+  integracion: "conexión con la tienda",
 };
 
 /** «POST /api/v1/ordenes/<id>/cerrar» → «Cerrar orden de producción»; el resto, por tabla o sin guiones bajos. */
@@ -101,12 +106,14 @@ const CAMPOS: Record<string, string> = {
   faltaAbono: "Falta de abono", proveedor: "Proveedor", item: "Ítem", materiaPrima: "Materia prima", factor: "Factor", recibidas: "Recibidas",
   porAsociar: "Por asociar", porRevisar: "Por revisar", ignoradas: "Ignoradas", leidas: "Leídas", nuevas: "Nuevas", lineasRecibidas: "Líneas recibidas",
   xmlPendientes: "XML pendientes", avisos: "Avisos", errores: "Errores", desde: "Desde", resultado: "Resultado", folio: "Folio",
+  httpStatus: "Respuesta HTTP", codigoError: "Código de error", latenciaMs: "Latencia (ms)", desfaseRelojMs: "Desfase de reloj (ms)", destino: "Destino",
+  detalle: "Detalle", bytes: "Tamaño (bytes)",
 };
 const MONTOS = new Set(["total", "subtotal", "iva", "neto", "descuento", "monto", "pagado", "saldo", "faltaAbono"]);
 // Valores de código que se leen mejor en palabras (estado de pago, ADR-0020).
 const VALORES: Record<string, string> = { sin_control: "no exige pago", sin_abono: "sin abono", abonado: "abonado", pagado: "pagado" };
 // Ids internos y huellas no le dicen nada a quien lee el registro: se omiten del detalle.
-const OCULTOS = new Set(["id", "hash", "movimiento", "materiaPrimaId", "rolId", "ref", "creadoEn", "actualizadoEn", "bom", "item", "cotizacion"]);
+const OCULTOS = new Set(["id", "hash", "movimiento", "materiaPrimaId", "rolId", "ref", "creadoEn", "actualizadoEn", "bom", "item", "cotizacion", "eventId", "sha256"]);
 
 // Códigos de error de la API (API.md §2) como los leería una persona.
 const ERRORES: Record<string, string> = {

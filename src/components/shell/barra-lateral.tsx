@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  CalendarDays, ClipboardList, FileText, Gauge, Hammer, Layers, LayoutDashboard, Menu, Package, ScrollText, Settings2, Shield, Tag, Users, X,
+  Cable, CalendarDays, ClipboardList, FileText, Gauge, Hammer, Layers, LayoutDashboard, Menu, Package, ScrollText, Settings2, Shield, Tag, Users, X,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
@@ -42,6 +42,7 @@ const grupos: { nombre: string; items: ItemNavegacion[] }[] = [
       { href: "/administracion/metricas", texto: "Métricas de IA", icono: Gauge, permiso: "auditoria.ver" },
       { href: "/administracion/ia", texto: "Ajustes de IA", icono: Settings2, permiso: "config.editar" },
       { href: "/administracion/feriados", texto: "Feriados", icono: CalendarDays, permiso: "config.editar" },
+      { href: "/administracion/tienda", texto: "Conexión con la tienda", icono: Cable, permiso: "config.editar" },
     ],
   },
 ];
@@ -55,7 +56,7 @@ function visibles(permisos: ReadonlySet<string>) {
 
 function Contenido({ pie, ruta, permisos }: { pie: ReactNode; ruta: string; permisos: ReadonlySet<string> }) {
   const activo = (href: string) =>
-    href === "/" ? ruta === "/" : ruta === href || (ruta.startsWith(href + "/") && !(href === "/administracion" && /^\/administracion\/(auditoria|metricas|ia|feriados)/.test(ruta)));
+    href === "/" ? ruta === "/" : ruta === href || (ruta.startsWith(href + "/") && !(href === "/administracion" && /^\/administracion\/(auditoria|metricas|ia|feriados|tienda)/.test(ruta)));
 
   return (
     <>

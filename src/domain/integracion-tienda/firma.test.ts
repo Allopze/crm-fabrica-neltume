@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { configIntegracion, firmaHmac, firmar, verificarFirma } from "./firma";
+import { codigoFabrica, configEnvio, configIntegracion, firmaHmac, firmar, verificarFirma } from "./firma";
 
 const cuerpo = new TextEncoder().encode('{"a":1}');
 
@@ -42,5 +42,18 @@ describe("integracion.firma (ADR-0023 §2)", () => {
     expect(configIntegracion(env({ INTEGRACION_TIENDA_SECRETO: "corto" }))).toBeNull();
     expect(configIntegracion(env({ INTEGRACION_TIENDA_SECRETO: "s".repeat(32), INTEGRACION_TIENDA_CLIENTE_RUT: "76.059.066-5" })))
       .toEqual({ secretos: ["s".repeat(32)], fabrica: "PANGUIPULLI", clienteRut: "76.059.066-5" });
+  });
+
+  it("el envío firma solo con el secreto vigente (nunca con el anterior) y con el código de la fábrica (ADR-0024)", () => {
+    const env = (e: Record<string, string>) => e as unknown as NodeJS.ProcessEnv;
+    expect(configEnvio(env({}))).toBeNull();
+    expect(configEnvio(env({ INTEGRACION_TIENDA_SECRETO: "corto" }))).toBeNull();
+    // El anterior solo sirve para verificar lo que llega: con el vigente corto no se firma, aunque haya uno anterior válido.
+    expect(configEnvio(env({ INTEGRACION_TIENDA_SECRETO: "corto", INTEGRACION_TIENDA_SECRETO_ANTERIOR: "a".repeat(40) }))).toBeNull();
+    expect(configEnvio(env({ INTEGRACION_TIENDA_SECRETO: `  ${"s".repeat(40)}  `, INTEGRACION_TIENDA_SECRETO_ANTERIOR: "a".repeat(40) })))
+      .toEqual({ secreto: "s".repeat(40), fabrica: "PANGUIPULLI" });
+    expect(configEnvio(env({ INTEGRACION_TIENDA_SECRETO: "s".repeat(32), INTEGRACION_TIENDA_FABRICA: " panguipulli " }))?.fabrica).toBe("PANGUIPULLI");
+    expect(codigoFabrica(env({}))).toBe("PANGUIPULLI");
+    expect(codigoFabrica(env({ INTEGRACION_TIENDA_FABRICA: "santiago" }))).toBe("SANTIAGO");
   });
 });

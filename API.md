@@ -1,6 +1,6 @@
 # API.md — Contratos HTTP
 
-Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin Cloudflare Access (ADR-0010): sin sesión solo responden `POST /sesion` y `GET /salud`. Aparte, `/api/integrations/neltume/*` recibe las notas firmadas de la tienda (§3, Integraciones; ADR-0023). Todos los handlers van envueltos en `conPermiso` (SECURITY §2). Los importes van en CLP enteros y las fechas en ISO 8601; el formato chileno se aplica en la UI y en el PDF.
+Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin Cloudflare Access (ADR-0010): sin sesión solo responden `POST /sesion` y `GET /salud`. Aparte, `/api/integrations/neltume/*` recibe las notas y las pruebas de conexión firmadas de la tienda (§3, Integraciones; ADR-0023 y ADR-0024). Todos los handlers van envueltos en `conPermiso` (SECURITY §2). Los importes van en CLP enteros y las fechas en ISO 8601; el formato chileno se aplica en la UI y en el PDF.
 
 ## 1. Convenciones
 
@@ -20,7 +20,7 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | 401 | `NO_AUTENTICADO` |
 | 403 | `SIN_PERMISO`, `CSRF` |
 | 404 | `NO_ENCONTRADO` (también cuando no hay permiso de lectura sobre el recurso, contra IDOR) |
-| 409 | `VERSION_OBSOLETA`, `IDEMPOTENCIA_EN_CURSO`, `ITEMS_POR_CONFIRMAR`, `NO_APROBADA`, `VENCIDA`, `YA_TIENE_PEDIDO`, `ORDEN_CERRADA`, `STOCK_INSUFICIENTE`, `INSUMOS_INSUFICIENTES`, `SIN_BOM`, `BOM_INCOMPLETO` |
+| 409 | `VERSION_OBSOLETA`, `IDEMPOTENCIA_EN_CURSO`, `ITEMS_POR_CONFIRMAR`, `NO_APROBADA`, `VENCIDA`, `YA_TIENE_PEDIDO`, `ORDEN_CERRADA`, `STOCK_INSUFICIENTE`, `INSUMOS_INSUFICIENTES`, `SIN_BOM`, `BOM_INCOMPLETO`, `PRUEBA_EN_CURSO`, `INTEGRACION_APAGADA` |
 | 413 | `CUERPO_GRANDE`: más de 1 MB, o 6 MB en `/importaciones` y `/pedidos/nota-tienda*`; se rechaza sin leer el cuerpo, o al pasar el límite si llega por trozos (ADR-0011) |
 | 422 | `IDEMPOTENCIA_CONFLICTO`, `ULTIMO_ADMIN` |
 | 429 | `LIMITE_IA`, `LIMITE_LOGIN` |
@@ -121,13 +121,24 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | POST `/pedidos/nota-tienda/vista-previa` (multipart: `archivo` PDF ≤ 5 MB, `clienteId?`) | `pedidos.gestionar` | | Lee y valida la nota de la tienda sin escribir; 422 `NOTA_ILEGIBLE` (ADR-0008) |
 | POST `/pedidos/nota-tienda` (multipart: `archivo`, `clienteId` de tipo tienda, `direccionDespacho?`, `medioTransporte?`, `entregaComprometida?`, `observaciones?`) | `pedidos.gestionar` | ✔ | El servidor vuelve a leer el PDF; 409 `YA_IMPORTADA`; precio de lista sin recargo (REQ-COT-8.6–8.9) |
 
-### Integraciones (ADR-0023)
-Sin sesión, cookies ni CSRF: firma HMAC-SHA256 (`X-Neltume-Timestamp`, `X-Neltume-Signature: v1=…`, ±300 s) sobre los bytes crudos y `X-Idempotency-Key`. Errores `{ error: { code, message } }` en snake_case. El contrato completo está en el repo de la tienda (`docs/integracion-fabrica.md`); lo propio de la fábrica, en `docs/contratos/pedidos-tienda-v1.md`.
+### Conexión con la tienda (REQ-ADM-5, ADR-0024)
+Todas con `config.editar`, privadas (`cache-control: private, no-store`) y sin PDF en las listas.
+
+| Método y ruta | Idem | Notas |
+|---|---|---|
+| GET `/integracion/tienda/pruebas` | | `{ recepcion: { activa, fabrica }, envio: { secretoConfigurado, destino }, pruebas: [...] }`: si la recepción está activa, si el envío puede firmar, el host del último destino y las últimas pruebas de los dos sentidos (`direccion`: `enviada`/`recibida`; `estado`, `codigo` de 8 caracteres, `detalle`, `httpStatus`, `latenciaMs`, `desfaseRelojMs`, `destino`) |
+| POST `/integracion/tienda/pruebas` | ✔ | 202 `{ id, estado: "pendiente" }`: la app genera y firma un PDF de prueba y deja la solicitud para el servicio de enlace, que la envía a la tienda. 409 `INTEGRACION_APAGADA` sin `INTEGRACION_TIENDA_SECRETO`; 409 `PRUEBA_EN_CURSO` si hay otra en menos de 60 s |
+| GET `/integracion/tienda/pruebas/:id` | | Estado de una prueba (`pendiente` → `enviando` → `aceptada`, `duplicada`, `rechazada`, `sin_respuesta`, `no_configurada`, `vencida`; las recibidas, `recibida`); la pantalla lo consulta cada segundo hasta 30 s. 404 si el id no existe |
+| GET `/integracion/tienda/pruebas/:id/pdf` | | El PDF, `inline` (en el visor), con `nosniff` y sin `sandbox`; 404 si no existe |
+
+### Integraciones (ADR-0023, ADR-0024)
+Sin sesión, cookies ni CSRF: firma HMAC-SHA256 (`X-Neltume-Timestamp`, `X-Neltume-Signature: v1=…`, ±300 s) sobre los bytes crudos y `X-Idempotency-Key`. Errores `{ error: { code, message } }` en snake_case. El contrato completo está en el repo de la tienda (`docs/integracion-fabrica.md`); lo propio de la fábrica, en `docs/contratos/pedidos-tienda-v1.md`. La prueba de conexión tiene su propio contrato, igual en los dos sentidos: `docs/contratos/prueba-conexion-v1.md`.
 
 | Método y ruta | Cuerpo | Respuestas |
 |---|---|---|
 | POST `/api/integrations/neltume/orders` | JSON v1.0 (≤ 20 MB): `order.ready` con `order` y `documents`, u `order.cancelled` | 201 `accepted` (nueva o revisión aplicada), 200 `duplicate` o `accepted`, 202 `accepted` (espera a una persona o anulación recordada); 400 `schema_invalid`, 401 `invalid_signature`, 409 `idempotency_conflict`/`stale_revision`, 413, 415, 422 `destination_mismatch`/`unsupported_schema_version`/`document_invalid`, 503 `not_configured`, 500 `internal` |
 | PUT `/api/integrations/neltume/attachments/:sha256` | bytes de la imagen o PDF (≤ 10 MB) | 201 nuevo, 200 ya estaba; 422 `attachment_hash_mismatch`/`attachment_type_mismatch` |
+| POST `/api/integrations/neltume/connection-tests` (ADR-0024) | JSON v1.0 (≤ 2 MiB): `connection.test` con un PDF (≤ 1 MiB); `source` = `neltume-store`, clave `neltume-store:connection-test:{eventId}` | 201 `accepted`, 200 `duplicate`, con `{ status, eventId, receiver: "neltume-factory", receivedAt }`; 400 `schema_invalid`, 401 `invalid_signature`, 409 `idempotency_conflict`, 413 `payload_too_large` (cuerpo > 2 MiB o PDF > 1 MiB), 415, 422 `unsupported_schema_version`/`destination_mismatch`/`document_invalid`, 503 `not_configured`, 500 `internal`. No crea pedidos. Contrato en `docs/contratos/prueba-conexion-v1.md` |
 
 No hay rutas `/webhooks/*` ni otras entradas externas: un test lo verifica, y otro exige que solo `src/app/api/integrations/**` use la envoltura `integracion`.
 

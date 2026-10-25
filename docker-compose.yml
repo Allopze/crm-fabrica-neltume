@@ -28,6 +28,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_URL_WORKER: ${DATABASE_URL_WORKER}
       DATABASE_URL_COMPRAS: ${DATABASE_URL_COMPRAS:-}
+      DATABASE_URL_ENLACE: ${DATABASE_URL_ENLACE:-}
     networks: [datos]
     depends_on:
       db: { condition: service_healthy }
@@ -92,6 +93,22 @@ services:
       DATABASE_URL_COMPRAS: ${DATABASE_URL_COMPRAS:-}
       CHIPAX_APP_ID: ${CHIPAX_APP_ID:-}
       CHIPAX_SECRET_KEY: ${CHIPAX_SECRET_KEY:-}
+    networks: [datos, salida]
+    depends_on:
+      migrar: { condition: service_completed_successfully }
+
+  # Prueba de conexión con la tienda (ADR-0024): `COMPOSE_PROFILES=ia,chipax,tienda`. La app firma la prueba y deja la solicitud en
+  # la BD; este servicio, el único con salida hacia la tienda, la reenvía. Nunca recibe el secreto de la integración.
+  enlace:
+    profiles: [tienda]
+    build: { context: ., target: enlace }
+    restart: unless-stopped
+    environment:
+      # Rol de BD propio: solo actualiza el resultado de las pruebas de conexión e inserta en la auditoría.
+      DATABASE_URL_ENLACE: ${DATABASE_URL_ENLACE:-}
+      # Origen de la tienda, sin ruta (https://cotizador.puertasneltume.cl). Vacío = las pruebas quedan «sin configurar».
+      ENLACE_TIENDA_URL: ${ENLACE_TIENDA_URL:-}
+      ENLACE_TIENDA_TIMEOUT_MS: ${ENLACE_TIENDA_TIMEOUT_MS:-}
     networks: [datos, salida]
     depends_on:
       migrar: { condition: service_completed_successfully }

@@ -63,6 +63,64 @@ export const documentoTienda = pgTable("documento_tienda", {
   unique("documento_por_recepcion").on(t.recepcionId, t.tipo),
 ]);
 
+/** Prueba de conexión con la tienda (ADR-0024): una fila por prueba, recibida de la tienda o enviada a ella. */
+export const ESTADOS_PRUEBA = [
+  "recibida", // llegó de la tienda y se guardó
+  "pendiente", // enviada: la app la firmó y espera al servicio de enlace
+  "enviando", // enviada: el servicio la tomó y espera la respuesta
+  "aceptada", // la tienda la guardó (2xx con su identidad y el mismo eventId)
+  "duplicada", // la tienda ya la tenía (200 duplicate): también cuenta como entregada
+  "rechazada", // la tienda respondió con un error, o con otra identidad
+  "sin_respuesta", // red, plazo, redirección o caída del servicio: no se supo qué pasó
+  "no_configurada", // falta ENLACE_TIENDA_URL en el servicio de enlace
+  "vencida", // la firma pasó de 4 min antes de enviarse: no se manda, la tienda la rechazaría
+] as const;
+
+/**
+ * Contrato en docs/contratos/prueba-conexion-v1.md. Guarda el PDF y el resultado de las últimas 20 pruebas por sentido
+ * (las demás se borran al insertar; la auditoría recuerda quién probó y cuándo). Una prueba no crea pedidos ni toca
+ * `recepcion_tienda`. Mientras espera o se envía, la fila lleva la solicitud ya firmada que reenvía `enlace`, que no
+ * conoce el secreto; al terminar se borra.
+ */
+export const pruebaConexion = pgTable("prueba_conexion", {
+  id: uuid().primaryKey().defaultRandom(),
+  direccion: text().notNull(), // enviada | recibida
+  eventId: uuid().notNull(),
+  estado: text().notNull(),
+  hashCuerpo: text().notNull(), // SHA-256 del cuerpo JSON: un reintento de la tienda trae el mismo
+  contenido: bytea().notNull(), // el PDF
+  sha256: text().notNull(), // del PDF
+  bytes: integer().notNull(), // del PDF
+  nombreArchivo: text().notNull(),
+  // Solo enviadas, y solo mientras esperan o se envían:
+  solicitud: bytea(), // el cuerpo JSON firmado, con el PDF en base64
+  cabeceras: jsonb(), // x-neltume-timestamp, x-neltume-signature y x-idempotency-key
+  firmadaEn: timestamp({ withTimezone: true }), // cuándo se firmó: pasados 4 min la tienda la rechazaría
+  creadoPor: uuid().references(() => usuario.id), // quien apretó el botón
+  // Resultado del envío (lo escribe `enlace`):
+  tomadaEn: timestamp({ withTimezone: true }),
+  destino: text(), // host de la tienda al que se envió
+  httpStatus: integer(),
+  codigoError: text(), // error.code de la tienda o la clave del diagnóstico
+  detalle: text(), // el diagnóstico que ve la persona
+  latenciaMs: integer(),
+  desfaseRelojMs: integer(), // reloj de la tienda menos el nuestro; positivo = adelantado
+  creadoEn: ahora(),
+  resueltoEn: timestamp({ withTimezone: true }),
+}, (t) => [
+  check("prueba_direccion", sql`${t.direccion} in ('enviada', 'recibida')`),
+  check("prueba_estado", sql`${t.estado} in ('recibida', 'pendiente', 'enviando', 'aceptada', 'duplicada', 'rechazada', 'sin_respuesta', 'no_configurada', 'vencida')`),
+  check("prueba_estado_direccion", sql`(${t.direccion} = 'recibida') = (${t.estado} = 'recibida')`),
+  check("prueba_solicitud", sql`(${t.solicitud} IS NOT NULL) = (${t.direccion} = 'enviada' AND ${t.estado} in ('pendiente', 'enviando'))`),
+  check("prueba_cabeceras", sql`(${t.cabeceras} IS NULL) = (${t.solicitud} IS NULL)`),
+  check("prueba_autor", sql`(${t.creadoPor} IS NOT NULL) = (${t.direccion} = 'enviada')`),
+  check("prueba_firma", sql`(${t.firmadaEn} IS NOT NULL) = (${t.direccion} = 'enviada')`),
+  check("prueba_bytes", sql`${t.bytes} > 0`),
+  unique("prueba_evento_unico").on(t.direccion, t.eventId),
+  index("prueba_lista_idx").on(t.direccion, t.creadoEn),
+  index("prueba_pendiente_idx").on(t.creadoEn).where(sql`${t.estado} = 'pendiente'`),
+]);
+
 export const MIME_ADJUNTO = ["image/jpeg", "image/png", "image/webp", "application/pdf"] as const;
 
 export const adjuntoTienda = pgTable("adjunto_tienda", {

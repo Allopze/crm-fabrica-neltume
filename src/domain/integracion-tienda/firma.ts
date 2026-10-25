@@ -39,6 +39,9 @@ export function verificarFirma(
 
 export interface ConfigIntegracion { secretos: string[]; fabrica: string; clienteRut: string | null }
 
+/** Código de esta fábrica en el contrato (`INTEGRACION_TIENDA_FABRICA`; por omisión PANGUIPULLI). */
+export const codigoFabrica = (env: NodeJS.ProcessEnv = process.env) => env.INTEGRACION_TIENDA_FABRICA?.trim().toUpperCase() || "PANGUIPULLI";
+
 /**
  * Configuración desde el entorno del servicio `app` (ADR-0023 §9). Sin un secreto válido la integración está
  * apagada (503). Se lee en cada petición: los secretos nunca se copian a logs, respuestas ni BD.
@@ -47,5 +50,15 @@ export function configIntegracion(env: NodeJS.ProcessEnv = process.env): ConfigI
   const secretos = [env.INTEGRACION_TIENDA_SECRETO, env.INTEGRACION_TIENDA_SECRETO_ANTERIOR]
     .map((s) => s?.trim() ?? "").filter((s) => s.length >= LARGO_MINIMO_SECRETO);
   if (!env.INTEGRACION_TIENDA_SECRETO || secretos.length === 0) return null;
-  return { secretos, fabrica: env.INTEGRACION_TIENDA_FABRICA?.trim().toUpperCase() || "PANGUIPULLI", clienteRut: env.INTEGRACION_TIENDA_CLIENTE_RUT?.trim() || null };
+  return { secretos, fabrica: codigoFabrica(env), clienteRut: env.INTEGRACION_TIENDA_CLIENTE_RUT?.trim() || null };
+}
+
+/**
+ * Lo que hace falta para firmar un envío a la tienda (ADR-0024): el secreto vigente de `INTEGRACION_TIENDA_SECRETO` (nunca
+ * el anterior: ese solo se acepta al recibir) y el código de esta fábrica. Null si el secreto falta o es demasiado corto.
+ */
+export function configEnvio(env: NodeJS.ProcessEnv = process.env): { secreto: string; fabrica: string } | null {
+  const secreto = env.INTEGRACION_TIENDA_SECRETO?.trim() ?? "";
+  if (secreto.length < LARGO_MINIMO_SECRETO) return null;
+  return { secreto, fabrica: codigoFabrica(env) };
 }

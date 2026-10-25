@@ -51,6 +51,28 @@ describe("docker-compose.yml de producción (SECURITY §6, T8)", () => {
     expect(compose.services.app.environment).toHaveProperty("INTEGRACION_TIENDA_CLIENTE_RUT");
   });
 
+  it("el servicio de enlace con la tienda solo sale a internet, con su rol y su URL, y nunca con el secreto de la integración (ADR-0024)", () => {
+    const enlace = compose.services.enlace as Servicio & { profiles?: string[] };
+    expect(enlace.profiles).toEqual(["tienda"]);
+    expect(enlace.networks).toEqual(["datos", "salida"]); // sin `backend`: nadie le llega, solo sale
+    expect(Object.keys(enlace.environment ?? {}).sort()).toEqual(["DATABASE_URL_ENLACE", "ENLACE_TIENDA_TIMEOUT_MS", "ENLACE_TIENDA_URL"]);
+    for (const [nombre, s] of Object.entries(compose.services)) {
+      if (nombre !== "enlace") expect(Object.keys(s.environment ?? {}).filter((k) => k.startsWith("ENLACE_")), `servicio ${nombre}`).toEqual([]);
+    }
+    // `migrar` crea su rol de BD; la app firma con su secreto y no necesita la URL de la tienda (no sale a internet).
+    expect(compose.services.migrar.environment).toHaveProperty("DATABASE_URL_ENLACE");
+    expect(compose.services.app.environment).not.toHaveProperty("ENLACE_TIENDA_URL");
+    expect(readFileSync("Dockerfile", "utf8")).toMatch(/^FROM herramientas AS enlace$/m);
+    const ejemplo = readFileSync(".env.example", "utf8");
+    for (const v of ["ENLACE_TIENDA_URL", "ENLACE_TIENDA_TIMEOUT_MS", "DATABASE_URL_ENLACE"]) expect(ejemplo, v).toMatch(new RegExp(`^${v}=$`, "m"));
+  });
+
+  it("solo el worker, compras y enlace usan la red con salida a internet: la app no (SECURITY §6)", () => {
+    const enSalida = Object.entries(compose.services).filter(([, s]) => s.networks?.includes("salida")).map(([n]) => n).sort();
+    expect(enSalida).toEqual(["compras", "enlace", "worker"]);
+    expect(compose.networks.salida.internal).toBeFalsy();
+  });
+
   it("la app recibe los datos de la empresa que imprimen los PDF", () => {
     const ejemplo = readFileSync(".env.example", "utf8").match(/^NELTUME_EMPRESA_[A-Z]+(?==)/gm) ?? [];
     expect(ejemplo.length).toBeGreaterThan(0);

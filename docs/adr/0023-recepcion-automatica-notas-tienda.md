@@ -1,6 +1,6 @@
 # ADR-0023 — Recepción automática de las notas de pedido de la tienda
 
-**Estado:** aceptado (aprobado por el usuario el 24-10-2026, con D1–D5 en sus valores por defecto; Fase 19) · **Refs:** REQ-COT-8.5–8.9, 8.17, REQ-STK-7.x, REQ-NFR-5, NC-12, AGENTS reglas 2, 5, 6, 7, 8 y 10, SECURITY T2, T6 y T9 · **Modifica:** ADR-0003 (suma un canal de entrada) · **Complementa:** ADR-0008 (la carga del PDF queda como respaldo) · **Contrato:** [`docs/contratos/pedidos-tienda-v1.md`](../contratos/pedidos-tienda-v1.md)
+**Estado:** aceptado (aprobado por el usuario el 24-10-2026, con D1–D5 en sus valores por defecto; Fase 19) · **Refs:** REQ-COT-8.5–8.9, 8.17, REQ-STK-7.x, REQ-NFR-5, NC-12, AGENTS reglas 2, 5, 6, 7, 8 y 10, SECURITY T2, T6 y T9 · **Modifica:** ADR-0003 (suma un canal de entrada) · **Complementa:** ADR-0008 (la carga del PDF queda como respaldo) · **Complementado por:** ADR-0024 (la prueba de conexión, en los dos sentidos, con su propia ruta firmada) · **Contrato:** [`docs/contratos/pedidos-tienda-v1.md`](../contratos/pedidos-tienda-v1.md)
 
 ## Contexto
 

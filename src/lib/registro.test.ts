@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { redactar, registro } from "./registro";
+import { MAX_MENSAJE_ERROR, redactar, registro } from "./registro";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -19,6 +19,18 @@ describe("logger con redacción (SECURITY T5, §4)", () => {
     expect(redactar({ cliente: { rut: "1-9", nombre: "Ana", telefono: "1" }, usuario: { password: "p" } })).toEqual({
       cliente: { rut: "[REDACTADO]", nombre: "Ana", telefono: "[REDACTADO]" }, usuario: { password: "[REDACTADO]" },
     });
+  });
+
+  it("recorta el mensaje de un error largo: no deja en el log los parámetros de una consulta (un PDF, una firma)", () => {
+    const pdf = `%PDF-1.4 ${"x".repeat(50_000)}`;
+    const error = new Error(`Failed query: insert into "prueba_conexion" (...) values ($1, $2)\nparams: enviada,${pdf},x-neltume-signature=v1=abc123`);
+    const salida = redactar({ error }) as { error: { mensaje: string } };
+    expect(salida.error.mensaje.length).toBeLessThan(MAX_MENSAJE_ERROR + 100);
+    expect(salida.error.mensaje).toContain("Failed query: insert into");
+    expect(salida.error.mensaje).toMatch(/\[recortado: \d+ caracteres\]$/);
+    expect(salida.error.mensaje).not.toContain("v1=abc123");
+    // Un error corto pasa entero.
+    expect((redactar(new Error("corto")) as { mensaje: string }).mensaje).toBe("corto");
   });
 
   it("escribe una línea JSON con nivel y mensaje", () => {

@@ -6,7 +6,7 @@ import { ADMIN } from "./datos";
 // horizontal de página y los controles principales deben medir al menos 44 px de alto.
 test.describe.configure({ mode: "serial" });
 
-const RUTAS = ["/", "/cotizaciones", "/pedidos", "/stock", "/materias-primas", "/precios", "/produccion", "/clientes"];
+const RUTAS = ["/", "/cotizaciones", "/pedidos", "/stock", "/materias-primas", "/precios", "/produccion", "/clientes", "/administracion/tienda"];
 
 /** Contexto de celular que hereda del proyecto la URL base, el idioma y la zona horaria (playwright.config.ts). */
 async function abrirCelular(browser: Browser) {

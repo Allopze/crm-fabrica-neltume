@@ -12,6 +12,8 @@ flowchart LR
   A --> D[(db<br/>PostgreSQL)]
   W[worker<br/>src/ai/worker] --> D
   W -->|HTTPS; retención cero| L[Command Code]
+  E[enlace<br/>src/enlace] --> D
+  E -->|HTTPS; reenvía lo que la app firmó| S[tienda]
   B[backup<br/>pg_dump diario] --> D
   B --> X[(copia externa)]
 ```
@@ -20,6 +22,7 @@ flowchart LR
 |---|---|---|
 | app | Páginas, route handlers `/api/v1`, dominio (precios, stock, cotizaciones, pedidos, producción), PDF | todas |
 | worker | Toma trabajos de interpretación de la cola en BD, llama al LLM vía `src/ai/`, guarda la propuesta | REQ-COT-2.x |
+| enlace | Reenvía a la tienda las pruebas de conexión que la app firmó, con su rol de BD y sin el secreto; es el único servicio con salida hacia la tienda (ADR-0024, §12) | REQ-ADM-5.x |
 | db | Única fuente de verdad, con triggers de inmutabilidad y la cola de trabajos | REQ-STK-5.3, REQ-ADM-3.3 |
 | tunnel | Conexión saliente a Cloudflare; ningún puerto entrante; único camino de internet a la app (sin Access ni proxy intermedio: ADR-0010, ADR-0011) | REQ-NFR-7 |
 | backup | `pg_dump` diario, retención de 30 días local + copia externa | REQ-NFR-4 |
@@ -82,9 +85,11 @@ Días hábiles: lunes a viernes, descontando los feriados legales de Chile (calc
 | `backup` | `postgres` + cron | `datos` | ninguno | `PGPASSWORD`, `BACKUP_RETENCION_DIAS`, `BACKUP_DESTINO_EXTERNO` | `backups` |
 
 | `compras` (ADR-0021; perfil `chipax`) | build `.` (target `compras`) | `datos`, `salida` | ninguno | `DATABASE_URL_COMPRAS` (rol `neltume_compras`), `CHIPAX_APP_ID`, `CHIPAX_SECRET_KEY` | — |
+| `enlace` (ADR-0024; perfil `tienda`) | build `.` (target `enlace`) | `datos`, `salida` | ninguno | `DATABASE_URL_ENLACE` (rol `neltume_enlace`), `ENLACE_TIENDA_URL`, `ENLACE_TIENDA_TIMEOUT_MS` | — |
 
-- `datos` y `backend` son `internal: true`. Solo `borde` (tunnel) y `salida` (worker y compras) tienen egreso.
+- `datos` y `backend` son `internal: true`. Solo `borde` (tunnel) y `salida` (worker, compras y enlace) tienen egreso: la app no sale a internet.
 - Las API keys de proveedor solo se inyectan en `worker`; `app` y el navegador no las reciben.
+- El secreto de la integración con la tienda es solo de `app`: `enlace` recibe su URL y su rol de BD, nunca el secreto.
 - `.env.example` lista estos nombres con una descripción y sin valores.
 - Compose es solo de producción. Dev y test usan el PostgreSQL local: `npm run dev` aplica migraciones y semilla y levanta la app; `npm test` recrea las BD de test (TESTING.md §4).
 
@@ -158,7 +163,7 @@ Si una factura falla (XML aún no disponible, `410`, error de formato), se regis
 
 `src/domain/integracion-tienda/` es el único módulo que recibe datos de la tienda. Las rutas están en `src/app/api/integrations/neltume/` y van envueltas en `integracion()` (`src/domain/auth/integracion.ts`). Una petición pasa por este orden:
 
-1. Acota el cuerpo (20 MB pedidos, 10 MB adjuntos) y revisa el `Content-Type`.
+1. Acota el cuerpo (20 MB pedidos, 10 MB adjuntos, 2 MiB en la prueba de conexión) y revisa el `Content-Type`. Un rechazo de tamaño o de tipo queda en el registro y en la auditoría agregada por IP.
 2. Lee la configuración (`firma.ts`; sin secreto, 503) y verifica la firma HMAC sobre los bytes crudos.
 3. Parsea con el esquema estricto (`contrato.ts`, réplica del de la tienda) y comprueba clave de idempotencia y destino.
 4. Si la clave y el cuerpo ya se recibieron, responde `duplicate` sin volver a leer los PDF.
@@ -166,3 +171,19 @@ Si una factura falla (XML aún no disponible, `410`, error de formato), se regis
 6. Abre **una** transacción (`recibir.ts`): candado por pedido de la tienda, idempotencia y revisión, nota vigente (`nota.ts`), alta o reemplazo con `insertarPedido`, documentos y auditoría.
 
 Las líneas se arman en `lineas.ts` (lista vigente sin recargo; código desconocido o especial «a pedido, revisar»). Una persona resuelve lo pendiente con `resolver.ts`. La ficha lee `consulta.ts`, y la orden de trabajo sale de `src/domain/pdf/orden-trabajo.tsx`. Lo comercial nunca entra en precios ni totales (SECURITY T2).
+
+## 12. Prueba de conexión con la tienda (ADR-0024)
+
+`src/domain/integracion-tienda/` guarda lo común: `conexion.ts` (esquema estricto del mensaje, claves, armado y firma, verificación del PDF), `diagnostico.ts` (del resultado de la llamada al texto que lee la persona; los de las dos apps son los mismos, contrato §6) y `conexion-datos.ts` (la BD). El PDF sale de `src/domain/pdf/prueba-conexion.tsx`. El contrato, igual en los dos sentidos, está en `docs/contratos/prueba-conexion-v1.md`.
+
+**Tienda → fábrica.** La ruta `POST /api/integrations/neltume/connection-tests` va envuelta en `integracion()` y sigue el orden del contrato §3: las comprobaciones baratas, la firma sobre los bytes crudos, el JSON y su versión, el esquema estricto (con `source = neltume-store` y la clave de idempotencia), la fábrica, el PDF y, al final, una transacción que guarda la fila `recibida` y su auditoría. No toca `recepcion_tienda` ni crea pedidos.
+
+**Fábrica → tienda.** La app no sale a internet, así que el envío tiene dos mitades:
+
+1. El botón llama a `POST /api/v1/integracion/tienda/pruebas`. La **app** genera el PDF, arma el mensaje, lo firma con `INTEGRACION_TIENDA_SECRETO` y deja en `prueba_conexion` la solicitud ya firmada (`pendiente`). Responde 202.
+2. El servicio `src/enlace/` sondea la tabla cada 2 s con el rol `neltume_enlace`. Toma la pendiente más antigua (`FOR UPDATE SKIP LOCKED`), y la envía **tal cual** a `ENLACE_TIENDA_URL` + la ruta fija del contrato, con plazo de 15 s, sin seguir redirecciones y leyendo la respuesta hasta 64 KB. Solo reenvía las tres cabeceras de la firma, así que nada de lo que haya en la fila cambia el destino. Deja el resultado, borra la solicitud firmada y audita (`origen = enlace`).
+   - Una firma de más de 4 min no se envía (`vencida`), porque la tienda la rechazaría. Al pedir otra prueba, la app da por reemplazadas las pendientes de más de 60 s.
+   - Una prueba que quedó `enviando` por una caída pasa a `sin_respuesta` y nunca se reenvía sola.
+3. La pantalla consulta `GET .../pruebas/:id` cada segundo (hasta 30 s) y muestra el diagnóstico. Si en 20 s nadie tomó la fila, dice que el servicio de enlace no responde.
+
+El servicio `enlace` se parece a `compras` (ADR-0021): rol de BD propio con permisos mínimos (`migrar` los aplica), sin puertos ni conexiones entrantes, y salud opcional con `ENLACE_PUERTO_SALUD`. En `npm test` el destino es una tienda simulada local (`tests/fixtures/tienda/simulada.ts`), también en E2E 22.

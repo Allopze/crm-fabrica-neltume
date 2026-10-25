@@ -19,7 +19,7 @@ Sin marcas [NEEDS CLARIFICATION] abiertas: las decisiones de la Fase 3 están en
 | O4 | Diferencia entre stock del sistema y conteo físico, en conteo cíclico | ≤ 2 % de los artículos contados |
 | O5 | Cotizaciones con texto original, interpretación, versión de lista y aprobador guardados | 100 % |
 
-**No-objetivos.** Facturación electrónica; portal de clientes; ventas de la tienda; envío automático de cotizaciones; entrada de pedidos por correo o mensajería (la única entrada externa es la API firmada de la tienda para sus notas de pedido, ADR-0023); terminaciones, herrajes y puertas enchapadas; modo sin conexión; cálculo de flete (hoy "pendiente" en la cotización).
+**No-objetivos.** Facturación electrónica; portal de clientes; ventas de la tienda; envío automático de cotizaciones; entrada de pedidos por correo o mensajería (la única entrada externa es la API firmada de la tienda, para sus notas de pedido y sus pruebas de conexión, ADR-0023 y ADR-0024); terminaciones, herrajes y puertas enchapadas; modo sin conexión; cálculo de flete (hoy "pendiente" en la cotización).
 
 **Restricciones.** Español; moneda CLP en importes enteros; precios con y sin IVA (19 %); fechas y números en formato chileno. Bases de datos y paneles de administración nunca expuestos públicamente. Ningún secreto en documentos. Uso principal en PC con internet estable.
 
@@ -317,7 +317,7 @@ Códigos de artículo `MODELO-MADERA-ANCHO-ALTO` (por ejemplo ANC-O-4-B; fuera d
 
 ## 7. Trazabilidad de decisiones (entrevista Fase 0)
 
-Rol único con permisos separados → REQ-ADM-2.x · BOM por modelo → REQ-MP-3.x, 4.x · reserva al confirmar pedido → REQ-STK-7.x, REQ-COT-8.x · solo canal interno y aprobación humana → REQ-COT-4.x · medida fuera de grilla → REQ-COT-2.5 · lista única + recargo por tipo → REQ-COT-1.3 · descuento manual → REQ-COT-7.x.
+Rol único con permisos separados → REQ-ADM-2.x · BOM por modelo → REQ-MP-3.x, 4.x · reserva al confirmar pedido → REQ-STK-7.x, REQ-COT-8.x · solo canal interno y aprobación humana → REQ-COT-4.x · prueba de conexión con la tienda → REQ-ADM-5.x · medida fuera de grilla → REQ-COT-2.5 · lista única + recargo por tipo → REQ-COT-1.3 · descuento manual → REQ-COT-7.x.
 
 ## 8. Fuera de alcance
 
@@ -343,6 +343,7 @@ Facturación electrónica · portal de clientes · ventas de la tienda · envío
 | NC-14 | Pago (aprobado el 14-10-2026, ADR-0020): abono mínimo del 50 % (configurable) para producir y saldo antes de despachar o retirar; se puede pagar el total de una vez; si se cancela con abono, solo se anota. a la tienda no se le exige abono ni saldo: sus pagos son opcionales (20-10-2026, REQ-COT-8.17) (REQ-COT-8.10–8.14) |
 | NC-15 | Compras desde Chipax (aprobado el 14-10-2026, ADR-0021): las facturas de compra de proveedores habilitados suben el stock de materias primas; solo líneas con mapeo exacto, lo demás «por asociar» o «por revisar»; sin histórico previo a la habilitación. Proveedores definidos el 20-10-2026 (lista en ADR-0021); el desfase entre factura y llegada se acepta (REQ-MP-7.x) |
 | NC-16 | Recepción automática de las notas de la tienda (aprobado el 24-10-2026, ADR-0023): API firmada, solo Panguipulli; D1 PDF comercial guardado con permiso y sin datos personales estructurados; D2 y D5 revisiones y anulaciones solas solo si la nota no empezó; D3 y D4 códigos desconocidos y especiales «a pedido, revisar» (REQ-COT-8.18–8.24) |
+| NC-17 | Prueba de conexión con la tienda (aprobado el 25-10-2026, ADR-0024): un botón en Ajustes de cada app manda un PDF de prueba firmado a la otra, que lo muestra en su pantalla; no crea pedidos ni mueve stock. D1 la app no sale a internet: la envía un servicio aparte (`enlace`) que reenvía lo ya firmado y no conoce el secreto; D2 el mismo secreto en los dos sentidos; D3 se conservan las últimas 20 pruebas por sentido (REQ-ADM-5.1–5.4) |
 | — | Nombre del cliente: nunca se envía a la IA (REQ-COT-2.9) |
 
 ## 10. Ajustes de IA (ADR-0009, 06-10-2026; ADR-0022, 22-10-2026)
@@ -351,3 +352,12 @@ Facturación electrónica · portal de clientes · ventas de la tienda · envío
 - **REQ-ADM-4.2:** Ajustes lista modelos de Command Code y tarifas públicas por millón; modelos sin chat/herramienta o sin precio quedan deshabilitados con motivo. La configuración activa se aplica al iniciar el próximo trabajo.
 - **REQ-ADM-4.3:** *Retirado el 22-10-2026 (ADR-0022):* Groq dejó de ser proveedor. Una configuración guardada con Groq se lee como «sin proveedor» y Ajustes pide elegir un modelo de Command Code.
 - La evaluación de AI.md es informativa y no bloquea cambiar el modelo; no habilita aprobación automática de cotizaciones.
+
+## 11. Conexión con la tienda (ADR-0024, 25-10-2026; contrato en docs/contratos/prueba-conexion-v1.md)
+
+Ajustes → «Conexión con la tienda» comprueba que las dos apps se hablan, en los dos sentidos, con un PDF de prueba que no es un pedido. Lo ejercita todo el camino de una nota real (firma, tamaño, PDF, base de datos) sin dejar nada en producción.
+
+- **REQ-ADM-5.1:** WHEN un usuario con `config.editar` pide una prueba de conexión THE SYSTEM SHALL generar un PDF de ejemplo sin datos de clientes ni importes, firmarlo, enviarlo a la tienda, mostrar el resultado con su diagnóstico y auditarlo; nada se crea como pedido ni mueve stock.
+- **REQ-ADM-5.2:** WHEN la tienda envía una prueba firmada, dentro de ±300 s y con un PDF válido, THE SYSTEM SHALL guardarla, mostrarla en Ajustes a quien tenga `config.editar` y auditar la recepción; IF la firma, el esquema, el origen o el PDF no son válidos THEN THE SYSTEM SHALL rechazarla (401, 400, 413 o 422) sin guardar nada y auditar el rechazo sin secretos.
+- **REQ-ADM-5.3:** THE SYSTEM SHALL conservar las últimas 20 pruebas de cada sentido y mostrar su PDF solo a quien tenga `config.editar`; WHEN llega la misma prueba otra vez THE SYSTEM SHALL responder éxito sin duplicarla.
+- **REQ-ADM-5.4:** IF el servicio de enlace no responde, la tienda no está configurada o la tienda rechaza la prueba THEN THE SYSTEM SHALL decir cuál es la causa y no afectar al resto de la aplicación.

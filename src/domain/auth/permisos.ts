@@ -19,7 +19,7 @@ export const PERMISOS = {
   "pagos.registrar": "Registrar pagos, reversos y excepciones de abono o saldo de las notas de pedido",
   "clientes.ver": "Ver clientes",
   "clientes.editar": "Crear y editar clientes",
-  "config.editar": "Editar parámetros: mínimos, vigencia, recargos y proveedor de IA",
+  "config.editar": "Editar parámetros: mínimos, vigencia, recargos y proveedor de IA, y probar la conexión con la tienda",
 } as const;
 
 export type Permiso = keyof typeof PERMISOS;

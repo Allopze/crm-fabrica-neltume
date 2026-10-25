@@ -1,5 +1,6 @@
 // Defensa en profundidad en la BD (ADR-0017, auditoría M-02): rol propio del worker de IA con permisos mínimos y
 // triggers para invariantes que antes solo protegía TypeScript.
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -7,7 +8,7 @@ import { poolApp, poolOwner, urlsTest } from "./bd";
 import type { InterpreteIA } from "@/ai/interfaz";
 import { procesarSiguiente } from "@/ai/procesar";
 import { bd, cerrarBd } from "@/db/conexion";
-import { urlWorker } from "@/db/urls";
+import { urlEnlace, urlWorker } from "@/db/urls";
 import { crearInterpretacion } from "@/domain/cotizaciones/interpretacion";
 import { importarExcel } from "@/domain/importacion/importar";
 import { crearUsuario } from "@/domain/usuarios";
@@ -101,5 +102,71 @@ describe("invariantes en la BD (ADR-0017)", () => {
     await rechaza(app, `UPDATE nota_pedido SET estado = 'pendiente' WHERE id = '${p.id}'`);
     await rechaza(app, `DELETE FROM nota_pedido WHERE id = '${p.id}'`);
     await rechaza(app, `INSERT INTO pedido_item (nota_pedido_id, orden, descripcion, cantidad, reservado, faltante, precio_unitario, total_linea) VALUES ('${p.id}', 1, 'x', 1, 0, 1, 1, 1)`);
+  });
+});
+
+describe("rol de BD del servicio de enlace (ADR-0024)", () => {
+  const conEnlace = async (f: (enlace: Pool) => Promise<void>) => {
+    const enlace = new Pool({ connectionString: urlEnlace(urlsTest.app), max: 2 });
+    try { await f(enlace); } finally { await enlace.end(); }
+  };
+  /** Una prueba de conexión como la deja la app o la guarda la recepción; `o` cambia lo que cada caso quiere romper. */
+  const nueva = (o: { direccion?: string; estado?: string; solicitud?: string | null; cabeceras?: string | null; autor?: boolean; firma?: boolean; bytes?: number; evento?: string } = {}) => owner.query(
+    `INSERT INTO prueba_conexion (direccion, event_id, estado, hash_cuerpo, contenido, sha256, bytes, nombre_archivo, solicitud, cabeceras, firmada_en, creado_por)
+     VALUES ($1, $2, $3, 'h', 'x'::bytea, 'x', $4, 'x.pdf', $5::bytea, $6::jsonb, $7, $8) RETURNING id`,
+    [o.direccion ?? "enviada", o.evento ?? randomUUID(), o.estado ?? "pendiente", o.bytes ?? 1, o.solicitud === undefined ? "sol" : o.solicitud,
+      o.cabeceras === undefined ? "{}" : o.cabeceras, o.firma === false ? null : new Date(), o.autor === false ? null : usuarioId]);
+
+  it("no ve usuarios, clientes, stock, pedidos ni la recepción de la tienda, y de las pruebas solo lo necesario para tomar una", async () => {
+    await conEnlace(async (enlace) => {
+      for (const consulta of ["SELECT email FROM usuario LIMIT 1", "SELECT rut FROM cliente LIMIT 1", "SELECT * FROM movimiento LIMIT 1", "SELECT * FROM nota_pedido LIMIT 1",
+        "SELECT costo_total FROM precio LIMIT 1", "SELECT * FROM sesion LIMIT 1", "SELECT * FROM recepcion_tienda LIMIT 1", "SELECT * FROM documento_tienda LIMIT 1", "SELECT * FROM audit_log LIMIT 1"]) {
+        await rechaza(enlace, consulta);
+      }
+      for (const columna of ["contenido", "hash_cuerpo", "sha256", "bytes", "nombre_archivo", "creado_por", "destino", "detalle"]) await rechaza(enlace, `SELECT ${columna} FROM prueba_conexion LIMIT 1`);
+      await expect(enlace.query("SELECT id, direccion, event_id, estado, solicitud, cabeceras, firmada_en, tomada_en, creado_en FROM prueba_conexion")).resolves.toBeDefined();
+    });
+  });
+
+  it("solo escribe el resultado de una prueba: no cambia su PDF, su sentido ni su autor, no inserta ni borra, y la auditoría es de solo inserción", async () => {
+    const { rows: [p] } = await nueva();
+    await conEnlace(async (enlace) => {
+      await rechaza(enlace, `UPDATE prueba_conexion SET contenido = 'otro'::bytea WHERE id = '${p.id}'`);
+      await rechaza(enlace, `UPDATE prueba_conexion SET direccion = 'recibida' WHERE id = '${p.id}'`);
+      await rechaza(enlace, `UPDATE prueba_conexion SET creado_por = NULL WHERE id = '${p.id}'`);
+      await rechaza(enlace, `UPDATE prueba_conexion SET event_id = gen_random_uuid() WHERE id = '${p.id}'`);
+      await rechaza(enlace, `DELETE FROM prueba_conexion WHERE id = '${p.id}'`);
+      await rechaza(enlace, "INSERT INTO prueba_conexion (direccion, event_id, estado, hash_cuerpo, contenido, sha256, bytes, nombre_archivo) VALUES ('recibida', gen_random_uuid(), 'recibida', 'h', 'x'::bytea, 'x', 1, 'x.pdf')");
+      await rechaza(enlace, "TRUNCATE prueba_conexion");
+      await rechaza(enlace, "UPDATE audit_log SET resultado = 'ok'");
+      await rechaza(enlace, "DELETE FROM audit_log");
+      // Ninguna secuencia: no puede quemar los correlativos de cotizaciones, notas ni órdenes (y audit_log, identity, no la necesita).
+      for (const seq of ["cotizacion_numero_seq", "nota_pedido_numero_seq", "orden_produccion_numero_seq", "lista_precio_version_seq"]) {
+        await rechaza(enlace, `SELECT nextval('${seq}')`);
+      }
+      // Lo suyo sí: cerrar la prueba con su resultado y dejar la auditoría.
+      await enlace.query(`UPDATE prueba_conexion SET estado = 'aceptada', solicitud = NULL, cabeceras = NULL, http_status = 201, detalle = 'Aceptada en 5 ms.', resuelto_en = now() WHERE id = '${p.id}'`);
+      await enlace.query("INSERT INTO audit_log (actor_tipo, accion, recurso, resultado, origen) VALUES ('sistema', 'enviar prueba de conexion', 'prueba_conexion', 'ok', 'enlace')");
+    });
+    expect((await owner.query("SELECT estado FROM prueba_conexion WHERE id = $1", [p.id])).rows[0].estado).toBe("aceptada");
+    await owner.query("DELETE FROM prueba_conexion");
+  });
+
+  it("la tabla se defiende sola: la solicitud firmada solo existe mientras la prueba espera, y cada sentido tiene su autor y su estado", async () => {
+    const viola = (restriccion: string, o: Parameters<typeof nueva>[0]) => expect(nueva(o), restriccion).rejects.toThrow(new RegExp(`violates check constraint "${restriccion}"`));
+    await expect(nueva()).resolves.toBeDefined(); // lo válido pasa
+    await viola("prueba_solicitud", { estado: "aceptada" }); // terminada pero con la solicitud firmada
+    await viola("prueba_solicitud", { solicitud: null, cabeceras: null }); // pendiente sin solicitud
+    await viola("prueba_cabeceras", { cabeceras: null });
+    await viola("prueba_autor", { autor: false });
+    await viola("prueba_firma", { firma: false });
+    await viola("prueba_estado_direccion", { direccion: "recibida", estado: "aceptada", solicitud: null, cabeceras: null, autor: false, firma: false });
+    await viola("prueba_estado", { estado: "rara", solicitud: null, cabeceras: null });
+    await viola("prueba_bytes", { bytes: 0 });
+    // Un evento no se repite en el mismo sentido (la red de seguridad de la idempotencia).
+    const evento = randomUUID();
+    await nueva({ evento });
+    await expect(nueva({ evento })).rejects.toThrow(/prueba_evento_unico/);
+    await owner.query("DELETE FROM prueba_conexion");
   });
 });

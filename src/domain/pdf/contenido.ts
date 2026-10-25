@@ -1,5 +1,5 @@
 // Contenido del PDF de cotización, separado del render para poder probarlo (REQ-COT-4.2; TESTING U `pdf.contenido`).
-import { clp, fecha } from "@/lib/formato";
+import { clp, fecha, fechaHora, nombrePropio } from "@/lib/formato";
 import { type DatosEmpresa, datosEmpresa } from "@/lib/marca";
 import { formatearRut } from "../rut";
 
@@ -119,6 +119,27 @@ export function contenidoOrdenTrabajo(o: OrdenTrabajoPdf) {
     ]),
     observaciones: o.observaciones,
     pie: ["Documento para producción: no lleva precios.", "\"En stock\": unidades ya reservadas para esta nota; \"Por fabricar\": lo que falta."],
+  };
+}
+
+export interface PruebaConexionPdf { codigo: string; fabrica: string; creadaEn: Date }
+
+/**
+ * PDF de la prueba de conexión con la tienda (ADR-0024 §5): rotulado como prueba y con datos inventados. No lleva
+ * precios, clientes ni nada de la fábrica: solo lo necesario para reconocerlo al otro lado (el código corto del evento).
+ */
+export function contenidoPruebaConexion(p: PruebaConexionPdf) {
+  return {
+    titulo: "Prueba de conexión",
+    fechas: `Fecha ${fechaSantiago(p.creadaEn)} · Código ${p.codigo}`,
+    rotulo: "PRUEBA DE CONEXIÓN — no es un pedido",
+    datos: [["Emisor", `Fábrica ${nombrePropio(p.fabrica)}`], ["Destino", "La tienda"], ["Enviada", fechaHora(p.creadaEn)], ["Código", p.codigo]] as [string, string][],
+    filas: [
+      ["PRUEBA-1", "Puerta de ejemplo: dato inventado", "1", "0", "1"],
+      ["PRUEBA-2", "Marco de ejemplo: dato inventado", "2", "0", "2"],
+    ],
+    nota: `Este PDF viaja firmado de la fábrica a la tienda para comprobar la conexión. Si lo ves en la pantalla de la tienda con el código ${p.codigo}, el envío funcionó.`,
+    pie: ["Documento de prueba: no crea notas de pedido, no reserva stock y no lleva precios.", `Código de la prueba: ${p.codigo}.`],
   };
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { datosEmpresa } from "@/lib/marca";
-import { contenidoCotizacion, contenidoOrdenTrabajo, contenidoPedido, fechaSantiago, lineasEmpresa } from "./contenido";
+import { contenidoCotizacion, contenidoOrdenTrabajo, contenidoPedido, contenidoPruebaConexion, fechaSantiago, lineasEmpresa } from "./contenido";
 
 const base = {
   numero: 124, aprobadaEn: new Date("2026-10-06T02:30:00Z"), vigenciaHasta: "2026-10-20", listaVersion: 3,
@@ -90,5 +90,26 @@ describe("pdf.orden-trabajo (ADR-0023 §7)", () => {
     expect(k.filas[1][1]).toContain("REVISAR: Pedido especial");
     expect(k.filas[1].slice(2)).toEqual(["1", "—", "1"]);
     expect(JSON.stringify(k)).not.toMatch(/\$|IVA|Total|RUT/);
+  });
+});
+
+describe("pdf.prueba-conexion (ADR-0024 §5)", () => {
+  const k = contenidoPruebaConexion({ codigo: "6f1c2a7e", fabrica: "PANGUIPULLI", creadaEn: new Date("2026-10-25T18:02:11Z") });
+
+  it("se rotula como prueba, con la fecha y hora de Santiago y el código para reconocerlo al otro lado", () => {
+    expect(k.rotulo).toBe("PRUEBA DE CONEXIÓN — no es un pedido");
+    expect(k.titulo).toBe("Prueba de conexión");
+    expect(k.fechas).toBe("Fecha 25-10-2026 · Código 6f1c2a7e");
+    expect(k.datos).toEqual([["Emisor", "Fábrica Panguipulli"], ["Destino", "La tienda"], ["Enviada", "25-10-2026 15:02"], ["Código", "6f1c2a7e"]]);
+    expect(k.nota).toContain("6f1c2a7e");
+    expect(k.pie.join(" ")).toContain("no crea notas de pedido");
+  });
+
+  it("solo lleva datos inventados: ni precios, ni clientes, ni nada real de la fábrica", () => {
+    expect(k.filas.map((f) => f[0])).toEqual(["PRUEBA-1", "PRUEBA-2"]);
+    expect(k.filas.every((f) => f[1].includes("dato inventado"))).toBe(true);
+    expect(JSON.stringify({ datos: k.datos, filas: k.filas })).not.toMatch(/\$|IVA|Total|precio|RUT|@/i);
+    expect(JSON.stringify(k)).not.toContain("$"); // ni un monto en pesos en ninguna parte
+    expect(k.pie[0]).toContain("no lleva precios");
   });
 });

@@ -14,14 +14,11 @@ import { pagadoDe } from "../pedidos/pagos";
 import { insertarPedido } from "../pedidos/pedidos";
 import { normalizarRut } from "../rut";
 import type { PayloadConservado, PedidoTienda } from "./contrato";
+import { ErrorIntegracion } from "./errores";
 import { lineasDelPedido } from "./lineas";
 
-export class ErrorIntegracion extends Error {
-  constructor(public readonly http: number, public readonly codigo: string, mensaje: string) {
-    super(mensaje);
-    this.name = "ErrorIntegracion";
-  }
-}
+// Sigue saliendo de aquí para los importadores de siempre; vive en `errores.ts`.
+export { ErrorIntegracion };
 
 const noConfigurada = (mensaje: string) => new ErrorIntegracion(503, "not_configured", mensaje);
 

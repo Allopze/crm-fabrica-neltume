@@ -21,7 +21,7 @@ Documentos con un solo formato de número, igual en pantalla y en PDF: «Cotizac
 | Producción | Pestañas: Órdenes (crear y cerrar) · Recetas (BOM) · Madera de la puerta | `produccion.gestionar`, `mp.editar` | REQ-MP |
 | Precios | Precios vigentes con filtros (código o modelo, madera, tipo, alto) · Versiones · Recargos · Editar (nueva versión) · Importar Excel con informe | `precios.editar`, `catalogo.editar` | REQ-COT-1, REQ-STK-1 |
 | Clientes | Lista · Ficha (datos, cotizaciones y notas) | `clientes.*` | REQ-COT-9 |
-| Administración | Usuarios · Roles y permisos · Auditoría · Métricas IA · Feriados · Ajustes de IA (proveedor, modelo y privacidad de datos; claves en el entorno privado del servidor) | `usuarios.gestionar`, `auditoria.ver`, `config.editar` | REQ-ADM |
+| Administración | Usuarios · Roles y permisos · Auditoría · Métricas IA · Feriados · Ajustes de IA (proveedor, modelo y privacidad de datos; claves en el entorno privado del servidor) · Conexión con la tienda (envía un PDF de prueba y lista las pruebas de los dos sentidos) | `usuarios.gestionar`, `auditoria.ver`, `config.editar` | REQ-ADM |
 
 Navegación lateral fija desde 1024 px; en pantallas más angostas se abre como cajón con el botón de menú (Esc lo cierra). Al pie de la barra, el nombre de quien usa la app abre su menú (cambiar contraseña, cerrar sesión). Para quien puede cotizar, la entrada «desde texto» está siempre visible arriba, como acceso secundario para no competir con la acción principal de cada pantalla; las listas solo agregan «Cotizar a mano». En celular las tablas ocultan las columnas secundarias y conservan número, cliente o artículo, estado y total o disponible. Sin buscador global: cada lista tiene su propio filtro. Las tablas anchas se desplazan dentro de su marco (también con teclado) y la página nunca se desplaza hacia el costado; en pantallas táctiles los controles miden al menos 44 px.
 
@@ -88,6 +88,14 @@ Listas: los filtros se aplican solos (el texto, al dejar de escribir); el pie di
   - El panel «Documentos de la tienda» trae la orden de trabajo de la tienda y, con importes, la nota comercial. Si el PDF de producción vino con montos, se dice que quedó retenido.
   - Cada ítem muestra su observación, «Revisar: …» en pizarra si el código no está en el catálogo o el precio está por definir, y las referencias del cliente (enlace, o «pendiente de recibir»).
   - Una revisión o anulación que llegó con la nota en curso aparece arriba, en un aviso pizarra, con «Aplicar» o «Descartar» y motivo; aplicar una revisión lleva a la nota nueva.
+- **Conexión con la tienda** (ADR-0024; `/administracion/tienda`, bajo Configuración, solo con `config.editar`):
+  - **Estado:** «Recepción activa» o «apagada» (falta el secreto) con la fábrica, y «Lista para firmar» o «Sin firma» con el último destino.
+  - **Probar la conexión:** el botón «Enviar PDF de prueba a la tienda» queda en «Enviando…» y deshabilitado hasta tener el resultado. Se consulta cada segundo hasta 30 s.
+    - Si sale bien: «Aceptada en N ms» y el código de 8 caracteres para buscar el PDF en los Ajustes de la tienda.
+    - Si no: un aviso con el motivo en palabras (secreto distinto, relojes desfasados, ruta sin desplegar, tienda sin configurar, redirección, plazo agotado, otra aplicación). Rojo si la tienda la rechazó y ámbar si no hubo respuesta.
+    - Si en 20 s nadie tomó la prueba (sigue pendiente), dice que el servicio de enlace no responde; si ya la tomó y la tienda tarda, dice que tarda más de lo normal.
+  - **Últimas pruebas:** fecha, sentido («Enviada a la tienda» o «Recibida de la tienda»), resultado con color y texto, detalle y «Ver PDF» con el código, que se abre en una pestaña nueva. La lista se actualiza sola cada 10 s con la pestaña a la vista y tiene un botón «Actualizar».
+  - Como todo texto de la fábrica, dice «la tienda» hasta que la Fase 20 lo cambie.
 - **Sin `pedidos.importes.ver`** (perfil Producción): la nota de pedido, la lista, la ficha del cliente y el panel no muestran precios, totales ni pagos (los omite el servidor); los bloqueos de pago dicen «Falta el abono para producir» sin monto; no aparecen «PDF» ni la nota comercial.
 - **Compras (Chipax)** (ADR-0021): página `/materias-primas/compras`, con enlace desde Materias primas.
   - Arriba, la última sincronización (hora, resultado, facturas leídas, líneas recibidas, por asociar y por revisar) y «Sincronizar ahora».

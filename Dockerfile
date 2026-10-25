@@ -36,3 +36,7 @@ CMD ["npx", "tsx", "src/ai/worker.ts"]
 # Compras desde Chipax (ADR-0021): mismo entorno de herramientas que el worker.
 FROM herramientas AS compras
 CMD ["npx", "tsx", "src/compras/servicio.ts"]
+
+# Enlace con la tienda (ADR-0024): mismo entorno de herramientas. Es el único servicio, con la red `salida`, que habla con la tienda.
+FROM herramientas AS enlace
+CMD ["npx", "tsx", "src/enlace/servicio.ts"]

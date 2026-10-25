@@ -13,9 +13,9 @@ Requisitos: Node 24 (`.nvmrc`) y PostgreSQL local (Postgres.app en `localhost:54
    - `DATABASE_URL`: `postgres://neltume_app:<clave>@localhost:5432/neltume_dev`.
    - Claves aleatorias: `openssl rand -hex 18`.
 3. `cp .env.worker.example .env.worker.local` y pega `CMD_API_KEY`, la API key de Command Code. No la pongas en `.env.local`; el worker y `eval:ia` leen `.env.worker.local`.
-4. `npm run db:setup`: crea los roles (dueño, app, `neltume_worker`, el rol con permisos mínimos del worker de IA, ADR-0017, y `neltume_compras`, el del servicio de compras desde Chipax, ADR-0021) y las bases `neltume_dev`, `neltume_test` y `neltume_e2e`. Es idempotente; vuelve a correrlo si actualizas desde una versión sin el rol del worker. En desarrollo la clave del worker se deriva de `DATABASE_URL` si no defines `DATABASE_URL_WORKER`.
+4. `npm run db:setup`: crea los roles (dueño, app, `neltume_worker`, el rol con permisos mínimos del worker de IA, ADR-0017, `neltume_compras`, el del servicio de compras desde Chipax, ADR-0021, y `neltume_enlace`, el del servicio de enlace con la tienda, ADR-0024) y las bases `neltume_dev`, `neltume_test` y `neltume_e2e`. Es idempotente; vuelve a correrlo si actualizas desde una versión sin el rol del worker. En desarrollo la clave del worker se deriva de `DATABASE_URL` si no defines `DATABASE_URL_WORKER`.
 5. `npm run crear-admin`: primer usuario. La contraseña se pide por consola.
-6. `npm run dev`: migra la BD y levanta la app en `http://localhost:3000`. El worker carga las claves y actualiza los catálogos. Si agregas o cambias claves en `.env.worker.local` después de iniciarlo, reinicia `npm run dev` para que el worker las vuelva a cargar.
+6. `npm run dev`: migra la BD y levanta la app en `http://localhost:3000`, el worker y el servicio de enlace con la tienda (§9). El worker carga las claves y actualiza los catálogos. Si agregas o cambias claves en `.env.worker.local` después de iniciarlo, reinicia `npm run dev` para que el worker las vuelva a cargar.
 7. En **Ajustes de IA**, elige el modelo de Command Code.
 8. `npm run eval:ia`: en la terminal, elige el número del modelo en la tabla del catálogo de Command Code, ordenada por costo estimado por llamada (4.000 tokens de entrada y 400 de salida, menor primero), con tarifas y estimación. Usa la clave de `.env.worker.local` y no cambia el modelo activo. También acepta `--modelo <id>` y `--ids 1,17,34` para un diagnóstico breve; el informe guarda los hashes de prompt, casos y pipeline y no sobrescribe otro. Usa casos sintéticos; el worker debe haber actualizado el catálogo. Llama al servicio real y puede consumir cuota.
 
@@ -29,7 +29,8 @@ Pruebas: `npm test` (lint → typecheck → unit → integración → E2E). Siem
    - Lista de precios (si no se sube desde Precios → Importar): `docker compose run --rm -T -v /ruta/cotizador.xlsx:/tmp/cotizador.xlsx:ro migrar npx tsx scripts/importar-excel.mts /tmp/cotizador.xlsx`. Idempotente; audita a nombre del primer administrador y no imprime costos ni precios. Va **antes** de cargar el inventario: sin catálogo, toda puerta quedaría fuera de catálogo.
    - BOM reales (una vez; idempotente, no pisa lo editado después): `docker compose run --rm migrar npx tsx scripts/cargar-bom-real.mts`. En desarrollo: `npx tsx --env-file-if-exists=.env.local scripts/cargar-bom-real.mts` (ADR-0012).
    - Inventario de la fábrica (una vez, al pasar de la planilla a la app; ADR-0018): primero `--simular` y revisar el informe con la fábrica, después sin él. El Excel no va en la imagen: se monta solo para esa corrida, `docker compose run --rm -v /ruta/INVENTARIO.xlsx:/tmp/inventario.xlsx:ro migrar npx tsx scripts/cargar-inventario.mts /tmp/inventario.xlsx --simular`. En desarrollo: `npm run cargar-inventario -- datos/INVENTARIO.xlsx --simular`. Es idempotente (no repite puertas ni historial); se detiene si ya hay puertas en stock que no vienen de la planilla, salvo `--agregar`. Las filas sin código propio solo entran en la primera carga. Desde ese día la planilla deja de usarse.
-4. Cotizador con IA: `docker compose --profile ia up -d worker` (o `COMPOSE_PROFILES=ia` en `.env`, que usa `npm run deploy`). Los cambios de proveedor/modelo en Ajustes rigen desde el siguiente trabajo; al rotar API keys, reinicia el worker.
+4. Prueba de conexión con la tienda: `COMPOSE_PROFILES=ia,chipax,tienda` y, en el `.env`, `DATABASE_URL_ENLACE` y `ENLACE_TIENDA_URL` (§9).
+5. Cotizador con IA: `docker compose --profile ia up -d worker` (o `COMPOSE_PROFILES=ia` en `.env`, que usa `npm run deploy`). Los cambios de proveedor/modelo en Ajustes rigen desde el siguiente trabajo; al rotar API keys, reinicia el worker.
 6. Verifica la exposición:
    - `docker compose ps` no debe mostrar puertos publicados.
    - En el host, `ss -tlnp` no debe mostrar 5432 ni 3000 en `0.0.0.0`.
@@ -171,3 +172,43 @@ La tienda envía sola cada nota de pedido de Panguipulli a `POST /api/integratio
 | Una nota no aparece | La tienda la rechazó por un 4xx o aún reintenta | En la tienda, `npm run integracion`; en la fábrica, Auditoría con recurso «API de la tienda» |
 | «La tienda envió la revisión N» en una ficha | La nota ya estaba en curso | Una persona la aplica (cancela y crea la nueva) o la descarta, con motivo |
 | Documento de producción «retenido» | Su texto trae montos en pesos | Imprimir la orden de trabajo de la fábrica; avisar a la tienda |
+
+## 9. Prueba de conexión con la tienda (ADR-0024)
+
+En **Configuración → Conexión con la tienda** (solo con `config.editar`), «Enviar PDF de prueba a la tienda» comprueba la conexión sin crear un pedido. La tienda tiene el mismo botón en sus Ajustes y el PDF de cada lado aparece en la lista del otro. El contrato, igual en los dos sentidos, está en `docs/contratos/prueba-conexion-v1.md`.
+
+**Cómo funciona:** la app firma el PDF con `INTEGRACION_TIENDA_SECRETO` (el mismo de §8) y el servicio `enlace` lo envía a la tienda, porque la app no sale a internet. La tienda se lo manda de vuelta a la app por la ruta firmada `POST /api/integrations/neltume/connection-tests`, que ya está cubierta por la regla opcional de Cloudflare de §8.
+
+**Configurar (producción, una vez):**
+1. Si no lo hiciste en §8, el secreto: es el mismo que ya comparten las dos apps (`INTEGRACION_TIENDA_SECRETO` aquí y `NELTUME_FABRICA_PANGUIPULLI_SECRETO` en la tienda). No hay otro.
+2. En `/server/crm_fabrica_puertas/.env`:
+   - `ENLACE_TIENDA_URL=https://cotizador.puertasneltume.cl`: el origen de la tienda, sin ruta. Solo https;
+   - `DATABASE_URL_ENLACE=postgres://neltume_enlace:<clave>@db:5432/neltume`, con una clave aleatoria (`openssl rand -hex 18`);
+   - `tienda` en `COMPOSE_PROFILES` (por ejemplo, `ia,chipax,tienda`).
+3. `docker compose up -d` (`migrar` crea el rol `neltume_enlace` con sus permisos) y revisa `docker compose logs enlace`: debe decir «servicio de enlace con la tienda iniciado» y el host de destino.
+4. La tienda debe tener el hostname de la fábrica configurado y su ruta `connection-tests` desplegada. Su hostname (`cotizador.puertasneltume.cl`) debe figurar en su `NELTUME_HOSTS`; si no, responde 403.
+5. Prueba: aprieta el botón en la fábrica y luego en la tienda. En cada pantalla debe aparecer el PDF del otro lado con el mismo código de 8 caracteres.
+
+**Desarrollo (sin Docker):**
+- `npm run db:setup` (una vez) crea el rol `neltume_enlace`. `npm run dev` levanta el servicio de enlace junto con la app.
+- Su destino va en `.env.enlace.local` (copia `.env.enlace.example`): con la tienda en el puerto 3001, `ENLACE_TIENDA_URL=http://127.0.0.1:3001` (con `127.0.0.1` y no `localhost`: el `next dev` de la tienda escucha solo en IPv4). Sin él, las pruebas quedan «sin configurar».
+- En la tienda, `NELTUME_FABRICA_PANGUIPULLI_URL=http://127.0.0.1:3000` y el mismo secreto que `INTEGRACION_TIENDA_SECRETO`.
+- Un secreto desechable para probar entre dos equipos: pásalo por variables de entorno al arrancar cada app, sin escribirlo en archivos.
+
+**Diagnóstico:** el texto sale en la propia pantalla (contrato §6). Qué mirar en cada caso:
+
+| La pantalla dice | Causa probable | Acción |
+|---|---|---|
+| «Falta INTEGRACION_TIENDA_SECRETO en la app» (botón deshabilitado) | La app no tiene el secreto | Completarlo en el `.env` y reiniciar la app |
+| «El servicio de enlace no responde» (la prueba sigue pendiente) | `enlace` no corre, o no puede conectarse a la BD | `docker compose ps enlace`, `docker compose logs enlace`; revisa el perfil `tienda` y `DATABASE_URL_ENLACE` |
+| «Falta configurar ENLACE_TIENDA_URL en el servicio de enlace» o «debe ser https» | La URL falta, es http o trae ruta | Corregir `ENLACE_TIENDA_URL` (solo el origen) y reiniciar `enlace` |
+| «No se pudo conectar con la tienda: no se encontró el servidor (DNS)» o «conexión rechazada» | El hostname no resuelve o la tienda está caída | Revisar la URL y que la tienda esté arriba |
+| «sin respuesta en N ms» | La tienda no contestó en 15 s | Revisar la tienda y su túnel |
+| «La tienda rechazó la firma» | Secretos distintos, o relojes desfasados más de 5 min | Comparar el secreto de las dos apps; `timedatectl` en ambos servidores |
+| «La tienda rechazó el acceso (403)» | Su `NELTUME_HOSTS` no incluye el hostname, o hay un filtro de Cloudflare | Agregar el hostname a `NELTUME_HOSTS` de la tienda |
+| «aún no tiene esta ruta» | La tienda no tiene desplegada la ruta de prueba | Desplegar la tienda |
+| «redirección inesperada (¿Cloudflare Access?)» | Algo redirige la llamada (un login de Cloudflare Access, un cambio a otro dominio) | La tienda no está detrás de Access (confirmado el 25-10-2026): revisar la URL y el túnel |
+| «Respondió otra aplicación» | La URL apunta a otra app | Corregir `ENLACE_TIENDA_URL` |
+| «Aviso: el reloj de la tienda difiere N s» | Los relojes están desfasados (la firma solo vale ±300 s) | Sincronizar la hora de los servidores |
+
+Una prueba recibida de la tienda no aparece: en la tienda, su pantalla dice por qué (el diagnóstico es el mismo); en la fábrica, **Auditoría** muestra los rechazos con el recurso «API de la tienda».

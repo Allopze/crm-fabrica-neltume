@@ -37,6 +37,7 @@ Navegador → Cloudflare → túnel (cloudflared, saliente) → app (Next.js: UI
 
 - **app**: páginas y route handlers `/api/v1`. No tiene claves del LLM.
 - **worker** (perfil `ia` de Compose): toma trabajos de la cola `trabajo_ia` (`FOR UPDATE SKIP LOCKED`), llama al LLM y guarda la propuesta. Es el único servicio que recibe `CMD_API_KEY` y usa un rol de BD con permisos mínimos.
+- **enlace** (perfil `tienda` de Compose, ADR-0024): envía a la tienda la prueba de conexión que la app firmó. La app no sale a internet; este servicio sí, solo hacia `ENLACE_TIENDA_URL`, con un rol de BD mínimo y sin el secreto de la integración.
 - **db**: única fuente de verdad, con triggers de inmutabilidad y la vista `v_stock`.
 - **tunnel / backup**: única entrada desde internet y `pg_dump` diario con copia externa.
 
@@ -82,6 +83,7 @@ src/ai/             Único módulo que habla con el LLM
   prompt.ts revision.ts reintentos.ts redaccion.ts (enmascarado) procesar.ts worker.ts
   doble.ts          Doble determinista para tests (LLM_PROVEEDOR=doble)
   ajustes.ts catalogos.ts costo-estimado.ts evaluacion.ts
+src/enlace/         Servicio de enlace con la tienda (ADR-0024): cola de pruebas, envío con plazo y diagnóstico, bucle
 src/db/             Drizzle: esquema/ (5 archivos, ~37 tablas), migraciones/ (0000–0018),
                     conexion.ts (bd(), Tx), migrar.ts (grants + triggers), semilla.ts
 src/components/     shell/ (navegación, sesión) y ui/ (base, tabla, estados, niveles de stock)
@@ -118,9 +120,10 @@ Requisitos: Node 24 y PostgreSQL local (p. ej. Postgres.app en `localhost:5432`)
 npm install
 cp .env.example .env.local          # completa DATABASE_ADMIN_URL, DATABASE_URL_OWNER y DATABASE_URL
 cp .env.worker.example .env.worker.local   # claves de IA (solo el worker y eval:ia leen este archivo)
-npm run db:setup                    # crea roles neltume_owner/neltume_app/neltume_worker y las bases dev/test/e2e
+cp .env.enlace.example .env.enlace.local   # opcional: destino de la prueba de conexión con la tienda (RUNBOOK §9)
+npm run db:setup                    # crea los roles (dueño, app, worker, compras y enlace) y las bases dev/test/e2e
 npm run crear-admin                 # primer usuario (la contraseña se pide por consola)
-npm run dev                         # migra, levanta la app en :3000 y el worker
+npm run dev                         # migra, levanta la app en :3000, el worker y el servicio de enlace
 ```
 
 Con el doble determinista no necesitas proveedor: `LLM_PROVEEDOR=doble` hace que el worker responda según `tests/fixtures/ia-respuestas.json` (reconoce, por ejemplo, "simular IA caída"). Para el modelo real se elige proveedor y modelo en **Ajustes de IA** (`/administracion/ia`). Datos de demo: `npm run demo:preparar` (importa el Excel real, clientes ficticios, BOM demo y stock inicial; idempotente).
@@ -129,7 +132,7 @@ Con el doble determinista no necesitas proveedor: `LLM_PROVEEDOR=doble` hace que
 
 | Comando | Qué hace |
 |---|---|
-| `npm run dev` | Migra la BD y levanta Next + worker con recarga |
+| `npm run dev` | Migra la BD y levanta Next + worker + enlace con la tienda con recarga |
 | `npm test` | Suite completa: `lint → typecheck → unit → integración → E2E` (se corre entera, sin filtros) |
 | `npm run lint` · `npm run typecheck` | ESLint (`--max-warnings=0`) · `next typegen && tsc --noEmit` |
 | `npm run db:setup` · `db:migrar` · `db:generar` | Roles y bases · aplica migraciones + permisos · genera SQL desde el esquema |
@@ -137,6 +140,7 @@ Con el doble determinista no necesitas proveedor: `LLM_PROVEEDOR=doble` hace que
 | `npm run demo:preparar` | Deja el entorno de demo listo (idempotente) |
 | `npm run eval:ia` | Evalúa el intérprete con el **modelo real** (no es parte de `npm test`); escribe informe en `eval/informes/` |
 | `npm run worker` | Worker suelto (lee `.env.worker.local`) |
+| `npm run enlace` | Servicio de enlace con la tienda suelto (lee `.env.enlace.local`; ADR-0024, RUNBOOK §9) |
 | `npm run integracion:enviar-prueba` | Envía una nota de la tienda de prueba, firmada, a la app local (ADR-0023, RUNBOOK §8) |
 | `npm run build` · `npm run deploy` | Build de producción · despliegue por SSH + Compose (RUNBOOK §2) |
 
@@ -159,13 +163,14 @@ Regla: un test que falla no se marca `skip`/`only`; se arregla o se propone camb
 | `AI.md` | Uso del LLM: esquema, pipeline, límites, costos, evaluación |
 | `API.md` | Contratos HTTP: convenciones, errores y todos los endpoints |
 | `DATA-MODEL.md` | Tablas, tipos de movimiento, cálculo de una línea e importación del Excel |
-| `SECURITY.md` | Permisos, auditoría, datos personales, amenazas (T1–T9) y exposición de red |
+| `SECURITY.md` | Permisos, auditoría, datos personales, amenazas (T1–T12) y exposición de red |
 | `UX.md` | Pantallas, estados comunes y la revisión lado a lado |
 | `TESTING.md` | Pirámide, suites E2E, datos semilla y trazabilidad REQ → tests |
 | `TASKS.md` | Plan por fases con checkpoints de revisión humana |
 | `RUNBOOK.md` | Operación: dev, producción, túnel, respaldos, incidentes y guion de demo |
 | `PRODUCT.md` | Ficha de producto (contexto, usuarios, principios) para trabajo de interfaz |
-| `docs/adr/` | Decisiones de arquitectura ADR-0001…0018 |
+| `docs/adr/` | Decisiones de arquitectura ADR-0001…0024 |
+| `docs/contratos/` | Contratos con la tienda: pedidos (`pedidos-tienda-v1.md`, ADR-0023) y prueba de conexión (`prueba-conexion-v1.md`, ADR-0024) |
 
 Nota: `docs/PLAN.md` es un borrador obsoleto que contradice la guía vigente; si difiere, manda `AGENTS.md`.
 
