@@ -382,3 +382,26 @@ Un botón en Ajustes manda un PDF de prueba a la tienda y el de la tienda manda 
   - la prueba cruzada en producción, apretando el botón en cada app (ADR-0024 P1–P3) · RUNBOOK
 
 **Checkpoint F21:** `npm test` completo verde, lint y build. Recorrido: el botón de la fábrica deja el PDF en la pantalla de la tienda y el de la tienda lo deja en la de la fábrica; un fallo (secreto distinto, URL equivocada, servicio apagado) dice por qué; y nada de esto crea una nota ni mueve stock. Espero tu OK.
+
+## Fase 22 — Lector tolerante de la nota de la tienda (aprobada el 25-10-2026; ADR-0025)
+
+La tienda va a restilar sus PDF y no publica hasta que este lector esté desplegado y probado con sus PDF nuevos. Es la condición del orden de despliegue acordado con su agente. No cambia el aspecto de ningún PDF de la fábrica.
+
+- [x] T22.0 Decisiones en documentos: ADR-0025 (parcialmente aprobado: F22), anotación en ADR-0008, SPEC (REQ-COT-8.6 ampliado), API y TESTING · ADR-0025 · — · —
+- [x] T22.1 (90) Lector «por fábrica» tolerante: acepta «N.º» y «N°»; une fragmentos contiguos de una línea (el código en mono no lo parte); ignora las líneas de encabezado repetido (la que lleva «Cant.») al buscar descripción, cantidad y «Total»; tolerancia de la x de «Cant.» a 30 pt; una «Entrega comprometida» que no es fecha pasa a las observaciones como en la API (hoy se pierde sin aviso); las líneas sin «Referencia de catálogo» (pedidos especiales, «Por definir») hoy se omiten sin aviso: pasan a ítems «a pedido, revisar» como en la API o, como mínimo, a un aviso (hecho: el aviso; leerlas como «a pedido, revisar» queda pendiente de tu decisión) · REQ-COT-2.5, 8.6, 8.18 · U lector «por fábrica» y `nota-tienda-pdf` (PDF sintéticos de la tienda en `tests/fixtures/tienda/pdf`, estilo actual y nuevo, 1 y 4 páginas, sin datos reales) · T22.0
+- [ ] T22.2 Puesta en marcha (fuera del código): desplegar y avisar al agente de la tienda para que levante su condición · RUNBOOK
+
+**Checkpoint F22:** `npm test` completo verde, lint y build; el lector lee igual las notas de la tienda del formato actual y del nuevo, también con encabezado repetido. Espero tu OK.
+
+## Fase 23 — Estilo de documentos Neltume v1 (propuesta el 25-10-2026; pendiente de tu OK; ADR-0025)
+
+Los cuatro PDF de la fábrica (cotización, nota de pedido, orden de trabajo y prueba de conexión) pasan al estándar acordado con la tienda. Independiente de la F22 en el despliegue. Una cotización o nota ya emitida se descarga con el estilo nuevo, con los mismos datos congelados. Necesita que confirmes la regla de fechas de AGENTS.md (ADR-0025 D7); cada app conserva su logo y sus precios (D9).
+
+- [ ] T23.0 Decisiones en documentos: SPEC (REQ-COT-4.2 con el encabezado y REQ nuevos del estilo), DESIGN (PDF), UX (fechas), TESTING, ADR-0004 anotado, los dos documentos compartidos revisados y copiados en `docs/contratos/`; la regla de fechas de AGENTS.md solo con tu instrucción directa · ADR-0025 · — · —
+- [ ] T23.1 (45) Tokens de los documentos: `estilo-documentos-tokens.json` como fuente de colores, márgenes y tamaños; el logo no cambia (el «PUERTAS NELTUME» actual, solo a la izquierda del encabezado) · ADR-0025 D2, D9 · U tokens · T23.0
+- [ ] T23.2 (90) `comun.tsx`: encabezado (tipo sobre número, meta en columnas), bloques de partes, tabla sin mayúsculas ni interletrado, totales, caja de observaciones, pie ≥ 7,5 pt y marcas de agua «ANULADA» y «PRUEBA» · REQ-COT-4.2 · U `pdf.contenido` · T23.1
+- [ ] T23.3 (75) `contenido.ts` y los cuatro renderizadores: fecha larga en el encabezado, «Por definir» en ítems «a pedido» sin precio, columnas más anchas, metadatos · REQ-COT-4.2, 8.1 · U `pdf.contenido` · T23.2
+- [ ] T23.4 (75) Prueba de conformidad con pdfjs sobre los cuatro PDF: fuentes, tamaño del pie, márgenes, colores, «Página N de M» y metadatos, contra los tokens · ADR-0025 D11 · U/I `pdf.conformidad` · T23.3
+- [ ] T23.5 Puesta en marcha (fuera del código): revisar los PDF reales con la tienda y avisarle · RUNBOOK
+
+**Checkpoint F23:** `npm test` completo verde, lint y build; los cuatro PDF se ven en el estilo nuevo y siguen en el contenido y formato chileno de siempre. Espero tu OK.

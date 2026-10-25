@@ -10,7 +10,7 @@ import { listaVigenteId, precioDeArticulo } from "../cotizaciones/calculo";
 import { articuloConDescripcion } from "../cotizaciones/edicion";
 import { ErrorDominio } from "../errores";
 import { alPeso } from "../precios/calcular";
-import { leerNotaTienda, NotaIlegible, type NotaTienda } from "./nota-tienda";
+import { leerNotaTienda, NotaIlegible, type NotaTienda, observacionEntrega } from "./nota-tienda";
 import { esPdf, fragmentosPdf, MAX_PDF_BYTES } from "./pdf-texto";
 import { insertarPedido } from "./pedidos";
 
@@ -74,7 +74,8 @@ export async function crearPedidoDirecto(tx: Tx, datos: Uint8Array, d: DatosPedi
       direccionDespacho: texto(d.direccionDespacho, v.nota.despacho.direccion),
       medioTransporte: texto(d.medioTransporte, v.nota.despacho.transporte),
       entregaComprometida: texto(d.entregaComprometida, v.nota.despacho.entregaComprometida),
-      observaciones: texto(d.observaciones, null),
+      // Una entrega de la nota que no es fecha («15 de noviembre») no se pierde: queda en las observaciones, como en la API.
+      observaciones: texto(d.observaciones, observacionEntrega(v.nota.despacho.entregaTexto)),
     },
     lineas: v.lineas.map((l) => ({
       articuloId: l.articulo!.id, descripcion: l.articulo!.descripcion, medidaSolicitada: l.medidaSolicitada,

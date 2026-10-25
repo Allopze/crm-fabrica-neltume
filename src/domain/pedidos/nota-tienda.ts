@@ -16,7 +16,8 @@ export interface NotaTienda {
   numero: string;
   fecha: string | null; // aaaa-mm-dd
   refCotizacion: string | null;
-  despacho: { direccion: string | null; transporte: string | null; proyecto: string | null; entregaComprometida: string | null };
+  /** `entregaComprometida` es una fecha (aaaa-mm-dd); si la nota trae un texto libre («15 de noviembre») va en `entregaTexto`. */
+  despacho: { direccion: string | null; transporte: string | null; proyecto: string | null; entregaComprometida: string | null; entregaTexto?: string | null };
   lineas: LineaNota[];
   totales: { subtotal: number | null; total: number | null };
   avisos: string[];
@@ -31,10 +32,14 @@ export const MISMA_LINEA = 3; // puntos de tolerancia vertical
 
 export const pesos = (t: string) => Number(t.replace(/[$\s.]/g, ""));
 export const limpio = (t: string) => t.replace(/\s+/g, " ").trim();
-const isoDesde = (dmy: string) => {
+export const isoDesde = (dmy: string) => {
   const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(dmy.trim());
   return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
 };
+/** Ordinal del número de una nota: «N.º 51», «N° 51» y «Nº 51» (estilo común v1, docs/contratos; ADR-0025 D10). */
+export const NUMERO_NOTA = /^N\.?[°º]\s*(\d+)$/;
+/** Observación que deja una entrega comprometida que no es una fecha, igual que la de la API (nota.ts). */
+export const observacionEntrega = (texto: string | null | undefined) => (texto ? `Entrega acordada con la tienda: ${texto}` : null);
 
 export function leerNotaTienda(fragmentos: Fragmento[]): NotaTienda {
   if (esNotaPorFabrica(fragmentos)) return leerNotaPorFabrica(fragmentos);
@@ -43,8 +48,8 @@ export function leerNotaTienda(fragmentos: Fragmento[]): NotaTienda {
     .sort((a, b) => a.pagina - b.pagina || b.y - a.y || a.x - b.x);
   const todo = fs.map((f) => f.texto).join(" ");
   if (/\bANULADA\b/.test(todo)) throw new NotaIlegible("La nota está ANULADA: no se puede importar.");
-  const numero = /NOTA DE PEDIDO N[°º.]?\s*(\d+)/i.exec(todo)?.[1];
-  if (!numero) throw new NotaIlegible("No parece una nota de pedido del cotizador de la tienda (falta «NOTA DE PEDIDO N°»).");
+  const numero = /NOTA DE PEDIDO N[.°º]{0,2}\s*(\d+)/i.exec(todo)?.[1];
+  if (!numero) throw new NotaIlegible("No parece una nota de pedido del cotizador de la tienda (falta «NOTA DE PEDIDO N.º»).");
 
   /** Valor a la derecha de una etiqueta, en la misma línea (o el resto del mismo fragmento). */
   const valor = (etiqueta: RegExp, en?: Fragmento): string | null => {
@@ -94,15 +99,19 @@ export function leerNotaTienda(fragmentos: Fragmento[]): NotaTienda {
   if (subtotal && PESOS.test(subtotal) && pesos(subtotal) !== suma) avisos.push(`La suma de los ítems (${suma}) no coincide con el subtotal de la nota (${pesos(subtotal)}): revisa si faltan filas.`);
 
   const fecha = valor(/^Fecha:/i);
+  const entrega = valor(/^Entrega comprometida:/i);
+  const entregaIso = entrega ? isoDesde(entrega) : null;
+  if (entrega && !entregaIso) avisos.push(`La entrega comprometida de la nota («${entrega}») no es una fecha: pasa a las observaciones del pedido.`);
   return {
     numero,
     fecha: fecha ? isoDesde(fecha) : null,
-    refCotizacion: valor(/^Ref\. cotizaci[óo]n:/i)?.replace(/^N[°º]\s*/, "") ?? null,
+    refCotizacion: valor(/^Ref\. cotizaci[óo]n:/i)?.replace(/^N[.°º]{1,2}\s*/, "") ?? null,
     despacho: {
       direccion: valor(/^Direcci[óo]n de despacho:/i),
       transporte: valor(/^Medio de transporte:/i),
       proyecto: valor(/^Proyecto:/i),
-      entregaComprometida: isoDesde(valor(/^Entrega comprometida:/i) ?? ""),
+      entregaComprometida: entregaIso,
+      entregaTexto: entrega && !entregaIso ? entrega : null,
     },
     lineas,
     totales: { subtotal: subtotal && PESOS.test(subtotal) ? pesos(subtotal) : null, total: totalNota && PESOS.test(totalNota) ? pesos(totalNota) : null },

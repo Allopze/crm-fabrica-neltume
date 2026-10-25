@@ -44,6 +44,12 @@ describe("lectura de la nota de pedido de la tienda (ADR-0008, REQ-COT-8.6)", ()
     expect(() => leerNotaTienda(base.filter((x) => !/^[A-Z]+-/.test(x.texto)))).toThrow(/código/);
   });
 
+  it("acepta «N.º» y una entrega que no es fecha va a `entregaTexto` con un aviso (ADR-0025 D10, F22)", () => {
+    const n = leerNotaTienda(base.map((x) => (x.texto.startsWith("N°") || x.texto.startsWith("NOTA") ? { ...x, texto: x.texto.replace("N°", "N.º") } : x.texto === "20-11-2026" ? { ...x, texto: "15 de noviembre" } : x)));
+    expect(n).toMatchObject({ numero: "12", refCotizacion: "340", despacho: { entregaComprometida: null, entregaTexto: "15 de noviembre" } });
+    expect(n.avisos).toEqual([expect.stringContaining("15 de noviembre")]);
+  });
+
   it("lee el PDF real que genera el cotizador de la tienda (ejemplo)", async () => {
     const datos = new Uint8Array(readFileSync("tests/fixtures/nota-tienda-ejemplo.pdf"));
     expect(esPdf(datos)).toBe(true);

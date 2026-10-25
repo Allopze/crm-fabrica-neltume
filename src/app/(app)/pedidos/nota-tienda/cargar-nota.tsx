@@ -10,12 +10,13 @@ import { campo as campoBase } from "@/components/ui/campos";
 import { Dropdown } from "@/components/ui/dropdown";
 import { ErrorAccion } from "@/components/ui/error-accion";
 import { Tabla, Td, Th, Tr } from "@/components/ui/tabla";
+import { observacionEntrega } from "@/domain/pedidos/nota-tienda";
 import { enviarIdempotente, ErrorApi, huellaFormulario, SIN_CONFIRMAR } from "@/lib/api-cliente";
 import { clp, fecha } from "@/lib/formato";
 
 interface Linea { codigo: string; cantidad: number; medidaSolicitada: string | null; precioNota: number; articulo: { descripcion: string } | null; precioLista: number | null; aviso: string | null }
 interface Previa {
-  nota: { numero: string; fecha: string | null; refCotizacion: string | null; despacho: { direccion: string | null; transporte: string | null; proyecto: string | null; entregaComprometida: string | null }; avisos: string[] };
+  nota: { numero: string; fecha: string | null; refCotizacion: string | null; despacho: { direccion: string | null; transporte: string | null; proyecto: string | null; entregaComprometida: string | null; entregaTexto?: string | null }; avisos: string[] };
   lineas: Linea[]; errores: string[]; duplicada: { id: string; numero: number } | null;
 }
 
@@ -109,7 +110,7 @@ export function CargarNota({ tiendas, csrf }: { tiendas: { id: string; nombre: s
             <label className="text-sm text-tinta-tenue">Dirección de despacho<input name="direccionDespacho" defaultValue={previa.nota.despacho.direccion ?? ""} maxLength={300} className={campo} /></label>
             <label className="text-sm text-tinta-tenue">Medio de transporte<input name="medioTransporte" defaultValue={previa.nota.despacho.transporte ?? ""} maxLength={120} className={campo} /></label>
             <div className="text-sm text-tinta-tenue">Entrega comprometida<CampoFecha name="entregaComprometida" defaultValue={previa.nota.despacho.entregaComprometida ?? ""} aria-label="Entrega comprometida" className="mt-1 w-full" /></div>
-            <label className="text-sm text-tinta-tenue">Observaciones para la fábrica<input name="observaciones" maxLength={1000} className={campo} /></label>
+            <label className="text-sm text-tinta-tenue">Observaciones para la fábrica<input name="observaciones" defaultValue={observacionEntrega(previa.nota.despacho.entregaTexto) ?? ""} maxLength={1000} className={campo} /></label>
             <p className="text-xs text-tinta-tenue sm:col-span-2">Se cobra el precio de venta de la lista vigente, sin recargo. No se guardan los datos del cliente final de la tienda.</p>
             <div className="sm:col-span-2"><Boton type="submit" variante="primario" disabled={bloqueado || leyendo || creando}>{creando ? "Creando nota…" : "Crear nota de pedido y reservar"}</Boton></div>
           </form>

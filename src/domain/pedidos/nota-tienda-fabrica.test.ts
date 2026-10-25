@@ -50,3 +50,67 @@ describe("lectura de la nota «por fábrica» de la tienda (ADR-0023 §10, T19.9
     expect(fechaEnPalabras("semana del 16")).toBeNull();
   });
 });
+
+// Lector tolerante (ADR-0025 D10; estilo común v1 §8): lo que pasa cuando la tienda cambia de estilo.
+describe("lector tolerante de la nota «por fábrica» (F22, REQ-COT-8.6)", () => {
+  it("acepta «N.º», «N°» y «Nº» en el número de la nota y en la cotización", () => {
+    for (const ordinal of ["N.º", "N°", "Nº"]) {
+      const n = leerNotaTienda(nota.map((x) => (/^N° \d+$/.test(x.texto) ? { ...x, texto: x.texto.replace("N°", ordinal) } : x)));
+      expect(n).toMatchObject({ numero: "51", refCotizacion: "340" });
+    }
+  });
+
+  it("une «Referencia de catálogo:» con el código cuando pdfjs los parte por el cambio de fuente", () => {
+    const partida = nota.flatMap((x) => (x.texto.startsWith("Referencia de catálogo: FUY")
+      ? [f(139, 483, "Referencia de catálogo:"), f(218, 483, "FUY-O-2-A"), f(262, 483, "· 0,70–0,75 × 2,00 m")] : [x]));
+    const n = leerNotaTienda(partida);
+    expect(n.lineas.map((l) => [l.codigo, l.descripcion, l.cantidad])).toEqual([["FUY-O-2-A", "Fuy Pino Oregon 0,72 m × 2,00 m", 3], ["MAR-O-2X4-B", "Marco Pino Oregon 2x4 pulg. kit", 3]]);
+  });
+
+  it("lee la cantidad aunque «Cant.» y la cifra queden ~25 pt aparte (columnas alineadas a la derecha)", () => {
+    const n = leerNotaTienda(nota.map((x) => (/^3$/.test(x.texto) ? { ...x, x: x.x + 14 } : x)));
+    expect(n.lineas.map((l) => l.cantidad)).toEqual([3, 3]);
+  });
+
+  it("lee un ítem de fila alta (descripción larga: la cantidad queda ~56 pt sobre la referencia) y no toma la cantidad del ítem anterior si falta la propia", () => {
+    const alta = nota.map((x) => (x.texto.startsWith("Referencia de catálogo: FUY") ? { ...x, y: 440 } : x));
+    expect(leerNotaTienda(alta).lineas.map((l) => [l.codigo, l.cantidad, l.total])).toEqual([["FUY-O-2-A", 3, 432000], ["MAR-O-2X4-B", 3, 57000]]);
+    // Sin la fila propia de MAR (cantidad y precios) y con su referencia a 40 pt de la de FUY, la cantidad de FUY queda a 96 pt de la
+    // de MAR, dentro del límite, pero por encima de la referencia anterior: no es suya.
+    const sinPropia = alta.map((x) => (x.texto.startsWith("Referencia de catálogo: MAR") ? { ...x, y: 400 } : x)).filter((x) => x.y !== 318 && x.y !== 324);
+    expect(() => leerNotaTienda(sinPropia)).toThrow(/cantidad del ítem MAR-O-2X4-B/);
+  });
+
+  it("con el encabezado repetido en la página 2 lee todos los ítems, la descripción y el «Total» de la nota", () => {
+    const p = (pagina: number) => (x: number, y: number, texto: string): Fragmento => ({ x, y, texto, pagina });
+    const [a, b] = [p(1), p(2)];
+    // «Producto» queda en la misma x que la descripción y a menos de 20 pt de la línea del primer ítem: el caso que lo confundiría.
+    const cabecera = (g: ReturnType<typeof p>, y: number) => [g(40, y, "N°"), g(57, y, "Plano"), g(139, y, "Producto"), g(374, y, "Cant."), g(411, y, "Precio fábrica"), g(509, y, "Total"), g(532, y, "Listo")];
+    const n = leerNotaTienda([
+      ...nota.filter((x) => x.y > 545),
+      ...cabecera(a, 537), a(139, 507, "Fuy Pino Oregon 0,72 m × 2,00 m"), a(385, 496, "3"), a(413, 496, "$144.000"), a(481, 496, "$432.000"),
+      a(139, 483, "Referencia de catálogo: FUY-O-2-A · 0,70–0,75 × 2,00 m"),
+      ...cabecera(b, 762), b(139, 755, "Marco Pino Oregon 2x4 pulg. kit"), b(385, 744, "3"), b(419, 744, "$19.000"), b(481, 744, "$57.000"),
+      b(139, 731, "Referencia de catálogo: MAR-O-2X4-B · 2,10 m"),
+      b(363, 650, "Neto"), b(505, 650, "$489.000"), b(363, 632, "IVA 19 %"), b(513, 632, "$92.910"), b(363, 600, "Total"), b(447, 600, "$581.910"),
+    ]);
+    expect(n.lineas.map((l) => [l.codigo, l.descripcion])).toEqual([["FUY-O-2-A", "Fuy Pino Oregon 0,72 m × 2,00 m"], ["MAR-O-2X4-B", "Marco Pino Oregon 2x4 pulg. kit"]]);
+    expect(n.totales).toEqual({ subtotal: 489000, total: 581910 });
+    expect(n.avisos).toEqual([]);
+  });
+
+  it("una entrega que no es fecha va a `entregaTexto` con un aviso; con día, mes y año se lee como fecha", () => {
+    const con = (texto: string) => leerNotaTienda(nota.map((x) => (x.texto === "20-11-2026" ? { ...x, texto } : x)));
+    expect(con("15 de noviembre")).toMatchObject({ despacho: { entregaComprometida: null, entregaTexto: "15 de noviembre" } });
+    expect(con("15 de noviembre").avisos).toEqual([expect.stringContaining("15 de noviembre")]);
+    expect(con("15 de noviembre de 2026")).toMatchObject({ despacho: { entregaComprometida: "2026-11-15", entregaTexto: null }, avisos: [] });
+  });
+
+  it("avisa de las líneas sin referencia de catálogo (pedidos especiales) en vez de omitirlas", () => {
+    const especial = [f(139, 410, "Puerta según diseño del cliente 7 · Roble"), f(385, 400, "1"), f(414, 400, "Por definir"), f(482, 400, "Por definir"), f(139, 388, "Producto personalizado, fuera de catálogo")];
+    const n = leerNotaTienda([...nota, ...especial]);
+    expect(n.lineas).toHaveLength(2);
+    expect(n.avisos).toEqual([expect.stringMatching(/^La nota trae 1 línea sin «Referencia de catálogo»/)]);
+    expect(leerNotaTienda(nota).avisos).toEqual([]);
+  });
+});
