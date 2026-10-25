@@ -351,6 +351,8 @@ La tienda envía sola cada nota de Panguipulli por una API firmada. La nota entr
   - crear el perfil Producción para quien corresponda;
   - una muestra de la planilla de Bea para comparar con la orden de trabajo (ADR-0023 P1–P3) · RUNBOOK §8
 
+- [x] T19.12 (30) Corrección en producción (24-10-2026): el build standalone no copiaba `pdf.worker.mjs` y pdfjs rechazaba todo PDF («el PDF está dañado»), tanto en la API de la tienda (422 `document_invalid`) como en la carga manual de ADR-0008. Ahora `pdf-texto.ts` importa el worker y lo entrega por `globalThis.pdfjsWorker`, y el `Dockerfile` no construye la imagen si falta · REQ-COT-8.6, 8.18 · build standalone + U lector · —
+
 **Checkpoint F19:** `npm test` completo verde, lint y build. Recorrido: una nota firmada llega sola, aparece en «Notas de pedido» con sus dos documentos, el perfil Producción imprime la orden de trabajo sin ver importes, y una revisión sobre una nota en producción espera a una persona. Espero tu OK.
 
 ## Fase 20 — Nombre visible de la tienda (pedida el 24-10-2026; pendiente, después de pasar F19 a producción)

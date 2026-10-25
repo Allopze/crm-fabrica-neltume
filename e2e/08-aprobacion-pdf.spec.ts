@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { api, cotizacionId, ingresar, ir } from "./ayudas";
 import { ADMIN } from "./datos";
+import { hoySantiago } from "@/domain/precios/dias-habiles";
 
 // Suite 08 (TESTING §3): aprobar congela precios, fija vigencia y aprobador, y habilita el PDF.
 test.describe.configure({ mode: "serial" });
@@ -20,8 +21,9 @@ test("aprobar A congela precios, fija la vigencia y muestra al aprobador", async
 
   const c = (await api(page, "GET", `/api/v1/cotizaciones/${id}`)).cuerpo;
   expect(c).toMatchObject({ estado: "aprobada", aprobador: ADMIN.nombre });
-  // 10 días hábiles desde hoy: nunca menos de 14 días corridos.
-  expect((new Date(c.vigenciaHasta).getTime() - Date.now()) / 86_400_000).toBeGreaterThan(12);
+  // 10 días hábiles desde hoy: nunca menos de 12 días corridos. Se comparan fechas de Santiago, no la hora: medido contra
+  // la medianoche UTC del vencimiento, fallaba un sábado después de las 21:00 (24-10-2026).
+  expect((Date.parse(c.vigenciaHasta) - Date.parse(hoySantiago())) / 86_400_000).toBeGreaterThanOrEqual(12);
   await expect(page.getByRole("main")).toContainText(clp(Number(c.total)));
   const r = await api(page, "PATCH", `/api/v1/cotizaciones/${id}/items/${c.items[0].id}`, { cantidad: 9, version: c.version });
   expect(r.cuerpo.error.codigo).toBe("NO_EDITABLE");
