@@ -235,10 +235,13 @@ Formato EARS. Cada historia incluye al menos un criterio de acceso denegado: en 
 
 **H4 Aprobar y generar PDF (P1).** Como usuario, quiero un PDF profesional solo cuando yo lo apruebo.
 - REQ-COT-4.1: WHEN un usuario aprueba una cotización sin ítems por confirmar THE SYSTEM SHALL fijar estado aprobada, congelar precios y totales, registrar aprobador y fecha, y habilitar el PDF.
-- REQ-COT-4.2: THE SYSTEM SHALL emitir el PDF con logo, datos del cliente, ítems, subtotal, IVA, total, vigencia y la nota "valores puestos en fábrica, flete aparte", en formato chileno.
+- REQ-COT-4.2: THE SYSTEM SHALL emitir el PDF con logo, datos del cliente, ítems, subtotal, IVA, total, vigencia y la nota "valores puestos en fábrica, flete aparte", en formato chileno. *(Ampliado el 25-10-2026, ADR-0025: la fecha del encabezado va en palabras, «25 de octubre de 2026»; el resto de las fechas, en dd-mm-aaaa.)*
 - REQ-COT-4.3: IF la cotización no está aprobada THEN THE SYSTEM SHALL no generar el PDF.
 - REQ-COT-4.4: THE SYSTEM SHALL no enviar ninguna cotización al cliente sin acción humana explícita.
 - REQ-COT-4.5: IF un usuario sin permiso de aprobar intenta aprobar o descargar THEN THE SYSTEM SHALL denegarlo y registrar el intento.
+- REQ-COT-4.6: THE SYSTEM SHALL emitir la cotización, la nota de pedido, la orden de trabajo y la prueba de conexión con el estilo común de los documentos (docs/contratos/estilo-documentos-v1.md, ADR-0025): las tipografías, colores, tamaños y márgenes de 14 mm de sus tokens, el tipo del documento sobre su número «N.º n» en el encabezado y el pie a 7,5 pt con «Página n de m». Cada app conserva su logo, sus precios y lo que la diferencia.
+- REQ-COT-4.7: WHERE la nota de pedido o la orden de trabajo es de una nota cancelada, o el documento es la prueba de conexión, THE SYSTEM SHALL marcarlo en cada página con «ANULADA» o «PRUEBA», en diagonal y muy tenue.
+- REQ-COT-4.8: THE SYSTEM SHALL imprimir «Por definir», y nunca «$0», en un ítem «a pedido» de la nota de pedido que aún no tiene precio, sin sumarlo al total.
 
 **H5 Cotización manual (P1).** Como usuario, quiero cotizar sin IA cuando haga falta.
 - REQ-COT-5.1: WHEN un usuario elige artículos y cantidades a mano THE SYSTEM SHALL calcular la cotización con las mismas reglas que la generada con IA.

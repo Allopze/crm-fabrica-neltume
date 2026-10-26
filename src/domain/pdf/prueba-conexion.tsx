@@ -2,10 +2,9 @@
 // genera la app al apretar el botón y lo firma y envía el servicio de enlace; la tienda lo muestra en sus Ajustes.
 import { Document, Page, renderToBuffer, Text, View } from "@react-pdf/renderer";
 import { MARCA } from "@/lib/marca";
-import { Datos, e, Membrete, Pie, TablaItems, TENUE } from "./comun";
+import { Caja, e, MarcaDeAgua, Membrete, Partes, Pie, TablaItems } from "./comun";
 import { contenidoPruebaConexion, type PruebaConexionPdf } from "./contenido";
-
-const RAULI = "#9a4524";
+import { COLOR } from "./estilo";
 
 function DocumentoPrueba({ p }: { p: PruebaConexionPdf }) {
   const k = contenidoPruebaConexion(p);
@@ -13,17 +12,15 @@ function DocumentoPrueba({ p }: { p: PruebaConexionPdf }) {
     // Metadatos sin nada propio de la fábrica: solo el título (ADR-0024 §5).
     <Document title={k.titulo} author={MARCA.nombre} creator={MARCA.nombre} producer={MARCA.nombre} creationDate={p.creadaEn} modificationDate={p.creadaEn}>
       <Page size="A4" style={e.pagina}>
-        <Membrete titulo={k.titulo} fechas={k.fechas} />
-        <View style={{ borderWidth: 1.2, borderColor: RAULI, paddingVertical: 12, marginBottom: 16 }}>
-          <Text style={{ fontFamily: "Fraunces", fontSize: 16, textAlign: "center", color: RAULI }}>{k.rotulo}</Text>
+        <Membrete tipo={k.tipo} numero={k.numero} meta={k.meta} />
+        <View style={{ borderWidth: 1.2, borderColor: COLOR.rauli, paddingVertical: 12, marginBottom: 16 }}>
+          <Text style={{ fontFamily: "Fraunces", fontWeight: 500, fontSize: 16, textAlign: "center", color: COLOR.rauli }}>{k.rotulo}</Text>
         </View>
-        <Datos pares={k.datos} />
+        <Partes partes={k.partes} />
         <TablaItems columnas={["Código", "Descripción", "Cant.", "En stock", "Por fabricar"]} filas={k.filas} />
-        <View style={e.observaciones} wrap={false}>
-          <Text style={{ fontSize: 7, letterSpacing: 1, textTransform: "uppercase", color: TENUE }}>Cómo reconocerlo</Text>
-          <Text style={{ marginTop: 4 }}>{k.nota}</Text>
-        </View>
+        <Caja titulo="Cómo reconocerlo" texto={k.nota} />
         <Pie lineas={k.pie} />
+        <MarcaDeAgua texto={k.marca} />
       </Page>
     </Document>
   );

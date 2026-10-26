@@ -1,9 +1,9 @@
 // PDF de la nota de pedido desde la copia congelada (ADR-0004; REQ-COT-8.1).
-import { Document, Page, renderToBuffer, Text, View } from "@react-pdf/renderer";
+import { Document, Page, renderToBuffer } from "@react-pdf/renderer";
 import type { Tx } from "@/db/conexion";
 import { MARCA } from "@/lib/marca";
 import { obtenerPedido } from "../pedidos/consulta";
-import { Datos, e, Membrete, Pie, TablaItems, TENUE, Totales } from "./comun";
+import { Caja, e, MarcaDeAgua, Membrete, Partes, Pie, TablaItems, Totales } from "./comun";
 import { contenidoPedido, type PedidoPdf } from "./contenido";
 
 function DocumentoPedido({ p }: { p: PedidoPdf }) {
@@ -11,15 +11,13 @@ function DocumentoPedido({ p }: { p: PedidoPdf }) {
   return (
     <Document title={k.titulo} author={MARCA.nombre} creator={MARCA.nombre} producer={MARCA.nombre} creationDate={p.creadoEn} modificationDate={p.creadoEn}>
       <Page size="A4" style={e.pagina}>
-        <Membrete titulo={k.titulo} fechas={k.fechas} />
-        <Datos pares={k.datos} />
+        <Membrete tipo={k.tipo} numero={k.numero} meta={k.meta} />
+        <Partes partes={k.partes} />
         <TablaItems columnas={["Código", "Descripción", "Cant.", "Por fabricar", "Total"]} filas={k.filas} casilla />
         <Totales lineas={k.totales} total={k.total} despues={k.pago} />
-        <View style={e.observaciones} wrap={false}>
-          <Text style={{ fontSize: 7, letterSpacing: 1, textTransform: "uppercase", color: TENUE }}>Observaciones para la fábrica</Text>
-          <Text style={{ marginTop: 4 }}>{k.observaciones ?? ""}</Text>
-        </View>
+        <Caja titulo="Observaciones para la fábrica" texto={k.observaciones} campo />
         <Pie lineas={k.pie} />
+        {k.marca && <MarcaDeAgua texto={k.marca} />}
       </Page>
     </Document>
   );

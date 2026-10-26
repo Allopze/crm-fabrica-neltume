@@ -187,3 +187,13 @@ Las líneas se arman en `lineas.ts` (lista vigente sin recargo; código desconoc
 3. La pantalla consulta `GET .../pruebas/:id` cada segundo (hasta 30 s) y muestra el diagnóstico. Si en 20 s nadie tomó la fila, dice que el servicio de enlace no responde.
 
 El servicio `enlace` se parece a `compras` (ADR-0021): rol de BD propio con permisos mínimos (`migrar` los aplica), sin puertos ni conexiones entrantes, y salud opcional con `ENLACE_PUERTO_SALUD`. En `npm test` el destino es una tienda simulada local (`tests/fixtures/tienda/simulada.ts`), también en E2E 22.
+
+## 13. Estilo común de los documentos (REQ-COT-4.6–4.8, ADR-0025)
+
+Los cuatro PDF (cotización, nota de pedido, orden de trabajo y prueba de conexión) siguen el estilo común con la tienda, que fija `docs/contratos/estilo-documentos-v1.md` y su archivo de tokens (idéntico en los dos repos). Cada app conserva su logo, sus precios y lo que la diferencia.
+
+- `src/domain/pdf/estilo.ts` lee los tokens (colores, tamaños por rol, trazos, marcas de agua y márgenes de 14 mm) y registra las cuatro fuentes de `public/marca/fuentes`; ningún valor del estilo se escribe a mano en los componentes.
+- `comun.tsx` tiene las piezas: `Membrete` (logo, datos de la empresa más abajo que el número; a la derecha el tipo, el número «N.º n» y la meta en columnas), `Partes`, `TablaItems`, `Totales`, `Caja`, `Pie` y `MarcaDeAgua`.
+- `contenido.ts` arma lo que se imprime. La fecha del encabezado va en palabras y el resto, en dd-mm-aaaa; un ítem «a pedido» sin precio dice «Por definir»; una nota cancelada lleva la marca «ANULADA» y la prueba de conexión, «PRUEBA».
+- Con react-pdf: las descripciones van una línea por `Text` (un `\n` dentro del texto cita Helvetica, que no va incrustada), sin `lineHeight` en la página ni en las celdas (duplica el alto de las líneas y el texto dinámico «Página n de m» no se dibuja con él), y sin ligaduras ni guiones de partición, para que el texto copiado de un PDF no pierda letras.
+- `conformidad.test.ts` abre los cuatro PDF con pdfjs y los compara con los tokens. Los PDF no se guardan: se generan al descargar, así que una cotización ya emitida sale con el estilo nuevo (mismos precios, texto y fecha congelados).

@@ -1,7 +1,13 @@
 // Contenido del PDF de cotización, separado del render para poder probarlo (REQ-COT-4.2; TESTING U `pdf.contenido`).
-import { clp, fecha, fechaHora, nombrePropio } from "@/lib/formato";
+import { clp, fecha, fechaHora, fechaLarga, nombrePropio } from "@/lib/formato";
 import { type DatosEmpresa, datosEmpresa } from "@/lib/marca";
 import { formatearRut } from "../rut";
+
+/** Bloque de partes del documento (Cliente, Obra, Despacho…): etiqueta chica, título y pares clave-valor (estilo común v1 §5). */
+export interface Parte { etiqueta: string; titulo: string; pares: [string, string][] }
+type Marca = "ANULADA" | "PRUEBA" | null;
+/** Lo que el PDF dice de un ítem «a pedido» sin precio fijado: nunca «$0» (estilo común v1 §5). */
+const POR_DEFINIR = "Por definir";
 
 /** Líneas del bloque de la empresa bajo el logo; solo las que estén configuradas (NELTUME_EMPRESA_*). */
 export function lineasEmpresa(d: DatosEmpresa): string[] {
@@ -27,18 +33,22 @@ export interface CotizacionPdf {
   abonoPct: number | null;
 }
 
+const isoSantiago = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santiago" }).format(d);
 /** Fecha calendario en Santiago (dd-mm-aaaa), independiente de la zona del servidor. */
-export function fechaSantiago(d: Date): string {
-  return fecha(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santiago" }).format(d));
-}
+export const fechaSantiago = (d: Date): string => fecha(isoSantiago(d));
+/** La misma fecha en palabras, solo para el encabezado de los PDF: «25 de octubre de 2026» (ADR-0025 D7). */
+export const fechaLargaSantiago = (d: Date): string => fechaLarga(isoSantiago(d));
+/** Título del archivo PDF: «Cotización N.º 9 · Neltume». */
+const tituloPdf = (tipo: string, numero?: string) => [tipo, numero].filter(Boolean).join(" ") + " · Neltume";
 
 export function contenidoCotizacion(c: CotizacionPdf, empresa: DatosEmpresa = datosEmpresa()) {
   return {
-    titulo: `Cotización N.º ${c.numero}`,
-    fechas: `Fecha ${fechaSantiago(c.aprobadaEn)} · Válida hasta ${fecha(c.vigenciaHasta)}`,
-    cliente: c.cliente && [
-      ["Cliente", c.cliente.nombre], ["RUT", c.cliente.rut ? formatearRut(c.cliente.rut) : "—"], ["Contacto", c.cliente.contacto ?? "—"], ["Comuna", c.cliente.comuna ?? "—"],
-    ] as [string, string][],
+    tipo: "Cotización", numero: `N.º ${c.numero}`, titulo: tituloPdf("Cotización", `N.º ${c.numero}`),
+    meta: [["Fecha", fechaLargaSantiago(c.aprobadaEn)], ["Válida hasta", fecha(c.vigenciaHasta)]] as [string, string][],
+    partes: c.cliente ? [{
+      etiqueta: "Cliente", titulo: c.cliente.nombre,
+      pares: [["RUT", c.cliente.rut ? formatearRut(c.cliente.rut) : "—"], ["Contacto", c.cliente.contacto ?? "—"], ["Comuna", c.cliente.comuna ?? "—"]],
+    }] satisfies Parte[] : [],
     lineas: c.items.map((i) => ({
       codigo: i.codigo ?? "A pedido", descripcion: i.medidaSolicitada ? `${i.descripcion}\nMedida solicitada: ${i.medidaSolicitada}` : i.descripcion, cantidad: String(i.cantidad),
       unitario: clp(i.precioUnitario), total: clp(i.totalLinea),
@@ -67,17 +77,28 @@ export interface PedidoPdf {
   pago: { pagado: number; saldo: number } | null;
 }
 
+/** Despacho de una nota: dirección (o «Retira en fábrica»), transporte y entrega comprometida. */
+const despacho = (d: { direccionDespacho: string | null; medioTransporte: string | null; entregaComprometida: string | null }): Parte => ({
+  etiqueta: "Despacho", titulo: d.direccionDespacho ?? "Retira en fábrica",
+  pares: [["Transporte", d.medioTransporte ?? "—"], ["Entrega", d.entregaComprometida ? fecha(d.entregaComprometida) : "Por comprometer"]],
+});
+
 export function contenidoPedido(p: PedidoPdf) {
+  const cancelada = p.estado === "cancelada";
   return {
-    titulo: `Nota de pedido N.º ${p.numero}${p.estado === "cancelada" ? " (cancelada)" : ""}`,
-    fechas: `Fecha ${fechaSantiago(p.creadoEn)} · ${p.cotizacionNumero ? `Cotización N.º ${p.cotizacionNumero}` : `Nota de la tienda N.º ${p.notaTienda}`}`,
-    datos: [
-      ["Cliente", p.cliente.nombre], ["RUT", p.cliente.rut ? formatearRut(p.cliente.rut) : "—"], ["Contacto", p.cliente.contacto ?? "—"], ["Teléfono", p.cliente.telefono ?? "—"],
-      ["Despacho", p.direccionDespacho ?? "Retira en fábrica"], ["Transporte", p.medioTransporte ?? "—"],
-      ["Entrega", p.entregaComprometida ? fecha(p.entregaComprometida) : "Por comprometer"],
+    tipo: "Nota de pedido", numero: `N.º ${p.numero}`, titulo: tituloPdf("Nota de pedido", `N.º ${p.numero}`),
+    marca: (cancelada ? "ANULADA" : null) as Marca,
+    meta: [
+      ["Fecha", fechaLargaSantiago(p.creadoEn)],
+      p.cotizacionNumero ? ["Cotización", `N.º ${p.cotizacionNumero}`] : ["Nota de la tienda", `N.º ${p.notaTienda}`],
+      ...(cancelada ? [["Estado", "Cancelada"]] : []),
     ] as [string, string][],
+    partes: [
+      { etiqueta: "Cliente", titulo: p.cliente.nombre, pares: [["RUT", p.cliente.rut ? formatearRut(p.cliente.rut) : "—"], ["Contacto", p.cliente.contacto ?? "—"], ["Teléfono", p.cliente.telefono ?? "—"]] },
+      despacho(p),
+    ] satisfies Parte[],
     filas: p.items.map((i) => [i.codigo ?? "A pedido", i.medidaSolicitada ? `${i.descripcion}\nMedida solicitada: ${i.medidaSolicitada}` : i.descripcion,
-      String(i.cantidad), i.faltante ? String(i.faltante) : "—", clp(i.totalLinea)]),
+      String(i.cantidad), i.faltante ? String(i.faltante) : "—", !i.codigo && i.totalLinea === 0 ? POR_DEFINIR : clp(i.totalLinea)]),
     observaciones: p.observaciones,
     totales: [
       ["Subtotal neto", clp(p.subtotal)],
@@ -102,15 +123,14 @@ export interface OrdenTrabajoPdf {
  * personales del cliente final. Sale de los datos guardados, nunca del PDF de la tienda.
  */
 export function contenidoOrdenTrabajo(o: OrdenTrabajoPdf) {
-  const origen = o.cotizacionNumero ? `Cotización N.º ${o.cotizacionNumero}`
-    : `Nota de la tienda N.º ${o.notaTienda}${o.revisionTienda > 1 ? ` (rev. ${o.revisionTienda})` : ""}`;
+  const origen: [string, string] = o.cotizacionNumero ? ["Cotización", `N.º ${o.cotizacionNumero}`]
+    : ["Nota de la tienda", `N.º ${o.notaTienda}${o.revisionTienda > 1 ? ` (rev. ${o.revisionTienda})` : ""}`];
+  const cancelada = o.estado === "cancelada";
   return {
-    titulo: `Orden de trabajo · Nota N.º ${o.numero}${o.estado === "cancelada" ? " (cancelada)" : ""}`,
-    fechas: `Fecha ${fechaSantiago(o.creadoEn)} · ${origen}`,
-    datos: [
-      ["Proyecto", o.proyecto ?? "—"], ["Despacho", o.direccionDespacho ?? "Retira en fábrica"], ["Transporte", o.medioTransporte ?? "—"],
-      ["Entrega", o.entregaComprometida ? fecha(o.entregaComprometida) : "Por comprometer"],
-    ] as [string, string][],
+    tipo: "Orden de trabajo", numero: `N.º ${o.numero}`, titulo: tituloPdf("Orden de trabajo", `N.º ${o.numero}`),
+    marca: (cancelada ? "ANULADA" : null) as Marca,
+    meta: [["Fecha", fechaLargaSantiago(o.creadoEn)], origen, ...(cancelada ? [["Estado", "Cancelada"]] : [])] as [string, string][],
+    partes: [{ etiqueta: "Obra", titulo: o.proyecto ?? "Sin proyecto", pares: [] }, despacho(o)] satisfies Parte[],
     filas: o.items.map((i) => [
       i.codigo ?? "A pedido",
       [i.descripcion, i.medidaSolicitada && `Medida solicitada: ${i.medidaSolicitada}`, i.observacion, i.referencias ? `Referencias del cliente: ${i.referencias} (en la app)` : null,
@@ -130,10 +150,11 @@ export interface PruebaConexionPdf { codigo: string; fabrica: string; creadaEn: 
  */
 export function contenidoPruebaConexion(p: PruebaConexionPdf) {
   return {
-    titulo: "Prueba de conexión",
-    fechas: `Fecha ${fechaSantiago(p.creadaEn)} · Código ${p.codigo}`,
+    // Sin número de documento: en su lugar va el código corto del evento. Fecha y hora de Chile en vez de la fecha en palabras.
+    tipo: "Prueba de conexión", numero: p.codigo, titulo: tituloPdf("Prueba de conexión"), marca: "PRUEBA" as const,
+    meta: [["Fecha y hora", fechaHora(p.creadaEn)]] as [string, string][],
     rotulo: "PRUEBA DE CONEXIÓN — no es un pedido",
-    datos: [["Emisor", `Fábrica ${nombrePropio(p.fabrica)}`], ["Destino", "La tienda"], ["Enviada", fechaHora(p.creadaEn)], ["Código", p.codigo]] as [string, string][],
+    partes: [{ etiqueta: "Emisor", titulo: `Fábrica ${nombrePropio(p.fabrica)}`, pares: [] }, { etiqueta: "Destino", titulo: "La tienda", pares: [["Código", p.codigo]] }] satisfies Parte[],
     filas: [
       ["PRUEBA-1", "Puerta de ejemplo: dato inventado", "1", "0", "1"],
       ["PRUEBA-2", "Marco de ejemplo: dato inventado", "2", "0", "2"],

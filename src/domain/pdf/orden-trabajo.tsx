@@ -1,10 +1,10 @@
 // PDF «Orden de trabajo» de una nota de pedido, para producción (ADR-0023 §7): sin precios, totales, pagos ni datos
 // personales del cliente final, armado desde los datos guardados. Sirve para toda nota, también las de cotización.
-import { Document, Page, renderToBuffer, Text, View } from "@react-pdf/renderer";
+import { Document, Page, renderToBuffer } from "@react-pdf/renderer";
 import type { Tx } from "@/db/conexion";
 import { MARCA } from "@/lib/marca";
 import { obtenerPedido } from "../pedidos/consulta";
-import { Datos, e, Membrete, Pie, TablaItems, TENUE } from "./comun";
+import { Caja, e, MarcaDeAgua, Membrete, Partes, Pie, TablaItems } from "./comun";
 import { contenidoOrdenTrabajo, type OrdenTrabajoPdf } from "./contenido";
 
 function DocumentoOrden({ o }: { o: OrdenTrabajoPdf }) {
@@ -13,14 +13,12 @@ function DocumentoOrden({ o }: { o: OrdenTrabajoPdf }) {
     // Metadatos sin importes ni cliente: solo el título del documento (ADR-0023 §7).
     <Document title={k.titulo} author={MARCA.nombre} creator={MARCA.nombre} producer={MARCA.nombre} creationDate={o.creadoEn} modificationDate={o.creadoEn}>
       <Page size="A4" style={e.pagina}>
-        <Membrete titulo={k.titulo} fechas={k.fechas} />
-        <Datos pares={k.datos} />
+        <Membrete tipo={k.tipo} numero={k.numero} meta={k.meta} />
+        <Partes partes={k.partes} />
         <TablaItems columnas={["Código", "Descripción", "Cant.", "En stock", "Por fabricar"]} filas={k.filas} casilla />
-        <View style={e.observaciones} wrap={false}>
-          <Text style={{ fontSize: 7, letterSpacing: 1, textTransform: "uppercase", color: TENUE }}>Observaciones para la fábrica</Text>
-          <Text style={{ marginTop: 4 }}>{k.observaciones ?? ""}</Text>
-        </View>
+        <Caja titulo="Observaciones para la fábrica" texto={k.observaciones} campo />
         <Pie lineas={k.pie} />
+        {k.marca && <MarcaDeAgua texto={k.marca} />}
       </Page>
     </Document>
   );

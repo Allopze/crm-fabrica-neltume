@@ -3,7 +3,7 @@
 ## Proyecto
 Webapp interna de la fábrica de puertas Neltume (no de la tienda): stock de puertas, materias primas con BOM, producción, nota de pedido y cotizador con IA en lenguaje natural.
 Alcance por fases en SPEC.md (demo primero, producto después). Un solo rol hoy, que hace todo (ve costos y márgenes); permisos por permiso para sumar roles sin refactor. Canales de entrada: la webapp y, solo para las notas de pedido y las pruebas de conexión de la tienda, su API firmada (ADR-0023, ADR-0024).
-UI y docs en español. CLP como enteros; precios con y sin IVA (19 %); números y fechas en formato chileno (1.234,56; dd-mm-aaaa).
+UI y docs en español. CLP como enteros; precios con y sin IVA (19 %); números y fechas en formato chileno (1.234,56; dd-mm-aaaa; solo el encabezado de los PDF lleva la fecha en palabras, «25 de octubre de 2026», ADR-0025).
 
 ## Stack y comandos
 Stack (ADR-0005): Next.js 16 (App Router) + TypeScript + Tailwind v4 + lucide-react, PostgreSQL + Drizzle, Zod, sesiones propias (argon2id), react-pdf, cloudflared (túnel directo a la app, sin proxy: ADR-0011), Vitest + Playwright. Versiones: pendiente (se fijan con lockfile en el esqueleto). Despliegue: Producción: Docker Compose expuesto solo por Cloudflare Tunnel; dev y test: Postgres local (`npm run dev`). LLM: Command Code (Provider API) detrás de una interfaz agnóstica al proveedor en `src/ai/`; lo específico de Command Code vive solo en su implementación.

@@ -51,6 +51,14 @@ export function usd(valor: number | null | undefined, decimales = 2): string {
   return `US$ ${new Intl.NumberFormat("es-CL", { minimumFractionDigits: decimales, maximumFractionDigits: Math.max(decimales, 4) }).format(valor)}`;
 }
 
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+/** «2026-10-25» → «25 de octubre de 2026». Solo para el encabezado de los PDF (ADR-0025 D7); lo demás va en dd-mm-aaaa. */
+export function fechaLarga(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  return m ? `${Number(m[3])} de ${MESES[Number(m[2]) - 1]} de ${m[1]}` : iso;
+}
+
 export const capital = (texto: string) => texto.charAt(0).toLocaleUpperCase("es-CL") + texto.slice(1);
 
 const PARTICULAS = new Set(["de", "del", "la", "las", "los", "y", "e"]);

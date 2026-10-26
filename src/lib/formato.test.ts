@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { clp, fecha, fechaHora, metros, metrosDesdeMm, cantidad, leerCantidad, nombreMadera, nombrePropio, puntoFinal, titulo, usd, usoPorPuerta } from "./formato";
+import { clp, fecha, fechaHora, fechaLarga, metros, metrosDesdeMm, cantidad, leerCantidad, nombreMadera, nombrePropio, puntoFinal, titulo, usd, usoPorPuerta } from "./formato";
 
 describe("formato chileno (REQ-STK-2.3, REQ-NFR-9)", () => {
   it("formatea CLP sin decimales y con punto de miles", () => {
     expect(clp(1234567)).toBe("$1.234.567");
     expect(clp(277759.6)).toBe("$277.760");
     expect(clp(0)).toBe("$0");
+  });
+
+  it("la fecha en palabras (solo el encabezado de los PDF, ADR-0025) no lleva cero ni mayúscula", () => {
+    expect(fechaLarga("2026-10-05")).toBe("5 de octubre de 2026");
+    expect(fechaLarga("2026-12-31")).toBe("31 de diciembre de 2026");
+    expect(fechaLarga("no es fecha")).toBe("no es fecha");
   });
 
   it("formatea fechas dd-mm-aaaa", () => {

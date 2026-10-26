@@ -7,7 +7,7 @@ import { MARCA } from "@/lib/marca";
 import { obtenerCotizacion } from "../cotizaciones/consulta";
 import { ErrorDominio } from "../errores";
 import { abonoPct } from "../pedidos/pagos";
-import { Datos, e, Membrete, Pie, TablaItems, Totales } from "./comun";
+import { e, Membrete, Partes, Pie, TablaItems, Totales } from "./comun";
 import { type CotizacionPdf, contenidoCotizacion } from "./contenido";
 
 function DocumentoCotizacion({ c }: { c: CotizacionPdf }) {
@@ -15,8 +15,8 @@ function DocumentoCotizacion({ c }: { c: CotizacionPdf }) {
   return (
     <Document title={k.titulo} author={MARCA.nombre} creator={MARCA.nombre} producer={MARCA.nombre} creationDate={c.aprobadaEn} modificationDate={c.aprobadaEn}>
       <Page size="A4" style={e.pagina}>
-        <Membrete titulo={k.titulo} fechas={k.fechas} />
-        {k.cliente && <Datos pares={k.cliente} />}
+        <Membrete tipo={k.tipo} numero={k.numero} meta={k.meta} />
+        {k.partes.length > 0 && <Partes partes={k.partes} />}
         <TablaItems columnas={["Código", "Descripción", "Cant.", "Precio unit.", "Total"]}
           filas={k.lineas.map((l) => [l.codigo, l.descripcion, l.cantidad, l.unitario, l.total])} />
         <Totales lineas={k.totales} total={k.total} />

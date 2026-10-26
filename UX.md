@@ -1,6 +1,6 @@
 # UX.md — Pantallas y estados
 
-Uso principal en PC (≥ 1280 px); las pantallas deben poder leerse en celular, sin flujos propios (REQ-NFR-6). Español, CLP con separador de miles ($1.234.567) y fechas dd-mm-aaaa. Las fechas y horas con zona se muestran en America/Santiago, nunca en UTC.
+Uso principal en PC (≥ 1280 px); las pantallas deben poder leerse en celular, sin flujos propios (REQ-NFR-6). Español, CLP con separador de miles ($1.234.567) y fechas dd-mm-aaaa (solo el encabezado de los PDF lleva la fecha en palabras, ADR-0025). Las fechas y horas con zona se muestran en America/Santiago, nunca en UTC.
 
 Documentos con un solo formato de número, igual en pantalla y en PDF: «Cotización N.º 7», «Nota de pedido N.º 1», «Orden N.º 3»; en una columna «N.º» basta el número. Cada página abre con su título y, si hace falta, una línea de contexto (fecha, origen) debajo; sin antetítulos. Nunca se muestran ids internos, claves de permiso ni nombres de archivos de configuración: se nombra el documento (con enlace) o la acción en español.
 

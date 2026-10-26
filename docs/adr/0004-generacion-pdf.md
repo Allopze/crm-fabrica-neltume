@@ -1,6 +1,6 @@
 # ADR-0004 — Generación de PDF en el servidor con react-pdf
 
-**Estado:** aceptado · **Fecha:** 05-10-2026 · **Refs:** REQ-COT-4.1–4.3, 8.1
+**Estado:** aceptado; **complementado por ADR-0025** (25-10-2026): estilo común de los documentos con la tienda · **Fecha:** 05-10-2026 · **Refs:** REQ-COT-4.1–4.3, 8.1
 
 ## Contexto
 La cotización aprobada y la nota de pedido deben salir en PDF con logo, en formato chileno, desde datos congelados y solo si están aprobadas. El despliegue es un contenedor Node sin navegador.
