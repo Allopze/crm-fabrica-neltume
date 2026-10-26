@@ -10,8 +10,11 @@ import { Plano } from "./plano";
 const BLANCO = "#ffffff";
 /** Sin lineHeight en la página: el texto dinámico (render) de react-pdf no se dibuja con él (ver estilo.ts). */
 const TEXTO = rol("texto", false);
-/** El pie va a 8,5 mm del borde (dentro del margen inferior del estándar) y la página deja sitio para sus dos líneas más el número. */
-const PIE_BAJO = 24;
+/**
+ * El pie, sin filete, deja su línea base a 6 mm del borde inferior de la hoja, como el de la tienda (en react-pdf, 15 pt
+ * desde el borde dejan la línea base a 16,9 pt). El cuerpo respeta el margen inferior del estándar, que sobra para dos líneas.
+ */
+const PIE_BAJO = 15;
 const trazo = (nombre: keyof typeof TRAZOS) => ({ ancho: TRAZOS[nombre].anchoPt, color: COLOR[TRAZOS[nombre].color] });
 const bajoCabecera = trazo("bajoEncabezado");
 const bajoTabla = trazo("bajoEncabezadoTabla");
@@ -22,7 +25,7 @@ const COL = { n: 22, plano: mm(PLANO.celdaMm), cantidad: 34, importe: 62, listo:
 
 export const e = StyleSheet.create({
   // Sin ligaduras (fi, fl): con ellas el texto copiado o buscado en el PDF pierde letras («fete» en vez de «flete»).
-  pagina: { ...TEXTO, paddingTop: MARGEN.arriba, paddingHorizontal: MARGEN.lateral, paddingBottom: PIE_BAJO + 44, fontFeatureSettings: { liga: false, clig: false } },
+  pagina: { ...TEXTO, paddingTop: MARGEN.arriba, paddingHorizontal: MARGEN.lateral, paddingBottom: MARGEN.abajo, fontFeatureSettings: { liga: false, clig: false } },
   cabecera: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   tipo: { ...rol("tipoDocumento"), textAlign: "right" },
   numero: { ...rol("numeroDocumento"), textAlign: "right", marginTop: 2 },
@@ -71,7 +74,8 @@ export const e = StyleSheet.create({
   etiquetaTotal: rol("etiquetaTotal"),
   cifraTotal: rol("cifraTotal"),
   gris: { color: COLOR.gris },
-  pie: { ...rol("pie"), position: "absolute", left: MARGEN.lateral, right: MARGEN.lateral, bottom: PIE_BAJO, borderTopWidth: 0.5, borderTopColor: entreFilas.color, paddingTop: 8, paddingRight: 80, lineHeight: 1.5 },
+  // Ni filete ni lineHeight: el texto de la empresa y «Página n de m» se apoyan en el mismo borde y comparten línea base.
+  pie: { ...rol("pie"), position: "absolute", left: MARGEN.lateral, right: MARGEN.lateral, bottom: PIE_BAJO, paddingRight: 80 },
   // Texto dinámico (render): necesita su ancho (izquierda y derecha) y nada de lineHeight, con el que react-pdf no lo dibuja.
   numeroPagina: { ...rol("pie"), position: "absolute", left: MARGEN.lateral, right: MARGEN.lateral, bottom: PIE_BAJO, textAlign: "right" },
 });

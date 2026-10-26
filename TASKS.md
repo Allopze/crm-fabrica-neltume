@@ -426,6 +426,7 @@ Al comparar los documentos de las dos apps, los de la fábrica se veían mucho m
 - [x] T25.3 (90) Componentes: `Plano` (dibujo y cotas en mm), tabla común (N.º, plano o dibujo, celda de producto, Cant., importes y Listo), bloque «Para fábrica» con firmas, notas junto a los totales, encabezado solo con el logo y pie con los datos de la empresa · REQ-COT-4.10, 4.11 · U `pdf.conformidad` · T25.2
 - [x] T25.4 (75) Los cuatro PDF con el formato común y su prueba de conformidad con pdfjs (planos, cotas, firmas, columnas, sin Helvetica) · REQ-COT-4.9 a 4.11 · U `pdf.conformidad` · T25.3
 - [ ] T25.5 Puesta en marcha (fuera del código): desplegar; la tienda avisa si agrega un modelo nuevo (hay que copiarlo) · RUNBOOK
+- [x] T25.6 (30) Pie como el de la tienda (decidido el 26-10-2026): sin filete, línea base a 6 mm del borde y la misma para los datos de la empresa y «Página n de m» (antes, 2,1 pt de diferencia); el cuerpo respeta el margen inferior de 17 mm; copia del estándar con la regla del pie · REQ-COT-4.6 · U `pdf.conformidad` (pie de una y de dos líneas) · T25.4
 
 **Checkpoint F25:** `npm test` completo verde, lint y build; los PDF de la cotización, la nota y la orden se ven con el mismo formato que los de la tienda, con el dibujo de cada puerta y las cotas, en la paleta de la fábrica. Espero tu OK.
 

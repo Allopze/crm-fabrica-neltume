@@ -1,8 +1,11 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { Document, Page, renderToBuffer } from "@react-pdf/renderer";
+import { createElement } from "react";
 import { beforeAll, describe, expect, it } from "vitest";
 import tokens from "../../../docs/contratos/estilo-documentos-tokens.json";
+import { e, Pie } from "./comun";
 import { PLANO } from "./estilo";
 import { renderizarCotizacion } from "./cotizacion";
 import { renderizarOrdenTrabajo } from "./orden-trabajo";
@@ -139,6 +142,24 @@ describe("conformidad con el estilo común de los documentos (PDF real, pdfjs; A
       expect(Math.max(...frags.filter((f) => !f.girado).map((f) => f.y))).toBeLessThanOrEqual(numero!.y + 1); // nada va más abajo
     });
     expect(notaLarga.paginas.length).toBeGreaterThan(1); // se probó también con más de una página
+  });
+
+  it("el pie no lleva filete y su línea base queda a 6 mm del borde inferior, la misma para la empresa y «Página n de m» (§6)", async () => {
+    expect(e.pie).not.toHaveProperty("borderTopWidth");
+    expect(e.pie).not.toHaveProperty("borderTopColor");
+    const desdeAbajo = (d: Leido, f: Fragmento) => d.alto - f.y;
+    const comprobar = (d: Leido, etiqueta: string) => d.paginas.forEach((frags, i) => {
+      const numero = frags.find((f) => /^Página \d+ de \d+$/.test(f.s))!;
+      expect(Math.abs(desdeAbajo(d, numero) - (6 / 25.4) * 72), `${etiqueta}, página ${i + 1}: 6 mm ± 0,5 pt`).toBeLessThanOrEqual(0.5);
+      const ultimaLineaDeLaEmpresa = Math.max(...frags.filter((f) => f !== numero && f.y > d.alto - 60).map((f) => f.y));
+      expect(Math.abs(ultimaLineaDeLaEmpresa - numero.y), `${etiqueta}, página ${i + 1}: misma línea base`).toBeLessThanOrEqual(0.5);
+    });
+    documentos().forEach((d, i) => comprobar(d, `documento ${i + 1}`));
+    // Con la dirección larga los datos pasan a dos líneas: la última se apoya en el mismo punto.
+    const largo = "Neltume.co · RUT 76.123.456-7 · Camino a Neltume km 3, sector Los Lagos, Panguipulli, Región de Los Ríos · Tel. +56 9 1234 5678 · www.neltume.co · neltume.co@gmail.com";
+    const dosLineas = await leer(await renderToBuffer(createElement(Document, null, createElement(Page, { size: "A4", style: e.pagina }, createElement(Pie, { lineas: [largo] })))));
+    expect(dosLineas.paginas[0].filter((f) => f.y > dosLineas.alto - 60).length, "el pie largo ocupa dos líneas").toBeGreaterThanOrEqual(3);
+    comprobar(dosLineas, "pie de dos líneas");
   });
 
   it("encabezado: tipo (11 pt) sobre número (29 pt, «N.º n») y el resto de la meta en sus tamaños", () => {
