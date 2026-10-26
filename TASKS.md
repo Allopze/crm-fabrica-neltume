@@ -389,7 +389,7 @@ La tienda va a restilar sus PDF y no publica hasta que este lector esté despleg
 
 - [x] T22.0 Decisiones en documentos: ADR-0025 (parcialmente aprobado: F22), anotación en ADR-0008, SPEC (REQ-COT-8.6 ampliado), API y TESTING · ADR-0025 · — · —
 - [x] T22.1 (90) Lector «por fábrica» tolerante: acepta «N.º» y «N°»; une fragmentos contiguos de una línea (el código en mono no lo parte); ignora las líneas de encabezado repetido (la que lleva «Cant.») al buscar descripción, cantidad y «Total»; tolerancia de la x de «Cant.» a 30 pt; una «Entrega comprometida» que no es fecha pasa a las observaciones como en la API (hoy se pierde sin aviso); las líneas sin «Referencia de catálogo» (pedidos especiales, «Por definir») hoy se omiten sin aviso: pasan a ítems «a pedido, revisar» como en la API o, como mínimo, a un aviso (hecho: el aviso; leerlas como «a pedido, revisar» queda pendiente de tu decisión) · REQ-COT-2.5, 8.6, 8.18 · U lector «por fábrica» y `nota-tienda-pdf` (PDF sintéticos de la tienda en `tests/fixtures/tienda/pdf`, estilo actual y nuevo, 1 y 4 páginas, sin datos reales) · T22.0
-- [ ] T22.2 Puesta en marcha (fuera del código): desplegar y avisar al agente de la tienda para que levante su condición · RUNBOOK
+- [x] T22.2 Puesta en marcha (fuera del código): desplegada el 25-10-2026 (F22 y F23 en `origin/main`, 1c5f699; confirmado por el usuario); se avisó al agente de la tienda para que levante su condición · RUNBOOK
 
 **Checkpoint F22:** `npm test` completo verde, lint y build; el lector lee igual las notas de la tienda del formato actual y del nuevo, también con encabezado repetido. Espero tu OK.
 
@@ -402,6 +402,6 @@ Los cuatro PDF de la fábrica (cotización, nota de pedido, orden de trabajo y p
 - [x] T23.2 (90) `comun.tsx`: encabezado (tipo sobre número, meta en columnas), bloques de partes, tabla sin mayúsculas ni interletrado, totales, caja de observaciones, pie ≥ 7,5 pt y marcas de agua «ANULADA» y «PRUEBA» · REQ-COT-4.2 · U `pdf.contenido` · T23.1
 - [x] T23.3 (75) `contenido.ts` y los cuatro renderizadores: fecha larga en el encabezado, «Por definir» en ítems «a pedido» sin precio, columnas más anchas, metadatos · REQ-COT-4.2, 8.1 · U `pdf.contenido` · T23.2
 - [x] T23.4 (75) Prueba de conformidad con pdfjs sobre los cuatro PDF: fuentes, tamaño del pie, márgenes, colores, «Página N de M» y metadatos, contra los tokens · ADR-0025 D11 · U/I `pdf.conformidad` · T23.3
-- [ ] T23.5 Puesta en marcha (fuera del código): revisar los PDF reales con la tienda y avisarle · RUNBOOK
+- [x] T23.5 Puesta en marcha (fuera del código): desplegada junto con la F22 el 25-10-2026 y avisada la tienda; queda la prueba de conexión cruzada en producción cuando la tienda publique su lado · RUNBOOK
 
 **Checkpoint F23:** `npm test` completo verde, lint y build; los cuatro PDF se ven en el estilo nuevo y siguen en el contenido y formato chileno de siempre. Espero tu OK.
