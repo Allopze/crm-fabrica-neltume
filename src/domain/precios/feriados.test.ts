@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { feriadosLegales, pascua, solsticioInvierno } from "./feriados";
+import { sumarDiasHabiles } from "./dias-habiles";
+import { feriadosDesde, feriadosLegales, pascua, solsticioInvierno } from "./feriados";
 
 const fechas = (a: number) => [...feriadosLegales(a).keys()].sort();
 
@@ -40,5 +41,10 @@ describe("feriados de Chile por ley (REQ-COT-6.6)", () => {
     expect(solsticioInvierno(2026)).toBe("2026-06-21");
     expect(feriadosLegales(2021).has("2021-06-21")).toBe(true);
     expect([...feriadosLegales(2020).values()]).not.toContain("Pueblos Indígenas");
+  });
+
+  it("una vigencia que cruza el año salta los feriados del año siguiente", () => {
+    // Desde el lunes 28-12-2026: 10 hábiles saltan el 1-1-2027 (viernes) → 12-01-2027.
+    expect(sumarDiasHabiles("2026-12-28", 10, feriadosDesde("2026-12-28"))).toBe("2027-01-12");
   });
 });

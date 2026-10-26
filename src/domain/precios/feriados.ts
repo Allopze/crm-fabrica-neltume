@@ -1,5 +1,5 @@
-// Feriados nacionales de Chile calculados por ley (REQ-COT-6.6). Puro y sin conexión: los decretados por única
-// vez (elecciones, leyes puntuales) se cargan a mano en la tabla `feriado` y se suman a estos.
+// Feriados nacionales de Chile calculados por ley (REQ-COT-6.6). Puro y sin conexión ni configuración: el usuario
+// no los ve ni los mantiene. Un feriado decretado por única vez en día hábil se agrega en FERIADOS_UNICOS.
 // Portado del cotizador de la tienda (referencia/src/negocio/feriados.ts), verificado contra calendarios oficiales.
 
 const iso = (a: number, m: number, d: number) => `${a}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -47,6 +47,9 @@ function trasladable(a: number, m: number, d: number) {
   return iso(a, m, d);
 }
 
+/** Feriados de ley puntual que caen en día hábil (las elecciones son en domingo y no afectan): fecha → nombre. */
+const FERIADOS_UNICOS: Readonly<Record<string, string>> = {};
+
 const cache = new Map<number, ReadonlyMap<string, string>>();
 
 /** Feriados legales del año: fecha (aaaa-mm-dd) → nombre. */
@@ -81,7 +84,14 @@ export function feriadosLegales(a: number): ReadonlyMap<string, string> {
   // Ley 20.299: Iglesias Evangélicas; martes → viernes 27, miércoles → viernes 2 de noviembre.
   const ev = diaSemana(a, 10, 31);
   f.push([ev === 2 ? iso(a, 10, 27) : ev === 3 ? iso(a, 11, 2) : iso(a, 10, 31), "Iglesias Evangélicas y Protestantes"]);
+  for (const [fecha, nombre] of Object.entries(FERIADOS_UNICOS)) if (fecha.startsWith(`${a}-`)) f.push([fecha, nombre]);
   const mapa = new Map(f);
   cache.set(a, mapa);
   return mapa;
+}
+
+/** Feriados del año de `desdeIso` y del siguiente: una vigencia puede cruzar el año. */
+export function feriadosDesde(desdeIso: string): Set<string> {
+  const a = Number(desdeIso.slice(0, 4));
+  return new Set([...feriadosLegales(a).keys(), ...feriadosLegales(a + 1).keys()]);
 }

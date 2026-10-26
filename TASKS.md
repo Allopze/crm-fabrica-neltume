@@ -429,3 +429,10 @@ Al comparar los documentos de las dos apps, los de la fábrica se veían mucho m
 
 **Checkpoint F25:** `npm test` completo verde, lint y build; los PDF de la cotización, la nota y la orden se ven con el mismo formato que los de la tienda, con el dibujo de cada puerta y las cotas, en la paleta de la fábrica. Espero tu OK.
 
+## Fase 26 — Feriados transparentes (pedida el 25-10-2026)
+
+Los feriados adicionales editables solo llevaban a confusión: el usuario no debe configurar feriados. La vigencia cuenta los feriados de Chile calculados por ley; un feriado de ley puntual en día hábil (las elecciones son en domingo) se agrega en el código.
+
+- [x] T26.1 (45) Sin pantalla, API ni tabla `feriado` (migración 0025); `feriadosDesde` puro en `feriados.ts` con `FERIADOS_UNICOS`; docs (SPEC REQ-COT-6.6 y NC-13, DESIGN, DATA-MODEL, API, UX) · REQ-COT-6.6 · U `feriados`, I `migraciones` · —
+
+**Checkpoint F26:** `npm test` completo verde, lint y build; Administración ya no muestra Feriados y la vigencia sigue saltando los feriados legales.

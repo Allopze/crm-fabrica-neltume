@@ -6,8 +6,8 @@ import { parametro } from "@/db/esquema/catalogo";
 import { cotizacion, cotizacionItem } from "@/db/esquema/comercial";
 import { type Actor, type Origen, registrarAuditoria } from "../auditoria";
 import { ErrorDominio } from "../errores";
-import { cargarFeriados } from "../precios/calendario";
 import { hoySantiago, sumarDiasHabiles } from "../precios/dias-habiles";
+import { feriadosDesde } from "../precios/feriados";
 import { recalcularTotales } from "./calculo";
 
 export async function aprobarCotizacion(tx: Tx, id: string, version: number, actor: Actor & { id: string }, origen: Origen) {
@@ -24,7 +24,7 @@ export async function aprobarCotizacion(tx: Tx, id: string, version: number, act
   const totales = await recalcularTotales(tx, id);
   const [p] = await tx.select().from(parametro).where(eq(parametro.clave, "vigencia_dias_habiles"));
   const hoy = hoySantiago();
-  const vigenciaHasta = sumarDiasHabiles(hoy, Number(p?.valor ?? 10), await cargarFeriados(tx, hoy));
+  const vigenciaHasta = sumarDiasHabiles(hoy, Number(p?.valor ?? 10), feriadosDesde(hoy));
   await tx.update(cotizacion).set({
     estado: "aprobada", aprobadaPor: actor.id, aprobadaEn: sql`now()`, vigenciaHasta, version: c.version + 1, actualizadoEn: sql`now()`,
   }).where(eq(cotizacion.id, id));

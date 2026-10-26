@@ -1,4 +1,4 @@
-// Días hábiles en Chile: lunes a viernes, descontando los feriados de calendario.ts (REQ-COT-6.4, 6.6).
+// Días hábiles en Chile: lunes a viernes, descontando los feriados de feriados.ts (REQ-COT-6.4, 6.6).
 
 const DIA_MS = 86_400_000;
 

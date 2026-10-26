@@ -176,6 +176,13 @@
       "when": 1792949190006,
       "tag": "0024_prueba_conexion",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792983496931,
+      "tag": "0025_feriados_sin_tabla",
+      "breakpoints": true
     }
   ]
 }

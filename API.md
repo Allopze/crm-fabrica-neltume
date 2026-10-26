@@ -40,7 +40,6 @@ Base `/api/v1`, JSON UTF-8, expuesta a internet solo por Cloudflare Tunnel, sin 
 | GET `/roles` · POST `/roles` · PUT `/roles/:id/permisos` | `usuarios.gestionar` | | |
 | GET `/auditoria?actor&recurso&accion&resultado&desde&hasta&antesDe&limite` | `auditoria.ver` | | Paginado por id (más nuevo primero); fechas en días de Santiago |
 | GET `/metricas/ia` | `auditoria.ver` | | Latencia, costo y tasa de fallas |
-| GET `/feriados?anio` · POST `/feriados` (`fecha, nombre`) · DELETE `/feriados/:fecha` | sesión / `config.editar` | | Legales calculados más adicionales; solo los adicionales se agregan o quitan (REQ-COT-6.6) |
 | GET `/ajustes/ia` | `config.editar` | | Proveedor/modelo activos y el catálogo de Command Code. La clave solo está en el entorno del worker y nunca se devuelve (REQ-ADM-4.x) |
 | PUT `/ajustes/ia` (`proveedorActivo?`: `commandcode`, `modelo?`) | `config.editar` | | Guarda proveedor/modelo, auditado; activar un modelo requiere que sea compatible en el catálogo. Groq (`proveedorActivo: "groq"`, `groqZdrConfirmado`) se rechaza con 400 desde ADR-0022. API keys no se aceptan en el cuerpo |
 

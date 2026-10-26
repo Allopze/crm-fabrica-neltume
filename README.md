@@ -63,7 +63,7 @@ src/app/            Páginas y rutas API (App Router)
   (auth)/login      Login (público)
   (app)/            Área con sesión: panel, cotizaciones, pedidos, stock, materias-primas,
                     producción, precios, clientes, administración (usuarios, auditoría,
-                    métricas IA, feriados, ajustes de IA)
+                    métricas IA, ajustes de IA, conexión con la tienda)
   api/v1/**/route.ts  ~60 endpoints; todos envueltos en conPermiso/publico
 src/domain/         Lógica del negocio (la mayor parte de la app)
   auth/             politica.ts (conPermiso, CSRF, idempotencia, formato de error),

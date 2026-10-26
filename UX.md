@@ -21,7 +21,7 @@ Documentos con un solo formato de número, igual en pantalla y en PDF: «Cotizac
 | Producción | Pestañas: Órdenes (crear y cerrar) · Recetas (BOM) · Madera de la puerta | `produccion.gestionar`, `mp.editar` | REQ-MP |
 | Precios | Precios vigentes con filtros (código o modelo, madera, tipo, alto) · Versiones · Recargos · Editar (nueva versión) · Importar Excel con informe | `precios.editar`, `catalogo.editar` | REQ-COT-1, REQ-STK-1 |
 | Clientes | Lista · Ficha (datos, cotizaciones y notas) | `clientes.*` | REQ-COT-9 |
-| Administración | Usuarios · Roles y permisos · Auditoría · Métricas IA · Feriados · Ajustes de IA (proveedor, modelo y privacidad de datos; claves en el entorno privado del servidor) · Conexión con la tienda (envía un PDF de prueba y lista las pruebas de los dos sentidos) | `usuarios.gestionar`, `auditoria.ver`, `config.editar` | REQ-ADM |
+| Administración | Usuarios · Roles y permisos · Auditoría · Métricas IA · Ajustes de IA (proveedor, modelo y privacidad de datos; claves en el entorno privado del servidor) · Conexión con la tienda (envía un PDF de prueba y lista las pruebas de los dos sentidos) | `usuarios.gestionar`, `auditoria.ver`, `config.editar` | REQ-ADM |
 
 Navegación lateral fija desde 1024 px; en pantallas más angostas se abre como cajón con el botón de menú (Esc lo cierra). Al pie de la barra, el nombre de quien usa la app abre su menú (cambiar contraseña, cerrar sesión). Para quien puede cotizar, la entrada «desde texto» está siempre visible arriba, como acceso secundario para no competir con la acción principal de cada pantalla; las listas solo agregan «Cotizar a mano». En celular las tablas ocultan las columnas secundarias y conservan número, cliente o artículo, estado y total o disponible. Sin buscador global: cada lista tiene su propio filtro. Las tablas anchas se desplazan dentro de su marco (también con teclado) y la página nunca se desplaza hacia el costado; en pantallas táctiles los controles miden al menos 44 px.
 
@@ -29,7 +29,7 @@ Los selectores usan el campo de la plataforma y abren un menú integrado con las
 
 Las fechas se escriben dd-mm-aaaa (también con / o .) o se eligen en un calendario propio (flechas, RePág/AvPág, Esc): nunca el selector del navegador, que cambia de formato según su idioma. Las medidas se leen en metros en todas las pantallas («0,90 × 2,00»).
 
-Listas: los filtros se aplican solos (el texto, al dejar de escribir); el pie dice cuántos hay con esos filtros, con «Volver al inicio» y la página siguiente; la fila se abre con un clic en cualquier parte; las tablas largas dejan el encabezado a la vista, avisan con una sombra cuando hay columnas fuera de vista, y Stock › Artículos se ordena por columna. Los formularios que se abren desde el encabezado (movimientos de stock, nueva materia prima, nuevo cliente, feriado adicional) van en un panel lateral: la página no se mueve.
+Listas: los filtros se aplican solos (el texto, al dejar de escribir); el pie dice cuántos hay con esos filtros, con «Volver al inicio» y la página siguiente; la fila se abre con un clic en cualquier parte; las tablas largas dejan el encabezado a la vista, avisan con una sombra cuando hay columnas fuera de vista, y Stock › Artículos se ordena por columna. Los formularios que se abren desde el encabezado (movimientos de stock, nueva materia prima, nuevo cliente) van en un panel lateral: la página no se mueve.
 
 ## 2. Estados comunes (toda pantalla)
 

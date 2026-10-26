@@ -1,7 +1,7 @@
 // Catálogo, bodegas, parámetros y precios versionados (DATA-MODEL §2; REQ-STK-1, REQ-COT-1).
 import { sql } from "drizzle-orm";
 import {
-  boolean, check, date, index, integer, jsonb, numeric, pgTable, primaryKey, serial, text, timestamp, unique, uniqueIndex, uuid,
+  boolean, check, index, integer, jsonb, numeric, pgTable, primaryKey, serial, text, timestamp, unique, uniqueIndex, uuid,
 } from "drizzle-orm/pg-core";
 import { usuario } from "./seguridad";
 
@@ -80,11 +80,6 @@ export const bodega = pgTable("bodega", {
 export const parametro = pgTable("parametro", {
   clave: text().primaryKey(),
   valor: jsonb().notNull(),
-});
-
-export const feriado = pgTable("feriado", {
-  fecha: date({ mode: "string" }).primaryKey(),
-  nombre: text().notNull(),
 });
 
 // --- Precios versionados ---
