@@ -415,3 +415,17 @@ El estándar unificaba el acento en el verde de la tienda; el usuario decidió q
 - [ ] T24.2 Puesta en marcha (fuera del código): desplegar; entregar a la tienda los cuatro PDF de muestra con su pedido de ejemplo · RUNBOOK
 
 **Checkpoint F24:** `npm test` completo verde, lint y build; los cuatro PDF se ven con la paleta de la fábrica (acento terracota). Espero tu OK.
+
+## Fase 25 — Documentos de la fábrica con el mismo formato de la tienda (aprobada el 25-10-2026; ADR-0025 D12)
+
+Al comparar los documentos de las dos apps, los de la fábrica se veían mucho más simples: faltaban los dibujos de las puertas, la celda de producto, el bloque «Para fábrica» con firmas y las notas junto a los totales. El usuario pidió que la fábrica use el mismo formato y los mismos dibujos que la tienda, cada app con su logo, sus colores, sus precios y sus columnas. Los dibujos se usan en los mismos documentos que la tienda (a confirmar con ella).
+
+- [x] T25.0 Decisiones en documentos: ADR-0025 D12, SPEC (REQ-COT-4.9 a 4.11), DESIGN §13, TESTING; la tabla, el plano y el bloque «Para fábrica» pasan a común en el estándar compartido (lo redacta la tienda y yo lo copio) · ADR-0025 · — · —
+- [x] T25.1 (60) Dibujos: copia de los 35 dibujos y de `dibujos.json` de la tienda en `public/marca/dibujos`, lectura del manifiesto, esquema genérico de puerta y `dibujoDe(modelo, familia)` · REQ-COT-4.9 · U `pdf.dibujos` (cada archivo existe y mide lo que dice el manifiesto; el modelo se normaliza como en la tienda) · T25.0
+- [x] T25.2 (75) Datos de cada línea: modelo, familia, ancho y alto pedidos (de la medida solicitada) y observación en cotización, nota y orden · REQ-COT-4.9, 4.10 · U `pdf.contenido`, I `cotizacion-pdf` y `pedido-pdf` · T25.1
+- [x] T25.3 (90) Componentes: `Plano` (dibujo y cotas en mm), tabla común (N.º, plano o dibujo, celda de producto, Cant., importes y Listo), bloque «Para fábrica» con firmas, notas junto a los totales, encabezado solo con el logo y pie con los datos de la empresa · REQ-COT-4.10, 4.11 · U `pdf.conformidad` · T25.2
+- [x] T25.4 (75) Los cuatro PDF con el formato común y su prueba de conformidad con pdfjs (planos, cotas, firmas, columnas, sin Helvetica) · REQ-COT-4.9 a 4.11 · U `pdf.conformidad` · T25.3
+- [ ] T25.5 Puesta en marcha (fuera del código): desplegar; la tienda avisa si agrega un modelo nuevo (hay que copiarlo) · RUNBOOK
+
+**Checkpoint F25:** `npm test` completo verde, lint y build; los PDF de la cotización, la nota y la orden se ven con el mismo formato que los de la tienda, con el dibujo de cada puerta y las cotas, en la paleta de la fábrica. Espero tu OK.
+

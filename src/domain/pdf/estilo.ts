@@ -15,6 +15,9 @@ const ROLES = tokens.roles as Record<NombreRol, Rol>;
 export const TRAZOS = tokens.trazos as Record<keyof typeof tokens.trazos, { anchoPt: number; color: NombreColor }>;
 export const MARCAS_DE_AGUA = tokens.marcasDeAgua as Record<keyof typeof tokens.marcasDeAgua, { familia: string; peso: number; color: NombreColor; opacidad: number; giroGrados: number }>;
 
+/** Medidas del dibujo de puertas y marcos (alto del plano y de la miniatura, lienzo con cotas y texto de las cotas). */
+export const PLANO = tokens.plano;
+
 /** Milímetros a puntos. */
 export const mm = (valor: number) => (valor * 72) / 25.4;
 export const MARGEN = { arriba: mm(tokens.hoja.margenesMm.arriba), lateral: mm(tokens.hoja.margenesMm.izquierda), abajo: mm(tokens.hoja.margenesMm.abajo) };

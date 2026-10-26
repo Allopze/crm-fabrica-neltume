@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import tokens from "../../../docs/contratos/estilo-documentos-tokens.json";
+import { PLANO } from "./estilo";
 import { renderizarCotizacion } from "./cotizacion";
 import { renderizarOrdenTrabajo } from "./orden-trabajo";
 import { renderizarPedido } from "./pedido";
@@ -14,7 +15,7 @@ import { pdfPruebaConexion } from "./prueba-conexion";
 
 interface Fragmento { s: string; x: number; y: number; fin: number; tam: number; girado: boolean }
 /** `colorTexto`: el último color de relleno con que se dibujó cada texto, para saber de qué color salió una cifra. */
-interface Leido { paginas: Fragmento[][]; fuentes: string[]; colores: string[]; colorTexto: Map<string, string>; opacidades: number[]; ancho: number; alto: number; bytes: number; info: Record<string, string> }
+interface Leido { paginas: Fragmento[][]; fuentes: string[]; colores: string[]; colorTexto: Map<string, string>; opacidades: number[]; imagenes: number; ancho: number; alto: number; bytes: number; info: Record<string, string> }
 
 async function leer(pdf: Buffer): Promise<Leido> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
@@ -24,7 +25,7 @@ async function leer(pdf: Buffer): Promise<Leido> {
   const documento = await tarea.promise;
   const paginas: Fragmento[][] = [];
   const fuentes = new Set<string>(), colores = new Set<string>(), opacidades = new Set<number>(), colorTexto = new Map<string, string>();
-  let [ancho, alto] = [0, 0];
+  let [ancho, alto, imagenes] = [0, 0, 0];
   for (let n = 1; n <= documento.numPages; n++) {
     const pagina = await documento.getPage(n);
     const vista = pagina.getViewport({ scale: 1 });
@@ -36,6 +37,7 @@ async function leer(pdf: Buffer): Promise<Leido> {
     let relleno = "";
     for (let i = 0; i < ops.fnArray.length; i++) {
       const [fn, args] = [ops.fnArray[i], ops.argsArray[i]];
+      if (fn === pdfjs.OPS.paintImageXObject) imagenes++;
       if (fn === pdfjs.OPS.setFillRGBColor) relleno = String(args[0]).toLowerCase();
       if (fn === pdfjs.OPS.showText) colorTexto.set((args[0] as ({ unicode?: string } | number)[]).map((g) => (typeof g === "object" && g.unicode) || "").join(""), relleno);
       if (fn === pdfjs.OPS.setFillRGBColor || fn === pdfjs.OPS.setStrokeRGBColor) colores.add(String(args[0]).toLowerCase());
@@ -48,7 +50,7 @@ async function leer(pdf: Buffer): Promise<Leido> {
   }
   const { info } = await documento.getMetadata();
   await tarea.destroy();
-  return { paginas, fuentes: [...fuentes].sort(), colores: [...colores], colorTexto, opacidades: [...opacidades], ancho, alto, bytes: pdf.length, info: info as Record<string, string> };
+  return { paginas, fuentes: [...fuentes].sort(), colores: [...colores], colorTexto, opacidades: [...opacidades], imagenes, ancho, alto, bytes: pdf.length, info: info as Record<string, string> };
 }
 
 const SUFIJO: Record<number, string> = { 400: "Regular", 500: "Medium", 600: "SemiBold" };
@@ -61,7 +63,8 @@ const todos = (l: Leido) => l.paginas.flat();
 const hay = (l: Leido, texto: RegExp | string) => todos(l).some((f) => (typeof texto === "string" ? f.s === texto : texto.test(f.s)));
 
 const cliente = { nombre: "Constructora Los Alerces", rut: "12.345.678-5", comuna: "Temuco", contacto: "María Soto" };
-const items = Array.from({ length: 40 }, (_, i) => ({ codigo: i % 9 === 8 ? null : `MOL-O-${i % 3 + 1}-A`, descripcion: `Molco · Pino Oregón · 0,8${i % 5} × 2,00 m`, medidaSolicitada: i % 7 === 0 ? "820 × 2000 mm (Vano)" : null, cantidad: i + 1, faltante: i % 2, totalLinea: i % 9 === 8 ? 0 : 90000 * (i + 1) }));
+const items = Array.from({ length: 40 }, (_, i) => ({ codigo: i % 9 === 8 ? null : `MOL-O-${i % 3 + 1}-A`, descripcion: `Molco · Pino Oregón · 0,8${i % 5} × 2,00 m`, medidaSolicitada: i % 7 === 0 ? "820 × 2000 mm (Vano)" : null,
+  modelo: i % 9 === 8 ? null : "MOLCO", familia: i % 9 === 8 ? null : ("puerta" as const), cantidad: i + 1, faltante: i % 2, totalLinea: i % 9 === 8 ? 0 : 90000 * (i + 1) }));
 const pedido = { numero: 7, creadoEn: new Date("2026-10-25T15:00:00Z"), estado: "pendiente", cotizacionNumero: 124, notaTienda: null,
   cliente: { nombre: cliente.nombre, rut: cliente.rut, contacto: "Luis Rojas", telefono: "+56 9 1234 5678" }, direccionDespacho: "Camino a Neltume km 3, Panguipulli", medioTransporte: "Camión propio",
   entregaComprometida: "2026-11-20", observaciones: "Llamar antes de despachar.\nEntrega acordada con la tienda: 15 de noviembre", items, subtotal: 1000, descuento: 0, iva: 190, total: 1190, pago: { pagado: 595, saldo: 595 } };
@@ -73,7 +76,7 @@ let cotizacion: Leido, nota: Leido, notaLarga: Leido, cancelada: Leido, trabajo:
 beforeAll(async () => {
   cotizacion = await leer(await renderizarCotizacion({
     numero: 124, aprobadaEn: new Date("2026-10-25T15:30:00Z"), vigenciaHasta: "2026-11-06", listaVersion: 3, cliente,
-    items: [{ codigo: "MOL-O-3-A", descripcion: "Molco · Pino Oregón · 0,82 × 2,00 m", cantidad: 3, precioUnitario: 277760, totalLinea: 833280 }],
+    items: [{ codigo: "MOL-O-3-A", descripcion: "Molco · Pino Oregón · 0,82 × 2,00 m", medidaSolicitada: "820 × 2000 mm (Hoja)", modelo: "MOLCO", familia: "puerta" as const, cantidad: 3, precioUnitario: 277760, totalLinea: 833280 }],
     subtotal: 833280, descuento: 0, descuentoMotivo: null, iva: 158323, total: 991603, abonoPct: 50 }));
   nota = await leer(await renderizarPedido({ ...pedido, items: items.slice(0, 3) }));
   notaLarga = await leer(await renderizarPedido(pedido));
@@ -157,8 +160,39 @@ describe("conformidad con el estilo común de los documentos (PDF real, pdfjs; A
     for (const d of documentos()) expect(hay(d, /\$0$/)).toBe(false);
   });
 
-  it("el encabezado de la tabla no se fuerza a mayúsculas ni se interletra", () => {
-    for (const d of [cotizacion, nota, trabajo, prueba]) { expect(hay(d, "Código")).toBe(true); expect(hay(d, "Descripción")).toBe(true); expect(hay(d, "CÓDIGO")).toBe(false); }
+  it("la tabla común: N.º, Producto y Cant. en todas; «Plano» y «Listo» en la nota y la orden, y la cotización con miniaturas; sin mayúsculas forzadas", () => {
+    for (const d of [cotizacion, nota, trabajo, prueba]) for (const t of ["N.º", "Producto", "Cant."]) expect(hay(d, t), t).toBe(true);
+    for (const d of [nota, trabajo]) for (const t of ["Plano", "Listo"]) expect(hay(d, t), t).toBe(true);
+    for (const t of ["Plano", "Listo"]) expect(hay(cotizacion, t), t).toBe(false);
+    for (const d of [cotizacion, nota, trabajo, prueba]) expect(hay(d, "PRODUCTO")).toBe(false);
+    expect(todos(nota).find((f) => f.s === "Producto")!.tam).toBeCloseTo(tokens.roles.encabezadoTabla.tamanoPt, 1);
+  });
+
+  it("los dibujos: miniatura en la cotización, plano en la nota y la orden y ninguno en la prueba; las cotas solo en el plano, con el texto del estándar", () => {
+    expect(cotizacion.imagenes).toBeGreaterThan(0);
+    expect(nota.imagenes).toBeGreaterThan(0);
+    expect(trabajo.imagenes).toBeGreaterThan(0);
+    expect(prueba.imagenes).toBe(0);
+    // Cotas de la medida pedida (820 × 2000) en Instrument Sans 600 de 125 px sobre el lienzo de 660 × 1090 escalado al alto del plano.
+    const tam = (PLANO.cotas.tamanoPx * (PLANO.alturaMm / 25.4) * 72) / PLANO.lienzoConCotasPx.alto;
+    for (const d of [nota, trabajo]) for (const cota of ["820", "2000"]) expect(todos(d).find((f) => f.s === cota)!.tam, cota).toBeCloseTo(tam, 1);
+    // La cotización lleva la medida en el texto de la línea, pero ninguna cota.
+    expect(hay(cotizacion, "Medida solicitada: 820 × 2000 mm (Hoja)")).toBe(true);
+    for (const cota of ["820", "2000"]) expect(hay(cotizacion, cota), cota).toBe(false);
+  });
+
+  it("«Para fábrica» con sus dos firmas en la nota y la orden, y no en la cotización ni en la prueba", () => {
+    for (const d of [nota, trabajo]) for (const t of ["Para fábrica", "Entrega comprometida", "Aprobado por", "Recibido por la fábrica"]) expect(hay(d, t), t).toBe(true);
+    for (const d of [cotizacion, prueba]) expect(hay(d, "Para fábrica")).toBe(false);
+  });
+
+  it("el encabezado lleva solo el logo (sin datos de la empresa) y los datos de la empresa van en el pie", () => {
+    for (const d of documentos()) {
+      const dato = todos(d).filter((f) => f.s.startsWith("Neltume.co · "));
+      expect(dato).toHaveLength(d.paginas.length);
+      for (const f of dato) expect(f.y, f.s).toBeGreaterThan(d.alto - 80); // al pie
+      expect(d.paginas[0].filter((f) => f.y < 130 && f.x < d.ancho / 2), "texto a la izquierda del encabezado de la primera página").toHaveLength(0);
+    }
   });
 
   it("marcas de agua: ANULADA solo en la cancelada y PRUEBA solo en la prueba, con su opacidad", () => {
