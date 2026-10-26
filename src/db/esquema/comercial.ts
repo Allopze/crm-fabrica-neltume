@@ -74,7 +74,7 @@ export const cotizacionItem = pgTable("cotizacion_item", {
   estadoItem: text().notNull(), // ok | por_confirmar | a_pedido
   duda: text(),
   textoFuente: text(), // fragmento del texto del cliente que originó el ítem
-  medidaSolicitada: text(), // la pedida en mm, con hoja/vano si se dijo (REQ-COT-2.12)
+  medidaSolicitada: text(), // la pedida en mm, siempre en las puertas, con hoja/vano si se dijo (REQ-COT-2.12)
   precioNetoLista: numeric({ precision: 14, scale: 4, mode: "number" }),
   recargoPct: numeric({ precision: 6, scale: 4, mode: "number" }),
   precioUnitario: pesos(),

@@ -1,6 +1,7 @@
 // Contenido de los PDF, separado del render para poder probarlo (REQ-COT-4.2, 4.9–4.11; TESTING U `pdf.contenido`).
 import { clp, fecha, fechaHora, fechaLarga, nombrePropio } from "@/lib/formato";
 import { type DatosEmpresa, datosEmpresa } from "@/lib/marca";
+import { lineaDeMedida } from "@/lib/medida";
 import { formatearRut } from "../rut";
 import { type Dibujo, dibujoDe, type Medida, medidaPedida } from "./dibujos";
 
@@ -50,13 +51,16 @@ interface LineaDeProducto {
   modelo: string | null; familia: FamiliaModelo;
 }
 
-/** Celda de producto y dibujo de una línea; las cotas solo en la nota y la orden, para puertas con ancho y alto pedidos y un dibujo con hoja. */
+/**
+ * Celda de producto y dibujo de una línea; las cotas solo en la nota y la orden, para puertas con ancho y alto pedidos y un dibujo con hoja.
+ * Esos dos documentos también son los únicos que dicen si la medida es de hoja o de vano (la cotización nunca lo nombra).
+ */
 function celda(l: LineaDeProducto, conCotas: boolean): Omit<FilaTabla, "n" | "detalle" | "revisar" | "cantidad" | "importes"> {
   const medida = medidaPedida(l.medidaSolicitada ?? null);
   const dibujo = dibujoDe({ modelo: l.modelo, familia: l.familia, descripcion: l.descripcion, medida });
   return {
     titulo: l.descripcion, codigo: l.codigo, dibujo,
-    medida: l.medidaSolicitada ? `Medida solicitada: ${l.medidaSolicitada}` : null,
+    medida: lineaDeMedida(l.descripcion, l.medidaSolicitada, conCotas),
     observacion: l.observacion ? `Observación: ${l.observacion}` : null,
     cotas: conCotas && medida && dibujo?.hoja ? medida : null,
   };

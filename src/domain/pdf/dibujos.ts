@@ -3,6 +3,9 @@
 // la hoja dentro del dibujo, que es lo que permite poner las cotas. Cuando la tienda agrega un modelo hay que copiarlo.
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { type Medida, medidaPedida } from "@/lib/medida";
+
+export { type Medida, medidaPedida };
 
 /** La hoja dentro del dibujo, como fracción del ancho y del alto del lienzo. */
 export interface Hoja { izq: number; der: number; arriba: number; abajo: number }
@@ -43,9 +46,6 @@ export function imagenDelDibujo(d: Dibujo): Buffer {
   return bytes;
 }
 
-/** Ancho y alto pedidos, en milímetros. */
-export interface Medida { ancho: number; alto: number }
-
 export interface LineaDibujable {
   /** Nombre del modelo del catálogo y su familia; nulos en una línea «a pedido» sin artículo. */
   modelo: string | null;
@@ -66,10 +66,4 @@ export function dibujoDe(l: LineaDibujable): Dibujo | null {
     return normalizarModelo(l.modelo) === "MARCO" ? del("MARCO") : null;
   }
   return del(l.descripcion.split(" · ")[0]) ?? (l.medida ? GENERICO : null);
-}
-
-/** Ancho y alto pedidos, en mm, de una medida solicitada como «820 × 2000 mm (Hoja)» o «830 × 2360 mm, vano». */
-export function medidaPedida(texto: string | null): Medida | null {
-  const m = texto ? /(\d{3,4})\s*[×x]\s*(\d{3,4})\s*mm/i.exec(texto) : null;
-  return m ? { ancho: Number(m[1]), alto: Number(m[2]) } : null;
 }

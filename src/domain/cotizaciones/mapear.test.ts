@@ -25,7 +25,13 @@ const item = (p: Partial<ItemPropuesto>): ItemPropuesto => ({
 
 describe("mapeo exacto al catálogo (REQ-COT-2.1, 2.3–2.5)", () => {
   it("coincidencia exacta → ok con código y descripción del catálogo", () => {
-    expect(mapearItem(item({}), cat)).toMatchObject({ estado: "ok", codigo: "NEL-R-4-B", cantidad: 3, descripcion: "Neltume · Raulí · 0,90 a 0,95 × 2,10 m", duda: null });
+    expect(mapearItem(item({}), cat)).toMatchObject({ estado: "ok", codigo: "NEL-R-4-B", cantidad: 3, descripcion: "Neltume · Raulí · 0,90 × 2,10 m", medidaSolicitada: "900 × 2100 mm", duda: null });
+  });
+
+  it("la descripción trae la medida exacta pedida y no el rango del catálogo (REQ-COT-2.12)", () => {
+    expect(mapearItem(item({ ancho_m: 0.92 }), cat)).toMatchObject({ estado: "ok", codigo: "NEL-R-4-B", descripcion: "Neltume · Raulí · 0,92 × 2,10 m", medidaSolicitada: "920 × 2100 mm" });
+    expect(mapearItem(item({ ancho_m: 0.925 }), cat)).toMatchObject({ estado: "ok", codigo: "NEL-R-4-B", descripcion: "Neltume · Raulí · 0,925 × 2,10 m", medidaSolicitada: "925 × 2100 mm" });
+    expect(mapearItem(item({ ancho_m: 92, alto_m: 209 }), cat).descripcion).not.toMatch(/ a 0,/); // 92 cm es 0,92 m, y 2,09 m cae en el alto de 2,10 m
   });
 
   it("acepta variantes de escritura: tildes, minúsculas, 'pino' y 'oregón'", () => {
@@ -75,7 +81,7 @@ describe("medidas en m, cm o mm y vano/hoja (REQ-COT-2.12)", () => {
   });
 
   it("80 × 210 en cm o 900 × 2100 en mm mapean al artículo", () => {
-    expect(mapearItem(item({ ancho_m: 90, alto_m: 210 }), cat)).toMatchObject({ estado: "ok", codigo: "NEL-R-4-B", medidaSolicitada: null });
+    expect(mapearItem(item({ ancho_m: 90, alto_m: 210 }), cat)).toMatchObject({ estado: "ok", codigo: "NEL-R-4-B", medidaSolicitada: "900 × 2100 mm" });
     expect(mapearItem(item({ ancho_m: 900, alto_m: 2100 }), cat)).toMatchObject({ estado: "ok", codigo: "NEL-R-4-B" });
     expect(mapearItem(item({ ancho_m: 5, alto_m: 2.1 }), cat)).toMatchObject({ estado: "por_confirmar", duda: expect.stringContaining("no es plausible") });
   });

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, CircleHelp, Minus, Package, Plus, Ruler, TriangleAlert } from "lucide-react";
 import { Boton, Placa } from "@/components/ui/base";
 import { ConfirmarAccion } from "@/components/ui/confirmar-accion";
+import { LineaMedida } from "@/components/ui/linea-medida";
 import { clp, cn } from "@/lib/formato";
 import { SelectorArticulo } from "./selector-articulo";
 import type { ItemDetalle } from "./tipos";
@@ -65,7 +66,7 @@ export function TarjetaItem({ item, n, activo, bloqueado, soloLectura, listaVers
           <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
             {item.codigo && item.estadoItem === "ok" && <Placa codigo={item.codigo} />}<span className="text-pretty">{item.descripcion}</span>
           </p>
-          {item.medidaSolicitada && <p className="text-xs text-tinta-tenue">Medida solicitada: {item.medidaSolicitada}</p>}
+          <LineaMedida titulo={item.descripcion} medida={item.medidaSolicitada} como="p" />
           {item.estadoItem !== "ok" && item.textoFuente && <p className="mt-0.5 text-sm text-tinta-tenue">Pedido: «{item.textoFuente}»</p>}
           {item.duda && item.estadoItem !== "ok" && <p className="mt-1 text-sm text-tinta-suave">{item.duda}</p>}
           {item.avisoStock && !soloLectura && (

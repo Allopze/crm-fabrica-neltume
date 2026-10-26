@@ -197,9 +197,12 @@ describe("conformidad con el estilo común de los documentos (PDF real, pdfjs; A
     // Cotas de la medida pedida (820 × 2000) en Instrument Sans 600 de 125 px sobre el lienzo de 660 × 1090 escalado al alto del plano.
     const tam = (PLANO.cotas.tamanoPx * (PLANO.alturaMm / 25.4) * 72) / PLANO.lienzoConCotasPx.alto;
     for (const d of [nota, trabajo]) for (const cota of ["820", "2000"]) expect(todos(d).find((f) => f.s === cota)!.tam, cota).toBeCloseTo(tam, 1);
-    // La cotización lleva la medida en el texto de la línea, pero ninguna cota.
-    expect(hay(cotizacion, "Medida solicitada: 820 × 2000 mm (Hoja)")).toBe(true);
+    // La cotización lleva la medida exacta en el texto de la línea (no el rango), sin «hoja» ni «vano», y ninguna cota.
+    expect(hay(cotizacion, "Molco · Pino Oregón · 0,82 × 2,00 m")).toBe(true);
+    expect(hay(cotizacion, /hoja|vano|Medida solicitada/i)).toBe(false);
     for (const cota of ["820", "2000"]) expect(hay(cotizacion, cota), cota).toBe(false);
+    // La nota y la orden sí dicen si la medida es de hoja o de vano.
+    for (const d of [nota, trabajo]) expect(hay(d, "Medida solicitada: 820 × 2000 mm (Vano)"), "hoja o vano en la nota y la orden").toBe(true);
   });
 
   it("«Para fábrica» con sus dos firmas en la nota y la orden, y no en la cotización ni en la prueba", () => {

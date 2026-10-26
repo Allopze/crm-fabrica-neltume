@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { ChevronRight, ClipboardList, Download, FileText, Hammer, Image as Imagen } from "lucide-react";
 import { BotonDescarga, Encabezado, Etiqueta, Panel, Placa } from "@/components/ui/base";
 import { estadoPago, estadoPedido, MEDIOS } from "@/components/ui/estado-pedido";
+import { LineaMedida } from "@/components/ui/linea-medida";
 import { SinPermiso } from "@/components/ui/sin-permiso";
 import { bd } from "@/db/conexion";
 import { notaPedido } from "@/db/esquema/comercial";
@@ -129,7 +130,7 @@ export default async function PedidoPage({ params }: PageProps<"/pedidos/[id]">)
               <li key={i.id}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="flex items-center gap-3">{i.codigo ? <Placa codigo={i.codigo} /> : <span className="text-xs font-semibold uppercase tracking-wider text-pizarra">A pedido</span>}
-                    <span className="text-sm">{i.descripcion}{i.medidaSolicitada && <span className="block text-xs text-tinta-tenue">Medida solicitada: {i.medidaSolicitada}</span>}
+                    <span className="text-sm">{i.descripcion}<LineaMedida titulo={i.descripcion} medida={i.medidaSolicitada} />
                       {i.observacion && <span className="block whitespace-pre-wrap text-xs text-tinta-suave">{i.observacion}</span>}
                       {i.revisar && <span className="mt-1 block text-xs font-medium text-pizarra">Revisar: {i.revisar}</span>}
                       {i.referencias.length > 0 && (

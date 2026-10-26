@@ -437,3 +437,13 @@ Los feriados adicionales editables solo llevaban a confusión: el usuario no deb
 - [x] T26.1 (45) Sin pantalla, API ni tabla `feriado` (migración 0025); `feriadosDesde` puro en `feriados.ts` con `FERIADOS_UNICOS`; docs (SPEC REQ-COT-6.6 y NC-13, DESIGN, DATA-MODEL, API, UX) · REQ-COT-6.6 · U `feriados`, I `migraciones` · —
 
 **Checkpoint F26:** `npm test` completo verde, lint y build; Administración ya no muestra Feriados y la vigencia sigue saltando los feriados legales.
+
+## Fase 27 — La cotización muestra la medida exacta pedida (pedida el 26-10-2026; ADR-0025 D13)
+
+La cotización imprimía el rango de la fila del catálogo («0,80 a 0,85 × 2,00 m») y la medida pedida solo se guardaba si el cliente decía «hoja» o «vano». El usuario pidió que muestre la medida exacta y que no diga «hoja» ni «vano» (la nota de pedido sí puede). La tienda ya lo resolvió igual en su app y lo escribió en el estándar compartido.
+
+- [x] T27.1 (45) `mapear` guarda siempre la medida pedida de la puerta y la deja en la descripción, en metros («0,82 × 2,00 m»); `lib/medida.ts` con `lineaDeMedida` (la línea «Medida solicitada» solo si el título no la dice; el tipo, solo en la nota y la orden) · REQ-COT-2.12, REQ-COT-4.12 · U `mapear`, `lib.medida`, I `cotizacion-manual` · —
+- [x] T27.2 (45) La cotización, la nota y la orden en PDF y las pantallas de cotización y pedido usan `lineaDeMedida`; el estándar compartido con la regla «Medida pedida» · REQ-COT-4.12 · U `pdf.contenido`, `pdf.conformidad` · T27.1
+- [ ] T27.3 Puesta en marcha (fuera del código): desplegar; las cotizaciones aprobadas antes no cambian (su medida exacta no se guardó) · RUNBOOK
+
+**Checkpoint F27:** `npm test` completo verde, lint y build; la cotización de una puerta de 0,82 × 2,00 m dice «0,82 × 2,00 m» y no «0,80 a 0,85», sin «hoja» ni «vano»; la nota y la orden lo conservan. Espero tu OK.

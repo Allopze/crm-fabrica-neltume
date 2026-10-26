@@ -1,6 +1,7 @@
 // Mapeo determinista de la propuesta de la IA al catálogo (REQ-COT-2.3–2.5; AI.md §2; DESIGN §3 paso 7).
 // Puro: el catálogo se pasa como datos. Nada se completa en silencio: lo incierto queda por confirmar.
 import type { ItemPropuesto } from "@/ai/esquema";
+import { metrosExactos } from "@/lib/medida";
 import { normalizar } from "../importacion/mapear";
 import { mapearAccesorio, type PiezaCatalogo } from "./accesorios";
 import { type AliasModelo, resolverModelo } from "./modelos";
@@ -25,10 +26,10 @@ export interface ItemMapeado {
   codigo: string | null;
   referencia: { articuloId: string; codigo: string } | null;
   cantidad: number;
-  descripcion: string; // del catálogo, nunca texto libre de la IA
+  descripcion: string; // nombre del catálogo y medida pedida (calculada de los números interpretados), nunca texto libre de la IA
   duda: string | null;
   textoFuente: string;
-  /** Medida pedida en mm (con hoja/vano si se dijo), cuando no es exactamente la del artículo o se indicó el tipo. */
+  /** Medida pedida en mm de las puertas, siempre (con hoja/vano si el cliente lo dijo); en los accesorios, solo el largo especial. */
   medidaSolicitada: string | null;
 }
 
@@ -86,8 +87,8 @@ export function mapearItem(p: ItemPropuesto, cat: CatalogoMapeo): ItemMapeado {
     const art = cat.articulos.get(`${modelo.id}|${madera.id}|${rangoExacto.codigo}|${altoExacto.codigo}`);
     if (!art) return porConfirmar(`No existe la variante ${nombre} ${rangoExacto.etiqueta} × ${m2(altoExacto.altoM)} m.`);
     return {
-      ...base, estado: "ok", articuloId: art.id, codigo: art.codigo, duda: null, descripcion: `${nombre} · ${rangoExacto.etiqueta.replace(" A ", " a ")} × ${m2(altoExacto.altoM)} m`,
-      medidaSolicitada: tipo ? pedida : null,
+      ...base, estado: "ok", articuloId: art.id, codigo: art.codigo, duda: null, descripcion: `${nombre} · ${metrosExactos(ancho)} × ${metrosExactos(altoM)} m`,
+      medidaSolicitada: pedida,
     };
   }
   if (!rangoSuperior || !altoSuperior) return porConfirmar(`La medida ${m2(ancho)} × ${m2(altoM)} m supera la grilla del catálogo.`);
@@ -95,7 +96,7 @@ export function mapearItem(p: ItemPropuesto, cat: CatalogoMapeo): ItemMapeado {
   if (!ref) return porConfirmar(`No hay variante de referencia para ${nombre} ${m2(ancho)} × ${m2(altoM)} m.`);
   return {
     ...base, estado: "a_pedido", referencia: { articuloId: ref.id, codigo: ref.codigo },
-    descripcion: `${nombre} · ${m2(ancho)} × ${m2(altoM)} m (medida especial)`, medidaSolicitada: pedida,
+    descripcion: `${nombre} · ${metrosExactos(ancho)} × ${metrosExactos(altoM)} m (medida especial)`, medidaSolicitada: pedida,
     duda: "La medida queda fuera de la grilla: se fabrica a pedido. Una persona debe fijar el precio.",
   };
 }

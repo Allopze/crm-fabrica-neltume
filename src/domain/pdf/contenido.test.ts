@@ -26,13 +26,27 @@ describe("pdf.contenido (REQ-COT-4.2; estilo común v1)", () => {
 
   it("la tabla común: celda de producto, importes en formato chileno y la miniatura del dibujo sin cotas", () => {
     const k = contenidoCotizacion(base);
-    expect(k.filas[0]).toMatchObject({ n: 1, titulo: base.items[0].descripcion, medida: "Medida solicitada: 820 × 2000 mm (Hoja)", observacion: null, codigo: "MOL-O-3-A", cantidad: "3", importes: ["$277.760", "$833.280"], cotas: null });
+    expect(k.filas[0]).toMatchObject({ n: 1, titulo: base.items[0].descripcion, medida: "Medida solicitada: 820 × 2000 mm", observacion: null, codigo: "MOL-O-3-A", cantidad: "3", importes: ["$277.760", "$833.280"], cotas: null });
     expect(k.filas[0].dibujo!.archivo).toBe("molco.png");
     // «A pedido» sin artículo: el modelo sale del comienzo de la descripción y no lleva código.
-    expect(k.filas[1]).toMatchObject({ n: 2, codigo: null, importes: ["$400.000", "$800.000"], cotas: null });
+    expect(k.filas[1]).toMatchObject({ n: 2, codigo: null, medida: null, importes: ["$400.000", "$800.000"], cotas: null });
     expect(k.filas[1].dibujo!.archivo).toBe("tolten.png");
     expect(k.totales).toEqual([["Subtotal neto", "$1.633.280"], ["IVA 19 %", "$310.323"]]);
     expect(k.total).toBe("$1.943.603");
+  });
+
+  it("la cotización imprime la medida exacta pedida y no el rango, y nunca «hoja» ni «vano» (REQ-COT-4.12)", () => {
+    const nueva = { ...base, items: [
+      { ...base.items[0], descripcion: "Molco · Pino Oregón · 0,82 × 2,00 m", medidaSolicitada: "820 × 2000 mm (hoja)" },
+      { ...base.items[1], descripcion: "Toltén · Raulí · 0,822 × 2,15 m", medidaSolicitada: "822 × 2150 mm (vano)" },
+    ] };
+    const k = contenidoCotizacion(nueva);
+    expect(k.filas.map((f) => [f.titulo, f.medida])).toEqual([["Molco · Pino Oregón · 0,82 × 2,00 m", null], ["Toltén · Raulí · 0,822 × 2,15 m", null]]);
+    // Una cotización antigua trae el rango del catálogo en el título: la medida pedida va aparte y también sin el tipo.
+    const antigua = contenidoCotizacion({ ...base, items: [{ ...base.items[0], medidaSolicitada: "820 × 2000 mm, vano" }, { ...base.items[0], medidaSolicitada: null }] });
+    expect(antigua.filas.map((f) => [f.titulo, f.medida])).toEqual([[base.items[0].descripcion, "Medida solicitada: 820 × 2000 mm"], [base.items[0].descripcion, null]]);
+    const texto = JSON.stringify([...k.filas, ...antigua.filas].map((f) => [f.titulo, f.medida, f.observacion, f.detalle]));
+    expect(texto).not.toMatch(/hoja|vano/i);
   });
 
   it("las notas junto a los totales (flete, lista, condición de pago) y el pie con los datos de la empresa", () => {
@@ -98,6 +112,15 @@ describe("pdf.contenido de la nota de pedido (REQ-COT-8.1, 8.16, 4.9–4.11)", (
     expect(especial.dibujo).toBe(GENERICO);
     expect(especial.cotas).toEqual({ ancho: 900, alto: 2100 });
     expect(especial.codigo).toBeNull();
+  });
+
+  it("la nota dice «hoja» o «vano» solo si el cliente lo indicó; con la medida ya en el título no repite la línea (REQ-COT-4.12)", () => {
+    const linea = (descripcion: string, medidaSolicitada: string) => contenidoPedido({ ...nota, items: [{ ...nota.items[0], descripcion, medidaSolicitada }] }).filas[0].medida;
+    expect(linea("Fuy · Pino Oregón · 0,72 × 2,00 m", "720 × 2000 mm")).toBeNull();
+    expect(linea("Fuy · Pino Oregón · 0,72 × 2,00 m", "720 × 2000 mm (Hoja)")).toBe("Medida solicitada: 720 × 2000 mm (Hoja)");
+    // Una línea de la tienda trae la descripción del catálogo (el rango): la medida pedida va siempre aparte.
+    expect(linea("Fuy Pino Oregon 0,70 a 0,75 m × 2 m", "720 × 2000 mm")).toBe("Medida solicitada: 720 × 2000 mm");
+    expect(linea("Fuy Pino Oregon 0,70 a 0,75 m × 2 m", "720 × 2000 mm (Vano)")).toBe("Medida solicitada: 720 × 2000 mm (Vano)");
   });
 
   it("«Para fábrica»: entrega, observaciones y las dos firmas; un ítem a pedido sin precio dice «Por definir», nunca «$0»", () => {

@@ -43,7 +43,9 @@ describe("cotización manual (REQ-COT-5.1–5.3)", () => {
     expect(r.estado).toBe(201);
     const manual = (await llamar(rutaCot.GET, "GET", "/x", s, { id: r.cuerpo.id })).cuerpo;
     expect(manual).toMatchObject({ origen: "manual", estado: "borrador", textoOriginal: null });
-    expect(manual.items[0]).toMatchObject({ estadoItem: "ok", descripcion: conIa.descripcion, precioUnitario: conIa.precioUnitario, totalLinea: conIa.totalLinea });
+    // La cotización con IA trae la medida exacta pedida; la manual, sin medida pedida, la descripción del catálogo (su rango).
+    expect(conIa).toMatchObject({ descripcion: "Neltume · Raulí · 0,90 × 2,10 m", medidaSolicitada: "900 × 2100 mm" });
+    expect(manual.items[0]).toMatchObject({ estadoItem: "ok", descripcion: "Neltume · Raulí · 0,90 a 0,95 × 2,10 m", medidaSolicitada: null, precioUnitario: conIa.precioUnitario, totalLinea: conIa.totalLinea });
     expect(Number(manual.subtotal)).toBe(Number(conIa.totalLinea));
   });
 
