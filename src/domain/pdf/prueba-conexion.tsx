@@ -13,8 +13,8 @@ function DocumentoPrueba({ p }: { p: PruebaConexionPdf }) {
     <Document title={k.titulo} author={MARCA.nombre} creator={MARCA.nombre} producer={MARCA.nombre} creationDate={p.creadaEn} modificationDate={p.creadaEn}>
       <Page size="A4" style={e.pagina}>
         <Membrete tipo={k.tipo} numero={k.numero} meta={k.meta} />
-        <View style={{ borderWidth: 1.2, borderColor: COLOR.rauli, paddingVertical: 12, marginBottom: 16 }}>
-          <Text style={{ fontFamily: "Fraunces", fontWeight: 500, fontSize: 16, textAlign: "center", color: COLOR.rauli }}>{k.rotulo}</Text>
+        <View style={{ borderWidth: 1.2, borderColor: COLOR.acento, paddingVertical: 12, marginBottom: 16 }}>
+          <Text style={{ fontFamily: "Fraunces", fontWeight: 500, fontSize: 16, textAlign: "center", color: COLOR.acento }}>{k.rotulo}</Text>
         </View>
         <Partes partes={k.partes} />
         <TablaItems columnas={["Código", "Descripción", "Cant.", "En stock", "Por fabricar"]} filas={k.filas} />

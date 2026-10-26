@@ -13,7 +13,8 @@ import { pdfPruebaConexion } from "./prueba-conexion";
 // márgenes se comparan con los tokens, los mismos en las dos apps. Las anclas de lectura (§8) son de la tienda, no de aquí.
 
 interface Fragmento { s: string; x: number; y: number; fin: number; tam: number; girado: boolean }
-interface Leido { paginas: Fragmento[][]; fuentes: string[]; colores: string[]; opacidades: number[]; ancho: number; alto: number; bytes: number; info: Record<string, string> }
+/** `colorTexto`: el último color de relleno con que se dibujó cada texto, para saber de qué color salió una cifra. */
+interface Leido { paginas: Fragmento[][]; fuentes: string[]; colores: string[]; colorTexto: Map<string, string>; opacidades: number[]; ancho: number; alto: number; bytes: number; info: Record<string, string> }
 
 async function leer(pdf: Buffer): Promise<Leido> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
@@ -22,7 +23,7 @@ async function leer(pdf: Buffer): Promise<Leido> {
   const tarea = pdfjs.getDocument({ data: new Uint8Array(pdf), useSystemFonts: false, fontExtraProperties: true, verbosity: 0 });
   const documento = await tarea.promise;
   const paginas: Fragmento[][] = [];
-  const fuentes = new Set<string>(), colores = new Set<string>(), opacidades = new Set<number>();
+  const fuentes = new Set<string>(), colores = new Set<string>(), opacidades = new Set<number>(), colorTexto = new Map<string, string>();
   let [ancho, alto] = [0, 0];
   for (let n = 1; n <= documento.numPages; n++) {
     const pagina = await documento.getPage(n);
@@ -32,8 +33,11 @@ async function leer(pdf: Buffer): Promise<Leido> {
     paginas.push(items.flatMap((i) => ("str" in i && i.str.trim()
       ? [{ s: i.str, x: i.transform[4], y: vista.height - i.transform[5], fin: i.transform[4] + i.width, tam: Math.hypot(i.transform[0], i.transform[1]), girado: Math.abs(i.transform[1]) > 0.01 }] : [])));
     const ops = await pagina.getOperatorList();
+    let relleno = "";
     for (let i = 0; i < ops.fnArray.length; i++) {
       const [fn, args] = [ops.fnArray[i], ops.argsArray[i]];
+      if (fn === pdfjs.OPS.setFillRGBColor) relleno = String(args[0]).toLowerCase();
+      if (fn === pdfjs.OPS.showText) colorTexto.set((args[0] as ({ unicode?: string } | number)[]).map((g) => (typeof g === "object" && g.unicode) || "").join(""), relleno);
       if (fn === pdfjs.OPS.setFillRGBColor || fn === pdfjs.OPS.setStrokeRGBColor) colores.add(String(args[0]).toLowerCase());
       if (fn === pdfjs.OPS.setGState) for (const [clave, valor] of args[0] as [string, unknown][]) if (clave === "ca" && typeof valor === "number" && valor < 1) opacidades.add(valor);
       if (fn === pdfjs.OPS.setFont) {
@@ -44,12 +48,14 @@ async function leer(pdf: Buffer): Promise<Leido> {
   }
   const { info } = await documento.getMetadata();
   await tarea.destroy();
-  return { paginas, fuentes: [...fuentes].sort(), colores: [...colores], opacidades: [...opacidades], ancho, alto, bytes: pdf.length, info: info as Record<string, string> };
+  return { paginas, fuentes: [...fuentes].sort(), colores: [...colores], colorTexto, opacidades: [...opacidades], ancho, alto, bytes: pdf.length, info: info as Record<string, string> };
 }
 
 const SUFIJO: Record<number, string> = { 400: "Regular", 500: "Medium", 600: "SemiBold" };
 const FUENTES_DEL_ESTANDAR = new Set(tokens.fuentes.map((f) => `${f.familia.replace(/ /g, "")}-${SUFIJO[f.peso]}`));
-const PALETA = new Set([...Object.values(tokens.colores), "#ffffff"]);
+const PALETA = new Set([...Object.values(tokens.colores.fabrica), "#ffffff"]);
+// Cada app conserva sus colores: lo que es solo de la paleta de la tienda no puede aparecer en mis PDF.
+const SOLO_DE_LA_TIENDA = Object.values(tokens.colores.tienda).filter((c) => !PALETA.has(c));
 const MARGEN = (tokens.hoja.margenesMm.izquierda / 25.4) * 72;
 const todos = (l: Leido) => l.paginas.flat();
 const hay = (l: Leido, texto: RegExp | string) => todos(l).some((f) => (typeof texto === "string" ? f.s === texto : texto.test(f.s)));
@@ -58,7 +64,7 @@ const cliente = { nombre: "Constructora Los Alerces", rut: "12.345.678-5", comun
 const items = Array.from({ length: 40 }, (_, i) => ({ codigo: i % 9 === 8 ? null : `MOL-O-${i % 3 + 1}-A`, descripcion: `Molco · Pino Oregón · 0,8${i % 5} × 2,00 m`, medidaSolicitada: i % 7 === 0 ? "820 × 2000 mm (Vano)" : null, cantidad: i + 1, faltante: i % 2, totalLinea: i % 9 === 8 ? 0 : 90000 * (i + 1) }));
 const pedido = { numero: 7, creadoEn: new Date("2026-10-25T15:00:00Z"), estado: "pendiente", cotizacionNumero: 124, notaTienda: null,
   cliente: { nombre: cliente.nombre, rut: cliente.rut, contacto: "Luis Rojas", telefono: "+56 9 1234 5678" }, direccionDespacho: "Camino a Neltume km 3, Panguipulli", medioTransporte: "Camión propio",
-  entregaComprometida: "2026-11-20", observaciones: "Llamar antes de despachar.", items, subtotal: 1000, descuento: 0, iva: 190, total: 1190, pago: { pagado: 595, saldo: 595 } };
+  entregaComprometida: "2026-11-20", observaciones: "Llamar antes de despachar.\nEntrega acordada con la tienda: 15 de noviembre", items, subtotal: 1000, descuento: 0, iva: 190, total: 1190, pago: { pagado: 595, saldo: 595 } };
 const orden = { numero: 418, creadoEn: new Date("2026-10-24T15:00:00Z"), estado: "pendiente", cotizacionNumero: null, notaTienda: "577", revisionTienda: 2, proyecto: "Casa Lago",
   direccionDespacho: "Camino a Neltume km 3", medioTransporte: "Starken", entregaComprometida: "2026-11-16", observaciones: null,
   items: items.slice(0, 4).map((i) => ({ codigo: i.codigo, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, observacion: null, revisar: i.codigo ? null : "Pedido especial; precio por definir", referencias: 0, cantidad: i.cantidad, reservado: 0, faltante: i.cantidad })) };
@@ -88,12 +94,24 @@ describe("conformidad con el estilo común de los documentos (PDF real, pdfjs; A
   it("solo usa las fuentes del estándar, incrustadas y sin Type 3", () => {
     for (const d of documentos()) for (const f of d.fuentes) expect(FUENTES_DEL_ESTANDAR.has(f), f).toBe(true);
     expect(nota.fuentes).toContain("Fraunces-Medium");
+    expect(hay(nota, "Entrega acordada con la tienda: 15 de noviembre")).toBe(true); // observaciones de varias líneas: sin Helvetica
     expect(nota.fuentes).toContain("JetBrainsMono-Regular"); // el código de la tabla
   });
 
-  it("solo usa los colores de los tokens (más el blanco del campo para escribir a mano)", () => {
-    for (const d of documentos()) for (const c of d.colores) expect(PALETA.has(c), c).toBe(true);
-    expect(nota.colores).toEqual(expect.arrayContaining([tokens.colores.tinta, tokens.colores.gris, tokens.colores.verde, tokens.colores.filete, tokens.colores.fondoSuave]));
+  it("solo usa la paleta de la fábrica de los tokens (más el blanco del campo para escribir a mano), no la de la tienda", () => {
+    const { tinta, gris, acento, filete, fondoSuave } = tokens.colores.fabrica;
+    for (const d of documentos()) for (const c of d.colores) { expect(PALETA.has(c), c).toBe(true); expect(SOLO_DE_LA_TIENDA, c).not.toContain(c); }
+    expect(nota.colores).toEqual(expect.arrayContaining([tinta, gris, acento, filete, fondoSuave]));
+    expect(SOLO_DE_LA_TIENDA.length).toBeGreaterThan(0);
+  });
+
+  it("la cifra del total va en el color del total (tinta en la fábrica) y no en el acento terracota", () => {
+    const { total, acento, tinta } = tokens.colores.fabrica;
+    expect(total).toBe(tinta);
+    expect(total).not.toBe(acento);
+    expect(cotizacion.colorTexto.get("$991.603")).toBe(total);
+    expect(nota.colorTexto.get("$1.190")).toBe(total);
+    expect(cotizacion.colores).toContain(acento); // el filete del encabezado sí lleva el acento
   });
 
   it("los márgenes laterales son los del estándar (14 mm): nada se sale y el texto llega hasta ellos", () => {

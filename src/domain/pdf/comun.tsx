@@ -60,7 +60,7 @@ export const e = StyleSheet.create({
 
 /**
  * Encabezado: el logo de la app a la izquierda (con los datos de la empresa más abajo que el número) y, a la derecha, el tipo
- * del documento sobre su número y la meta en columnas con la etiqueta arriba. Cierra con un filete verde.
+ * del documento sobre su número y la meta en columnas con la etiqueta arriba. Cierra con un filete en el color de acento.
  */
 export function Membrete({ tipo, numero, meta }: { tipo: string; numero: string; meta: [string, string][] }) {
   const [nombre, ...resto] = lineasEmpresa(datosEmpresa());
@@ -143,7 +143,8 @@ export function Totales({ lineas, total, despues = [] }: { lineas: [string, stri
 
 /** Caja sobre fondo suave con un título serif; con `campo`, el texto va en un cuadro blanco con borde gris para escribir a mano. */
 export function Caja({ titulo, texto, campo = false }: { titulo: string; texto: string | null; campo?: boolean }) {
-  const contenido = <Text>{texto ?? ""}</Text>;
+  // Una línea por Text, como en la tabla: un salto («\n») dentro del texto hace que react-pdf cite Helvetica, que no va incrustada.
+  const contenido = <>{(texto ?? "").split("\n").map((linea, k) => <Text key={k}>{linea}</Text>)}</>;
   return (
     <View style={e.caja} wrap={false}>
       <Text style={e.tituloCaja}>{titulo}</Text>

@@ -1,15 +1,16 @@
 // Estilo común de los documentos (docs/contratos/estilo-documentos-v1.md; ADR-0025). Colores, tamaños y márgenes salen del
-// archivo de tokens, el mismo en las dos apps: aquí no se escribe ninguno a mano. Las fuentes de la marca van en la imagen
+// archivo de tokens, el mismo en las dos apps: aquí no se escribe ninguno a mano. Los roles de color son comunes y cada app
+// los llena con su paleta: la fábrica usa `colores.fabrica`. Las fuentes de la marca van en la imagen
 // (public/marca/fuentes, licencia OFL): el PDF se ve como la app y no se piden por red.
 import path from "node:path";
 import { Font } from "@react-pdf/renderer";
 import tokens from "../../../docs/contratos/estilo-documentos-tokens.json";
 
-export type NombreColor = keyof typeof tokens.colores;
+export type NombreColor = keyof typeof tokens.colores.fabrica;
 export type NombreRol = keyof typeof tokens.roles;
 interface Rol { familia: string; peso: number; tamanoPt: number; color: NombreColor; interlineado?: number }
 
-export const COLOR: Record<NombreColor, string> = tokens.colores;
+export const COLOR: Record<NombreColor, string> = tokens.colores.fabrica;
 const ROLES = tokens.roles as Record<NombreRol, Rol>;
 export const TRAZOS = tokens.trazos as Record<keyof typeof tokens.trazos, { anchoPt: number; color: NombreColor }>;
 export const MARCAS_DE_AGUA = tokens.marcasDeAgua as Record<keyof typeof tokens.marcasDeAgua, { familia: string; peso: number; color: NombreColor; opacidad: number; giroGrados: number }>;

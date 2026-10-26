@@ -405,3 +405,13 @@ Los cuatro PDF de la fábrica (cotización, nota de pedido, orden de trabajo y p
 - [x] T23.5 Puesta en marcha (fuera del código): desplegada junto con la F22 el 25-10-2026 y avisada la tienda; queda la prueba de conexión cruzada en producción cuando la tienda publique su lado · RUNBOOK
 
 **Checkpoint F23:** `npm test` completo verde, lint y build; los cuatro PDF se ven en el estilo nuevo y siguen en el contenido y formato chileno de siempre. Espero tu OK.
+
+## Fase 24 — Cada app conserva sus colores (aprobada el 25-10-2026; ADR-0025 D2)
+
+El estándar unificaba el acento en el verde de la tienda; el usuario decidió que cada app mantiene sus colores. Los PDF de la fábrica vuelven a su paleta y el resto del estilo (tipografías, márgenes, encabezado, pie) no cambia. Los dos colores que la fábrica nunca tuvo (fondo suave `#f2f3ec` y «ANULADA» `#aa1e1e`) se dejan como en el estándar.
+
+- [x] T24.0 Decisiones en documentos: ADR-0025 D2, SPEC (REQ-COT-4.6), DESIGN §13 y TESTING; copia de los tokens por app y del estándar de la tienda (a6e205d) en `docs/contratos/` · ADR-0025 · — · —
+- [x] T24.1 (45) `estilo.ts` lee `colores.fabrica`, el rótulo de la prueba de conexión usa el acento y la conformidad compara con esa paleta y rechaza cualquier color exclusivo de la tienda · REQ-COT-4.6 · U `pdf.conformidad` · T24.0
+- [ ] T24.2 Puesta en marcha (fuera del código): desplegar; entregar a la tienda los cuatro PDF de muestra con su pedido de ejemplo · RUNBOOK
+
+**Checkpoint F24:** `npm test` completo verde, lint y build; los cuatro PDF se ven con la paleta de la fábrica (acento terracota). Espero tu OK.
