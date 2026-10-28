@@ -132,14 +132,21 @@ describe("lector tolerante de la nota «por fábrica» (F22, REQ-COT-8.6)", () =
       ["PUERTA MOLCO MODELO X CON VIDRIO TIPO A", "840 × 2000 mm (Vano)", 1, 100000],
       ["Molco Pino Oregon 0,80 m × 2,00 m", "800 × 2000 mm (Hoja)", 10000, 1000000000],
     ]);
-    expect(n.avisos).toEqual([expect.stringMatching(/^La nota trae 1 línea sin «Referencia de catálogo»/)]);
+    expect(n.avisos).toEqual([expect.stringMatching(/^La nota trae 1 línea sin código del catálogo/)]);
+
+    // Desde el 28-10-2026 la tienda imprime el código solo, en gris, sin «Referencia de catálogo:» ni rango (estilo común v1 §8.9).
+    const soloCodigo = muestra.map((x) => (x.texto.startsWith("Referencia de catálogo: ") ? { ...x, texto: "MOL-O-3-A" } : x));
+    const c = leerNotaTienda(soloCodigo);
+    expect(c.numero).toBe("577");
+    expect(c.lineas).toEqual(n.lineas);
+    expect(c.avisos).toEqual(n.avisos);
   });
 
   it("avisa de las líneas sin referencia de catálogo (pedidos especiales) en vez de omitirlas", () => {
     const especial = [f(139, 410, "Puerta según diseño del cliente 7 · Roble"), f(385, 400, "1"), f(414, 400, "Por definir"), f(482, 400, "Por definir"), f(139, 388, "Producto personalizado, fuera de catálogo")];
     const n = leerNotaTienda([...nota, ...especial]);
     expect(n.lineas).toHaveLength(2);
-    expect(n.avisos).toEqual([expect.stringMatching(/^La nota trae 1 línea sin «Referencia de catálogo»/)]);
+    expect(n.avisos).toEqual([expect.stringMatching(/^La nota trae 1 línea sin código del catálogo/)]);
     expect(leerNotaTienda(nota).avisos).toEqual([]);
   });
 });

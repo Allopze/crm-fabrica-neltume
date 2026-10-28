@@ -12,7 +12,7 @@ import { fragmentosPdf, MAX_PDF_PAGINAS, PdfDemasiadoLargo } from "./pdf-texto";
 // ADR-0025 D10, F22: el lector debe aceptar los dos antes de que la tienda publique el suyo. TESTING §4.
 const RAIZ = "tests/fixtures/tienda/pdf";
 const leer = async (archivo: string) => leerNotaTienda(await fragmentosPdf(new Uint8Array(readFileSync(`${RAIZ}/${archivo}`))));
-const ESPECIALES = expect.stringMatching(/^La nota trae 4 líneas sin «Referencia de catálogo»/);
+const ESPECIALES = expect.stringMatching(/^La nota trae 4 líneas sin código del catálogo/);
 
 describe.each([["actual"], ["estandar"]])("PDF de la nota de la tienda, estilo %s (F22, REQ-COT-8.6)", (estilo) => {
   it("1 página: número, fecha, cotización, despacho, totales y las 3 líneas, sin datos del cliente final", async () => {
@@ -50,7 +50,7 @@ describe("PDF de la nota de la tienda, estilo nuevo: casos aparte (F22)", () => 
     const n = await leer("estandar/nota-entrega-libre.pdf");
     expect(n.despacho).toMatchObject({ entregaComprometida: null, entregaTexto: "15 de noviembre" });
     expect(n.lineas).toHaveLength(3);
-    expect(n.avisos).toEqual([expect.stringMatching(/1 línea sin «Referencia de catálogo»/), expect.stringContaining("15 de noviembre")]);
+    expect(n.avisos).toEqual([expect.stringMatching(/1 línea sin código del catálogo/), expect.stringContaining("15 de noviembre")]);
   });
 
   it("con el código en otra fuente (pdfjs lo entrega partido) igual lo lee", async () => {
