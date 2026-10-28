@@ -1,8 +1,8 @@
 // PDF de la prueba de conexión con la tienda (ADR-0024 §5): una página rotulada como prueba, con datos inventados. Lo
 // genera la app al apretar el botón y lo firma y envía el servicio de enlace; la tienda lo muestra en sus Ajustes.
-import { Document, Page, renderToBuffer, Text, View } from "@react-pdf/renderer";
+import { Document, Page, Text, View } from "@react-pdf/renderer";
 import { MARCA } from "@/lib/marca";
-import { Caja, e, MarcaDeAgua, Membrete, Notas, Partes, Pie, TablaItems } from "./comun";
+import { Caja, e, MarcaDeAgua, Membrete, Notas, Partes, Pie, renderizarPdf, TablaItems } from "./comun";
 import { contenidoPruebaConexion, type PruebaConexionPdf } from "./contenido";
 import { COLOR } from "./estilo";
 
@@ -17,7 +17,7 @@ function DocumentoPrueba({ p }: { p: PruebaConexionPdf }) {
           <Text style={{ fontFamily: "Fraunces", fontWeight: 500, fontSize: 16, textAlign: "center", color: COLOR.acento }}>{k.rotulo}</Text>
         </View>
         <Partes partes={k.partes} />
-        <TablaItems columnas={["En stock", "Por fabricar"]} filas={k.filas} dibujos={null} />
+        <TablaItems columnas={["En stock", "Por fabricar"]} filas={k.filas} />
         <Caja titulo="Cómo reconocerlo" texto={k.nota} />
         <Notas notas={k.notas} />
         <Pie lineas={[k.pie]} />
@@ -27,4 +27,4 @@ function DocumentoPrueba({ p }: { p: PruebaConexionPdf }) {
   );
 }
 
-export const pdfPruebaConexion = (p: PruebaConexionPdf): Promise<Buffer> => renderToBuffer(<DocumentoPrueba p={p} />);
+export const pdfPruebaConexion = (p: PruebaConexionPdf): Promise<Buffer> => renderizarPdf(<DocumentoPrueba p={p} />);

@@ -2,7 +2,7 @@
 // firma `%PDF-` y que pdfjs lo abra; el de producción además debe mostrar el N.º de la nota y ningún monto en pesos:
 // si no, el pedido igual entra, pero ese PDF queda retenido y no se sirve.
 import { createHash } from "node:crypto";
-import { esPdf, fragmentosPdf } from "../pedidos/pdf-texto";
+import { esPdf, fragmentosPdf, MAX_PDF_PAGINAS, PdfDemasiadoLargo } from "../pedidos/pdf-texto";
 
 export const MAX_DOCUMENTO_BYTES = 8 * 1024 * 1024;
 export const MAX_ADJUNTO_BYTES = 10 * 1024 * 1024;
@@ -39,7 +39,8 @@ export async function verificarDocumento(
   let texto: string;
   try {
     texto = (await fragmentosPdf(contenido)).map((f) => f.texto).join(" ");
-  } catch {
+  } catch (e) {
+    if (e instanceof PdfDemasiadoLargo) throw new DocumentoInvalido(`tiene ${e.paginas} páginas; el máximo es ${MAX_PDF_PAGINAS}`);
     throw new DocumentoInvalido("el PDF está dañado o no se puede leer");
   }
   const muestraNumero = new RegExp(`(^|\\D)${numeroNota.replace(/\D/g, "")}(\\D|$)`).test(texto);

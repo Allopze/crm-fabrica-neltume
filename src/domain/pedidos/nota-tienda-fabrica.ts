@@ -85,7 +85,11 @@ export function leerNotaPorFabrica(entrada: Fragmento[]): NotaTienda {
     if (!fila) throw new NotaIlegible(`No se pudo leer la cantidad del ítem ${codigo}.`);
     const montos = fs.filter((f) => f.pagina === r.pagina && Math.abs(f.y - fila.y) <= MISMA_LINEA && PESOS.test(f.texto)).sort((a, b) => a.x - b.x);
     if (montos.length < 2) throw new NotaIlegible(`No se pudieron leer los precios del ítem ${codigo}.`);
-    const columna = fs.filter((f) => f.pagina === r.pagina && Math.abs(f.x - r.x) < 3 && f.y > r.y && f.y <= fila.y + 20 && !enCabecera(f));
+    // La cantidad va centrada en la fila: su borde de arriba queda tan lejos de ella como la referencia por abajo. Con una
+    // observación de 3 o más líneas la descripción queda a más de 20 pt de la cantidad (muestra 577 de la tienda, ítem 4).
+    const borde = fila.y + Math.max(20, fila.y - r.y + 8);
+    const columna = fs.filter((f) => f.pagina === r.pagina && Math.abs(f.x - r.x) < 3 && f.y > r.y && f.y <= borde && !enCabecera(f)
+      && !(anterior && anterior.pagina === r.pagina && f.y >= anterior.y));
     const medida = columna.find((f) => /^Medida solicitada:/i.test(f.texto));
     const descripcion = columna.filter((f) => !/^Medida solicitada:/i.test(f.texto)).sort((a, b) => b.y - a.y)[0]?.texto ?? "";
     const cantidad = Number(fila.texto);

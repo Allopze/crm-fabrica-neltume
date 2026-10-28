@@ -18,6 +18,8 @@ COPY --from=build --chown=node:node /app/public ./public
 # pdfjs necesita su worker para leer los PDF de la tienda (ADR-0008, ADR-0023): si el build standalone no lo copió,
 # la imagen no se construye, en vez de rechazar cada nota en producción.
 RUN test -f node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs || { echo "Falta pdf.worker.mjs en el build standalone" >&2; exit 1; }
+# sharp reduce las fotos del cliente en la nota y la orden de trabajo (ADR-0025 D14): su binario de Linux debe cargar aquí.
+RUN node -e "require('sharp')" || { echo "sharp no carga en la imagen" >&2; exit 1; }
 USER node
 EXPOSE 3000
 CMD ["node", "server.js"]

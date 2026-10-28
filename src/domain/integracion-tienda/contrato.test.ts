@@ -61,6 +61,9 @@ describe("integracion.lineas (ADR-0023 §5, D3, D4)", () => {
     expect(medidaSolicitada(base.dimensions)).toBe("720 × 2000 mm (Hoja)");
     expect(medidaSolicitada({ ...base.dimensions, requested: null })).toBe("720 × 2000 mm, hoja");
     expect(medidaSolicitada({ widthMm: null, heightMm: null, lengthMm: 2100, section: "2X4", measureType: null, requested: null })).toBe("2X4 × 2100 mm");
+    // Marco o moldura especial con el ancho que escribió la vendedora (`widthMm` sin `heightMm`).
+    expect(medidaSolicitada({ widthMm: 900, heightMm: null, lengthMm: 2100, section: "2X4", measureType: null, requested: null })).toBe("2X4 × 900 × 2100 mm");
+    expect(medidaSolicitada({ widthMm: 900, heightMm: null, lengthMm: 2100, section: null, measureType: "no_especificado", requested: "0,90 m × 2,10 m" })).toBe("0,90 m × 2,10 m");
     expect(observacionItem({ ...base, descriptionEdited: true, description: "Panel liso", observations: "Bisagras a la derecha" }, true))
       .toBe("Descripción de la tienda: Panel liso\nBisagras a la derecha");
     expect(observacionItem(base, true)).toBeNull();

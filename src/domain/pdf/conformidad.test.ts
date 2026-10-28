@@ -3,22 +3,28 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { Document, Page, renderToBuffer } from "@react-pdf/renderer";
 import { createElement } from "react";
+import sharp from "sharp";
 import { beforeAll, describe, expect, it } from "vitest";
 import tokens from "../../../docs/contratos/estilo-documentos-tokens.json";
 import { e, Pie } from "./comun";
-import { PLANO } from "./estilo";
 import { renderizarCotizacion } from "./cotizacion";
 import { renderizarOrdenTrabajo } from "./orden-trabajo";
 import { renderizarPedido } from "./pedido";
 import { pdfPruebaConexion } from "./prueba-conexion";
+import { type ImagenPdf, reducirImagen, type ReferenciaPdf } from "./referencias";
 
 // Conformidad con el estilo común de los documentos (docs/contratos/estilo-documentos-v1.md; ADR-0025 D11): imprime los
 // cuatro PDF con datos inventados y los lee con pdfjs, sobre el PDF real y no sobre el contenido. Colores, fuentes y
 // márgenes se comparan con los tokens, los mismos en las dos apps. Las anclas de lectura (§8) son de la tienda, no de aquí.
 
 interface Fragmento { s: string; x: number; y: number; fin: number; tam: number; girado: boolean }
-/** `colorTexto`: el último color de relleno con que se dibujó cada texto, para saber de qué color salió una cifra. */
-interface Leido { paginas: Fragmento[][]; fuentes: string[]; colores: string[]; colorTexto: Map<string, string>; opacidades: number[]; imagenes: number; ancho: number; alto: number; bytes: number; info: Record<string, string> }
+/** Una imagen dibujada: su tamaño en la página (puntos), según la matriz con que se pintó. */
+interface Dibujada { ancho: number; alto: number }
+/**
+ * `colorTexto`: el último color de relleno con que se dibujó cada texto, para saber de qué color salió una cifra.
+ * `imagenesPorPagina`: las imágenes pintadas en cada página, con su tamaño.
+ */
+interface Leido { paginas: Fragmento[][]; fuentes: string[]; colores: string[]; colorTexto: Map<string, string>; opacidades: number[]; imagenes: number; imagenesPorPagina: Dibujada[][]; ancho: number; alto: number; bytes: number; info: Record<string, string> }
 
 async function leer(pdf: Buffer): Promise<Leido> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
@@ -29,6 +35,7 @@ async function leer(pdf: Buffer): Promise<Leido> {
   const paginas: Fragmento[][] = [];
   const fuentes = new Set<string>(), colores = new Set<string>(), opacidades = new Set<number>(), colorTexto = new Map<string, string>();
   let [ancho, alto, imagenes] = [0, 0, 0];
+  const imagenesPorPagina: Dibujada[][] = [];
   for (let n = 1; n <= documento.numPages; n++) {
     const pagina = await documento.getPage(n);
     const vista = pagina.getViewport({ scale: 1 });
@@ -38,9 +45,13 @@ async function leer(pdf: Buffer): Promise<Leido> {
       ? [{ s: i.str, x: i.transform[4], y: vista.height - i.transform[5], fin: i.transform[4] + i.width, tam: Math.hypot(i.transform[0], i.transform[1]), girado: Math.abs(i.transform[1]) > 0.01 }] : [])));
     const ops = await pagina.getOperatorList();
     let relleno = "";
+    let matriz = [1, 0, 0, 1];
+    const dibujadas: Dibujada[] = [];
+    imagenesPorPagina.push(dibujadas);
     for (let i = 0; i < ops.fnArray.length; i++) {
       const [fn, args] = [ops.fnArray[i], ops.argsArray[i]];
-      if (fn === pdfjs.OPS.paintImageXObject) imagenes++;
+      if (fn === pdfjs.OPS.transform) matriz = args as number[];
+      if (fn === pdfjs.OPS.paintImageXObject) { imagenes++; dibujadas.push({ ancho: Math.abs(matriz[0]), alto: Math.abs(matriz[3]) }); }
       if (fn === pdfjs.OPS.setFillRGBColor) relleno = String(args[0]).toLowerCase();
       if (fn === pdfjs.OPS.showText) colorTexto.set((args[0] as ({ unicode?: string } | number)[]).map((g) => (typeof g === "object" && g.unicode) || "").join(""), relleno);
       if (fn === pdfjs.OPS.setFillRGBColor || fn === pdfjs.OPS.setStrokeRGBColor) colores.add(String(args[0]).toLowerCase());
@@ -53,7 +64,7 @@ async function leer(pdf: Buffer): Promise<Leido> {
   }
   const { info } = await documento.getMetadata();
   await tarea.destroy();
-  return { paginas, fuentes: [...fuentes].sort(), colores: [...colores], colorTexto, opacidades: [...opacidades], imagenes, ancho, alto, bytes: pdf.length, info: info as Record<string, string> };
+  return { paginas, fuentes: [...fuentes].sort(), colores: [...colores], colorTexto, opacidades: [...opacidades], imagenes, imagenesPorPagina, ancho, alto, bytes: pdf.length, info: info as Record<string, string> };
 }
 
 const SUFIJO: Record<number, string> = { 400: "Regular", 500: "Medium", 600: "SemiBold" };
@@ -67,19 +78,35 @@ const hay = (l: Leido, texto: RegExp | string) => todos(l).some((f) => (typeof t
 
 const cliente = { nombre: "Constructora Los Alerces", rut: "12.345.678-5", comuna: "Temuco", contacto: "María Soto" };
 const items = Array.from({ length: 40 }, (_, i) => ({ codigo: i % 9 === 8 ? null : `MOL-O-${i % 3 + 1}-A`, descripcion: `Molco · Pino Oregón · 0,8${i % 5} × 2,00 m`, medidaSolicitada: i % 7 === 0 ? "820 × 2000 mm (Vano)" : null,
-  modelo: i % 9 === 8 ? null : "MOLCO", familia: i % 9 === 8 ? null : ("puerta" as const), cantidad: i + 1, faltante: i % 2, totalLinea: i % 9 === 8 ? 0 : 90000 * (i + 1) }));
+  cantidad: i + 1, faltante: i % 2, totalLinea: i % 9 === 8 ? 0 : 90000 * (i + 1) }));
 const pedido = { numero: 7, creadoEn: new Date("2026-10-25T15:00:00Z"), estado: "pendiente", cotizacionNumero: 124, notaTienda: null,
   cliente: { nombre: cliente.nombre, rut: cliente.rut, contacto: "Luis Rojas", telefono: "+56 9 1234 5678" }, direccionDespacho: "Camino a Neltume km 3, Panguipulli", medioTransporte: "Camión propio",
   entregaComprometida: "2026-11-20", observaciones: "Llamar antes de despachar.\nEntrega acordada con la tienda: 15 de noviembre", items, subtotal: 1000, descuento: 0, iva: 190, total: 1190, pago: { pagado: 595, saldo: 595 } };
 const orden = { numero: 418, creadoEn: new Date("2026-10-24T15:00:00Z"), estado: "pendiente", cotizacionNumero: null, notaTienda: "577", revisionTienda: 2, proyecto: "Casa Lago",
   direccionDespacho: "Camino a Neltume km 3", medioTransporte: "Starken", entregaComprometida: "2026-11-16", observaciones: null,
-  items: items.slice(0, 4).map((i) => ({ codigo: i.codigo, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, observacion: null, revisar: i.codigo ? null : "Pedido especial; precio por definir", referencias: 0, cantidad: i.cantidad, reservado: 0, faltante: i.cantidad })) };
+  items: items.slice(0, 4).map((i) => ({ codigo: i.codigo, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, observacion: null, revisar: i.codigo ? null : "Pedido especial; precio por definir", referencias: [] as ReferenciaPdf[], cantidad: i.cantidad, reservado: 0, faltante: i.cantidad })) };
 
-let cotizacion: Leido, nota: Leido, notaLarga: Leido, cancelada: Leido, trabajo: Leido, prueba: Leido;
+/** Foto de prueba de `ancho` × `alto` px, en el formato dado; el PNG lleva transparencia (debe salir con fondo blanco). */
+async function fotoDePrueba(ancho: number, alto: number, formato: "png" | "webp" | "jpeg"): Promise<ImagenPdf> {
+  const bytes = await sharp({ create: { width: ancho, height: alto, channels: 4, background: { r: 120, g: 70, b: 40, alpha: formato === "png" ? 0.5 : 1 } } })[formato]().toBuffer();
+  return (await reducirImagen(bytes))!;
+}
+/** Imágenes por ítem de la nota con fotos: 0 a 4 por ítem, un ítem sin fotos en medio y un croquis en PDF. */
+const FOTOS_POR_ITEM = [1, 3, 0, 4, 2, 4, 3, 1];
+
+let cotizacion: Leido, nota: Leido, notaLarga: Leido, cancelada: Leido, trabajo: Leido, prueba: Leido, notaFotos: Leido, trabajoFotos: Leido;
 beforeAll(async () => {
+  const fotos = [await fotoDePrueba(1600, 1200, "png"), await fotoDePrueba(800, 1200, "webp"), await fotoDePrueba(3000, 600, "jpeg"), await fotoDePrueba(400, 300, "jpeg")];
+  const refs = FOTOS_POR_ITEM.map((n, i): ReferenciaPdf[] => [
+    ...Array.from({ length: n }, (_, k) => ({ nombre: `foto-${i + 1}-${k + 1}.jpg`, imagen: fotos[(i + k) % fotos.length] })),
+    ...(i === 2 ? [{ nombre: "croquis.pdf", imagen: null }] : []),
+  ]);
+  const conFotos = items.slice(0, FOTOS_POR_ITEM.length).map((i, k) => ({ ...i, referencias: refs[k] }));
+  notaFotos = await leer(await renderizarPedido({ ...pedido, items: conFotos }));
+  trabajoFotos = await leer(await renderizarOrdenTrabajo({ ...orden, items: conFotos.map((i) => ({ ...i, observacion: null, revisar: null, reservado: 0 })) }));
   cotizacion = await leer(await renderizarCotizacion({
     numero: 124, aprobadaEn: new Date("2026-10-25T15:30:00Z"), vigenciaHasta: "2026-11-06", listaVersion: 3, cliente,
-    items: [{ codigo: "MOL-O-3-A", descripcion: "Molco · Pino Oregón · 0,82 × 2,00 m", medidaSolicitada: "820 × 2000 mm (Hoja)", modelo: "MOLCO", familia: "puerta" as const, cantidad: 3, precioUnitario: 277760, totalLinea: 833280 }],
+    items: [{ codigo: "MOL-O-3-A", descripcion: "Molco · Pino Oregón · 0,82 × 2,00 m", medidaSolicitada: "820 × 2000 mm (Hoja)", cantidad: 3, precioUnitario: 277760, totalLinea: 833280 }],
     subtotal: 833280, descuento: 0, descuentoMotivo: null, iva: 158323, total: 991603, abonoPct: 50 }));
   nota = await leer(await renderizarPedido({ ...pedido, items: items.slice(0, 3) }));
   notaLarga = await leer(await renderizarPedido(pedido));
@@ -87,7 +114,7 @@ beforeAll(async () => {
   trabajo = await leer(await renderizarOrdenTrabajo(orden));
   prueba = await leer(await pdfPruebaConexion({ codigo: "6f1c2a7e", fabrica: "PANGUIPULLI", creadaEn: new Date("2026-10-25T18:02:11Z") }));
 }, 60_000);
-const documentos = () => [cotizacion, nota, notaLarga, cancelada, trabajo, prueba];
+const documentos = () => [cotizacion, nota, notaLarga, cancelada, trabajo, prueba, notaFotos, trabajoFotos];
 
 it("las fuentes de public/marca/fuentes son byte a byte las del estándar (sha256 de los tokens)", () => {
   expect(tokens.fuentes).toHaveLength(4);
@@ -181,28 +208,57 @@ describe("conformidad con el estilo común de los documentos (PDF real, pdfjs; A
     for (const d of documentos()) expect(hay(d, /\$0$/)).toBe(false);
   });
 
-  it("la tabla común: N.º, Producto y Cant. en todas; «Plano» y «Listo» en la nota y la orden, y la cotización con miniaturas; sin mayúsculas forzadas", () => {
+  it("la tabla común: N.º, Producto y Cant. en todas; «Listo» en la nota y la orden; ninguna con «Plano»; sin mayúsculas forzadas", () => {
     for (const d of [cotizacion, nota, trabajo, prueba]) for (const t of ["N.º", "Producto", "Cant."]) expect(hay(d, t), t).toBe(true);
-    for (const d of [nota, trabajo]) for (const t of ["Plano", "Listo"]) expect(hay(d, t), t).toBe(true);
-    for (const t of ["Plano", "Listo"]) expect(hay(cotizacion, t), t).toBe(false);
+    for (const d of [nota, trabajo]) expect(hay(d, "Listo")).toBe(true);
+    expect(hay(cotizacion, "Listo")).toBe(false);
+    for (const d of documentos()) expect(hay(d, "Plano")).toBe(false);
     for (const d of [cotizacion, nota, trabajo, prueba]) expect(hay(d, "PRODUCTO")).toBe(false);
     expect(todos(nota).find((f) => f.s === "Producto")!.tam).toBeCloseTo(tokens.roles.encabezadoTabla.tamanoPt, 1);
   });
 
-  it("los dibujos: miniatura en la cotización, plano en la nota y la orden y ninguno en la prueba; las cotas solo en el plano, con el texto del estándar", () => {
-    expect(cotizacion.imagenes).toBeGreaterThan(0);
-    expect(nota.imagenes).toBeGreaterThan(0);
-    expect(trabajo.imagenes).toBeGreaterThan(0);
-    expect(prueba.imagenes).toBe(0);
-    // Cotas de la medida pedida (820 × 2000) en Instrument Sans 600 de 125 px sobre el lienzo de 660 × 1090 escalado al alto del plano.
-    const tam = (PLANO.cotas.tamanoPx * (PLANO.alturaMm / 25.4) * 72) / PLANO.lienzoConCotasPx.alto;
-    for (const d of [nota, trabajo]) for (const cota of ["820", "2000"]) expect(todos(d).find((f) => f.s === cota)!.tam, cota).toBeCloseTo(tam, 1);
+  it("sin dibujos del catálogo: ningún documento sin adjuntos lleva imágenes ni cotas (REQ-COT-4.13)", () => {
+    for (const d of [cotizacion, nota, notaLarga, cancelada, trabajo, prueba]) expect(d.imagenes).toBe(0);
+    for (const d of documentos()) for (const cota of ["820", "2000"]) expect(hay(d, cota), cota).toBe(false);
     // La cotización lleva la medida exacta en el texto de la línea (no el rango), sin «hoja» ni «vano», y ninguna cota.
     expect(hay(cotizacion, "Molco · Pino Oregón · 0,82 × 2,00 m")).toBe(true);
     expect(hay(cotizacion, /hoja|vano|Medida solicitada/i)).toBe(false);
-    for (const cota of ["820", "2000"]) expect(hay(cotizacion, cota), cota).toBe(false);
     // La nota y la orden sí dicen si la medida es de hoja o de vano.
     for (const d of [nota, trabajo]) expect(hay(d, "Medida solicitada: 820 × 2000 mm (Vano)"), "hoja o vano en la nota y la orden").toBe(true);
+  });
+
+  it("las imágenes de referencia van en «Para fábrica», agrupadas por ítem, sin partir un grupo y dentro de 40 × 58 mm (REQ-COT-4.14)", () => {
+    const mmPt = (v: number) => (v / 25.4) * 72;
+    for (const d of [notaFotos, trabajoFotos]) {
+      expect(d.imagenes).toBe(FOTOS_POR_ITEM.reduce((a, b) => a + b, 0));
+      expect(d.paginas.length, "el bloque sigue en la página siguiente").toBeGreaterThan(1);
+      // Un grupo por ítem con fotos, en el orden de la tabla, con la línea gris de 7,3 pt; el ítem 3 no tiene fotos y no deja grupo.
+      const titulos = todos(d).filter((f) => /^Ítem \d+ · /.test(f.s));
+      expect(titulos.map((f) => Number(/^Ítem (\d+)/.exec(f.s)![1]))).toEqual([1, 2, 4, 5, 6, 7, 8]);
+      for (const t of titulos) expect(t.tam).toBeCloseTo(tokens.roles.productoReferencia.tamanoPt, 1);
+      expect(d.colorTexto.get(titulos[0].s)).toBe(tokens.colores.fabrica.gris);
+      // Van después de la etiqueta «Observaciones»: en su misma página, más abajo, o en las siguientes.
+      const pObs = d.paginas.findIndex((p) => p.some((f) => f.s === "Observaciones"));
+      const obs = d.paginas[pObs].find((f) => f.s === "Observaciones")!;
+      expect(d.paginas[pObs].filter((f) => /^Ítem \d+ · /.test(f.s)).every((f) => f.y > obs.y)).toBe(true);
+      expect(d.paginas.slice(0, pObs).some((p) => p.some((f) => /^Ítem \d+ · /.test(f.s)))).toBe(false);
+      // Ningún grupo se parte: las imágenes de cada página son exactamente las de los grupos cuyo título está en ella.
+      d.paginas.forEach((p, i) => {
+        const esperadas = p.filter((f) => /^Ítem \d+ · /.test(f.s)).reduce((t, f) => t + FOTOS_POR_ITEM[Number(/^Ítem (\d+)/.exec(f.s)![1]) - 1], 0);
+        expect(d.imagenesPorPagina[i].length, `imágenes de la página ${i + 1}`).toBe(esperadas);
+      });
+      // Cada imagen dentro de 40 × 58 mm y tocando uno de los dos topes (conserva la proporción).
+      for (const im of d.imagenesPorPagina.flat()) {
+        expect(im.ancho).toBeLessThanOrEqual(mmPt(tokens.imagenesReferencia.anchoMaxMm) + 0.5);
+        expect(im.alto).toBeLessThanOrEqual(mmPt(tokens.imagenesReferencia.altoMaxMm) + 0.5);
+        expect(Math.max(im.ancho / mmPt(tokens.imagenesReferencia.anchoMaxMm), im.alto / mmPt(tokens.imagenesReferencia.altoMaxMm))).toBeCloseTo(1, 1);
+      }
+      // El PDF adjunto se nombra en la celda del producto; las imágenes, no.
+      expect(hay(d, "Referencias del cliente: croquis.pdf")).toBe(true);
+      expect(hay(d, /foto-\d/)).toBe(false);
+      // Las firmas siguen al final.
+      expect(d.paginas.at(-1)!.some((f) => f.s === "Recibido por la fábrica")).toBe(true);
+    }
   });
 
   it("«Para fábrica» con sus dos firmas en la nota y la orden, y no en la cotización ni en la prueba", () => {
@@ -223,7 +279,7 @@ describe("conformidad con el estilo común de los documentos (PDF real, pdfjs; A
     expect(hay(cancelada, "ANULADA")).toBe(true);
     expect(cancelada.opacidades).toContain(tokens.marcasDeAgua.ANULADA.opacidad);
     expect(todos(cancelada).find((f) => f.s === "ANULADA")!.girado).toBe(true);
-    for (const d of [cotizacion, nota, notaLarga, trabajo, prueba]) expect(hay(d, "ANULADA")).toBe(false);
+    for (const d of [cotizacion, nota, notaLarga, trabajo, prueba, notaFotos]) expect(hay(d, "ANULADA")).toBe(false);
     expect(hay(prueba, "PRUEBA")).toBe(true);
     expect(prueba.opacidades).toContain(tokens.marcasDeAgua.PRUEBA.opacidad);
     for (const d of [cotizacion, nota, notaLarga, cancelada, trabajo]) expect(d.opacidades).not.toContain(tokens.marcasDeAgua.PRUEBA.opacidad);

@@ -38,6 +38,7 @@ Este archivo no repite ese contrato. Solo anota cómo lo cumple la fábrica y lo
 |---|---|
 | `order.items` con `isCustom: false` | Si `productCode` existe y está activo en el catálogo, pasa a `pedido_item` con su artículo; la medida solicitada es `dimensions.requested`, y las observaciones van al ítem. Si es desconocido (`IA-…` o una planilla más nueva), **no se rechaza**: la línea entra como ítem «a pedido», marcado «por revisar» (ADR-0023 D3) |
 | `order.items` con `isCustom: true` (`ESPECIAL`) | Ítem «a pedido» (sin artículo) que una persona confirma al marcar la nota lista (ADR-0023 D4) |
+| `dimensions` | La medida solicitada es `requested` tal cual («0,90 m × 2,10 m»). Si falta, se arma desde los milímetros: puerta, «ancho × alto mm, hoja/vano»; marco o moldura, «sección × ancho × largo mm». `widthMm` también llega en marcos y molduras especiales cuando la vendedora escribe el ancho (acordado con la tienda el 27-10-2026; en el resto, `null`) |
 | `order.commercial` | Se guarda aparte (en `recepcion_tienda.comercial`) y solo se ve con `pedidos.importes.ver`. El precio de la nota de la fábrica sale de su lista vigente sin recargo (NC-12); el de la tienda solo se compara y genera un aviso |
 | `order.customer` | Solo se persisten `project` (y `name`, si se aprueba D1). `taxId`, `phone`, `address` y `businessActivity` se descartan sin guardarse (REQ-COT-8.9) |
 | `approvedBy`, `issuedBy` | No se guardan |

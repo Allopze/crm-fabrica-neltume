@@ -15,8 +15,8 @@ const ROLES = tokens.roles as Record<NombreRol, Rol>;
 export const TRAZOS = tokens.trazos as Record<keyof typeof tokens.trazos, { anchoPt: number; color: NombreColor }>;
 export const MARCAS_DE_AGUA = tokens.marcasDeAgua as Record<keyof typeof tokens.marcasDeAgua, { familia: string; peso: number; color: NombreColor; opacidad: number; giroGrados: number }>;
 
-/** Medidas del dibujo de puertas y marcos (alto del plano y de la miniatura, lienzo con cotas y texto de las cotas). */
-export const PLANO = tokens.plano;
+/** Imágenes de referencia del cliente en las observaciones (tamaño máximo, separación, lado mayor y calidad del JPEG; ADR-0025 D14). */
+export const IMAGENES = tokens.imagenesReferencia;
 
 /** Milímetros a puntos. */
 export const mm = (valor: number) => (valor * 72) / 25.4;
@@ -28,6 +28,25 @@ const de = (familia: string) => tokens.fuentes.filter((f) => f.familia === famil
 for (const familia of new Set(tokens.fuentes.map((f) => f.familia))) Font.register({ family: familia, fonts: de(familia) });
 // Sin guiones de partición: las reglas por defecto son del inglés y cortarían mal palabras en español.
 Font.registerHyphenationCallback((palabra) => [palabra]);
+
+interface Fontkit { characterSet: number[]; glyphForCodePoint(codigo: number): unknown }
+let fuentesListas: Promise<void> | null = null;
+/**
+ * Carga las fuentes y crea, una sola vez, el glifo de cada carácter con su código. react-pdf reutiliza el objeto de fontkit
+ * entre documentos y fontkit guarda cada glifo con los caracteres con que se creó la primera vez: un PDF podía crear la coma
+ * sin caracteres (probado) y en los siguientes la coma se copiaba del PDF como «$», «)» o nada. Se llama antes de cada render.
+ */
+export function prepararFuentes(): Promise<void> {
+  fuentesListas ??= (async () => {
+    for (const f of tokens.fuentes) {
+      const descriptor = { fontFamily: f.familia, fontWeight: f.peso };
+      await Font.load(descriptor);
+      const datos = (Font.getFont(descriptor) as unknown as { data: Fontkit }).data;
+      for (const codigo of [...datos.characterSet].sort((a, b) => a - b)) datos.glyphForCodePoint(codigo);
+    }
+  })();
+  return fuentesListas;
+}
 
 /**
  * Estilo de react-pdf de un rol del estándar (familia, peso, tamaño, color e interlineado). Con `interlineado: false` no lleva

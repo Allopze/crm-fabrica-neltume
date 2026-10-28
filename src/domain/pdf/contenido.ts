@@ -1,14 +1,13 @@
-// Contenido de los PDF, separado del render para poder probarlo (REQ-COT-4.2, 4.9–4.11; TESTING U `pdf.contenido`).
+// Contenido de los PDF, separado del render para poder probarlo (REQ-COT-4.2, 4.11–4.14; TESTING U `pdf.contenido`).
 import { clp, fecha, fechaHora, fechaLarga, nombrePropio } from "@/lib/formato";
 import { type DatosEmpresa, datosEmpresa } from "@/lib/marca";
 import { lineaDeMedida } from "@/lib/medida";
 import { formatearRut } from "../rut";
-import { type Dibujo, dibujoDe, type Medida, medidaPedida } from "./dibujos";
+import type { ImagenPdf, ReferenciaPdf } from "./referencias";
 
 /** Bloque de partes del documento (Cliente, Obra, Despacho…): etiqueta chica, título y pares clave-valor (estilo común v1 §5). */
 export interface Parte { etiqueta: string; titulo: string; pares: [string, string][] }
 type Marca = "ANULADA" | "PRUEBA" | null;
-type FamiliaModelo = "puerta" | "accesorio" | null;
 /** Lo que el PDF dice de un ítem «a pedido» sin precio fijado: nunca «$0» (estilo común v1 §5). */
 const POR_DEFINIR = "Por definir";
 
@@ -17,8 +16,6 @@ export function textoPie(d: DatosEmpresa): string {
   return [d.nombre, d.rut && `RUT ${formatearRut(d.rut)}`, d.direccion, d.telefono && `Tel. ${d.telefono}`, d.web, d.correo].filter(Boolean).join(" · ");
 }
 export const NOTA_FLETE = "Valores puestos en fábrica, flete aparte.";
-/** Qué son las cotas del plano (nota y orden de trabajo). */
-const NOTA_COTAS = "Las cotas del plano son la medida pedida de cada puerta, en milímetros (de hoja o de vano, como indica la línea).";
 
 /** Condición de pago impresa en la cotización (REQ-COT-8.16, ADR-0020). */
 export const condicionPago = (abonoPct: number) => abonoPct > 0 && abonoPct < 100
@@ -26,45 +23,51 @@ export const condicionPago = (abonoPct: number) => abonoPct > 0 && abonoPct < 10
   : "Condición de pago: total antes del despacho o retiro.";
 
 /**
- * Una línea de la tabla común (estilo común v1 §5): la celda de producto, de arriba abajo, su dibujo (miniatura o plano con
- * cotas) y las columnas que siguen a «Cant.», que son de cada documento.
+ * Una línea de la tabla común (estilo común v1 §5), solo texto: la celda de producto, de arriba abajo, y las columnas que
+ * siguen a «Cant.», que son de cada documento. Sin dibujos del catálogo (ADR-0025 D14).
  */
 export interface FilaTabla {
   n: number;
   titulo: string;
-  /** «Medida solicitada: …», «Observación: …», y en la orden «Referencias del cliente» y «REVISAR: …». */
+  /** «Medida solicitada: …», «Observación: …», «REVISAR: …» (orden) y «Referencias del cliente: a.pdf» (los adjuntos que no son imagen). */
   medida: string | null;
   observacion: string | null;
   detalle: string | null;
   revisar: string | null;
   /** Nulo en una línea «a pedido»: no hay código que mostrar. */
   codigo: string | null;
-  dibujo: Dibujo | null;
-  cotas: Medida | null;
   cantidad: string;
   importes: string[];
 }
-/** Lo que se sabe de una línea para armar su celda de producto y elegir su dibujo. */
-interface LineaDeProducto {
-  codigo: string | null; descripcion: string; medidaSolicitada?: string | null; observacion?: string | null;
-  /** Modelo y familia del artículo; nulos en una línea «a pedido» sin artículo. */
-  modelo: string | null; familia: FamiliaModelo;
-}
+/** Lo que se sabe de una línea para armar su celda de producto. */
+interface LineaDeProducto { codigo: string | null; descripcion: string; medidaSolicitada?: string | null; observacion?: string | null }
 
 /**
- * Celda de producto y dibujo de una línea; las cotas solo en la nota y la orden, para puertas con ancho y alto pedidos y un dibujo con hoja.
- * Esos dos documentos también son los únicos que dicen si la medida es de hoja o de vano (la cotización nunca lo nombra).
+ * Celda de producto de una línea. Solo la nota y la orden dicen si la medida es de hoja o de vano (`conTipo`); la cotización
+ * nunca lo nombra.
  */
-function celda(l: LineaDeProducto, conCotas: boolean): Omit<FilaTabla, "n" | "detalle" | "revisar" | "cantidad" | "importes"> {
-  const medida = medidaPedida(l.medidaSolicitada ?? null);
-  const dibujo = dibujoDe({ modelo: l.modelo, familia: l.familia, descripcion: l.descripcion, medida });
+function celda(l: LineaDeProducto, conTipo: boolean): Omit<FilaTabla, "n" | "detalle" | "revisar" | "cantidad" | "importes"> {
   return {
-    titulo: l.descripcion, codigo: l.codigo, dibujo,
-    medida: lineaDeMedida(l.descripcion, l.medidaSolicitada, conCotas),
+    titulo: l.descripcion, codigo: l.codigo,
+    medida: lineaDeMedida(l.descripcion, l.medidaSolicitada, conTipo),
     observacion: l.observacion ? `Observación: ${l.observacion}` : null,
-    cotas: conCotas && medida && dibujo?.hoja ? medida : null,
   };
 }
+
+/** Imágenes de un ítem en las observaciones, bajo la línea «Ítem n · producto» (estilo común v1 §5). */
+export interface GrupoImagenes { titulo: string; imagenes: ImagenPdf[] }
+
+/** Los adjuntos que no se muestran (PDF o imagen ilegible), nombrados en la celda del producto. */
+const nombrados = (refs: ReferenciaPdf[]) => {
+  const nombres = refs.filter((r) => !r.imagen).map((r) => r.nombre);
+  return nombres.length ? `Referencias del cliente: ${nombres.join(", ")}` : null;
+};
+/** Un grupo por ítem con imágenes, en el orden de la tabla; un ítem sin imágenes no deja grupo. */
+const gruposDeImagenes = (items: { descripcion: string; referencias: ReferenciaPdf[] }[]): GrupoImagenes[] =>
+  items.flatMap((i, k) => {
+    const imagenes = i.referencias.flatMap((r) => (r.imagen ? [r.imagen] : []));
+    return imagenes.length ? [{ titulo: `Ítem ${k + 1} · ${i.descripcion}`, imagenes }] : [];
+  });
 
 export interface CotizacionPdf {
   numero: number;
@@ -74,8 +77,7 @@ export interface CotizacionPdf {
   vigenciaHasta: string;
   listaVersion: number | null;
   cliente: { nombre: string; rut: string | null; comuna: string | null; contacto: string | null } | null;
-  items: { codigo: string | null; descripcion: string; medidaSolicitada?: string | null; cantidad: number; precioUnitario: number; totalLinea: number;
-    modelo?: string | null; familia?: FamiliaModelo }[];
+  items: { codigo: string | null; descripcion: string; medidaSolicitada?: string | null; cantidad: number; precioUnitario: number; totalLinea: number }[];
   subtotal: number; descuento: number; descuentoMotivo: string | null; iva: number; total: number;
   /** Nulo para la tienda, a la que no se le exige abono ni saldo (REQ-COT-8.17): no se imprime la condición. */
   abonoPct: number | null;
@@ -98,7 +100,7 @@ export function contenidoCotizacion(c: CotizacionPdf, empresa: DatosEmpresa = da
       pares: [["RUT", c.cliente.rut ? formatearRut(c.cliente.rut) : "—"], ["Contacto", c.cliente.contacto ?? "—"], ["Comuna", c.cliente.comuna ?? "—"]],
     }] satisfies Parte[] : [],
     filas: c.items.map((i, k): FilaTabla => ({
-      ...celda({ ...i, modelo: i.modelo ?? null, familia: i.familia ?? null }, false), n: k + 1, detalle: null, revisar: null,
+      ...celda(i, false), n: k + 1, detalle: null, revisar: null,
       cantidad: String(i.cantidad), importes: [clp(i.precioUnitario), clp(i.totalLinea)],
     })),
     totales: [
@@ -121,7 +123,7 @@ export interface PedidoPdf {
   cliente: { nombre: string; rut: string | null; contacto: string | null; telefono: string | null };
   direccionDespacho: string | null; medioTransporte: string | null; entregaComprometida: string | null; observaciones: string | null;
   items: { codigo: string | null; descripcion: string; medidaSolicitada: string | null; observacion?: string | null; cantidad: number; faltante: number; totalLinea: number;
-    modelo?: string | null; familia?: FamiliaModelo }[];
+    referencias?: ReferenciaPdf[] }[];
   subtotal: number; descuento: number; iva: number; total: number;
   /** Lo pagado y el saldo (REQ-COT-8.16); nulo en notas que no exigen pago y no tienen pagos. */
   pago: { pagado: number; saldo: number } | null;
@@ -133,9 +135,14 @@ const despacho = (d: { direccionDespacho: string | null; medioTransporte: string
   etiqueta: "Despacho", titulo: d.direccionDespacho ?? "Retira en fábrica",
   pares: [["Transporte", d.medioTransporte ?? "—"], ["Entrega", entrega(d.entregaComprometida)]],
 });
-/** Bloque «Para fábrica» de la nota y la orden: entrega, observaciones y dos firmas (etiquetas de la fábrica, estilo común v1 §6). */
-const paraFabrica = (d: { entregaComprometida: string | null; observaciones: string | null }) =>
-  ({ entrega: entrega(d.entregaComprometida), observaciones: d.observaciones, firmas: ["Aprobado por", "Recibido por la fábrica"] as [string, string] });
+/**
+ * Bloque «Para fábrica» de la nota y la orden: entrega, observaciones con las imágenes de referencia de cada ítem y dos firmas
+ * (etiquetas de la fábrica, estilo común v1 §6).
+ */
+const paraFabrica = (d: { entregaComprometida: string | null; observaciones: string | null; items: { descripcion: string; referencias?: ReferenciaPdf[] }[] }) => ({
+  entrega: entrega(d.entregaComprometida), observaciones: d.observaciones, firmas: ["Aprobado por", "Recibido por la fábrica"] as [string, string],
+  imagenes: gruposDeImagenes(d.items.map((i) => ({ descripcion: i.descripcion, referencias: i.referencias ?? [] }))),
+});
 
 export function contenidoPedido(p: PedidoPdf, empresa: DatosEmpresa = datosEmpresa()) {
   const cancelada = p.estado === "cancelada";
@@ -152,7 +159,7 @@ export function contenidoPedido(p: PedidoPdf, empresa: DatosEmpresa = datosEmpre
       despacho(p),
     ] satisfies Parte[],
     filas: p.items.map((i, k): FilaTabla => ({
-      ...celda({ ...i, modelo: i.modelo ?? null, familia: i.familia ?? null }, true), n: k + 1, detalle: null, revisar: null,
+      ...celda(i, true), n: k + 1, detalle: nombrados(i.referencias ?? []), revisar: null,
       cantidad: String(i.cantidad), importes: [i.faltante ? String(i.faltante) : "—", !i.codigo && i.totalLinea === 0 ? POR_DEFINIR : clp(i.totalLinea)],
     })),
     paraFabrica: paraFabrica(p),
@@ -165,7 +172,6 @@ export function contenidoPedido(p: PedidoPdf, empresa: DatosEmpresa = datosEmpre
     pago: p.pago ? [["Pagado", clp(p.pago.pagado)], ["Saldo", clp(p.pago.saldo)]] as [string, string][] : [],
     notas: [
       `${NOTA_FLETE} ${p.cotizacionNumero ? `Precios congelados de la cotización N.º ${p.cotizacionNumero}.` : "Precios de venta de la lista vigente al confirmar el pedido."}`,
-      NOTA_COTAS,
       "\"Por fabricar\": unidades sin stock al confirmar el pedido. Las líneas «Por definir» son pedidos especiales sin precio fijado: no están en el total.",
     ],
     pie: textoPie(empresa),
@@ -175,8 +181,8 @@ export function contenidoPedido(p: PedidoPdf, empresa: DatosEmpresa = datosEmpre
 export interface OrdenTrabajoPdf {
   numero: number; creadoEn: Date; estado: string; cotizacionNumero: number | null; notaTienda: string | null; revisionTienda: number;
   proyecto: string | null; direccionDespacho: string | null; medioTransporte: string | null; entregaComprometida: string | null; observaciones: string | null;
-  items: { codigo: string | null; descripcion: string; medidaSolicitada: string | null; observacion: string | null; revisar: string | null; referencias: number;
-    cantidad: number; reservado: number; faltante: number; modelo?: string | null; familia?: FamiliaModelo }[];
+  items: { codigo: string | null; descripcion: string; medidaSolicitada: string | null; observacion: string | null; revisar: string | null; referencias: ReferenciaPdf[];
+    cantidad: number; reservado: number; faltante: number }[];
 }
 
 /**
@@ -193,13 +199,13 @@ export function contenidoOrdenTrabajo(o: OrdenTrabajoPdf, empresa: DatosEmpresa 
     meta: [["Fecha", fechaLargaSantiago(o.creadoEn)], origen, ...(cancelada ? [["Estado", "Cancelada"]] : [])] as [string, string][],
     partes: [{ etiqueta: "Obra", titulo: o.proyecto ?? "Sin proyecto", pares: [] }, despacho(o)] satisfies Parte[],
     filas: o.items.map((i, k): FilaTabla => ({
-      ...celda({ ...i, modelo: i.modelo ?? null, familia: i.familia ?? null }, true), n: k + 1,
-      detalle: i.referencias ? `Referencias del cliente: ${i.referencias} (en la app)` : null,
+      ...celda(i, true), n: k + 1,
+      detalle: nombrados(i.referencias),
       revisar: i.revisar ? `REVISAR: ${i.revisar}` : null,
       cantidad: String(i.cantidad), importes: [i.codigo ? String(i.reservado) : "—", i.codigo ? (i.faltante ? String(i.faltante) : "—") : String(i.cantidad)],
     })),
     paraFabrica: paraFabrica(o),
-    notas: ["Documento para producción: no lleva precios.", NOTA_COTAS, "\"En stock\": unidades ya reservadas para esta nota; \"Por fabricar\": lo que falta."],
+    notas: ["Documento para producción: no lleva precios.", "\"En stock\": unidades ya reservadas para esta nota; \"Por fabricar\": lo que falta."],
     pie: textoPie(empresa),
   };
 }
@@ -212,7 +218,7 @@ export interface PruebaConexionPdf { codigo: string; fabrica: string; creadaEn: 
  */
 export function contenidoPruebaConexion(p: PruebaConexionPdf, empresa: DatosEmpresa = datosEmpresa()) {
   const fila = (n: number, codigo: string, titulo: string, cantidad: string): FilaTabla =>
-    ({ n, titulo, codigo, medida: null, observacion: null, detalle: null, revisar: null, dibujo: null, cotas: null, cantidad, importes: ["0", cantidad] });
+    ({ n, titulo, codigo, medida: null, observacion: null, detalle: null, revisar: null, cantidad, importes: ["0", cantidad] });
   return {
     // Sin número de documento: en su lugar va el código corto del evento. Fecha y hora de Chile en vez de la fecha en palabras.
     tipo: "Prueba de conexión", numero: p.codigo, titulo: tituloPdf("Prueba de conexión"), marca: "PRUEBA" as const,

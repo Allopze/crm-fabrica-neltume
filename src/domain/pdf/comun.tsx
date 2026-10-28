@@ -1,11 +1,12 @@
-// Piezas compartidas de los PDF (ADR-0004; estilo común v1, ADR-0025): membrete, bloques de partes, tabla común con su plano,
-// totales con notas, «Para fábrica», cajas, pie y marca de agua. Los colores, tamaños y medidas salen de los tokens (estilo.ts),
+// Piezas compartidas de los PDF (ADR-0004; estilo común v1, ADR-0025): membrete, bloques de partes, tabla común (solo texto),
+// totales con notas, «Para fábrica» con las imágenes de referencia, cajas, pie y marca de agua. Los colores, tamaños y medidas salen de los tokens (estilo.ts),
 // iguales en las dos apps.
-import { Path, Rect, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
+import { type DocumentProps, Image, Path, Rect, renderToBuffer, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
+import type { ReactElement } from "react";
 import { LOGO } from "@/lib/logo-trazos";
-import { type FilaTabla, type Parte } from "./contenido";
-import { COLOR, MARCAS_DE_AGUA, MARGEN, mm, PLANO, rol, TRAZOS } from "./estilo";
-import { Plano } from "./plano";
+import { type FilaTabla, type GrupoImagenes, type Parte } from "./contenido";
+import { COLOR, IMAGENES, MARCAS_DE_AGUA, MARGEN, mm, prepararFuentes, rol, TRAZOS } from "./estilo";
+import type { ImagenPdf } from "./referencias";
 
 const BLANCO = "#ffffff";
 /** Sin lineHeight en la página: el texto dinámico (render) de react-pdf no se dibuja con él (ver estilo.ts). */
@@ -21,7 +22,7 @@ const bajoTabla = trazo("bajoEncabezadoTabla");
 const entreFilas = trazo("entreFilas");
 const sobreTotal = trazo("sobreTotal");
 /** Anchos de las columnas fijas de la tabla, en puntos; «Producto» ocupa lo que sobra. */
-const COL = { n: 22, plano: mm(PLANO.celdaMm), cantidad: 34, importe: 62, listo: 36 };
+const COL = { n: 22, cantidad: 34, importe: 62, listo: 36 };
 
 export const e = StyleSheet.create({
   // Sin ligaduras (fi, fl): con ellas el texto copiado o buscado en el PDF pierde letras («fete» en vez de «flete»).
@@ -42,14 +43,10 @@ export const e = StyleSheet.create({
   encabezadoTabla: { ...rol("encabezadoTabla"), flexDirection: "row", borderBottomWidth: bajoTabla.ancho, borderBottomColor: bajoTabla.color, paddingBottom: 4, marginTop: 22 },
   fila: { flexDirection: "row", alignItems: "center", borderBottomWidth: entreFilas.ancho, borderBottomColor: entreFilas.color, paddingVertical: 6 },
   cN: { width: COL.n, color: COLOR.gris },
-  cPlano: { width: COL.plano },
   cProducto: { flex: 1, paddingRight: 8 },
   cCantidad: { width: COL.cantidad, textAlign: "right", fontWeight: 600 },
   cImporte: { width: COL.importe, textAlign: "right" },
   cListo: { width: COL.listo, alignItems: "flex-end", textAlign: "right" },
-  conMiniatura: { flexDirection: "row", alignItems: "center", gap: 8 },
-  // La miniatura ocupa siempre su recuadro (10 × 12,5 mm), con o sin dibujo, para que los títulos queden alineados.
-  miniatura: { width: mm(PLANO.miniaturaMm.ancho), height: mm(PLANO.miniaturaMm.alto), alignItems: "center", justifyContent: "center" },
   titulo: rol("productoTitulo"),
   medida: { ...rol("productoMedida"), marginTop: 1.5 },
   detalle: { ...rol("productoDetalle"), marginTop: 1.5 },
@@ -60,6 +57,9 @@ export const e = StyleSheet.create({
   caja: { marginTop: 18, backgroundColor: COLOR.fondoSuave, padding: 10 },
   tituloCaja: { ...rol("tituloCaja"), marginBottom: 6 },
   campo: { backgroundColor: BLANCO, borderWidth: 0.5, borderColor: COLOR.gris, padding: 8, minHeight: 44 },
+  grupo: { marginTop: 8 },
+  tituloGrupo: { ...rol("productoReferencia"), marginBottom: 3 },
+  imagenes: { flexDirection: "row", flexWrap: "wrap", gap: mm(IMAGENES.separacionMm) },
   etiquetaCaja: { fontWeight: 600 },
   entrega: { flexDirection: "row", alignItems: "flex-end", gap: 8, marginBottom: 10 },
   lineaEntrega: { flex: 1, borderBottomWidth: 0.8, borderBottomColor: COLOR.tinta, paddingBottom: 1.5 },
@@ -79,6 +79,12 @@ export const e = StyleSheet.create({
   // Texto dinámico (render): necesita su ancho (izquierda y derecha) y nada de lineHeight, con el que react-pdf no lo dibuja.
   numeroPagina: { ...rol("pie"), position: "absolute", left: MARGEN.lateral, right: MARGEN.lateral, bottom: PIE_BAJO, textAlign: "right" },
 });
+
+/** El PDF de un documento, con las fuentes ya preparadas (ver `prepararFuentes`). */
+export async function renderizarPdf(documento: ReactElement<DocumentProps>): Promise<Buffer> {
+  await prepararFuentes();
+  return renderToBuffer(documento);
+}
 
 /**
  * Encabezado: solo el logo de la app a la izquierda y, a la derecha, el tipo del documento sobre su número y la meta en
@@ -122,30 +128,32 @@ export function Partes({ partes }: { partes: Parte[] }) {
   );
 }
 
-/** Celda de producto, de arriba abajo: título, medida solicitada, observación, detalle, «REVISAR» y la línea del código (en mono; «A pedido» no es un código). */
+/**
+ * Celda de producto, de arriba abajo: título, medida solicitada, observación, «REVISAR», los adjuntos nombrados (sobre la línea
+ * del código, estilo común v1 §5) y la línea del código (en mono; «A pedido» no es un código).
+ */
 function Producto({ f }: { f: FilaTabla }) {
   return (
     <View>
       <Text style={e.titulo}>{f.titulo}</Text>
       {f.medida && <Text style={e.medida}>{f.medida}</Text>}
       {f.observacion && <Text style={e.detalle}>{f.observacion}</Text>}
-      {f.detalle && <Text style={e.detalle}>{f.detalle}</Text>}
       {f.revisar && <Text style={e.revisar}>{f.revisar}</Text>}
+      {f.detalle && <Text style={e.detalle}>{f.detalle}</Text>}
       {f.codigo ? <Text style={e.codigo}>{f.codigo}</Text> : <Text style={e.referencia}>A pedido</Text>}
     </View>
   );
 }
 
 /**
- * Tabla común (estilo común v1 §5): N.º, «Plano» (dibujo con cotas, en nota y orden) o una miniatura junto al producto (cotización),
- * Producto, Cant., las columnas de importes y de stock de cada documento y, con `casilla`, «Listo».
+ * Tabla común (estilo común v1 §5), solo texto: N.º, Producto, Cant., las columnas de importes y de stock de cada documento y,
+ * con `casilla`, «Listo». Sin dibujos del catálogo (ADR-0025 D14).
  */
-export function TablaItems({ columnas, filas, dibujos, casilla }: { columnas: string[]; filas: FilaTabla[]; dibujos: "plano" | "miniatura" | null; casilla?: boolean }) {
+export function TablaItems({ columnas, filas, casilla }: { columnas: string[]; filas: FilaTabla[]; casilla?: boolean }) {
   return (
     <>
       <View style={e.encabezadoTabla}>
         <Text style={e.cN}>N.º</Text>
-        {dibujos === "plano" && <Text style={e.cPlano}>Plano</Text>}
         <Text style={e.cProducto}>Producto</Text>
         <Text style={e.cCantidad}>Cant.</Text>
         {columnas.map((c) => <Text key={c} style={e.cImporte}>{c}</Text>)}
@@ -154,12 +162,7 @@ export function TablaItems({ columnas, filas, dibujos, casilla }: { columnas: st
       {filas.map((f) => (
         <View key={f.n} style={e.fila} wrap={false}>
           <Text style={e.cN}>{f.n}</Text>
-          {dibujos === "plano" && <View style={e.cPlano}>{f.dibujo && <Plano dibujo={f.dibujo} cotas={f.cotas} altoPt={mm(PLANO.alturaMm)} />}</View>}
-          <View style={e.cProducto}>
-            {dibujos === "miniatura"
-              ? <View style={e.conMiniatura}><View style={e.miniatura}>{f.dibujo && <Plano dibujo={f.dibujo} cotas={null} altoPt={mm(PLANO.miniaturaMm.alto)} />}</View><Producto f={f} /></View>
-              : <Producto f={f} />}
-          </View>
+          <View style={e.cProducto}><Producto f={f} /></View>
           <Text style={e.cCantidad}>{f.cantidad}</Text>
           {f.importes.map((v, k) => <Text key={k} style={[e.cImporte, columnas[k] === "Total" ? { fontWeight: 600 } : {}]}>{v}</Text>)}
           {casilla && <View style={e.cListo}><View style={e.casilla} /></View>}
@@ -196,15 +199,37 @@ export function Caja({ titulo, texto }: { titulo: string; texto: string }) {
   return <View style={e.caja} wrap={false}><Text style={e.tituloCaja}>{titulo}</Text>{porLineas(texto)}</View>;
 }
 
-/** «Para fábrica» (nota y orden): entrega comprometida sobre una línea, observaciones en un campo blanco y dos líneas de firma. */
-export function ParaFabrica({ entrega, observaciones, firmas }: { entrega: string; observaciones: string | null; firmas: [string, string] }) {
+/** Imagen dentro de 40 × 58 mm como máximo, con su proporción (tokens `imagenesReferencia`). */
+function Imagen({ imagen }: { imagen: ImagenPdf }) {
+  const k = Math.min(mm(IMAGENES.anchoMaxMm) / imagen.ancho, mm(IMAGENES.altoMaxMm) / imagen.alto);
+  // Es la imagen de un PDF (react-pdf), no un <img>: no tiene atributo alt.
+  // eslint-disable-next-line jsx-a11y/alt-text
+  return <Image src={{ data: imagen.data, format: "jpg" }} style={{ width: imagen.ancho * k, height: imagen.alto * k }} />;
+}
+
+/**
+ * «Para fábrica» (nota y orden): entrega comprometida sobre una línea, observaciones en un campo blanco y dos líneas de firma.
+ * Las imágenes de referencia van en las observaciones, después del texto, un grupo por ítem que no se parte entre páginas;
+ * con imágenes el bloque puede seguir en la página siguiente (estilo común v1 §5).
+ */
+export function ParaFabrica({ entrega, observaciones, firmas, imagenes = [] }: { entrega: string; observaciones: string | null; firmas: [string, string]; imagenes?: GrupoImagenes[] }) {
   return (
-    <View style={e.caja} wrap={false}>
-      <Text style={e.tituloCaja}>Para fábrica</Text>
-      <View style={e.entrega}><Text style={e.etiquetaCaja}>Entrega comprometida</Text><View style={e.lineaEntrega}><Text>{entrega}</Text></View></View>
-      <Text style={[e.etiquetaCaja, { marginBottom: 4 }]}>Observaciones</Text>
-      <View style={e.campo}>{porLineas(observaciones)}</View>
-      <View style={e.firmas}>{firmas.map((f) => <Text key={f} style={e.firma}>{f}</Text>)}</View>
+    <View style={e.caja} wrap={imagenes.length > 0}>
+      <View wrap={false}>
+        <Text style={e.tituloCaja}>Para fábrica</Text>
+        <View style={e.entrega}><Text style={e.etiquetaCaja}>Entrega comprometida</Text><View style={e.lineaEntrega}><Text>{entrega}</Text></View></View>
+        <Text style={[e.etiquetaCaja, { marginBottom: 4 }]}>Observaciones</Text>
+      </View>
+      <View style={e.campo}>
+        {porLineas(observaciones)}
+        {imagenes.map((g) => (
+          <View key={g.titulo} style={e.grupo} wrap={false}>
+            <Text style={e.tituloGrupo}>{g.titulo}</Text>
+            <View style={e.imagenes}>{g.imagenes.map((im, k) => <Imagen key={k} imagen={im} />)}</View>
+          </View>
+        ))}
+      </View>
+      <View style={e.firmas} wrap={false}>{firmas.map((f) => <Text key={f} style={e.firma}>{f}</Text>)}</View>
     </View>
   );
 }

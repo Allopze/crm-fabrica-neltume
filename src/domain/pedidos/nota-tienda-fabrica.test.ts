@@ -106,6 +106,35 @@ describe("lector tolerante de la nota «por fábrica» (F22, REQ-COT-8.6)", () =
     expect(con("15 de noviembre de 2026")).toMatchObject({ despacho: { entregaComprometida: "2026-11-15", entregaTexto: null }, avisos: [] });
   });
 
+  it("lee la descripción de un ítem con observación de 3 o más líneas (muestra 577 de la tienda, 27-10-2026)", () => {
+    // Coordenadas de la nota de muestra 577 de la tienda (datos inventados): el ítem 4 trae una URL partida en dos líneas y su
+    // descripción queda 27,7 pt sobre la cantidad; el ítem 5 trae 10000 unidades y un total de 13 caracteres a 8,2 pt.
+    const muestra = [
+      f(330, 760, "Nota de pedido"), f(470, 745, "N.º 577"), f(461, 730, "Fábrica Panguipulli"),
+      f(40, 580.9, "N.º"), f(65.2, 580.9, "Producto"), f(374, 580.9, "Cant."), f(411, 580.9, "Precio fábrica"), f(509, 580.9, "Total"), f(531.8, 580.9, "Listo"),
+      f(65.2, 558.4, "Molco Pino Oregon 0,82 m × 2,00 m"), f(65.2, 545.7, "Medida solicitada: 820 × 2000 mm (Hoja)"),
+      f(65.2, 534.4, "Observación: Bisagras a la izquierda."), f(65.2, 522.4, "Referencia de catálogo: MOL-O-3-A · 0,80–0,85 × 2,00 m"),
+      f(39.7, 541.2, "1"), f(385.8, 541.2, "2"), f(415.5, 541.2, "$100.000"), f(483.1, 541.2, "$200.000"),
+      f(65.2, 457.9, "Moldura a medida · Raulí"), f(65.2, 445.2, "Medida solicitada: 0,35 m × 2,40 m"),
+      f(65.2, 433.2, "Producto personalizado, fuera de catálogo"), f(39.7, 445.9, "3"), f(380.3, 445.9, "10"), f(426.5, 445.9, "$5.500"), f(488.6, 445.9, "$55.000"),
+      f(65.2, 412.9, "PUERTA MOLCO MODELO X CON VIDRIO TIPO A"), f(65.2, 400.9, "Medida solicitada: 840 × 2000 mm (Vano)"),
+      f(65.2, 389.7, "Observación: Ver plano:"), f(65.2, 378.4, "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345678"),
+      f(65.2, 367.9, "9abcdefghijk/view?usp=sharing_planos_obra_edificio_los_robles"), f(65.2, 355.9, "Referencia de catálogo: MOL-O-3-A · 0,80–0,85 × 2,00 m"),
+      f(39.7, 385.2, "4"), f(385.8, 385.2, "1"), f(415.5, 385.2, "$100.000"), f(483.1, 385.2, "$100.000"),
+      f(65.2, 335.7, "Molco Pino Oregon 0,80 m × 2,00 m"), f(65.2, 322.9, "Medida solicitada: 800 × 2000 mm (Hoja)"),
+      f(65.2, 310.9, "Referencia de catálogo: MOL-O-3-A · 0,80–0,85 × 2,00 m"),
+      f(39.7, 323.7, "5"), f(363.8, 323.7, "10000"), f(415.5, 323.7, "$100.000"), f(463.4, 323.7, "$1.000.000.000"),
+    ];
+    const n = leerNotaTienda(muestra);
+    expect(n.numero).toBe("577");
+    expect(n.lineas.map((l) => [l.descripcion, l.medidaSolicitada, l.cantidad, l.total])).toEqual([
+      ["Molco Pino Oregon 0,82 m × 2,00 m", "820 × 2000 mm (Hoja)", 2, 200000],
+      ["PUERTA MOLCO MODELO X CON VIDRIO TIPO A", "840 × 2000 mm (Vano)", 1, 100000],
+      ["Molco Pino Oregon 0,80 m × 2,00 m", "800 × 2000 mm (Hoja)", 10000, 1000000000],
+    ]);
+    expect(n.avisos).toEqual([expect.stringMatching(/^La nota trae 1 línea sin «Referencia de catálogo»/)]);
+  });
+
   it("avisa de las líneas sin referencia de catálogo (pedidos especiales) en vez de omitirlas", () => {
     const especial = [f(139, 410, "Puerta según diseño del cliente 7 · Roble"), f(385, 400, "1"), f(414, 400, "Por definir"), f(482, 400, "Por definir"), f(139, 388, "Producto personalizado, fuera de catálogo")];
     const n = leerNotaTienda([...nota, ...especial]);

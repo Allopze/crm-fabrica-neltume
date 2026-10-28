@@ -14,7 +14,9 @@ export function medidaSolicitada(d: ItemTienda["dimensions"]): string | null {
   if (d.requested?.trim()) return d.requested.trim();
   const tipo = d.measureType === "hoja" || d.measureType === "vano" ? `, ${d.measureType}` : "";
   if (d.widthMm && d.heightMm) return `${d.widthMm} × ${d.heightMm} mm${tipo}`;
-  if (d.section || d.lengthMm) return [d.section, d.lengthMm && `${d.lengthMm} mm`].filter(Boolean).join(" × ");
+  // Marco o moldura: la tienda manda el ancho en `widthMm` solo en los especiales que lo traen (acordado el 27-10-2026).
+  const mm = [d.widthMm, d.lengthMm].filter(Boolean).join(" × ");
+  if (d.section || mm) return [d.section, mm && `${mm} mm`].filter(Boolean).join(" × ");
   return null;
 }
 

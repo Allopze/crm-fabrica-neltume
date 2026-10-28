@@ -1,5 +1,5 @@
 // PDF de cotización con @react-pdf/renderer desde los datos congelados (ADR-0004). Fuentes de la marca incrustadas: sin red.
-import { Document, Page, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Page } from "@react-pdf/renderer";
 import { eq } from "drizzle-orm";
 import type { Tx } from "@/db/conexion";
 import { cliente } from "@/db/esquema/comercial";
@@ -7,9 +7,8 @@ import { MARCA } from "@/lib/marca";
 import { obtenerCotizacion } from "../cotizaciones/consulta";
 import { ErrorDominio } from "../errores";
 import { abonoPct } from "../pedidos/pagos";
-import { e, Membrete, Partes, Pie, TablaItems, ZonaTotales } from "./comun";
+import { e, Membrete, Partes, Pie, renderizarPdf, TablaItems, ZonaTotales } from "./comun";
 import { type CotizacionPdf, contenidoCotizacion } from "./contenido";
-import { modelosDeArticulos } from "./modelos";
 
 function DocumentoCotizacion({ c }: { c: CotizacionPdf }) {
   const k = contenidoCotizacion(c);
@@ -18,7 +17,7 @@ function DocumentoCotizacion({ c }: { c: CotizacionPdf }) {
       <Page size="A4" style={e.pagina}>
         <Membrete tipo={k.tipo} numero={k.numero} meta={k.meta} />
         {k.partes.length > 0 && <Partes partes={k.partes} />}
-        <TablaItems columnas={["Precio unit.", "Total"]} filas={k.filas} dibujos="miniatura" />
+        <TablaItems columnas={["Precio unit.", "Total"]} filas={k.filas} />
         <ZonaTotales notas={k.notas} lineas={k.totales} total={k.total} />
         <Pie lineas={[k.pie]} />
       </Page>
@@ -26,7 +25,7 @@ function DocumentoCotizacion({ c }: { c: CotizacionPdf }) {
   );
 }
 
-export const renderizarCotizacion = (c: CotizacionPdf) => renderToBuffer(<DocumentoCotizacion c={c} />);
+export const renderizarCotizacion = (c: CotizacionPdf) => renderizarPdf(<DocumentoCotizacion c={c} />);
 
 /** Lee la cotización congelada y la convierte en PDF. 409 NO_APROBADA si no está aprobada (REQ-COT-4.3). */
 export async function pdfCotizacion(tx: Tx, id: string): Promise<{ numero: number; pdf: Buffer }> {
@@ -34,12 +33,10 @@ export async function pdfCotizacion(tx: Tx, id: string): Promise<{ numero: numbe
   if (c.estado !== "aprobada" && c.estado !== "aceptada") throw new ErrorDominio("NO_APROBADA", "Solo una cotización aprobada tiene PDF.");
   const [cli] = c.clienteId ? await tx.select({ tipo: cliente.tipo }).from(cliente).where(eq(cliente.id, c.clienteId)) : [];
   const tienda = cli?.tipo === "tienda";
-  const modelos = await modelosDeArticulos(tx, c.items.map((i) => i.articuloId));
   const datos: CotizacionPdf = {
     numero: c.numero, aprobadaEn: c.aprobadaEn!, aprobadaPor: c.aprobador, vigenciaHasta: c.vigenciaHasta!, listaVersion: c.lista.usada,
     cliente: c.cliente && { nombre: c.cliente.nombre, rut: c.cliente.rut ?? null, comuna: c.cliente.comuna ?? null, contacto: c.cliente.contacto ?? null },
-    items: c.items.map((i) => ({ codigo: i.codigo, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, cantidad: i.cantidad, precioUnitario: Number(i.precioUnitario), totalLinea: Number(i.totalLinea),
-      modelo: modelos.get(i.articuloId ?? "")?.modelo ?? null, familia: modelos.get(i.articuloId ?? "")?.familia ?? null })),
+    items: c.items.map((i) => ({ codigo: i.codigo, descripcion: i.descripcion, medidaSolicitada: i.medidaSolicitada, cantidad: i.cantidad, precioUnitario: Number(i.precioUnitario), totalLinea: Number(i.totalLinea) })),
     subtotal: Number(c.subtotal), descuento: Number(c.descuento), descuentoMotivo: c.descuentoMotivo, iva: Number(c.iva), total: Number(c.total),
     abonoPct: tienda ? null : await abonoPct(tx),
   };

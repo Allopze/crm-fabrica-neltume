@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { poolApp } from "./bd";
 import { llamar } from "./http";
@@ -33,6 +34,16 @@ type Ruta = Parameters<typeof llamar>[0];
 const get = (ruta: { GET: Ruta }, id: string, sesion: Sesion, extra: object = {}) => llamar(ruta.GET, "GET", "/x", sesion, { id, ...extra });
 const post = (ruta: { POST: Ruta }, params: object, sesion: Sesion, cuerpo: object = {}) => llamar(ruta.POST, "POST", "/x", { ...sesion, cabeceras: idem(), cuerpo }, params);
 const textoPdf = async (bytes: Buffer) => (await fragmentosPdf(new Uint8Array(bytes))).map((f) => f.texto).join(" ");
+/** Imágenes pintadas en el PDF (pdfjs), para saber cuántas fotos del cliente lleva. */
+async function imagenesPdf(bytes: Buffer): Promise<number> {
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const tarea = pdfjs.getDocument({ data: new Uint8Array(bytes), verbosity: 0 });
+  const doc = await tarea.promise;
+  let n = 0;
+  for (let p = 1; p <= doc.numPages; p++) n += (await (await doc.getPage(p)).getOperatorList()).fnArray.filter((f) => f === pdfjs.OPS.paintImageXObject).length;
+  await tarea.destroy();
+  return n;
+}
 const estado = async (id: string) => (await filas("SELECT estado FROM nota_pedido WHERE id = $1", [id]))[0].estado;
 
 beforeAll(async () => {
@@ -105,6 +116,36 @@ describe("importes y documentos con permiso (ADR-0023 §6–§8)", () => {
     expect(a.estado).toBe(200);
     expect(a.res.headers.get("content-type")).toBe("image/png");
     expect((await get(rutaAdjunto, id, produccion, { sha256: sha })).estado).toBe(404);
+  });
+
+  it("la nota y la orden muestran las fotos de un ítem de catálogo en «Para fábrica» y nombran el croquis PDF y la imagen ilegible (REQ-COT-4.14)", async () => {
+    const adjunto = async (bytes: Buffer, filename: string, mimeType: string) => {
+      const sha = createHash("sha256").update(bytes).digest("hex");
+      await subirAdjunto(sha, bytes, mimeType);
+      return { attachmentId: sha, filename, mimeType, sizeBytes: bytes.length };
+    };
+    const foto = await sharp({ create: { width: 2000, height: 1500, channels: 3, background: "#7a4a2a" } }).jpeg().toBuffer();
+    const webp = await sharp({ create: { width: 900, height: 1400, channels: 4, background: { r: 30, g: 60, b: 40, alpha: 0.5 } } }).webp().toBuffer();
+    const refs = [
+      await adjunto(foto, "fachada.jpg", "image/jpeg"),
+      await adjunto(webp, "detalle.webp", "image/webp"),
+      await adjunto(Buffer.from("%PDF-1.7\ncroquis del cliente"), "croquis.pdf", "application/pdf"),
+      // Pasa el chequeo de tipo (firma PNG) pero no se puede decodificar: se nombra en vez de romper el PDF.
+      await adjunto(Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from("dañada")]), "dañada.png", "image/png"),
+    ];
+    const r = await enviar(await mensajeListo({ numero: "703", items: [lineaTienda(1, "FUY-O-2-A", 1), lineaTienda(2, "MAR-O-2X4-B", 2, { references: refs })] }));
+    expect(r.estado).toBe(201);
+    const nota = r.cuerpo.factoryOrderId;
+    for (const [ruta, sesion] of [[rutaOrden, produccion], [rutaPdf, admin]] as const) {
+      const pdf = await get(ruta, nota, sesion);
+      expect(pdf.estado).toBe(200);
+      const texto = await textoPdf(pdf.bytes);
+      expect(texto).toMatch(/Ítem 2 · /);
+      expect(texto).not.toMatch(/Ítem 1 · /); // el ítem sin adjuntos no deja grupo
+      expect(texto).toContain("Referencias del cliente: croquis.pdf, dañada.png");
+      expect(texto).not.toMatch(/fachada|detalle\.webp|Plano/);
+      expect(await imagenesPdf(pdf.bytes)).toBe(2);
+    }
   });
 });
 

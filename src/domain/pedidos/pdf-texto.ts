@@ -1,7 +1,16 @@
 // Extracción de texto con posiciones de un PDF (ADR-0008). Solo texto: sin XFA, sin fuentes del sistema ni red.
-import type { Fragmento } from "./nota-tienda";
+import { type Fragmento, NotaIlegible } from "./nota-tienda";
 
 export const MAX_PDF_BYTES = 5 * 1024 * 1024;
+/** Páginas que se leen como máximo; con fotos una nota puede ser más larga, pero no tanto (ADR-0025 D14). */
+export const MAX_PDF_PAGINAS = 50;
+
+/** El PDF tiene más páginas de las que se leen: se rechaza con un error claro en vez de leer solo una parte. */
+export class PdfDemasiadoLargo extends NotaIlegible {
+  constructor(readonly paginas: number) {
+    super(`El PDF tiene ${paginas} páginas; el máximo es ${MAX_PDF_PAGINAS}.`);
+  }
+}
 
 export function esPdf(datos: Uint8Array): boolean {
   return datos.length > 5 && new TextDecoder().decode(datos.subarray(0, 5)) === "%PDF-";
@@ -18,8 +27,9 @@ export async function fragmentosPdf(datos: Uint8Array): Promise<Fragmento[]> {
   const tarea = getDocument({ data: new Uint8Array(datos), enableXfa: false, useSystemFonts: false, disableFontFace: true, stopAtErrors: true, verbosity: 0 });
   const doc = await tarea.promise;
   try {
+    if (doc.numPages > MAX_PDF_PAGINAS) throw new PdfDemasiadoLargo(doc.numPages);
     const fragmentos: Fragmento[] = [];
-    for (let n = 1; n <= Math.min(doc.numPages, 20); n++) {
+    for (let n = 1; n <= doc.numPages; n++) {
       const pagina = await doc.getPage(n);
       const { items } = await pagina.getTextContent();
       for (const it of items) {

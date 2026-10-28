@@ -1,9 +1,11 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { Document, Page, renderToBuffer, Text } from "@react-pdf/renderer";
+import { createElement } from "react";
 import { describe, expect, it } from "vitest";
-import { verificarDocumento } from "../integracion-tienda/documentos";
+import { DocumentoInvalido, verificarDocumento } from "../integracion-tienda/documentos";
 import { leerNotaTienda } from "./nota-tienda";
-import { fragmentosPdf } from "./pdf-texto";
+import { fragmentosPdf, MAX_PDF_PAGINAS, PdfDemasiadoLargo } from "./pdf-texto";
 
 // PDF sintéticos de la tienda (datos inventados, sin clientes ni precios reales), generados por su rama del estilo común
 // v1: «actual» es el estilo de producción al 25-10-2026; «estandar», el nuevo («N.º», Fraunces/Instrument Sans, pie de 7,5 pt).
@@ -63,4 +65,50 @@ describe("PDF de la orden de trabajo de la tienda, estilo nuevo (producción: si
     const v = await verificarDocumento({ filename: archivo, contentBase64: datos.toString("base64"), sha256: createHash("sha256").update(datos).digest("hex") }, "produccion", "577");
     expect(v.retencion).toBeNull();
   });
+});
+
+// F28 (ADR-0025 D14): la tienda ya no imprime dibujos y pone las fotos del cliente en «Observaciones» de «Para fábrica»,
+// agrupadas con una línea «Ítem n · producto». Muestras de su rama (datos inventados): las anclas no se mueven.
+describe("PDF de la nota de la tienda sin dibujos y con fotos en las observaciones (F28, REQ-COT-8.6)", () => {
+  const TRES = [["YEL-O-3-A", 1, 120000], ["MOL-O-3-A", 2, 258000], ["MAR-O-2X4-B", 2, 76000]];
+  it.each([["nota-sin-fotos.pdf"], ["nota-una-foto.pdf"]])("%s: lee sus 3 ítems, el despacho y los totales sin avisos", async (archivo) => {
+    const n = await leer(`fotos/${archivo}`);
+    expect(n).toMatchObject({ numero: "577", refCotizacion: "323", despacho: { entregaComprometida: "2026-11-15", entregaTexto: null }, totales: { subtotal: 454000, total: 540260 }, avisos: [] });
+    expect(n.lineas.map((l) => [l.codigo, l.cantidad, l.total])).toEqual(TRES);
+    expect(n.lineas[0]).toMatchObject({ descripcion: "Puerta especial de tablas verticales con vidrio lateral", medidaSolicitada: "820 × 2000 mm (Hoja)" });
+  });
+
+  it("3 páginas con 8 ítems y sus fotos en «Para fábrica»: los grupos «Ítem n · …» no se leen como ítems y el croquis PDF no cambia la descripción", async () => {
+    const n = await leer("fotos/nota-varias-fotos.pdf");
+    expect(n).toMatchObject({ despacho: { entregaComprometida: "2026-11-15", entregaTexto: null }, totales: { subtotal: 1376000, total: 1637440 }, avisos: [] });
+    expect(n.lineas.map((l) => [l.codigo, l.cantidad, l.total])).toEqual([...TRES,
+      ["PAL-O-3-A", 2, 294000], ["YEL-O-3-A", 1, 120000], ["MAR-O-2X4-B", 2, 76000], ["RAN-O-3-A", 1, 138000], ["PAL-O-3-A", 2, 294000]]);
+    expect(n.lineas[2].descripcion).toBe("Marco Pino Oregon 2x4 pulg. kit");
+  });
+
+  it("su orden de trabajo con fotos se acepta sin retención", async () => {
+    const datos = readFileSync(`${RAIZ}/fotos/nota-varias-fotos-orden-de-trabajo.pdf`);
+    const v = await verificarDocumento({ filename: "orden.pdf", contentBase64: datos.toString("base64"), sha256: createHash("sha256").update(datos).digest("hex") }, "produccion", "577");
+    expect(v.retencion).toBeNull();
+  });
+});
+
+describe("PDF de más de 50 páginas (F28, REQ-COT-8.6)", () => {
+  const paginas = (n: number) => renderToBuffer(createElement(Document, null,
+    ...Array.from({ length: n }, (_, i) => createElement(Page, { key: i, size: "A4" }, createElement(Text, null, `Página ${i + 1}`)))));
+
+  it("se rechaza con un error claro, en vez de leer en silencio solo una parte; con 50 lee todas", async () => {
+    await expect(fragmentosPdf(new Uint8Array(await paginas(MAX_PDF_PAGINAS + 1)))).rejects.toThrow(new PdfDemasiadoLargo(51));
+    await expect(fragmentosPdf(new Uint8Array(await paginas(MAX_PDF_PAGINAS + 1)))).rejects.toThrow("El PDF tiene 51 páginas; el máximo es 50.");
+    const leidas = await fragmentosPdf(new Uint8Array(await paginas(MAX_PDF_PAGINAS)));
+    expect(new Set(leidas.map((f) => f.pagina)).size).toBe(50);
+  }, 30_000);
+
+  it("por la API de la tienda, el documento se rechaza con el mismo motivo", async () => {
+    const datos = await paginas(MAX_PDF_PAGINAS + 1);
+    const pedir = verificarDocumento({ filename: "nota.pdf", contentBase64: datos.toString("base64"), sha256: createHash("sha256").update(datos).digest("hex") }, "comercial", "577");
+    await expect(pedir).rejects.toThrow(DocumentoInvalido);
+    await expect(verificarDocumento({ filename: "nota.pdf", contentBase64: datos.toString("base64"), sha256: createHash("sha256").update(datos).digest("hex") }, "comercial", "577"))
+      .rejects.toThrow("tiene 51 páginas; el máximo es 50");
+  }, 30_000);
 });
